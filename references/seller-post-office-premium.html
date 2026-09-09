@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卖家邮局 · 高级版原型</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  --ink:#1C2B45;
+  --ink-soft:#5B6478;
+  --muted:#8A93A6;
+  --paper:#F6F6F3;
+  --surface:#FFFFFF;
+  --surface-2:#FBFBF9;
+  --border:#E5E4DE;
+  --accent:#1C2B45;
+  --accent-tint:#E9ECF1;
+  --stamp:#B23A2E;
+  --stamp-tint:#FBEAE7;
+  --gold:#A67B25;
+  --gold-tint:#F6EDD9;
+  --route:#2F6E52;
+  --route-tint:#E1F0E7;
+  --radius:14px;
+  --radius-sm:9px;
+  --shadow:0 1px 2px rgba(28,43,69,.05), 0 4px 14px rgba(28,43,69,.05);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;}
+::selection{background:var(--gold-tint);}
+h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;color:var(--ink);}
+p{margin:0;}
+.app{max-width:740px;margin:0 auto;padding:0 0 72px;}
+
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;}
+.brand{display:flex;align-items:center;gap:9px;}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:var(--accent-tint);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.brand-name{font-family:'Fraunces',serif;font-size:17px;font-weight:600;letter-spacing:-0.01em;}
+.plan-badge{font-size:11.5px;padding:4px 11px;border-radius:20px;background:var(--accent-tint);color:var(--accent);font-weight:500;}
+
+/* identity bar */
+.identity-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;margin:0 20px 6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+.identity-who{display:flex;align-items:center;gap:10px;min-width:0;}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent-tint);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;flex-shrink:0;}
+.identity-name{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.role-badge{font-size:10.5px;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:2px;font-weight:500;}
+.role-badge.admin{background:var(--stamp-tint);color:var(--stamp);}
+.role-badge.editor{background:var(--gold-tint);color:var(--gold);}
+.role-badge.viewer{background:var(--accent-tint);color:var(--muted);}
+.identity-select{width:auto;max-width:120px;padding:7px 9px;font-size:12.5px;border-radius:var(--radius-sm);flex-shrink:0;}
+
+/* tabs */
+.tabs{display:flex;gap:4px;overflow-x:auto;padding:14px 20px 0;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;white-space:nowrap;padding:0 4px 12px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;}
+.tab.active{color:var(--ink);border-bottom-color:var(--accent);}
+.view{display:none;padding:18px 20px;}
+.view.active{display:block;}
+
+/* stat cards */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 16px;}
+.stat-card .l{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;}
+.stat-card .n{font-family:'Fraunces',serif;font-size:26px;font-weight:600;line-height:1;}
+.stat-card .n.success{color:var(--route);}
+
+.section-title{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;}
+.section-title h2{font-size:16.5px;}
+.section-title .count{font-size:12px;color:var(--muted);}
+.hint{font-size:12.5px;color:var(--muted);margin:0 0 16px;line-height:1.6;}
+
+/* buttons */
+button{font-family:'IBM Plex Sans',sans-serif;cursor:pointer;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:500;border-radius:var(--radius-sm);}
+.btn:active{opacity:.85;}
+.btn-outline{background:var(--surface);color:var(--ink);border:1px solid var(--border);}
+.btn-sm{padding:6px 11px;font-size:12px;}
+.btn-danger{background:var(--stamp);}
+.btn-text{background:none;border:none;color:var(--muted);font-size:12.5px;padding:3px 0;font-weight:500;}
+.btn-text:hover{color:var(--accent);}
+.btn[disabled],.btn-text[disabled]{opacity:.35;cursor:not-allowed;}
+.disabled-hint{font-size:11px;color:var(--muted);}
+
+/* forms */
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500;}
+input[type=text],input[type=email],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:14px;border-radius:var(--radius-sm);}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);}
+textarea{resize:vertical;min-height:90px;line-height:1.55;}
+.field{margin-bottom:13px;}
+.field-row{display:flex;gap:10px;flex-direction:column;}
+
+/* cards / rows */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.row-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);}
+.row-item:last-child{border-bottom:none;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:10px;}
+.row-between{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+
+/* contacts */
+.contact-email{font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.contact-name{font-size:12px;color:var(--muted);margin-top:1px;}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.status-dot.subscribed{background:var(--route);}
+.status-dot.unsubscribed{background:var(--muted);}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.pill{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;white-space:nowrap;}
+.pill.tag{background:var(--gold-tint);color:var(--gold);}
+.pill.chip-btn{cursor:pointer;background:var(--surface);color:var(--ink-soft);border:1px solid var(--border);}
+.pill.chip-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.actions-inline{display:flex;gap:12px;margin-top:9px;flex-wrap:wrap;align-items:center;}
+
+/* templates */
+.tpl-cat{font-size:11px;color:var(--route);font-weight:600;letter-spacing:.02em;}
+.tpl-name{font-size:15px;margin:4px 0 3px;}
+.tpl-subject{font-size:13px;color:var(--ink-soft);font-style:italic;}
+
+/* campaigns */
+.status-pill{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;flex-shrink:0;}
+.status-pill.draft{background:var(--gold-tint);color:var(--gold);}
+.status-pill.sent{background:var(--route-tint);color:var(--route);}
+.campaign-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.bar-row .lbl{font-size:11.5px;color:var(--muted);width:52px;flex-shrink:0;}
+.bar-track{flex:1;height:7px;background:var(--accent-tint);border-radius:20px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:20px;}
+.bar-fill.sent{background:var(--ink);}
+.bar-fill.open{background:var(--gold);}
+.bar-fill.click{background:var(--route);}
+.bar-row .val{font-family:'IBM Plex Mono',monospace;font-size:10.5px;width:82px;text-align:right;flex-shrink:0;color:var(--ink-soft);}
+.stat-bars{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+
+.empty{padding:38px 18px;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius);}
+.empty h3{font-size:14.5px;color:var(--ink);margin-bottom:5px;}
+.empty p{font-size:12.5px;}
+
+/* modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(28,43,69,.45);display:none;align-items:flex-end;justify-content:center;z-index:100;}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--paper);width:100%;max-width:740px;max-height:90vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:22px 20px 30px;}
+.modal h2{font-size:17px;margin-bottom:16px;}
+.modal-close{float:right;background:none;border:none;font-size:20px;color:var(--muted);line-height:1;padding:0 0 0 10px;}
+
+.var-chip{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--accent-tint);border:none;padding:4px 9px;border-radius:20px;color:var(--accent);cursor:pointer;margin:0 6px 6px 0;display:inline-block;}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--radius-sm);font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:200;max-width:88%;text-align:center;box-shadow:var(--shadow);}
+.toast.show{opacity:1;}
+
+.preview-box{border:1px solid var(--border);background:var(--surface-2);border-radius:var(--radius-sm);padding:14px;white-space:pre-wrap;font-size:13.5px;line-height:1.6;max-height:220px;overflow-y:auto;}
+.preview-subject{font-weight:600;margin-bottom:8px;font-size:13.5px;}
+
+.settings-block{margin-bottom:24px;}
+.settings-block h3{font-size:14.5px;margin-bottom:8px;}
+.esp-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+.esp-row:last-child{border-bottom:none;}
+.esp-row .name{font-weight:600;flex-shrink:0;width:100px;}
+.esp-row .note{color:var(--muted);}
+
+.perm-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.perm-table th,.perm-table td{border:1px solid var(--border);padding:8px 6px;text-align:center;}
+.perm-table th{background:var(--surface-2);font-weight:600;font-size:11px;}
+.perm-table td:first-child,.perm-table th:first-child{text-align:left;}
+.perm-table .yes{color:var(--route);font-weight:600;}
+.perm-table .no{color:var(--muted);}
+
+.log-filter{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;}
+.log-time{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);width:68px;flex-shrink:0;}
+.log-body{flex:1;font-size:13px;}
+.log-body .who{font-weight:600;}
+
+@media (min-width:600px){ .field-row{flex-direction:row;} .field-row .field{flex:1;} }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <rect x="2.5" y="4.5" width="15" height="11" rx="1.5" stroke="#1C2B45" stroke-width="1.4"/>
+          <path d="M3.5 5.5l6.5 5 6.5-5" stroke="#1C2B45" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="brand-name">卖家邮局</span>
+    </div>
+    <span class="plan-badge">团队版</span>
+  </div>
+
+  <div class="identity-bar">
+    <div class="identity-who">
+      <span class="avatar" id="identity-avatar">店</span>
+      <div>
+        <div class="identity-name" id="identity-name-label">—</div>
+        <span class="role-badge" id="identity-role-badge">—</span>
+      </div>
+    </div>
+    <select id="identity-select" class="identity-select"></select>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="dashboard">总览</button>
+    <button class="tab" data-view="contacts">客户</button>
+    <button class="tab" data-view="templates">模板</button>
+    <button class="tab" data-view="campaigns">活动</button>
+    <button class="tab" data-view="team">团队</button>
+    <button class="tab" data-view="log">日志</button>
+    <button class="tab" data-view="settings">设置</button>
+  </div>
+
+  <div class="view active" id="view-dashboard">
+    <div class="stat-grid">
+      <div class="stat-card"><span class="l">客户数</span><span class="n" id="stat-contacts">0</span></div>
+      <div class="stat-card"><span class="l">模板数</span><span class="n" id="stat-templates">0</span></div>
+      <div class="stat-card"><span class="l">团队成员</span><span class="n" id="stat-members">0</span></div>
+      <div class="stat-card"><span class="l">平均打开率</span><span class="n success" id="stat-openrate">–</span></div>
+    </div>
+    <div class="section-title"><h2>最近动态</h2></div>
+    <div id="dash-log"></div>
+  </div>
+
+  <div class="view" id="view-contacts">
+    <div class="section-title"><h2>客户名单</h2><span class="count" id="contact-count">0 位</span></div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="btn" id="btn-add-contact">+ 添加客户</button>
+      <button class="btn btn-outline" id="btn-import-contact">批量导入</button>
+    </div>
+    <div class="field"><input type="text" id="contact-search" placeholder="搜索邮箱或姓名"></div>
+    <div class="tag-row" id="tag-filter-row" style="margin-bottom:14px;"></div>
+    <div id="contact-list" class="panel"></div>
+  </div>
+
+  <div class="view" id="view-templates">
+    <div class="section-title"><h2>邮件模板库</h2><span class="count" id="template-count">0 套</span></div>
+    <p class="hint">纯文本风格模板,{{name}} 这样的变量会在群发时自动替换成每位客户的信息。</p>
+    <button class="btn" id="btn-add-template" style="margin-bottom:16px;">+ 新建模板</button>
+    <div id="template-list"></div>
+  </div>
+
+  <div class="view" id="view-campaigns">
+    <div class="section-title"><h2>发信活动</h2><span class="count" id="campaign-count">0 条</span></div>
+    <button class="btn" id="btn-add-campaign" style="margin-bottom:16px;">+ 新建活动</button>
+    <div id="campaign-list"></div>
+  </div>
+
+  <div class="view" id="view-team">
+    <div class="section-title"><h2>团队成员</h2><span class="count" id="member-count">0 人</span></div>
+    <button class="btn" id="btn-add-member" style="margin-bottom:16px;">+ 添加成员</button>
+    <div id="member-list" class="panel"></div>
+    <hr class="divider">
+    <h3 style="font-size:14.5px;margin-bottom:10px;">角色权限说明</h3>
+    <table class="perm-table">
+      <tr><th>操作</th><th>管理员</th><th>运营</th><th>查看者</th></tr>
+      <tr><td>管理团队成员</td><td class="yes">✓</td><td class="no">–</td><td class="no">–</td></tr>
+      <tr><td>增删改客户</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">–</td></tr>
+      <tr><td>增删改模板</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">–</td></tr>
+      <tr><td>创建活动草稿</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">–</td></tr>
+      <tr><td>发送活动</td><td class="yes">✓</td><td class="no">–</td><td class="no">–</td></tr>
+      <tr><td>查看数据统计</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+    </table>
+    <p class="hint" style="margin-top:10px;">运营可以把活动准备到草稿状态,最后由管理员确认发送。</p>
+  </div>
+
+  <div class="view" id="view-log">
+    <div class="section-title"><h2>操作记录</h2><span class="count" id="log-count">0 条</span></div>
+    <div class="log-filter" id="log-filter-row"></div>
+    <div id="log-list"></div>
+  </div>
+
+  <div class="view" id="view-settings">
+    <div class="settings-block">
+      <h3>发件人信息</h3>
+      <p class="hint">用于模板预览里的落款。</p>
+      <div class="field-row">
+        <div class="field"><label>店铺 / 品牌名</label><input type="text" id="set-store"></div>
+        <div class="field"><label>发件人姓名</label><input type="text" id="set-sender"></div>
+      </div>
+      <button class="btn btn-outline btn-sm" id="btn-save-settings">保存</button>
+    </div>
+    <hr class="divider">
+    <div class="settings-block">
+      <h3>这个工具怎么帮你真正发出邮件</h3>
+      <p class="hint">团队在这里管理客户、模板、活动和权限;真正把邮件送到收件箱,仍然需要接一个发信通道。</p>
+      <div class="panel" style="padding:2px 14px;">
+        <div class="esp-row"><span class="name">阿里云邮件推送</span><span class="note">总量 2000 封免费,每天限 200 封</span></div>
+        <div class="esp-row"><span class="name">Brevo</span><span class="note">每天 300 封免费,适合起步团队</span></div>
+        <div class="esp-row"><span class="name">Mailgun</span><span class="note">每天 100 封免费,新账号需验证收件人</span></div>
+        <div class="esp-row"><span class="name">SendGrid</span><span class="note">免费额度仅 60 天试用</span></div>
+      </div>
+      <p class="hint" style="margin-top:12px;">建议接自己的账号而不是共用平台账号 —— 各账号发信信誉互相独立,不会被别人的名单质量拖累。</p>
+    </div>
+    <hr class="divider">
+    <div class="settings-block">
+      <h3>关于这份原型</h3>
+      <p class="hint">"当前身份"是模拟登录,用来演示角色权限差异,不是真实账号系统。客户、模板、活动、团队成员、操作记录这些数据对所有打开此页面的人共享可见,请不要放真实客户隐私数据。发送数据统计为模拟生成。</p>
+    </div>
+    <hr class="divider">
+    <div class="settings-block">
+      <h3>清空数据</h3>
+      <p class="hint">仅管理员可操作,且无法恢复。</p>
+      <button class="btn btn-danger btn-sm" id="btn-reset">清空全部数据</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-backdrop"><div class="modal" id="modal-content"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+async function loadData(key, fallback, shared){
+  try{ const res = await window.storage.get(key, !!shared); if(res && res.value) return JSON.parse(res.value); return fallback; }
+  catch(e){ return fallback; }
+}
+async function saveData(key, value, shared){
+  try{ await window.storage.set(key, JSON.stringify(value), !!shared); return true; }
+  catch(e){ console.error('save failed', key, e); showToast('保存失败,请重试'); return false; }
+}
+
+let state = { contacts:[], templates:[], campaigns:[], members:[], logs:[], settings:{store:'',sender:''} };
+let currentMemberId = null;
+let activeTagFilter = null;
+let activeLogFilter = null;
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtDate(ts){ if(!ts) return ''; const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()}`; }
+function fmtTime(ts){ if(!ts) return ''; const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function initials(name, email){ const s = (name||email||'?').trim(); return s.slice(0,2).toUpperCase(); }
+
+const ROLE_LABEL = {admin:'管理员', editor:'运营', viewer:'查看者'};
+const PERMISSIONS = {
+  admin:  {manage_team:true,  manage_contacts:true, manage_templates:true, create_campaign:true, send_campaign:true,  view_stats:true},
+  editor: {manage_team:false, manage_contacts:true, manage_templates:true, create_campaign:true, send_campaign:false, view_stats:true},
+  viewer: {manage_team:false, manage_contacts:false, manage_templates:false, create_campaign:false, send_campaign:false, view_stats:true}
+};
+function getCurrentMember(){ return state.members.find(m=>m.id===currentMemberId) || state.members[0] || null; }
+function can(action){ const m = getCurrentMember(); return !!(m && PERMISSIONS[m.role] && PERMISSIONS[m.role][action]); }
+async function logAction(action, target){
+  const m = getCurrentMember(); if(!m) return;
+  state.logs.unshift({id:uid(), actorId:m.id, actorName:m.name, actorRole:m.role, action, target, timestamp:Date.now()});
+  await saveData('logs', state.logs, true);
+}
+
+const DEFAULT_TEMPLATES = [
+  {name:'欢迎新客户', category:'欢迎系列', subject:"Welcome to {{store_name}} — here's 10% off",
+   body:"Hi {{name}},\n\nThanks so much for joining {{store_name}}. We're a small team and every order genuinely means a lot to us.\n\nHere's a code for 10% off your first order: {{discount}}\n\nIf you ever have a question, just reply to this email.\n\nWelcome aboard,\n{{sender_name}}"},
+  {name:'弃购挽回', category:'弃购挽回', subject:"You left {{product}} in your cart",
+   body:"Hi {{name}},\n\nI noticed {{product}} is still sitting in your cart. No pressure — just checking if you had any questions.\n\nHere's {{discount}} off if you complete your order in the next 48 hours.\n\nBest,\n{{sender_name}}"},
+  {name:'促销活动', category:'促销活动', subject:"{{discount}} off, this week only",
+   body:"Hi {{name}},\n\nQuick note from {{store_name}} — we're running {{discount}} off through this week.\n\nCode: {{discount}}\n\nThanks for being here,\n{{sender_name}}"},
+  {name:'物流通知', category:'物流通知', subject:"Your order {{order_number}} has shipped",
+   body:"Hi {{name}},\n\nGood news — order {{order_number}} is on its way. International shipping can take a little longer, so please allow the estimated window.\n\nThanks for your patience,\n{{sender_name}}"},
+  {name:'复购唤醒', category:'复购唤醒', subject:"We miss you, {{name}}",
+   body:"Hi {{name}},\n\nIt's been a while since your last order with {{store_name}}. Here's {{discount}} off as a thank-you for being an early customer.\n\nWarmly,\n{{sender_name}}"},
+  {name:'评价邀请', category:'评价邀请', subject:"How's {{product}} treating you?",
+   body:"Hi {{name}},\n\nHope {{product}} has been treating you well. A short review would mean a lot to a small store like ours.\n\nThank you,\n{{sender_name}}"}
+];
+
+async function init(){
+  state.contacts = await loadData('contacts', [], true);
+  state.templates = await loadData('templates', [], true);
+  state.campaigns = await loadData('campaigns', [], true);
+  state.members = await loadData('members', [], true);
+  state.logs = await loadData('logs', [], true);
+  state.settings = await loadData('settings', {store:'',sender:''}, true);
+
+  if(state.templates.length === 0){
+    state.templates = DEFAULT_TEMPLATES.map(t => ({...t, id: uid(), createdAt: Date.now()}));
+    await saveData('templates', state.templates, true);
+  }
+  if(state.members.length === 0){
+    state.members = [{id: uid(), name:'店主(你)', email:'you@yourstore.com', role:'admin', joinedAt: Date.now()}];
+    await saveData('members', state.members, true);
+  }
+  let changed = false;
+  state.contacts.forEach(c=>{ if(!c.status){ c.status='subscribed'; changed=true; } });
+  if(changed) await saveData('contacts', state.contacts, true);
+
+  currentMemberId = await loadData('current_member_id', null, false);
+  if(!currentMemberId || !state.members.find(m=>m.id===currentMemberId)){
+    currentMemberId = state.members[0].id;
+    await saveData('current_member_id', currentMemberId, false);
+  }
+
+  document.getElementById('set-store').value = state.settings.store || '';
+  document.getElementById('set-sender').value = state.settings.sender || '';
+
+  renderIdentityBar();
+  renderAll();
+  bindNav();
+  bindGlobalActions();
+}
+
+function renderAll(){ renderDashboard(); renderContacts(); renderTemplates(); renderCampaigns(); renderTeam(); renderLog(); }
+
+function renderIdentityBar(){
+  const sel = document.getElementById('identity-select');
+  sel.innerHTML = state.members.map(m=>`<option value="${m.id}" ${m.id===currentMemberId?'selected':''}>${esc(m.name)}</option>`).join('');
+  const m = getCurrentMember();
+  document.getElementById('identity-avatar').textContent = initials(m.name, m.email);
+  document.getElementById('identity-name-label').textContent = m.name;
+  const badge = document.getElementById('identity-role-badge');
+  badge.textContent = ROLE_LABEL[m.role];
+  badge.className = 'role-badge ' + m.role;
+  sel.onchange = async ()=>{
+    currentMemberId = sel.value;
+    await saveData('current_member_id', currentMemberId, false);
+    renderIdentityBar(); renderAll();
+    showToast('已切换为: ' + getCurrentMember().name);
+  };
+}
+
+function bindNav(){
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    });
+  });
+}
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+function openModal(html){
+  const content = document.getElementById('modal-content');
+  content.innerHTML = '<button class="modal-close" id="modal-close-btn">&times;</button>' + html;
+  document.getElementById('modal-backdrop').classList.add('open');
+  document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+}
+function closeModal(){ document.getElementById('modal-backdrop').classList.remove('open'); }
+function guard(action, label){
+  if(can(action)) return true;
+  showToast(`${ROLE_LABEL[getCurrentMember().role]}没有权限: ${label}`);
+  return false;
+}
+
+function bindGlobalActions(){
+  document.getElementById('modal-backdrop').addEventListener('click', e=>{ if(e.target.id==='modal-backdrop') closeModal(); });
+  document.getElementById('btn-add-contact').addEventListener('click', ()=>{ if(guard('manage_contacts','添加客户')) openContactForm(); });
+  document.getElementById('btn-import-contact').addEventListener('click', ()=>{ if(guard('manage_contacts','批量导入')) openImportForm(); });
+  document.getElementById('contact-search').addEventListener('input', renderContacts);
+  document.getElementById('btn-add-template').addEventListener('click', ()=>{ if(guard('manage_templates','新建模板')) openTemplateForm(); });
+  document.getElementById('btn-add-campaign').addEventListener('click', ()=>{ if(guard('create_campaign','新建活动')) openCampaignForm(); });
+  document.getElementById('btn-add-member').addEventListener('click', ()=>{ if(guard('manage_team','添加成员')) openMemberForm(); });
+  document.getElementById('btn-save-settings').addEventListener('click', async ()=>{
+    state.settings.store = document.getElementById('set-store').value.trim();
+    state.settings.sender = document.getElementById('set-sender').value.trim();
+    await saveData('settings', state.settings, true);
+    showToast('已保存');
+  });
+  document.getElementById('btn-reset').addEventListener('click', async ()=>{
+    if(!guard('manage_team','清空数据')) return;
+    if(!confirm('确定清空所有共享数据吗?此操作无法撤销。')) return;
+    state.contacts=[]; state.templates=[]; state.campaigns=[]; state.logs=[];
+    await saveData('contacts', [], true); await saveData('campaigns', [], true); await saveData('logs', [], true);
+    state.templates = DEFAULT_TEMPLATES.map(t => ({...t, id: uid(), createdAt: Date.now()}));
+    await saveData('templates', state.templates, true);
+    renderAll();
+    showToast('已清空');
+  });
+}
+
+function renderDashboard(){
+  document.getElementById('stat-contacts').textContent = state.contacts.length;
+  document.getElementById('stat-templates').textContent = state.templates.length;
+  document.getElementById('stat-members').textContent = state.members.length;
+  const sentWithStats = state.campaigns.filter(c=>c.status==='sent' && c.stats);
+  document.getElementById('stat-openrate').textContent = sentWithStats.length===0 ? '–' :
+    Math.round(sentWithStats.reduce((s,c)=>s + (c.stats.opens/Math.max(c.stats.sent,1)), 0) / sentWithStats.length * 100) + '%';
+  const box = document.getElementById('dash-log');
+  const recent = state.logs.slice(0,6);
+  if(recent.length===0){ box.innerHTML = `<div class="empty"><h3>还没有团队动态</h3><p>添加客户、创建模板或活动后,这里会显示是谁做了什么。</p></div>`; return; }
+  box.innerHTML = `<div class="panel">${recent.map(logRowHTML).join('')}</div>`;
+}
+function logRowHTML(l){
+  return `<div class="row-item"><span class="log-time">${fmtTime(l.timestamp)}</span><span class="log-body"><span class="who">${esc(l.actorName)}</span>(${ROLE_LABEL[l.actorRole]}) ${esc(l.action)}${l.target?' · '+esc(l.target):''}</span></div>`;
+}
+
+function allTags(){ const s=new Set(); state.contacts.forEach(c=>(c.tags||[]).forEach(t=>s.add(t))); return [...s]; }
+
+function renderContacts(){
+  document.getElementById('contact-count').textContent = state.contacts.length + ' 位';
+  document.getElementById('btn-add-contact').disabled = !can('manage_contacts');
+  document.getElementById('btn-import-contact').disabled = !can('manage_contacts');
+  const tags = allTags();
+  const filterRow = document.getElementById('tag-filter-row');
+  filterRow.innerHTML = tags.map(t=>`<span class="pill chip-btn ${activeTagFilter===t?'active':''}" data-tag="${esc(t)}">${esc(t)}</span>`).join('');
+  filterRow.querySelectorAll('.chip-btn').forEach(el=>el.addEventListener('click', ()=>{ activeTagFilter = activeTagFilter===el.dataset.tag?null:el.dataset.tag; renderContacts(); }));
+
+  const q = (document.getElementById('contact-search').value||'').toLowerCase();
+  let list = state.contacts.filter(c=>{
+    const mq = !q || c.email.toLowerCase().includes(q) || (c.name||'').toLowerCase().includes(q);
+    const mt = !activeTagFilter || (c.tags||[]).includes(activeTagFilter);
+    return mq && mt;
+  }).sort((a,b)=>b.createdAt-a.createdAt);
+
+  const box = document.getElementById('contact-list');
+  if(list.length===0){ box.className=''; box.innerHTML = `<div class="empty"><h3>名单是空的</h3><p>添加第一位客户,或粘贴表格批量导入。</p></div>`; return; }
+  box.className = 'panel';
+  const editable = can('manage_contacts');
+  box.innerHTML = list.map(c=>`
+    <div class="row-item" data-id="${c.id}" style="align-items:flex-start;">
+      <span class="avatar" style="width:32px;height:32px;font-size:11.5px;flex-shrink:0;">${initials(c.name,c.email)}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span class="status-dot ${c.status==='unsubscribed'?'unsubscribed':'subscribed'}" title="${c.status==='unsubscribed'?'已退订':'已订阅'}"></span>
+          <span class="contact-email">${esc(c.email)}</span>
+        </div>
+        ${c.name?`<div class="contact-name">${esc(c.name)}</div>`:''}
+        ${(c.tags&&c.tags.length)?`<div class="tag-row">${c.tags.map(t=>`<span class="pill tag">${esc(t)}</span>`).join('')}</div>`:''}
+        <div class="actions-inline">
+          <button class="btn-text edit-contact" ${editable?'':'disabled'}>编辑</button>
+          <button class="btn-text delete-contact" ${editable?'':'disabled'}>删除</button>
+          ${editable?'':'<span class="disabled-hint">需要客户管理权限</span>'}
+        </div>
+      </div>
+    </div>
+  `).join('');
+  box.querySelectorAll('.edit-contact').forEach(btn=>btn.addEventListener('click', e=>{ if(!guard('manage_contacts','编辑客户'))return; openContactForm(state.contacts.find(c=>c.id===e.target.closest('.row-item').dataset.id)); }));
+  box.querySelectorAll('.delete-contact').forEach(btn=>btn.addEventListener('click', async e=>{
+    if(!guard('manage_contacts','删除客户')) return;
+    const id = e.target.closest('.row-item').dataset.id;
+    const c = state.contacts.find(x=>x.id===id);
+    if(!confirm('删除这位客户?')) return;
+    state.contacts = state.contacts.filter(x=>x.id!==id);
+    await saveData('contacts', state.contacts, true);
+    await logAction('删除客户', c.email);
+    renderContacts(); renderDashboard(); renderLog();
+    showToast('已删除');
+  }));
+}
+
+function openContactForm(existing){
+  const isEdit = !!existing;
+  openModal(`
+    <h2>${isEdit?'编辑客户':'添加客户'}</h2>
+    <div class="field"><label>邮箱 *</label><input type="email" id="f-email" value="${isEdit?esc(existing.email):''}"></div>
+    <div class="field"><label>姓名</label><input type="text" id="f-name" value="${isEdit?esc(existing.name||''):''}"></div>
+    <div class="field"><label>标签(逗号分隔)</label><input type="text" id="f-tags" value="${isEdit?esc((existing.tags||[]).join(', ')):''}"></div>
+    <div class="field"><label>订阅状态</label>
+      <select id="f-status">
+        <option value="subscribed" ${!isEdit||existing.status!=='unsubscribed'?'selected':''}>已订阅</option>
+        <option value="unsubscribed" ${isEdit&&existing.status==='unsubscribed'?'selected':''}>已退订</option>
+      </select>
+    </div>
+    <button class="btn" id="f-save">${isEdit?'保存':'添加'}</button>
+  `);
+  document.getElementById('f-save').addEventListener('click', async ()=>{
+    const email = document.getElementById('f-email').value.trim();
+    if(!email || !email.includes('@')){ showToast('请输入有效邮箱'); return; }
+    const name = document.getElementById('f-name').value.trim();
+    const tags = document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+    const status = document.getElementById('f-status').value;
+    if(isEdit){ existing.email=email; existing.name=name; existing.tags=tags; existing.status=status; }
+    else { state.contacts.push({id:uid(), email, name, tags, status, createdAt:Date.now()}); }
+    await saveData('contacts', state.contacts, true);
+    await logAction(isEdit?'编辑客户':'添加客户', email);
+    closeModal(); renderContacts(); renderDashboard(); renderLog();
+    showToast(isEdit?'已保存':'已添加');
+  });
+}
+
+function openImportForm(){
+  openModal(`
+    <h2>批量导入</h2>
+    <p class="hint">每行一位:邮箱,姓名,标签1|标签2(姓名和标签可留空)</p>
+    <div class="field"><textarea id="f-import" rows="8" placeholder="anna@gmail.com, Anna, VIP|老客户
+bob@yahoo.com"></textarea></div>
+    <button class="btn" id="f-import-btn">导入</button>
+  `);
+  document.getElementById('f-import-btn').addEventListener('click', async ()=>{
+    const lines = document.getElementById('f-import').value.split('\n').map(l=>l.trim()).filter(Boolean);
+    let added=0, skipped=0;
+    lines.forEach(line=>{
+      const [emailRaw, nameRaw, tagsRaw] = line.split(',');
+      const email = (emailRaw||'').trim();
+      if(!email || !email.includes('@')){ skipped++; return; }
+      state.contacts.push({id:uid(), email, name:(nameRaw||'').trim(), tags:(tagsRaw||'').split('|').map(t=>t.trim()).filter(Boolean), status:'subscribed', createdAt:Date.now()});
+      added++;
+    });
+    await saveData('contacts', state.contacts, true);
+    await logAction('批量导入客户', `${added} 条`);
+    closeModal(); renderContacts(); renderDashboard(); renderLog();
+    showToast(`导入完成: 成功 ${added} 条${skipped?`, 跳过 ${skipped} 条`:''}`);
+  });
+}
+
+function extractVars(str){ const set=new Set(); const re=/{{\s*([\w]+)\s*}}/g; let m; while((m=re.exec(str))!==null) set.add(m[1]); return [...set]; }
+const COMMON_VARS = ['name','email','store_name','sender_name','discount','product','order_number'];
+
+function renderTemplates(){
+  document.getElementById('template-count').textContent = state.templates.length + ' 套';
+  document.getElementById('btn-add-template').disabled = !can('manage_templates');
+  const editable = can('manage_templates');
+  const box = document.getElementById('template-list');
+  if(state.templates.length===0){ box.innerHTML = `<div class="empty"><h3>还没有模板</h3><p>新建一套开始。</p></div>`; return; }
+  box.innerHTML = state.templates.map(t=>`
+    <div class="card" data-id="${t.id}">
+      <div class="tpl-cat">${esc(t.category||'自定义')}</div>
+      <h3 class="tpl-name">${esc(t.name)}</h3>
+      <div class="tpl-subject">${esc(t.subject)}</div>
+      <div class="actions-inline">
+        <button class="btn-text edit-tpl" ${editable?'':'disabled'}>编辑</button>
+        <button class="btn-text dup-tpl" ${editable?'':'disabled'}>复制一份</button>
+        <button class="btn-text del-tpl" ${editable?'':'disabled'}>删除</button>
+      </div>
+    </div>
+  `).join('');
+  box.querySelectorAll('.edit-tpl').forEach(btn=>btn.addEventListener('click', e=>{ if(!guard('manage_templates','编辑模板'))return; openTemplateForm(state.templates.find(t=>t.id===e.target.closest('.card').dataset.id)); }));
+  box.querySelectorAll('.dup-tpl').forEach(btn=>btn.addEventListener('click', async e=>{
+    if(!guard('manage_templates','复制模板')) return;
+    const orig = state.templates.find(t=>t.id===e.target.closest('.card').dataset.id);
+    state.templates.push({...orig, id:uid(), name:orig.name+' 副本', createdAt:Date.now()});
+    await saveData('templates', state.templates, true);
+    await logAction('复制模板', orig.name);
+    renderTemplates(); renderLog();
+    showToast('已复制');
+  }));
+  box.querySelectorAll('.del-tpl').forEach(btn=>btn.addEventListener('click', async e=>{
+    if(!guard('manage_templates','删除模板')) return;
+    const id = e.target.closest('.card').dataset.id;
+    const t = state.templates.find(x=>x.id===id);
+    if(!confirm('删除这套模板?')) return;
+    state.templates = state.templates.filter(x=>x.id!==id);
+    await saveData('templates', state.templates, true);
+    await logAction('删除模板', t.name);
+    renderTemplates(); renderDashboard(); renderLog();
+    showToast('已删除');
+  }));
+}
+
+function openTemplateForm(existing){
+  const isEdit = !!existing;
+  openModal(`
+    <h2>${isEdit?'编辑模板':'新建模板'}</h2>
+    <div class="field-row">
+      <div class="field"><label>模板名称</label><input type="text" id="t-name" value="${isEdit?esc(existing.name):''}"></div>
+      <div class="field"><label>分类</label><input type="text" id="t-cat" value="${isEdit?esc(existing.category||''):''}" placeholder="如: 促销活动"></div>
+    </div>
+    <div class="field"><label>邮件主题</label><input type="text" id="t-subject" value="${isEdit?esc(existing.subject):''}"></div>
+    <div class="field">
+      <label>正文</label>
+      <div style="margin-bottom:8px;">${COMMON_VARS.map(v=>`<span class="var-chip" data-v="${v}">{{${v}}}</span>`).join('')}</div>
+      <textarea id="t-body" rows="10">${isEdit?esc(existing.body):''}</textarea>
+    </div>
+    <button class="btn" id="t-save">${isEdit?'保存':'创建'}</button>
+  `);
+  const textarea = document.getElementById('t-body');
+  document.querySelectorAll('.var-chip').forEach(chip=>chip.addEventListener('click', ()=>{
+    const insert = `{{${chip.dataset.v}}}`;
+    const start=textarea.selectionStart, end=textarea.selectionEnd;
+    textarea.value = textarea.value.slice(0,start)+insert+textarea.value.slice(end);
+    textarea.focus();
+  }));
+  document.getElementById('t-save').addEventListener('click', async ()=>{
+    const name = document.getElementById('t-name').value.trim();
+    const subject = document.getElementById('t-subject').value.trim();
+    const body = document.getElementById('t-body').value;
+    if(!name || !subject || !body.trim()){ showToast('名称、主题和正文都要填'); return; }
+    const category = document.getElementById('t-cat').value.trim() || '自定义';
+    if(isEdit){ existing.name=name; existing.subject=subject; existing.body=body; existing.category=category; }
+    else { state.templates.push({id:uid(), name, subject, body, category, createdAt:Date.now()}); }
+    await saveData('templates', state.templates, true);
+    await logAction(isEdit?'编辑模板':'新建模板', name);
+    closeModal(); renderTemplates(); renderDashboard(); renderLog();
+    showToast(isEdit?'已保存':'已创建');
+  });
+}
+
+function mergeText(str, contact, vars){
+  return str.replace(/{{\s*([\w]+)\s*}}/g, (m,key)=>{
+    if(key==='name') return contact.name || contact.email.split('@')[0];
+    if(key==='email') return contact.email;
+    if(vars && vars[key]!==undefined) return vars[key];
+    return m;
+  });
+}
+function segmentContacts(tag){
+  const base = state.contacts.filter(c=>c.status!=='unsubscribed');
+  if(!tag || tag==='__all__') return base;
+  return base.filter(c=>(c.tags||[]).includes(tag));
+}
+function generateStats(sent){
+  if(sent===0) return {sent:0,opens:0,clicks:0};
+  const openRate = 0.15 + Math.random()*0.30;
+  const opens = Math.round(sent*openRate);
+  const clickRate = 0.08 + Math.random()*0.22;
+  const clicks = Math.round(opens*clickRate);
+  return {sent, opens, clicks};
+}
+function statBarsHTML(stats){
+  const pct = (n,d)=> d? Math.round(n/d*100):0;
+  return `<div class="stat-bars">
+    <div class="bar-row"><span class="lbl">已发送</span><div class="bar-track"><div class="bar-fill sent" style="width:100%"></div></div><span class="val">${stats.sent}</span></div>
+    <div class="bar-row"><span class="lbl">已打开</span><div class="bar-track"><div class="bar-fill open" style="width:${pct(stats.opens,stats.sent)}%"></div></div><span class="val">${stats.opens} · ${pct(stats.opens,stats.sent)}%</span></div>
+    <div class="bar-row"><span class="lbl">已点击</span><div class="bar-track"><div class="bar-fill click" style="width:${pct(stats.clicks,stats.sent)}%"></div></div><span class="val">${stats.clicks} · ${pct(stats.clicks,stats.sent)}%</span></div>
+  </div>`;
+}
+function campaignCardHTML(c){
+  const tpl = state.templates.find(t=>t.id===c.templateId);
+  const status = c.status==='sent' ? 'sent' : 'draft';
+  const canSend = can('send_campaign');
+  return `
+    <div class="card" data-id="${c.id}">
+      <div class="row-between">
+        <div style="flex:1;min-width:0;">
+          <h3 style="font-size:15px;font-family:'IBM Plex Sans',sans-serif;font-weight:600;">${esc(c.name)}</h3>
+          <div class="campaign-meta">${tpl?esc(tpl.name):'模板已删除'} · 面向 ${c.tagFilter==='__all__'?'全部客户':esc(c.tagFilter)}</div>
+          <div class="campaign-meta">收件 ${c.recipientCount||0} 人 ${c.sentAt?'· 发送于 '+fmtDate(c.sentAt):''} ${c.createdByName?'· 创建人 '+esc(c.createdByName):''}</div>
+        </div>
+        <span class="status-pill ${status}">${status==='sent'?'已发送':'草稿'}</span>
+      </div>
+      ${status==='sent' && c.stats ? statBarsHTML(c.stats) : ''}
+      <div class="actions-inline">
+        <button class="btn-text cp-preview" data-id="${c.id}">预览</button>
+        <button class="btn-text cp-export" data-id="${c.id}">导出 CSV</button>
+        ${status==='draft'?`<button class="btn-text cp-mark" data-id="${c.id}" ${canSend?'':'disabled'}>标记为已发送</button>`:''}
+        ${status==='draft' && !canSend?'<span class="disabled-hint">需要管理员发送</span>':''}
+        <button class="btn-text cp-del" data-id="${c.id}">删除</button>
+      </div>
+    </div>
+  `;
+}
+function renderCampaigns(){
+  document.getElementById('campaign-count').textContent = state.campaigns.length + ' 条';
+  document.getElementById('btn-add-campaign').disabled = !can('create_campaign');
+  const box = document.getElementById('campaign-list');
+  const sorted = [...state.campaigns].sort((a,b)=>b.createdAt-a.createdAt);
+  if(sorted.length===0){ box.innerHTML = `<div class="empty"><h3>还没有活动</h3><p>选一个模板和一批客户,新建第一条活动。</p></div>`; return; }
+  box.innerHTML = sorted.map(campaignCardHTML).join('');
+  bindCampaignCardEvents();
+}
+function bindCampaignCardEvents(){
+  document.querySelectorAll('.cp-preview').forEach(btn=>btn.addEventListener('click', e=>previewCampaign(e.target.dataset.id)));
+  document.querySelectorAll('.cp-export').forEach(btn=>btn.addEventListener('click', e=>exportCampaignCSV(e.target.dataset.id)));
+  document.querySelectorAll('.cp-mark').forEach(btn=>btn.addEventListener('click', async e=>{
+    if(!guard('send_campaign','发送活动')) return;
+    const c = state.campaigns.find(x=>x.id===e.target.dataset.id);
+    c.status='sent'; c.sentAt=Date.now(); c.stats = generateStats(c.recipientCount||0);
+    await saveData('campaigns', state.campaigns, true);
+    await logAction('发送活动', c.name);
+    renderCampaigns(); renderDashboard(); renderLog();
+    showToast('已发送(数据统计为模拟生成)');
+  }));
+  document.querySelectorAll('.cp-del').forEach(btn=>btn.addEventListener('click', async e=>{
+    const c = state.campaigns.find(x=>x.id===e.target.dataset.id);
+    if(c.status==='sent' && !guard('send_campaign','删除已发送活动')) return;
+    if(c.status==='draft' && !guard('create_campaign','删除草稿活动')) return;
+    if(!confirm('删除这条活动记录?')) return;
+    state.campaigns = state.campaigns.filter(x=>x.id!==c.id);
+    await saveData('campaigns', state.campaigns, true);
+    await logAction('删除活动', c.name);
+    renderCampaigns(); renderDashboard(); renderLog();
+    showToast('已删除');
+  }));
+}
+function openCampaignForm(){
+  if(state.templates.length===0){ showToast('先去"模板"页创建至少一套模板'); return; }
+  if(state.contacts.length===0){ showToast('先去"客户"页添加至少一位客户'); return; }
+  const tags = allTags();
+  openModal(`
+    <h2>新建活动</h2>
+    <p class="hint">已自动排除退订客户。</p>
+    <div class="field"><label>活动名称</label><input type="text" id="c-name" placeholder="如: 9 月促销"></div>
+    <div class="field"><label>选择模板</label><select id="c-template">${state.templates.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>发送对象</label>
+      <select id="c-segment">
+        <option value="__all__">全部客户(${segmentContacts('__all__').length} 人)</option>
+        ${tags.map(t=>`<option value="${esc(t)}">标签: ${esc(t)}(${segmentContacts(t).length} 人)</option>`).join('')}
+      </select>
+    </div>
+    <div id="c-var-fields"></div>
+    <button class="btn" id="c-save">创建活动草稿</button>
+  `);
+  function renderVarFields(){
+    const tpl = state.templates.find(t=>t.id===document.getElementById('c-template').value);
+    const vars = extractVars(tpl.subject+'\n'+tpl.body).filter(v=>v!=='name'&&v!=='email');
+    const box = document.getElementById('c-var-fields');
+    if(vars.length===0){ box.innerHTML=''; return; }
+    box.innerHTML = `<hr class="divider"><p class="hint" style="margin-bottom:12px;">这套模板还有几处需要统一填写:</p>` +
+      vars.map(v=>{
+        let def='';
+        if(v==='store_name') def = state.settings.store||'';
+        if(v==='sender_name') def = state.settings.sender||'';
+        return `<div class="field"><label>{{${v}}}</label><input type="text" class="c-var-input" data-var="${v}" value="${esc(def)}"></div>`;
+      }).join('');
+  }
+  document.getElementById('c-template').addEventListener('change', renderVarFields);
+  renderVarFields();
+  document.getElementById('c-save').addEventListener('click', async ()=>{
+    const name = document.getElementById('c-name').value.trim();
+    if(!name){ showToast('给活动起个名字'); return; }
+    const templateId = document.getElementById('c-template').value;
+    const tagFilter = document.getElementById('c-segment').value;
+    const vars = {};
+    document.querySelectorAll('.c-var-input').forEach(inp=>{ vars[inp.dataset.var]=inp.value; });
+    const recipientCount = segmentContacts(tagFilter).length;
+    const m = getCurrentMember();
+    state.campaigns.push({id:uid(), name, templateId, tagFilter, vars, status:'draft', createdAt:Date.now(), sentAt:null, recipientCount, stats:null, createdByName:m.name});
+    await saveData('campaigns', state.campaigns, true);
+    await logAction('创建活动草稿', name);
+    closeModal(); renderCampaigns(); renderDashboard(); renderLog();
+    showToast('草稿已创建,等待管理员发送');
+  });
+}
+function previewCampaign(id){
+  const c = state.campaigns.find(x=>x.id===id);
+  const tpl = state.templates.find(t=>t.id===c.templateId);
+  if(!tpl){ showToast('对应模板已被删除'); return; }
+  const recipients = segmentContacts(c.tagFilter);
+  const sample = recipients.slice(0,3);
+  openModal(`
+    <h2>${esc(c.name)}</h2>
+    <p class="hint">共 ${recipients.length} 位收件人(已排除退订),预览前 ${sample.length} 封:</p>
+    ${sample.map(contact=>`
+      <div class="preview-subject">收件人: ${esc(contact.email)}</div>
+      <div class="preview-subject">主题: ${esc(mergeText(tpl.subject, contact, c.vars))}</div>
+      <div class="preview-box">${esc(mergeText(tpl.body, contact, c.vars))}</div>
+      <hr class="divider">
+    `).join('')}
+    ${recipients.length===0?'<p class="hint">这个分组下目前没有可发送客户。</p>':''}
+  `);
+}
+function csvEscape(v){ const s=String(v==null?'':v); if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"'; return s; }
+function exportCampaignCSV(id){
+  const c = state.campaigns.find(x=>x.id===id);
+  const tpl = state.templates.find(t=>t.id===c.templateId);
+  if(!tpl){ showToast('对应模板已被删除'); return; }
+  const recipients = segmentContacts(c.tagFilter);
+  if(recipients.length===0){ showToast('这个分组下没有可发送客户'); return; }
+  const rows = [['email','name','subject','body']];
+  recipients.forEach(contact=>rows.push([contact.email, contact.name||'', mergeText(tpl.subject,contact,c.vars), mergeText(tpl.body,contact,c.vars)]));
+  const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`${c.name.replace(/[^\w\u4e00-\u9fa5]+/g,'_')}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('CSV 已导出');
+}
+
+function renderTeam(){
+  document.getElementById('member-count').textContent = state.members.length + ' 人';
+  document.getElementById('btn-add-member').disabled = !can('manage_team');
+  const editable = can('manage_team');
+  const box = document.getElementById('member-list');
+  box.innerHTML = state.members.map(m=>`
+    <div class="row-item" data-id="${m.id}">
+      <span class="avatar" style="width:32px;height:32px;font-size:11.5px;">${initials(m.name,m.email)}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;font-weight:500;">${esc(m.name)} ${m.id===currentMemberId?'· 当前身份':''}</div>
+        <div style="font-size:12px;color:var(--muted);">${esc(m.email)}</div>
+      </div>
+      <span class="role-badge ${m.role}">${ROLE_LABEL[m.role]}</span>
+    </div>
+    ${editable?`<div class="row-item" style="padding-top:0;padding-bottom:8px;border-bottom:1px solid var(--border);">
+      <div class="actions-inline" style="margin:0;">
+        <button class="btn-text edit-member" data-id="${m.id}">修改角色</button>
+        <button class="btn-text del-member" data-id="${m.id}">移除</button>
+      </div>
+    </div>`:''}
+  `).join('');
+  box.querySelectorAll('.edit-member').forEach(btn=>btn.addEventListener('click', e=>{ if(!guard('manage_team','修改角色'))return; openMemberForm(state.members.find(m=>m.id===e.target.dataset.id)); }));
+  box.querySelectorAll('.del-member').forEach(btn=>btn.addEventListener('click', async e=>{
+    if(!guard('manage_team','移除成员')) return;
+    const id = e.target.dataset.id;
+    const m = state.members.find(x=>x.id===id);
+    const admins = state.members.filter(x=>x.role==='admin');
+    if(m.role==='admin' && admins.length<=1){ showToast('至少需要保留一位管理员'); return; }
+    if(!confirm(`确定移除 ${m.name}?`)) return;
+    state.members = state.members.filter(x=>x.id!==id);
+    await saveData('members', state.members, true);
+    await logAction('移除成员', m.name);
+    if(currentMemberId===id){ currentMemberId = state.members[0].id; await saveData('current_member_id', currentMemberId, false); }
+    renderIdentityBar(); renderTeam(); renderDashboard(); renderLog();
+    showToast('已移除');
+  }));
+}
+function openMemberForm(existing){
+  const isEdit = !!existing;
+  openModal(`
+    <h2>${isEdit?'修改角色':'添加成员'}</h2>
+    <div class="field"><label>姓名</label><input type="text" id="m-name" value="${isEdit?esc(existing.name):''}" ${isEdit?'disabled':''}></div>
+    <div class="field"><label>邮箱</label><input type="email" id="m-email" value="${isEdit?esc(existing.email):''}" ${isEdit?'disabled':''}></div>
+    <div class="field"><label>角色</label>
+      <select id="m-role">
+        <option value="admin" ${isEdit&&existing.role==='admin'?'selected':''}>管理员</option>
+        <option value="editor" ${isEdit&&existing.role==='editor'?'selected':''}>运营</option>
+        <option value="viewer" ${isEdit&&existing.role==='viewer'?'selected':''}>查看者</option>
+      </select>
+    </div>
+    <button class="btn" id="m-save">${isEdit?'保存':'添加'}</button>
+  `);
+  document.getElementById('m-save').addEventListener('click', async ()=>{
+    const role = document.getElementById('m-role').value;
+    if(isEdit){
+      const admins = state.members.filter(x=>x.role==='admin');
+      if(existing.role==='admin' && role!=='admin' && admins.length<=1){ showToast('至少需要保留一位管理员'); return; }
+      existing.role = role;
+      await saveData('members', state.members, true);
+      await logAction('修改角色', `${existing.name} → ${ROLE_LABEL[role]}`);
+    } else {
+      const name = document.getElementById('m-name').value.trim();
+      const email = document.getElementById('m-email').value.trim();
+      if(!name || !email.includes('@')){ showToast('请填写姓名和有效邮箱'); return; }
+      state.members.push({id:uid(), name, email, role, joinedAt:Date.now()});
+      await saveData('members', state.members, true);
+      await logAction('添加成员', `${name}(${ROLE_LABEL[role]})`);
+    }
+    closeModal(); renderIdentityBar(); renderTeam(); renderDashboard(); renderLog();
+    showToast('已保存');
+  });
+}
+
+function renderLog(){
+  document.getElementById('log-count').textContent = state.logs.length + ' 条';
+  const filterRow = document.getElementById('log-filter-row');
+  filterRow.innerHTML = state.members.map(m=>`<span class="pill chip-btn ${activeLogFilter===m.id?'active':''}" data-mid="${m.id}">${esc(m.name)}</span>`).join('');
+  filterRow.querySelectorAll('.chip-btn').forEach(el=>el.addEventListener('click', ()=>{ activeLogFilter = activeLogFilter===el.dataset.mid?null:el.dataset.mid; renderLog(); }));
+  const list = activeLogFilter ? state.logs.filter(l=>l.actorId===activeLogFilter) : state.logs;
+  const box = document.getElementById('log-list');
+  if(list.length===0){ box.innerHTML = `<div class="empty"><h3>暂无记录</h3><p>团队成员的操作会自动记录在这里。</p></div>`; return; }
+  box.innerHTML = `<div class="panel">${list.map(logRowHTML).join('')}</div>`;
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# 仅用于本地开发；不要将整份配置推送到共享 content-up 项目。
+project_id = "pixel-edm"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public", "edm"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://localhost:3105"
+additional_redirect_urls = ["http://localhost:3105/auth/callback", "http://localhost:3105/auth/callback?next=/reset-password"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+
+[local_smtp]
+enabled = true
+port = 54324
