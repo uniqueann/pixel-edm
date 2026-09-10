@@ -80,6 +80,8 @@ npm run db:types
 
 已完成：应用外壳、邮箱和 Google 登录代码、回调、重置密码、局部退出、EDM 初始化和停用检查、工作区选择、管理员名称/地址设置、权限测试与 CI 配置。
 
-后续批次：客户 CRUD、名单导入、六套默认模板、活动草稿和 CSV、真实 ESP、回执与退订、团队邀请及完整审计。页面对这些功能显示待接入，不展示虚构数据。
+P2 客户管理第一部分已实现：客户新增编辑、标签、搜索分页、归档恢复及工作区权限，总览展示真实未归档客户数。云端已应用 `20260910035224_edm_contacts`；应用代码尚未提交或部署，逐项记录见 [客户管理交付记录](development-checklist-p2-contacts.md)。
+
+后续批次：名单导入、订阅与抑制模型、六套默认模板、活动草稿和 CSV、真实 ESP、回执与退订、团队邀请及完整审计。
 
 设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 `development-checklist-p1.md`；原始交互文件归档于 `references/seller-post-office-premium.html`。

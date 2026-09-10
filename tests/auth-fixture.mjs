@@ -95,6 +95,18 @@ const server = createServer(async (req, res) => {
       );
       return send(result.rows[0].id);
     }
+    const rpc = url.pathname.split("/").pop();
+    if (
+      url.pathname.startsWith("/rest/v1/rpc/") &&
+      ["save_contact", "archive_contact", "list_contacts"].includes(rpc)
+    ) {
+      const result = await asUser(
+        db,
+        uid,
+        `select edm.${rpc}('${JSON.stringify(input.payload).replaceAll("'", "''")}'::jsonb) as result`,
+      );
+      return send(result.rows[0].result);
+    }
     const table = url.pathname.split("/").pop();
     if (!["members", "workspaces", "workspace_members"].includes(table))
       return send({ message: "不存在" }, 404);

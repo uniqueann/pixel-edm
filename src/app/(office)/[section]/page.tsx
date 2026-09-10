@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { SettingsForm } from "@/components/settings-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { listContacts } from "@/features/contacts/actions";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -115,6 +116,7 @@ export default async function Page({
           <p className="hint mt-4">成员邀请和角色管理将在团队协作阶段开放。</p>
         </>
       );
+    const contactSummary = await listContacts({});
     return (
       <>
         <div className="welcome">
@@ -124,7 +126,7 @@ export default async function Page({
         </div>
         <div className="stat-grid">
           {[
-            ["客户数", "—"],
+            ["客户数", String(contactSummary.active_count)],
             ["模板数", "—"],
             ["工作区成员", String(members.length)],
             ["平均打开率", "—"],
@@ -137,13 +139,13 @@ export default async function Page({
             </Card>
           ))}
         </div>
-        <p className="hint">客户、模板和回执尚未接入，暂无对应统计。</p>
+        <p className="hint">客户数仅包含未归档客户；模板和回执统计待接入。</p>
         <div className="section-heading">
           <h2>最近动态</h2>
         </div>
         <EmptyState
           title="邮局已经准备好了"
-          description="账号和工作区已连接。客户、模板与发信活动将逐步加入这里。"
+          description="客户管理已接入；操作动态将在业务审计接入后展示。"
         />
       </>
     );
