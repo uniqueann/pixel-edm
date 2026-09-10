@@ -47,4 +47,11 @@ test("客户新增、标签、编辑、归档恢复与窄屏", async ({ page }) 
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  await page.getByRole("button", { name: "添加客户", exact: true }).click();
+  const dialogBox = await page.getByRole("dialog").boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(dialogBox!.x).toBeGreaterThanOrEqual(15);
+  expect(dialogBox!.x + dialogBox!.width).toBeLessThanOrEqual(375);
+  expect(Math.abs(dialogBox!.x - (390 - dialogBox!.width) / 2)).toBeLessThan(1);
+  expect(Math.abs(dialogBox!.y + dialogBox!.height - 844)).toBeLessThan(1);
 });

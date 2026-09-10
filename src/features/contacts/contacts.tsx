@@ -224,6 +224,7 @@ export function Contacts({
         }}
       >
         <DialogContent
+          placement="bottom"
           className="bottom-sheet max-h-[85vh] overflow-y-auto"
           onCloseAutoFocus={(event) => {
             event.preventDefault();

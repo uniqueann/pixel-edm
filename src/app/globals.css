@@ -316,11 +316,6 @@
   color: var(--destructive);
 }
 .bottom-sheet {
-  top: auto;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  translate: none;
   max-width: 740px !important;
   border-radius: 20px 20px 0 0;
   max-height: 90dvh;

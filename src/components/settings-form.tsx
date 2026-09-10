@@ -82,7 +82,7 @@ export function SettingsForm({
             为什么需要联系地址？
           </Button>
         </DialogTrigger>
-        <DialogContent className="bottom-sheet">
+        <DialogContent placement="bottom" className="bottom-sheet">
           <DialogHeader>
             <DialogTitle>让收件人找到你</DialogTitle>
             <DialogDescription>
