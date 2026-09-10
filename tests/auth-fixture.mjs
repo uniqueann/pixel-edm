@@ -114,6 +114,10 @@ const server = createServer(async (req, res) => {
         "set_template_archived",
         "list_templates",
         "list_activity_logs",
+        "list_campaigns",
+        "get_campaign",
+        "save_campaign",
+        "set_campaign_archived",
       ].includes(rpc)
     ) {
       const result = await asUser(

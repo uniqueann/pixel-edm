@@ -39,3 +39,13 @@
 - `authenticated` 可直接读取模板但不能直接写入，不能直接读取审计表；`anon` 无模板 RPC 权限，登录用户无内部审计写函数权限，`aigc_api` 无新表权限。
 - 本次 AIGC 结构比对包含表、字段、策略和函数，迁移前后均为 62 个组成部分，指纹均为 `0ee3d68fae1719bf8ae01ed98cebdb35`。
 - 迁移后 Supabase Advisor 没有新增 EDM 安全告警或缺失外键索引；新索引尚无使用统计属于预期信息提示。现有 `aigc/public/Auth` 告警保持不变，按项目隔离约束未修改。
+
+### P3-0 / P3-1 活动草稿基础迁移（2026-09-10）
+
+- 仅应用新增迁移 `20260910135553_p3_campaign_foundation`，云端迁移历史与本地文件名已对齐；未重放或改写 P1、P2、AIGC 及共享项目迁移。
+- 新增 `edm.campaigns`，云端为空表并启用 RLS；已核对 13 项约束、7 个索引和 1 条成员读取策略。
+- `authenticated` 不能直接选择、插入、更新或删除活动表，只能执行 `list_campaigns`、`get_campaign`、`save_campaign`、`set_campaign_archived` 四个受控 RPC。
+- `anon` 和 `aigc_api` 不能直接访问活动表或执行活动 RPC；`aigc_api` 对 `edm`、`edm_private` 仍无 USAGE。公开客户端匿名调用活动列表返回 HTTP 401 / PostgreSQL 42501。
+- 本次 AIGC 结构比对包含 `aigc` 的表、字段、策略和函数；迁移前后均为 62 个组成部分，指纹均为 `1e4d0de887b08979e2ef6e51b40e8277`。该查询字段组合与先前批次的记录不同，只比较本次迁移前后。
+- Supabase 安全 Advisor 未发现活动对象问题；性能 Advisor 仅提示五个新活动索引尚未使用，空表阶段属于预期信息。既有 `aigc/public/Auth` 告警未修改。
+- 本地 34 项单元/数据库测试、4 项端到端测试，以及 lint、类型、格式和生产构建均通过；云端未创建测试活动或修改既有业务数据。

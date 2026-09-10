@@ -11,6 +11,10 @@ export const activityLabels: Record<string, string> = {
   "template.archived": "归档模板",
   "template.restored": "恢复模板",
   "template.defaults_initialized": "初始化默认模板",
+  "campaign.created": "新建活动草稿",
+  "campaign.updated": "编辑活动草稿",
+  "campaign.archived": "归档活动草稿",
+  "campaign.restored": "恢复活动草稿",
 };
 
 export type ActivityLog = {

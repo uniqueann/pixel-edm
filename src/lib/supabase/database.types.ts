@@ -54,6 +54,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      campaigns: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          template_id: string;
+          audience_type: string;
+          tag_id: string | null;
+          variables: Json;
+          status: string;
+          archived_at: string | null;
+          created_by: string;
+          updated_by: string;
+          created_at: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          template_id: string;
+          audience_type: string;
+          tag_id?: string | null;
+          variables?: Json;
+          status?: string;
+          archived_at?: string | null;
+          created_by: string;
+          updated_by: string;
+          created_at?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          template_id?: string;
+          audience_type?: string;
+          tag_id?: string | null;
+          variables?: Json;
+          status?: string;
+          archived_at?: string | null;
+          created_by?: string;
+          updated_by?: string;
+          created_at?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [];
+      };
       contact_import_rows: {
         Row: {
           import_id: string;
@@ -472,6 +523,10 @@ export type Database = {
       set_template_archived: { Args: { payload: Json }; Returns: string };
       list_templates: { Args: { payload: Json }; Returns: Json };
       list_activity_logs: { Args: { payload: Json }; Returns: Json };
+      list_campaigns: { Args: { payload: Json }; Returns: Json };
+      get_campaign: { Args: { payload: Json }; Returns: Json };
+      save_campaign: { Args: { payload: Json }; Returns: string };
+      set_campaign_archived: { Args: { payload: Json }; Returns: string };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
