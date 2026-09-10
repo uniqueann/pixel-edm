@@ -97,6 +97,39 @@ export type CampaignEditorOptions = {
   tags: { id: string; name: string }[];
 };
 
+export type CampaignPreviewBlocker = {
+  code: "template_archived" | "missing_variables";
+  message: string;
+};
+
+export type CampaignPreview = {
+  campaign: { id: string; name: string; version: number };
+  template: { id: string; name: string; version: number };
+  calculated_at: string;
+  validation: {
+    valid: boolean;
+    missing_variables: CampaignVariableKey[];
+    blockers: CampaignPreviewBlocker[];
+  };
+  recipients: {
+    audience_count: number;
+    eligible_count: number;
+    excluded_count: number;
+    excluded: {
+      archived: number;
+      not_subscribed: number;
+      suppressed: number;
+    };
+    sample: {
+      contact_id: string;
+      email: string;
+      name: string;
+      subject: string;
+      body: string;
+    }[];
+  };
+};
+
 export type CampaignSummary = {
   id: string;
   workspace_id: string;

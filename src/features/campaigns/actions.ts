@@ -9,6 +9,7 @@ import {
   type CampaignDetail,
   type CampaignEditorOptions,
   type CampaignList,
+  type CampaignPreview,
 } from "./model";
 
 async function authorizedWorkspace(workspaceId: string, write = false) {
@@ -71,6 +72,22 @@ export async function getCampaign(input: unknown) {
     const { data, error } = await db.rpc("get_campaign", { payload: parsed });
     if (error) throw new Error(error.message);
     return { data: data as unknown as CampaignDetail };
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return { error: error.issues[0]?.message ?? "活动标识无效。" };
+    return actionError(error);
+  }
+}
+
+export async function getCampaignPreview(input: unknown) {
+  try {
+    const parsed = campaignReference.parse(input);
+    const db = await authorizedWorkspace(parsed.workspace_id, true);
+    const { data, error } = await db.rpc("get_campaign_preview", {
+      payload: parsed,
+    });
+    if (error) throw new Error(error.message);
+    return { data: data as unknown as CampaignPreview };
   } catch (error) {
     if (error instanceof z.ZodError)
       return { error: error.issues[0]?.message ?? "活动标识无效。" };

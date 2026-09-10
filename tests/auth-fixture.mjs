@@ -14,9 +14,63 @@ await db.query(
   "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'viewer') on conflict do nothing",
   [wb, a],
 );
-await db.query("insert into edm.tags(workspace_id,name) values($1,'VIP')", [
-  wa,
-]);
+const vipTag = (
+  await db.query(
+    "insert into edm.tags(workspace_id,name) values($1,'VIP') returning id",
+    [wa],
+  )
+).rows[0].id;
+const previewContacts = [
+  ["preview-alpha@example.test", "预览甲", "subscribed", false],
+  ["preview-blank@example.test", "", "subscribed", false],
+  ["preview-charlie@example.test", "预览丙", "subscribed", false],
+  ["preview-delta@example.test", "预览丁", "subscribed", false],
+  ["preview-archived@example.test", "归档客户", "subscribed", true],
+  ["preview-pending@example.test", "未确认客户", "unconfirmed", false],
+  ["preview-suppressed@example.test", "抑制客户", "subscribed", false],
+];
+let suppressedPreviewContact;
+for (const [
+  index,
+  [email, name, status, archived],
+] of previewContacts.entries()) {
+  const contact = (
+    await db.query(
+      `insert into edm.contacts(
+         workspace_id,email,name,subscription_status,archived_at,created_by,created_at
+       ) values($1,$2,$3,$4,case when $5 then now() end,$6,$7) returning id`,
+      [
+        wa,
+        email,
+        name,
+        status,
+        archived,
+        a,
+        new Date(Date.UTC(2026, 1, index + 1)).toISOString(),
+      ],
+    )
+  ).rows[0];
+  await db.query(
+    "insert into edm.contact_tags(workspace_id,contact_id,tag_id) values($1,$2,$3)",
+    [wa, contact.id, vipTag],
+  );
+  if (email === "preview-suppressed@example.test")
+    suppressedPreviewContact = contact.id;
+}
+const suppressionEvent = (
+  await db.query(
+    `insert into edm.subscription_events(
+       workspace_id,contact_id,email,event_type,source,note,created_by
+     ) values($1,$2,'preview-suppressed@example.test','unsubscribed','test','预览测试抑制',$3)
+     returning id`,
+    [wa, suppressedPreviewContact, a],
+  )
+).rows[0].id;
+await db.query(
+  `insert into edm.suppressions(workspace_id,email,reason,first_event_id)
+   values($1,'preview-suppressed@example.test','unsubscribed',$2)`,
+  [wa, suppressionEvent],
+);
 const wbTemplate = (
   await db.query(
     "select id from edm.templates where workspace_id=$1 and archived_at is null order by id limit 1",
@@ -145,6 +199,7 @@ const server = createServer(async (req, res) => {
         "save_campaign",
         "set_campaign_archived",
         "get_campaign_editor_options",
+        "get_campaign_preview",
       ].includes(rpc)
     ) {
       const result = await asUser(

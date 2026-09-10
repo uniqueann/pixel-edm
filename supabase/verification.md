@@ -1,6 +1,6 @@
 # EDM 基础迁移验证记录
 
-基础迁移验证日期：2026-09-09。进度更新日期：2026-09-10。目标：content-up / `gnrhyahjegvcicektebh`。
+基础迁移验证日期：2026-09-09。进度更新日期：2026-09-11。目标：content-up / `gnrhyahjegvcicektebh`。
 
 - 已应用 `20260909072930_edm_foundation`。
 - `edm.members`、`edm.workspaces`、`edm.workspace_members` 三表均启用 RLS。
@@ -59,3 +59,15 @@
 - AIGC 结构比对继续使用表、字段、策略和函数口径；迁移前后均为 62 个组成部分，指纹均为 `1e4d0de887b08979e2ef6e51b40e8277`。
 - Supabase 安全与性能 Advisor 没有发现新的 EDM 问题；现有 `aigc/public/Auth` 告警和既有未使用索引提示保持不变，按项目隔离约束未修改。
 - 本地 35 项单元/数据库测试、5 项端到端测试，以及 lint、类型、格式和生产构建均通过；云端未创建测试活动或修改既有业务数据。
+
+### P3-3 动态收件人与预览迁移（2026-09-11）
+
+- 仅应用新增迁移 `20260910223857_p3_campaign_preview`，本地文件名已与云端迁移版本对齐；未重放或改写其他项目迁移。
+- 新增 `edm.get_campaign_preview` 调用者权限包装和 `edm_private.get_campaign_preview` 固定空搜索路径提权实现；仅 `authenticated` 可执行公开包装，内部实现再限定管理员和编辑者，`anon` 与 `aigc_api` 均不可执行。
+- 动态筛选使用未归档、`subscribed`、无独立抑制及可选标签条件，并新增 `contacts_campaign_eligible_idx` 部分索引；排除人数按已归档、已抑制、非订阅互斥统计。
+- 主题和正文的活动级变量缺失、模板归档、活动归档或非草稿状态会阻断合并样本；合格联系人按创建时间和标识稳定排序，最多返回前三位，姓名缺失时回退邮箱前缀。
+- 未新增活动快照、收件人快照或持久化收件人数，也未为预览读取写审计；云端未创建测试数据或修改既有业务数据。
+- 匿名 Data API 调用预览 RPC 返回 HTTP 401 / PostgreSQL 42501；`aigc_api` 对 `edm`、`edm_private` 仍无 USAGE，内部渲染与变量函数不授予客户端执行权限。
+- AIGC 结构比对继续使用表、字段、策略和函数口径；迁移前后均为 62 个组成部分，指纹均为 `1e4d0de887b08979e2ef6e51b40e8277`。
+- Supabase 安全 Advisor 未发现新增 EDM 问题；性能 Advisor 仅提示新部分索引尚未使用，测试数据为空时属于预期信息。现有 `aigc/public/Auth` 告警保持不变，按隔离约束未修改。
+- 本地 42 项单元/数据库测试、5 项端到端测试，以及 lint、类型、格式和生产构建均通过。

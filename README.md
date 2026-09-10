@@ -2,7 +2,7 @@
 
 基于交互原型构建的邮件营销管理应用。第一批已实现工程基础、真实 Auth 接入、EDM 用户和工作区数据库、七页应用外壳及基础设置。
 
-进度更新：2026-09-10，P1 已收尾；P2 客户、名单导入、模板管理与业务审计已实现并部署；P3-0 至 P3-2 已完成活动草稿基础与管理界面，P3-2 应用代码尚待提交部署。用户已实际验证 Google 登录与邮箱重置。
+进度更新：2026-09-11，P1 已收尾；P2 客户、名单导入、模板管理与业务审计已实现并部署；P3-0 至 P3-3 已完成活动草稿、管理界面、动态收件人校验与前三位预览，P3-3 应用代码尚待提交部署。用户已实际验证 Google 登录与邮箱重置。
 
 ## 正式部署
 
@@ -39,7 +39,7 @@ npm run dev
 
 首次登录后通过幂等 RPC 创建 EDM 用户和个人工作区。EDM 停用不会修改 AIGC 状态，也不会删除共享 Auth 账号。没有改写现有注册触发器；EDM 新注册账号仍会触发 content-up 现有资料/额度初始化。
 
-已应用 EDM 迁移：`20260909072930_edm_foundation`、`20260910035224_edm_contacts`、`20260910081147_edm_contact_imports`、`20260910092601_p2_templates_audit`、`20260910135553_p3_campaign_foundation`、`20260910144358_p3_campaign_editor_options`；本地文件版本均与云端记录对齐。
+已应用 EDM 迁移：`20260909072930_edm_foundation`、`20260910035224_edm_contacts`、`20260910081147_edm_contact_imports`、`20260910092601_p2_templates_audit`、`20260910135553_p3_campaign_foundation`、`20260910144358_p3_campaign_editor_options`、`20260910223857_p3_campaign_preview`；本地文件版本均与云端记录对齐。
 
 ### 云端认证与验证记录
 
@@ -47,7 +47,7 @@ Auth Redirect URLs 已加入 `https://edm.contentup.cc/auth/callback`；应用�
 
 共享 Site URL 保持 `https://contentup.cc`，既有回调地址保留。此次配置未修改 Google Provider、共享 Auth 触发器或 AIGC 对象。认证流程通过依据用户实测，不将其表述为自动化端到端测试。
 
-P3-2 已复核活动编辑选项 RPC 的最小权限：仅 `authenticated` 可执行，`anon` 和 `aigc_api` 均不可执行；匿名 Data API 请求返回 HTTP 401 / PostgreSQL 42501。完整 Data API 暴露配置仍保留为独立验收项；`edm_private` 不对客户端暴露。其他未覆盖场景见 `supabase/verification.md`。
+P3-2/P3-3 已复核活动编辑与动态预览 RPC 的最小权限：仅 `authenticated` 可执行公开包装，预览结果再按管理员/编辑者角色授权；`anon` 和 `aigc_api` 均不可执行，匿名 Data API 请求返回 HTTP 401 / PostgreSQL 42501。完整 Data API 暴露配置仍保留为独立验收项；`edm_private` 不对客户端暴露。其他未覆盖场景见 `supabase/verification.md`。
 
 本地回调使用 `http://localhost:3105/auth/callback`（密码重置附带 `?next=/reset-password`）；本地白名单未单独记录验收，不能由正式站点验证推断其已配置。
 
@@ -65,7 +65,7 @@ npm run db:types
 
 `npm test` 在 PGlite 的 PostgreSQL 内执行同一份迁移、真实角色授权和 RLS 测试。`db:types` 从该迁移生成的数据库结构提取 EDM 表类型。
 
-端到端测试使用本机 Chrome（CI 会安装 Chrome），独占 3100 和 54329 端口。认证协议由仅在 `tests` 中运行的模拟接口提供，业务读写使用 PGlite 的真实 RLS。测试包含登录、幂等初始化、七页导航、设置保存、查看者工作区、活动草稿管理、弹层焦点、窄屏和退出，不连接云端，不代表云端邮件/Google 登录验收已完成。运行测试时不要同时构建应用。
+端到端测试使用本机 Chrome（CI 会安装 Chrome），独占 3100 和 54329 端口。认证协议由仅在 `tests` 中运行的模拟接口提供，业务读写使用 PGlite 的真实 RLS。测试包含登录、幂等初始化、七页导航、设置保存、查看者工作区、活动草稿管理、动态收件人计数、变量阻断、前三位合并预览、弹层焦点、窄屏和退出，不连接云端，不代表云端邮件/Google 登录验收已完成。运行测试时不要同时构建应用。
 
 完整本地 Supabase 需要 Docker；安装后可使用 `npx supabase start`。`supabase/config.toml` 仅用于本地，不得整份推送到 content-up。当前机器缺少 Docker，尚未完成 GoTrue/PostgREST 整套本地服务验收。
 
@@ -86,8 +86,8 @@ P2 名单导入与订阅模型已实现：支持粘贴/CSV、邮箱去重、错�
 
 P2 模板管理与业务审计已实现并部署：支持纯文本编辑、七个变量插入与校验、可编辑预览、预览复制、模板复制归档、六套默认模板一次性初始化，以及全部 P2 业务审计和管理员日志页；云端已应用 `20260910092601_p2_templates_audit`，详见 [模板与审计交付记录](development-checklist-p2-templates-audit.md)。
 
-P3-0 至 P3-2 已完成：活动草稿数据契约、角色权限、受控 RPC、业务审计，以及活动列表、新建编辑、模板/标签选择、归档恢复和移动端界面均已实现。云端已应用 `20260910135553_p3_campaign_foundation` 和 `20260910144358_p3_campaign_editor_options`；P3-2 应用代码尚待提交触发部署。本阶段不创建收件人快照或虚构统计，逐项状态见 [P3 活动管理交付清单](development-checklist-p3-campaigns.md)。
+P3-0 至 P3-3 已完成：活动草稿数据契约、角色权限、受控 RPC、业务审计、活动管理界面，以及基于最新客户/订阅/抑制状态的动态收件人计数、变量完整性阻断和前三位合并预览均已实现。云端已应用三项 P3 迁移，最新为 `20260910223857_p3_campaign_preview`；P3-3 应用代码尚待提交触发部署。本阶段仍不创建活动或收件人快照、不保存收件人数、不导出 CSV，逐项状态见 [P3 活动管理交付清单](development-checklist-p3-campaigns.md)。
 
-后续批次：动态收件人和前三位预览、CSV 导出、真实 ESP、公开退订与回执、团队邀请。
+后续批次：P3-4 冻结活动/收件人快照并导出安全 CSV；之后接入真实 ESP、公开退订与回执、团队邀请。
 
 设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 P1 与三个 P2 交付清单；原始交互文件归档于 `references/seller-post-office-premium.html`。

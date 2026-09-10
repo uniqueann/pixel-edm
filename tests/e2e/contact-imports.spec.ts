@@ -36,14 +36,23 @@ test("粘贴去重、错误报告、退订保护和 CSV 引号解析", async ({ 
   await expect(
     page.getByText("import@example.test", { exact: true }),
   ).toBeVisible();
+  const importedContact = page
+    .locator('[data-slot="card"]')
+    .filter({ hasText: "import@example.test" });
   await expect(
-    page.locator('span[data-slot="badge"]').filter({ hasText: "未确认" }),
+    importedContact
+      .locator('span[data-slot="badge"]')
+      .filter({ hasText: "未确认" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "退订", exact: true }).click();
+  await importedContact
+    .getByRole("button", { name: "退订", exact: true })
+    .click();
   await page.getByLabel("退订原因").fill("客户来信要求退订");
   await page.getByRole("button", { name: "确认退订" }).click();
   await expect(
-    page.locator('span[data-slot="badge"]').filter({ hasText: "已退订" }),
+    importedContact
+      .locator('span[data-slot="badge"]')
+      .filter({ hasText: "已退订" }),
   ).toBeVisible();
 
   await page.goto("/contacts/import");

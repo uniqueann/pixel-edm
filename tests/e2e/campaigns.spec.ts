@@ -27,7 +27,7 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(editor.getByLabel(/发件人/)).toHaveValue("店主");
   await editor.getByLabel(/优惠信息/).fill("WELCOME-20");
   await editor.getByRole("button", { name: "保存活动草稿" }).click();
-  await expect(page.getByText("活动草稿已保存")).toBeVisible();
+  await expect(page.getByText("活动草稿已保存").last()).toBeVisible();
   await expect(page.getByRole("heading", { name: "无客户草稿" })).toBeVisible();
 
   let card = page
@@ -42,16 +42,62 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(editor.getByLabel(/订单号/)).toBeVisible();
   await expect(editor.getByLabel(/优惠信息/)).toHaveCount(0);
   await expect(editor.getByLabel(/发件人/)).toHaveValue("店主");
-  await editor.getByLabel(/订单号/).fill("ORDER-1001");
   await editor.getByLabel("发送对象").selectOption("tag");
   await editor.getByLabel("客户标签").selectOption({ label: "VIP" });
   await editor.getByRole("button", { name: "保存活动草稿" }).click();
-  await expect(page.getByText("活动草稿已保存")).toBeVisible();
+  await expect(page.getByText("活动草稿已保存").last()).toBeVisible();
   card = page
     .getByRole("heading", { name: "VIP 物流提醒", exact: true })
     .locator("xpath=ancestor::div[@data-slot='card']");
   await expect(card.getByText("模板：物流通知")).toBeVisible();
   await expect(card.getByText("受众：标签 · VIP")).toBeVisible();
+
+  await card.getByRole("button", { name: "预览" }).click();
+  let previewDialog = page.getByRole("dialog");
+  await expect(previewDialog.getByText("目标客户").locator("..")).toContainText(
+    "7",
+  );
+  await expect(previewDialog.getByText("可发送").locator("..")).toContainText(
+    "4",
+  );
+  await expect(previewDialog.getByText("已排除").locator("..")).toContainText(
+    "3",
+  );
+  await expect(previewDialog.getByText(/排除明细/)).toContainText(
+    "归档 1 位 · 未订阅 1 位 · 受抑制 1 位",
+  );
+  await expect(previewDialog.getByText(/请补充活动变量/)).toContainText(
+    "{{order_number}}",
+  );
+  await expect(previewDialog.getByText(/第 1 封/)).toHaveCount(0);
+  await previewDialog.getByRole("button", { name: "编辑活动" }).click();
+  editor = page.getByRole("dialog");
+  await editor.getByLabel(/订单号/).fill("ORDER-1001");
+  await editor.getByRole("button", { name: "保存活动草稿" }).click();
+  await expect(page.getByText("活动草稿已保存").last()).toBeVisible();
+
+  card = page
+    .getByRole("heading", { name: "VIP 物流提醒", exact: true })
+    .locator("xpath=ancestor::div[@data-slot='card']");
+  await card.getByRole("button", { name: "预览" }).click();
+  previewDialog = page.getByRole("dialog");
+  await expect(
+    previewDialog.getByText("前 3 封邮件", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    previewDialog.getByText("收件人：preview-alpha@example.test", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    previewDialog.getByText("第 2 封 · preview-blank", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    previewDialog.getByText("主题：Your order ORDER-1001 has shipped").first(),
+  ).toBeVisible();
+  await previewDialog.getByRole("button", { name: "重新计算" }).click();
+  await expect(previewDialog.getByText(/计算时间/)).toBeVisible();
+  await previewDialog.getByRole("button", { name: "关闭" }).click();
 
   page.once("dialog", (dialog) => dialog.accept());
   await card.getByRole("button", { name: "归档" }).click();
@@ -88,7 +134,7 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(editor.getByText(/当前模板已归档/)).toBeVisible();
   await editor.getByLabel("活动名称").fill("归档模板活动");
   await editor.getByRole("button", { name: "保存活动草稿" }).click();
-  await expect(page.getByText("活动草稿已保存")).toBeVisible();
+  await expect(page.getByText("活动草稿已保存").last()).toBeVisible();
 
   await page.goto("/templates?status=archived");
   await page

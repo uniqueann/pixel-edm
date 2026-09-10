@@ -16,7 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCampaign, saveCampaign, setCampaignArchived } from "./actions";
+import {
+  getCampaign,
+  getCampaignPreview,
+  saveCampaign,
+  setCampaignArchived,
+} from "./actions";
 import {
   campaignStatusLabels,
   campaignVariableFields,
@@ -25,6 +30,7 @@ import {
   type CampaignEditorOptions,
   type CampaignEditorTemplate,
   type CampaignList,
+  type CampaignPreview,
   type CampaignStatus,
   type CampaignSummary,
   type CampaignVariableKey,
@@ -70,6 +76,10 @@ export function Campaigns({
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [loadingCampaignId, setLoadingCampaignId] = useState<string>();
+  const [previewing, setPreviewing] = useState<CampaignSummary>();
+  const [preview, setPreview] = useState<CampaignPreview>();
+  const [previewError, setPreviewError] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [editing, setEditing] = useState<CampaignDetail | null | undefined>();
   const [name, setName] = useState("");
   const [templateId, setTemplateId] = useState("");
@@ -78,6 +88,7 @@ export function Campaigns({
   const [variables, setVariables] = useState<CampaignVariables>({});
   const [error, setError] = useState("");
   const returnFocus = useRef<HTMLElement | null>(null);
+  const previewRequest = useRef(0);
   const archived = filters.status === "archived";
 
   const templateChoices: SelectableTemplate[] = editorOptions.templates.map(
@@ -154,8 +165,12 @@ export function Campaigns({
     setError("");
   }
 
-  async function openEditor(campaign: CampaignSummary) {
-    returnFocus.current = document.activeElement as HTMLElement | null;
+  async function openEditor(
+    campaign: CampaignSummary,
+    preserveReturnFocus = false,
+  ) {
+    if (!preserveReturnFocus)
+      returnFocus.current = document.activeElement as HTMLElement | null;
     setLoadingCampaignId(campaign.id);
     try {
       const result = await getCampaign({
@@ -183,6 +198,40 @@ export function Campaigns({
     } finally {
       setLoadingCampaignId(undefined);
     }
+  }
+
+  async function loadPreview(campaign: CampaignSummary) {
+    const request = ++previewRequest.current;
+    setPreviewLoading(true);
+    setPreviewError("");
+    try {
+      const result = await getCampaignPreview({
+        workspace_id: workspace,
+        id: campaign.id,
+      });
+      if (request !== previewRequest.current) return;
+      if ("error" in result) {
+        setPreview(undefined);
+        setPreviewError(result.error ?? "活动预览失败，请重试。");
+      } else {
+        setPreview(result.data);
+      }
+    } catch {
+      if (request === previewRequest.current) {
+        setPreview(undefined);
+        setPreviewError("活动预览失败，请重试。");
+      }
+    } finally {
+      if (request === previewRequest.current) setPreviewLoading(false);
+    }
+  }
+
+  function openPreview(campaign: CampaignSummary) {
+    returnFocus.current = document.activeElement as HTMLElement | null;
+    setPreviewing(campaign);
+    setPreview(undefined);
+    setPreviewError("");
+    void loadPreview(campaign);
   }
 
   async function archiveCampaign(campaign: CampaignSummary) {
@@ -218,7 +267,8 @@ export function Campaigns({
         <span>{data.total} 条</span>
       </div>
       <p className="hint">
-        先保存活动草稿；收件人计算、预览和导出将在后续步骤完成。
+        收件人和前三封预览会按最新订阅与抑制状态动态计算；CSV
+        导出将在后续步骤完成。
       </p>
       <div className="mb-4 flex flex-wrap gap-3">
         {canEdit && (
@@ -284,13 +334,22 @@ export function Campaigns({
               {canEdit && campaign.status === "draft" && (
                 <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
                   {!archived && (
-                    <Button
-                      variant="outline"
-                      disabled={busy || Boolean(loadingCampaignId)}
-                      onClick={() => openEditor(campaign)}
-                    >
-                      {loadingCampaignId === campaign.id ? "加载中…" : "编辑"}
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        disabled={busy || Boolean(loadingCampaignId)}
+                        onClick={() => openPreview(campaign)}
+                      >
+                        预览
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={busy || Boolean(loadingCampaignId)}
+                        onClick={() => openEditor(campaign)}
+                      >
+                        {loadingCampaignId === campaign.id ? "加载中…" : "编辑"}
+                      </Button>
+                    </>
                   )}
                   <Button
                     variant="outline"
@@ -334,6 +393,164 @@ export function Campaigns({
           下一页
         </Button>
       </div>
+
+      <Dialog
+        open={Boolean(previewing)}
+        onOpenChange={(open) => {
+          if (!open) {
+            previewRequest.current += 1;
+            setPreviewing(undefined);
+            setPreview(undefined);
+            setPreviewError("");
+            setPreviewLoading(false);
+          }
+        }}
+      >
+        <DialogContent
+          placement="bottom"
+          className="bottom-sheet max-h-[90dvh] overflow-y-auto"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            returnFocus.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{preview?.campaign.name ?? "活动预览"}</DialogTitle>
+            <DialogDescription>
+              每次都按最新客户、标签、订阅和抑制状态计算；这里只展示前三封，不保存收件人数。
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewLoading && (
+            <p className="py-8 text-center" role="status">
+              正在计算可发送客户和预览内容…
+            </p>
+          )}
+          {previewError && (
+            <p className="field-error" role="alert">
+              {previewError}
+            </p>
+          )}
+          {preview && !previewLoading && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border bg-white p-3">
+                  <p className="hint m-0">目标客户</p>
+                  <p className="text-xl font-semibold">
+                    {preview.recipients.audience_count}
+                  </p>
+                </div>
+                <div className="rounded-lg border bg-white p-3">
+                  <p className="hint m-0">可发送</p>
+                  <p className="text-xl font-semibold">
+                    {preview.recipients.eligible_count}
+                  </p>
+                </div>
+                <div className="col-span-2 rounded-lg border bg-white p-3 sm:col-span-1">
+                  <p className="hint m-0">已排除</p>
+                  <p className="text-xl font-semibold">
+                    {preview.recipients.excluded_count}
+                  </p>
+                </div>
+              </div>
+              <p className="hint m-0">
+                排除明细：归档 {preview.recipients.excluded.archived} 位 ·
+                未订阅 {preview.recipients.excluded.not_subscribed} 位 · 受抑制{" "}
+                {preview.recipients.excluded.suppressed} 位
+              </p>
+
+              {preview.validation.blockers.map((blocker) => (
+                <p className="field-error" role="alert" key={blocker.code}>
+                  {blocker.message}
+                </p>
+              ))}
+
+              {preview.validation.valid &&
+                preview.recipients.eligible_count === 0 && (
+                  <div className="rounded-lg border border-dashed p-6 text-center">
+                    <p className="font-medium">当前没有可发送客户</p>
+                    <p className="hint m-0">
+                      请检查活动标签、客户订阅状态和抑制记录。
+                    </p>
+                  </div>
+                )}
+
+              {preview.validation.valid &&
+                preview.recipients.sample.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-medium">
+                        前 {preview.recipients.sample.length} 封邮件
+                      </h3>
+                      <span className="hint">
+                        模板版本 {preview.template.version}
+                      </span>
+                    </div>
+                    {preview.recipients.sample.map((item, index) => (
+                      <div
+                        className="min-w-0 rounded-lg border bg-white p-4"
+                        key={item.contact_id}
+                      >
+                        <p className="mb-1 break-words font-medium">
+                          第 {index + 1} 封 · {item.name}
+                        </p>
+                        <p className="hint m-0 break-all">
+                          收件人：{item.email}
+                        </p>
+                        <p className="mt-3 break-words font-medium">
+                          主题：{item.subject}
+                        </p>
+                        <pre className="mt-3 whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm leading-7">
+                          {item.body}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              <p className="hint m-0">
+                计算时间：{formattedDate(preview.calculated_at)}
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={previewLoading || !previewing}
+              onClick={() => previewing && void loadPreview(previewing)}
+            >
+              {previewLoading ? "计算中…" : "重新计算"}
+            </Button>
+            {previewing &&
+              (previewError ||
+                preview?.validation.blockers.some(
+                  (blocker) => blocker.code === "missing_variables",
+                )) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const campaign = previewing;
+                    previewRequest.current += 1;
+                    setPreviewing(undefined);
+                    void openEditor(campaign, true);
+                  }}
+                >
+                  编辑活动
+                </Button>
+              )}
+            {preview?.validation.blockers.some(
+              (blocker) => blocker.code === "template_archived",
+            ) && (
+              <Button asChild type="button" variant="outline">
+                <Link href="/templates?status=archived">前往模板库</Link>
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={editing !== undefined}
