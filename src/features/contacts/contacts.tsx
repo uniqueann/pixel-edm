@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +14,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { saveContact, setContactArchived } from "./actions";
+import { Badge } from "@/components/ui/badge";
+import { saveContact, setContactArchived, unsubscribeContact } from "./actions";
 import type { Contact, ContactList } from "./model";
+import { subscriptionLabels } from "./import-model";
 export function Contacts({
   workspace,
   canEdit,
@@ -37,6 +40,8 @@ export function Contacts({
   const [name, setName] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tag, setTag] = useState("");
+  const [unsubscribing, setUnsubscribing] = useState<Contact>();
+  const [unsubscribeReason, setUnsubscribeReason] = useState("");
   const archived = filters.status === "archived";
   function navigate(changes: Record<string, string>) {
     const p = new URLSearchParams({ ...filters, ...changes });
@@ -114,6 +119,11 @@ export function Contacts({
       </div>
       <div className="mb-4 flex flex-wrap gap-3">
         {canEdit && <Button onClick={() => open(null)}>添加客户</Button>}
+        {canEdit && (
+          <Button asChild variant="outline">
+            <Link href="/contacts/import">导入名单</Link>
+          </Button>
+        )}
         <select
           aria-label="客户状态"
           className="rounded border bg-white p-2"
@@ -122,6 +132,21 @@ export function Contacts({
         >
           <option value="active">正常客户</option>
           <option value="archived">已归档</option>
+        </select>
+        <select
+          aria-label="订阅状态"
+          className="rounded border bg-white p-2"
+          value={filters.subscription ?? ""}
+          onChange={(e) =>
+            navigate({ subscription: e.target.value, page: "1" })
+          }
+        >
+          <option value="">全部订阅状态</option>
+          {Object.entries(subscriptionLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
         </select>
         <select
           aria-label="标签筛选"
@@ -154,6 +179,15 @@ export function Contacts({
               <div className="min-w-0 flex-1">
                 <p className="break-all">{c.email}</p>
                 <p className="hint">{c.name || "未填写姓名"}</p>
+                <Badge
+                  variant={
+                    c.subscription_status === "subscribed"
+                      ? "default"
+                      : "secondary"
+                  }
+                >
+                  {subscriptionLabels[c.subscription_status]}
+                </Badge>
                 <div className="flex flex-wrap gap-1">
                   {c.tags.map((t) => (
                     <span
@@ -168,13 +202,29 @@ export function Contacts({
               {canEdit && (
                 <div className="flex gap-2">
                   {!archived && (
-                    <Button
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() => open(c)}
-                    >
-                      编辑
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => open(c)}
+                      >
+                        编辑
+                      </Button>
+                      {!(
+                        ["unsubscribed", "bounced", "complained"] as string[]
+                      ).includes(c.subscription_status) && (
+                        <Button
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => {
+                            setUnsubscribing(c);
+                            setUnsubscribeReason("");
+                          }}
+                        >
+                          退订
+                        </Button>
+                      )}
+                    </>
                   )}
                   <Button
                     variant="outline"
@@ -342,6 +392,52 @@ export function Contacts({
                 重新加载
               </Button>
             )}
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(unsubscribing)}
+        onOpenChange={(value) => {
+          if (!value && !busy) setUnsubscribing(undefined);
+        }}
+      >
+        <DialogContent placement="bottom" className="bottom-sheet">
+          <DialogHeader>
+            <DialogTitle>确认手动退订</DialogTitle>
+            <DialogDescription>
+              退订会写入独立抑制记录。再次导入相同邮箱也不会恢复订阅。
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!unsubscribing) return;
+              setBusy(true);
+              const result = await unsubscribeContact({
+                workspace_id: workspace,
+                id: unsubscribing.id,
+                expected_version: unsubscribing.version,
+                reason: unsubscribeReason,
+              });
+              setBusy(false);
+              if (result.error) return toast.error(result.error);
+              setUnsubscribing(undefined);
+              toast.success("客户已退订，抑制记录已保存");
+              router.refresh();
+            }}
+          >
+            <Label htmlFor="unsubscribe-reason">退订原因</Label>
+            <Input
+              id="unsubscribe-reason"
+              required
+              maxLength={500}
+              value={unsubscribeReason}
+              onChange={(event) => setUnsubscribeReason(event.target.value)}
+            />
+            <Button disabled={busy || !unsubscribeReason.trim()}>
+              {busy ? "处理中…" : "确认退订"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

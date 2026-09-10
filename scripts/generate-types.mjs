@@ -20,7 +20,7 @@ try {
     .join(";\n");
   await writeFile(
     "src/lib/supabase/database.types.ts",
-    `// 由迁移对应的数据库结构生成，请运行 npm run db:types 更新。\ntype Json = string | number | boolean | null | { [key:string]: Json | undefined } | Json[];\nexport type Database = { edm: { Tables: { ${definitions} }; Views: Record<string,never>; Functions: { initialize_member: { Args: Record<string,never>; Returns: string }; save_contact: { Args: {payload:Json}; Returns:string }; archive_contact: { Args: {payload:Json}; Returns:string }; list_contacts: { Args: {payload:Json}; Returns:Json } }; Enums: Record<string,never>; CompositeTypes: Record<string,never> } };\n`,
+    `// 由迁移对应的数据库结构生成，请运行 npm run db:types 更新。\ntype Json = string | number | boolean | null | { [key:string]: Json | undefined } | Json[];\nexport type Database = { edm: { Tables: { ${definitions} }; Views: Record<string,never>; Functions: { initialize_member: { Args: Record<string,never>; Returns: string }; save_contact: { Args: {payload:Json}; Returns:string }; archive_contact: { Args: {payload:Json}; Returns:string }; list_contacts: { Args: {payload:Json}; Returns:Json }; prepare_contact_import: { Args: {payload:Json}; Returns:Json }; confirm_contact_import: { Args: {payload:Json}; Returns:Json }; process_contact_import_batch: { Args: {payload:Json}; Returns:Json }; get_contact_import: { Args: {payload:Json}; Returns:Json }; list_contact_imports: { Args: {payload:Json}; Returns:Json }; export_contact_import: { Args: {payload:Json}; Returns:Json }; unsubscribe_contact: { Args: {payload:Json}; Returns:string } }; Enums: Record<string,never>; CompositeTypes: Record<string,never> } };\n`,
   );
 } finally {
   await db.close();

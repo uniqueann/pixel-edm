@@ -98,7 +98,18 @@ const server = createServer(async (req, res) => {
     const rpc = url.pathname.split("/").pop();
     if (
       url.pathname.startsWith("/rest/v1/rpc/") &&
-      ["save_contact", "archive_contact", "list_contacts"].includes(rpc)
+      [
+        "save_contact",
+        "archive_contact",
+        "list_contacts",
+        "prepare_contact_import",
+        "confirm_contact_import",
+        "process_contact_import_batch",
+        "get_contact_import",
+        "list_contact_imports",
+        "export_contact_import",
+        "unsubscribe_contact",
+      ].includes(rpc)
     ) {
       const result = await asUser(
         db,

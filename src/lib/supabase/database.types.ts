@@ -9,6 +9,120 @@ type Json =
 export type Database = {
   edm: {
     Tables: {
+      contact_import_rows: {
+        Row: {
+          import_id: string;
+          workspace_id: string;
+          item_no: number;
+          source_rows: string;
+          email: string;
+          name: string;
+          tags: string;
+          requested_status: string;
+          consent_source: string | null;
+          consent_note: string | null;
+          consent_at: string | null;
+          preview_result: string;
+          result: string;
+          message: string;
+          contact_id: string | null;
+          processed_at: string | null;
+        };
+        Insert: {
+          import_id: string;
+          workspace_id: string;
+          item_no: number;
+          source_rows: string;
+          email: string;
+          name?: string;
+          tags?: string;
+          requested_status: string;
+          consent_source?: string | null;
+          consent_note?: string | null;
+          consent_at?: string | null;
+          preview_result: string;
+          result?: string;
+          message?: string;
+          contact_id?: string | null;
+          processed_at?: string | null;
+        };
+        Update: {
+          import_id?: string;
+          workspace_id?: string;
+          item_no?: number;
+          source_rows?: string;
+          email?: string;
+          name?: string;
+          tags?: string;
+          requested_status?: string;
+          consent_source?: string | null;
+          consent_note?: string | null;
+          consent_at?: string | null;
+          preview_result?: string;
+          result?: string;
+          message?: string;
+          contact_id?: string | null;
+          processed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      contact_imports: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          source_type: string;
+          source_name: string;
+          consent_declared: boolean;
+          consent_source: string | null;
+          consent_note: string | null;
+          consent_at: string | null;
+          status: string;
+          total_source_rows: number;
+          total_groups: number;
+          processed_groups: number;
+          summary: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          source_type: string;
+          source_name: string;
+          consent_declared?: boolean;
+          consent_source?: string | null;
+          consent_note?: string | null;
+          consent_at?: string | null;
+          status?: string;
+          total_source_rows: number;
+          total_groups: number;
+          processed_groups?: number;
+          summary?: string;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          source_type?: string;
+          source_name?: string;
+          consent_declared?: boolean;
+          consent_source?: string | null;
+          consent_note?: string | null;
+          consent_at?: string | null;
+          status?: string;
+          total_source_rows?: number;
+          total_groups?: number;
+          processed_groups?: number;
+          summary?: string;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       contact_tags: {
         Row: { workspace_id: string; contact_id: string; tag_id: string };
         Insert: { workspace_id: string; contact_id: string; tag_id: string };
@@ -26,6 +140,10 @@ export type Database = {
           created_at: string;
           updated_at: string;
           version: number;
+          subscription_status: string;
+          consent_source: string | null;
+          consent_note: string | null;
+          consent_at: string | null;
         };
         Insert: {
           id?: string;
@@ -37,6 +155,10 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           version?: number;
+          subscription_status?: string;
+          consent_source?: string | null;
+          consent_note?: string | null;
+          consent_at?: string | null;
         };
         Update: {
           id?: string;
@@ -48,6 +170,10 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           version?: number;
+          subscription_status?: string;
+          consent_source?: string | null;
+          consent_note?: string | null;
+          consent_at?: string | null;
         };
         Relationships: [];
       };
@@ -72,6 +198,78 @@ export type Database = {
           display_name?: string;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      subscription_events: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          contact_id: string | null;
+          email: string;
+          event_type: string;
+          source: string;
+          note: string;
+          consent_at: string | null;
+          import_id: string | null;
+          import_item_no: number | null;
+          metadata: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          contact_id?: string | null;
+          email: string;
+          event_type: string;
+          source: string;
+          note?: string;
+          consent_at?: string | null;
+          import_id?: string | null;
+          import_item_no?: number | null;
+          metadata?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          contact_id?: string | null;
+          email?: string;
+          event_type?: string;
+          source?: string;
+          note?: string;
+          consent_at?: string | null;
+          import_id?: string | null;
+          import_item_no?: number | null;
+          metadata?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      suppressions: {
+        Row: {
+          workspace_id: string;
+          email: string;
+          reason: string;
+          first_event_id: string;
+          created_at: string;
+        };
+        Insert: {
+          workspace_id: string;
+          email: string;
+          reason: string;
+          first_event_id: string;
+          created_at?: string;
+        };
+        Update: {
+          workspace_id?: string;
+          email?: string;
+          reason?: string;
+          first_event_id?: string;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -166,6 +364,13 @@ export type Database = {
       save_contact: { Args: { payload: Json }; Returns: string };
       archive_contact: { Args: { payload: Json }; Returns: string };
       list_contacts: { Args: { payload: Json }; Returns: Json };
+      prepare_contact_import: { Args: { payload: Json }; Returns: Json };
+      confirm_contact_import: { Args: { payload: Json }; Returns: Json };
+      process_contact_import_batch: { Args: { payload: Json }; Returns: Json };
+      get_contact_import: { Args: { payload: Json }; Returns: Json };
+      list_contact_imports: { Args: { payload: Json }; Returns: Json };
+      export_contact_import: { Args: { payload: Json }; Returns: Json };
+      unsubscribe_contact: { Args: { payload: Json }; Returns: string };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

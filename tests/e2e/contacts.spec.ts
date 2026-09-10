@@ -16,12 +16,15 @@ test("客户新增、标签、编辑、归档恢复与窄屏", async ({ page }) 
   await expect(
     page.getByText("customer@example.test", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "编辑", exact: true }).click();
+  const customerCard = page
+    .locator('[data-slot="card"]')
+    .filter({ hasText: "customer@example.test" });
+  await customerCard.getByRole("button", { name: "编辑", exact: true }).click();
   await page.getByLabel("姓名（选填）").fill("客户改名");
   await page.getByRole("button", { name: "保存客户" }).click();
   await expect(page.getByText("客户改名", { exact: true })).toBeVisible();
   page.once("dialog", (d) => d.accept());
-  await page.getByRole("button", { name: "归档", exact: true }).click();
+  await customerCard.getByRole("button", { name: "归档", exact: true }).click();
   await expect(
     page.getByText("customer@example.test", { exact: true }),
   ).not.toBeVisible();
@@ -29,7 +32,11 @@ test("客户新增、标签、编辑、归档恢复与窄屏", async ({ page }) 
   await expect(
     page.getByText("customer@example.test", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "恢复", exact: true }).click();
+  await page
+    .locator('[data-slot="card"]')
+    .filter({ hasText: "customer@example.test" })
+    .getByRole("button", { name: "恢复", exact: true })
+    .click();
   await expect(
     page.getByText("customer@example.test", { exact: true }),
   ).not.toBeVisible();

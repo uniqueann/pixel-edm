@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { SubscriptionStatus } from "./import-model";
 export const contactInput = z.object({
   workspace_id: z.string().uuid(),
   id: z.string().uuid().optional(),
@@ -16,6 +17,10 @@ export type Contact = {
   name: string;
   version: number;
   archived_at: string | null;
+  subscription_status: SubscriptionStatus;
+  consent_source: string | null;
+  consent_note: string | null;
+  consent_at: string | null;
   tags: Tag[];
 };
 export type ContactList = {
