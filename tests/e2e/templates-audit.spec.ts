@@ -97,6 +97,11 @@ test("模板编辑、变量预览、复制归档与管理员审计", async ({ pa
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  const mobileTemplateCard = page.locator("[data-slot='card']").first();
+  const mobileTemplateTitle = await mobileTemplateCard
+    .getByRole("heading")
+    .boundingBox();
+  expect(mobileTemplateTitle?.width ?? 0).toBeGreaterThan(120);
   await page.getByRole("button", { name: "预览" }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(

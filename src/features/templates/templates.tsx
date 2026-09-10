@@ -184,8 +184,8 @@ export function Templates({
       <div className="my-4 space-y-3" aria-busy={pending}>
         {data.items.map((template) => (
           <Card key={template.id}>
-            <CardContent className="flex flex-wrap items-center gap-3 pt-5">
-              <div className="min-w-0 flex-1">
+            <CardContent className="flex flex-col items-stretch gap-4 pt-5 sm:flex-row sm:items-center">
+              <div className="w-full min-w-0 flex-1">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <Badge variant="secondary">{template.category}</Badge>
                   {template.default_key && (
@@ -195,7 +195,7 @@ export function Templates({
                 <h2 className="break-words">{template.name}</h2>
                 <p className="hint m-0 break-words">{template.subject}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
                 <Button
                   variant="outline"
                   onClick={() => setPreviewing(template)}
