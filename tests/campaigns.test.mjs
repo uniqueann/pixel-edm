@@ -70,6 +70,55 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
     ).rows[0].result;
 
   let campaign;
+  await t.test("活动编辑选项按工作区、角色和模板变量收敛", async () => {
+    const options = await rpc("get_campaign_editor_options", {
+      workspace_id: workspace,
+    });
+    assert.equal(options.templates.length, 6);
+    assert.equal(options.tags.length, 1);
+    assert.equal(options.tags[0].name, "VIP");
+    assert.ok(
+      options.templates.every(
+        (item) =>
+          !item.variable_keys.includes("name") &&
+          !item.variable_keys.includes("email"),
+      ),
+    );
+    const welcome = options.templates.find(
+      (item) => item.name === "欢迎新客户",
+    );
+    assert.deepEqual(welcome.variable_keys, [
+      "store_name",
+      "sender_name",
+      "discount",
+    ]);
+    assert.equal(
+      (
+        await rpc(
+          "get_campaign_editor_options",
+          { workspace_id: workspace },
+          editor,
+        )
+      ).templates.length,
+      6,
+    );
+    await assert.rejects(
+      rpc("get_campaign_editor_options", { workspace_id: workspace }, viewer),
+      /权限/,
+    );
+    await assert.rejects(
+      rpc("get_campaign_editor_options", { workspace_id: workspace }, outsider),
+      /权限/,
+    );
+    const otherOptions = await rpc(
+      "get_campaign_editor_options",
+      { workspace_id: otherWorkspace },
+      outsider,
+    );
+    assert.ok(otherOptions.templates.every((item) => item.id !== template));
+    assert.ok(otherOptions.tags.every((item) => item.id !== tag));
+  });
+
   await t.test(
     "管理员和编辑者可保存不完整草稿，查看者只能读取摘要",
     async () => {
@@ -253,6 +302,14 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
       expected_version: 1,
       archived: true,
     });
+    assert.equal(
+      (
+        await rpc("get_campaign_editor_options", {
+          workspace_id: workspace,
+        })
+      ).templates.some((item) => item.id === secondTemplate),
+      false,
+    );
     await rpc("save_campaign", {
       workspace_id: workspace,
       id: existing,

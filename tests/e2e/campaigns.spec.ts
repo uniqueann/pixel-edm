@@ -1,0 +1,135 @@
+import { test, expect, type Page } from "@playwright/test";
+
+async function login(page: Page) {
+  await page.goto("/login");
+  await page.getByLabel("邮箱", { exact: true }).fill("owner@example.test");
+  await page.getByLabel("密码").fill("edm-test-password");
+  await page.getByRole("button", { name: "登录邮局" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+}
+
+test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await login(page);
+  await page.goto("/campaigns");
+  await expect(page.getByRole("heading", { name: "发信活动" })).toBeVisible();
+  await expect(page.getByText("0 条")).toBeVisible();
+
+  await page.getByRole("button", { name: "新建活动" }).click();
+  let editor = page.getByRole("dialog");
+  await expect(editor.getByLabel("邮件模板")).toHaveValue("");
+  await editor.getByLabel("活动名称").fill("无客户草稿");
+  await editor
+    .getByLabel("邮件模板")
+    .selectOption({ label: "欢迎系列 · 欢迎新客户" });
+  await expect(editor.getByLabel(/店铺名称/)).toHaveValue("我的邮局");
+  await expect(editor.getByLabel(/发件人/)).toHaveValue("店主");
+  await editor.getByLabel(/优惠信息/).fill("WELCOME-20");
+  await editor.getByRole("button", { name: "保存活动草稿" }).click();
+  await expect(page.getByText("活动草稿已保存")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "无客户草稿" })).toBeVisible();
+
+  let card = page
+    .getByRole("heading", { name: "无客户草稿", exact: true })
+    .locator("xpath=ancestor::div[@data-slot='card']");
+  await card.getByRole("button", { name: "编辑" }).click();
+  editor = page.getByRole("dialog");
+  await editor.getByLabel("活动名称").fill("VIP 物流提醒");
+  await editor
+    .getByLabel("邮件模板")
+    .selectOption({ label: "物流通知 · 物流通知" });
+  await expect(editor.getByLabel(/订单号/)).toBeVisible();
+  await expect(editor.getByLabel(/优惠信息/)).toHaveCount(0);
+  await expect(editor.getByLabel(/发件人/)).toHaveValue("店主");
+  await editor.getByLabel(/订单号/).fill("ORDER-1001");
+  await editor.getByLabel("发送对象").selectOption("tag");
+  await editor.getByLabel("客户标签").selectOption({ label: "VIP" });
+  await editor.getByRole("button", { name: "保存活动草稿" }).click();
+  await expect(page.getByText("活动草稿已保存")).toBeVisible();
+  card = page
+    .getByRole("heading", { name: "VIP 物流提醒", exact: true })
+    .locator("xpath=ancestor::div[@data-slot='card']");
+  await expect(card.getByText("模板：物流通知")).toBeVisible();
+  await expect(card.getByText("受众：标签 · VIP")).toBeVisible();
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await card.getByRole("button", { name: "归档" }).click();
+  await expect(page.getByText("活动草稿已归档")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "VIP 物流提醒", exact: true }),
+  ).not.toBeVisible();
+  await page.getByLabel("活动归档状态").selectOption("archived");
+  await page
+    .getByRole("heading", { name: "VIP 物流提醒", exact: true })
+    .locator("xpath=ancestor::div[@data-slot='card']")
+    .getByRole("button", { name: "恢复" })
+    .click();
+  await expect(page.getByText("活动草稿已恢复")).toBeVisible();
+  await page.getByLabel("活动归档状态").selectOption("active");
+
+  await page.goto("/templates");
+  const shippingTemplate = page
+    .getByRole("heading", { name: "物流通知", exact: true })
+    .locator("xpath=ancestor::div[@data-slot='card']");
+  page.once("dialog", (dialog) => dialog.accept());
+  await shippingTemplate.getByRole("button", { name: "归档" }).click();
+  await expect(page.getByText("模板已归档")).toBeVisible();
+  await page.goto("/campaigns");
+  card = page
+    .getByRole("heading", { name: "VIP 物流提醒", exact: true })
+    .locator("xpath=ancestor::div[@data-slot='card']");
+  await expect(card.getByText("模板已归档")).toBeVisible();
+  await card.getByRole("button", { name: "编辑" }).click();
+  editor = page.getByRole("dialog");
+  await expect(editor.getByLabel("邮件模板")).toContainText(
+    "已归档，仅保留当前引用",
+  );
+  await expect(editor.getByText(/当前模板已归档/)).toBeVisible();
+  await editor.getByLabel("活动名称").fill("归档模板活动");
+  await editor.getByRole("button", { name: "保存活动草稿" }).click();
+  await expect(page.getByText("活动草稿已保存")).toBeVisible();
+
+  await page.goto("/templates?status=archived");
+  await page
+    .getByRole("heading", { name: "物流通知", exact: true })
+    .locator("xpath=ancestor::div[@data-slot='card']")
+    .getByRole("button", { name: "恢复" })
+    .click();
+  await expect(page.getByText("模板已恢复")).toBeVisible();
+
+  await page.getByRole("combobox", { name: "当前工作区" }).click();
+  await page.getByRole("option", { name: "协作邮局", exact: true }).click();
+  await expect(
+    page.getByRole("combobox", { name: "当前工作区" }),
+  ).toContainText("协作邮局");
+  await page.goto("/campaigns");
+  await expect(page.getByText("当前为只读权限。")).toBeVisible();
+  await expect(page.getByRole("button", { name: "新建活动" })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "查看者可见活动" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "编辑" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "归档" })).toHaveCount(0);
+
+  await page.getByRole("combobox", { name: "当前工作区" }).click();
+  await page.getByRole("option", { name: "我的邮局", exact: true }).click();
+  await expect(
+    page.getByRole("combobox", { name: "当前工作区" }),
+  ).toContainText("我的邮局");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/campaigns");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole("button", { name: "编辑" }).click();
+  const dialogBox = await page.getByRole("dialog").boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(dialogBox!.x).toBeGreaterThanOrEqual(15);
+  expect(dialogBox!.x + dialogBox!.width).toBeLessThanOrEqual(375);
+  expect(Math.abs(dialogBox!.x - (390 - dialogBox!.width) / 2)).toBeLessThan(1);
+  expect(Math.abs(dialogBox!.y + dialogBox!.height - 844)).toBeLessThan(1);
+  expect(errors).toEqual([]);
+});

@@ -49,3 +49,13 @@
 - 本次 AIGC 结构比对包含 `aigc` 的表、字段、策略和函数；迁移前后均为 62 个组成部分，指纹均为 `1e4d0de887b08979e2ef6e51b40e8277`。该查询字段组合与先前批次的记录不同，只比较本次迁移前后。
 - Supabase 安全 Advisor 未发现活动对象问题；性能 Advisor 仅提示五个新活动索引尚未使用，空表阶段属于预期信息。既有 `aigc/public/Auth` 告警未修改。
 - 本地 34 项单元/数据库测试、4 项端到端测试，以及 lint、类型、格式和生产构建均通过；云端未创建测试活动或修改既有业务数据。
+
+### P3-2 活动管理界面迁移（2026-09-10）
+
+- 仅应用新增迁移 `20260910144358_p3_campaign_editor_options`，本地文件名已与云端迁移版本对齐；本次没有新增或修改表、索引、约束、策略及共享 Auth 对象。
+- 新增 `get_campaign_editor_options` 受控 RPC：`edm_private` 实现为固定空搜索路径的 `SECURITY DEFINER`，`edm` 包装为 `SECURITY INVOKER`；仅 `authenticated` 可执行，`anon` 和 `aigc_api` 均不可执行。
+- RPC 仅返回活动编辑表单需要的使用中模板标识、名称、分类、活动级变量键和当前工作区标签，不返回模板主题、正文或跨工作区内容；角色与工作区行为由真实迁移测试覆盖。
+- `authenticated` 仍不能直接读写 `edm.campaigns`；`anon` 对 `edm` 无 USAGE，`aigc_api` 对 `edm`、`edm_private` 均无 USAGE。公开客户端匿名调用编辑选项返回 HTTP 401 / PostgreSQL 42501。
+- AIGC 结构比对继续使用表、字段、策略和函数口径；迁移前后均为 62 个组成部分，指纹均为 `1e4d0de887b08979e2ef6e51b40e8277`。
+- Supabase 安全与性能 Advisor 没有发现新的 EDM 问题；现有 `aigc/public/Auth` 告警和既有未使用索引提示保持不变，按项目隔离约束未修改。
+- 本地 35 项单元/数据库测试、5 项端到端测试，以及 lint、类型、格式和生产构建均通过；云端未创建测试活动或修改既有业务数据。

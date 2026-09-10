@@ -8,6 +8,32 @@ await db.exec(`insert into auth.users values('${a}'),('${b}')`);
 const wb = (await asUser(db, b, "select edm.initialize_member() as id")).rows[0]
   .id;
 await db.exec(`update edm.workspaces set name='协作邮局' where id='${wb}'`);
+const wa = (await asUser(db, a, "select edm.initialize_member() as id")).rows[0]
+  .id;
+await db.query(
+  "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'viewer') on conflict do nothing",
+  [wb, a],
+);
+await db.query("insert into edm.tags(workspace_id,name) values($1,'VIP')", [
+  wa,
+]);
+const wbTemplate = (
+  await db.query(
+    "select id from edm.templates where workspace_id=$1 and archived_at is null order by id limit 1",
+    [wb],
+  )
+).rows[0].id;
+await asUser(
+  db,
+  b,
+  `select edm.save_campaign('${JSON.stringify({
+    workspace_id: wb,
+    name: "查看者可见活动",
+    template_id: wbTemplate,
+    audience_type: "all",
+    variables: {},
+  }).replaceAll("'", "''")}'::jsonb)`,
+);
 const user = (id) => ({
   id,
   aud: "authenticated",
@@ -118,6 +144,7 @@ const server = createServer(async (req, res) => {
         "get_campaign",
         "save_campaign",
         "set_campaign_archived",
+        "get_campaign_editor_options",
       ].includes(rpc)
     ) {
       const result = await asUser(

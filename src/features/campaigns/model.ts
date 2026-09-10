@@ -12,6 +12,16 @@ export type CampaignVariableKey =
   (typeof campaignVariableFields)[number]["key"];
 export type CampaignVariables = Partial<Record<CampaignVariableKey, string>>;
 
+export function campaignVariableKeysFromTemplate(
+  subject: string,
+  body: string,
+) {
+  const source = `${subject}\n${body}`;
+  return campaignVariableFields
+    .map((field) => field.key)
+    .filter((key) => new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`).test(source));
+}
+
 export const campaignVariablesInput = z
   .object({
     store_name: z.string().max(200, "店铺名称最多 200 字").optional(),
@@ -65,6 +75,27 @@ export type CampaignStatus =
   | "completed"
   | "completed_with_errors"
   | "failed";
+
+export const campaignStatusLabels: Record<CampaignStatus, string> = {
+  draft: "草稿",
+  queued: "排队中",
+  sending: "发送中",
+  completed: "已完成",
+  completed_with_errors: "部分失败",
+  failed: "失败",
+};
+
+export type CampaignEditorTemplate = {
+  id: string;
+  name: string;
+  category: string;
+  variable_keys: CampaignVariableKey[];
+};
+
+export type CampaignEditorOptions = {
+  templates: CampaignEditorTemplate[];
+  tags: { id: string; name: string }[];
+};
 
 export type CampaignSummary = {
   id: string;

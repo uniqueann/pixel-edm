@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
-import { campaignInput, type CampaignDetail, type CampaignList } from "./model";
+import {
+  campaignInput,
+  type CampaignDetail,
+  type CampaignEditorOptions,
+  type CampaignList,
+} from "./model";
 
 async function authorizedWorkspace(workspaceId: string, write = false) {
   const context = await getContext();
@@ -42,6 +47,16 @@ export async function listCampaigns(input: { status?: string; page?: string }) {
   });
   if (error) throw new Error("活动加载失败，请重试。");
   return data as unknown as CampaignList;
+}
+
+export async function getCampaignEditorOptions() {
+  const { workspace } = await getContext();
+  const db = await authorizedWorkspace(workspace.id, true);
+  const { data, error } = await db.rpc("get_campaign_editor_options", {
+    payload: { workspace_id: workspace.id },
+  });
+  if (error) throw new Error("活动编辑选项加载失败，请重试。");
+  return data as unknown as CampaignEditorOptions;
 }
 
 const campaignReference = z.object({

@@ -527,6 +527,7 @@ export type Database = {
       get_campaign: { Args: { payload: Json }; Returns: Json };
       save_campaign: { Args: { payload: Json }; Returns: string };
       set_campaign_archived: { Args: { payload: Json }; Returns: string };
+      get_campaign_editor_options: { Args: { payload: Json }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
