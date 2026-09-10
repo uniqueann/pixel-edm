@@ -2,6 +2,16 @@
 
 基于交互原型构建的邮件营销管理应用。第一批已实现工程基础、真实 Auth 接入、EDM 用户和工作区数据库、七页应用外壳及基础设置。
 
+进度更新：2026-09-10，P1 按用户确认完成文档收尾。用户已实际验证 Google 登录与邮箱重置；下一阶段为 P2 客户与模板。
+
+## 正式部署
+
+- 站点：[卖家邮局](https://edm.contentup.cc)。
+- Vercel 项目：`pixel-edm`，已完成首次生产部署和正式域名绑定。
+- Cloudflare：`edm` 的 CNAME 指向 `0ad5ec7ada8335ab.vercel-dns-017.com`，采用仅 DNS 模式。
+- Production 和 Preview 的 `NEXT_PUBLIC_SITE_URL` 已配置为 `https://edm.contentup.cc`；本地继续使用本地 origin。
+- Supabase 连接使用 content-up 的项目地址和公开客户端密钥；不在文档记录密钥值。
+
 ## 本地启动
 
 需要 Node.js 22 以上，建议使用 24。
@@ -31,13 +41,15 @@ npm run dev
 
 已应用迁移：`supabase/migrations/20260909072930_edm_foundation.sql`，本地文件版本已与云端记录对齐。
 
-### 云端尚需完成的配置
+### 云端认证与验证记录
 
-1. 在 [content-up Data API 设置](https://supabase.com/dashboard/project/gnrhyahjegvcicektebh/integrations/data_api/settings) 的 Exposed schemas 加入 `edm`，保留 `public` 和 `graphql_public`。不要加入 `edm_private`，也不要把 `aigc` 加入暴露列表。
-2. 在 Auth URL Configuration 保留既有站点和回调配置，并确认允许以下 EDM 回调：`http://localhost:3105/auth/callback`、`http://localhost:3105/auth/callback?next=/reset-password`。部署时另增正式站点地址。
-3. 验证注册邮件、密码重置和 Google OAuth 的实际回调。当前已只读确认 Google 和邮箱登录启用、注册要求邮箱确认；未修改项目级邮件模板、Site URL 或 OAuth 配置。
+Auth Redirect URLs 已加入 `https://edm.contentup.cc/auth/callback`；应用的密码重置请求使用同一路径并携带 `?next=/reset-password`。用户于 2026-09-10 确认正式站点 Google 登录及邮箱重置均已验证通过。
 
-当前连接工具可执行数据库迁移，但 CLI 未登录 Management API，控制台连接也未成功。因此未设置 SQL 级 PostgREST 覆盖，以免影响 Dashboard 后续管理共享项目。完成第 1 项之前，云端业务 API 会返回 `PGRST106`，登录后的初始化无法成功。
+共享 Site URL 保持 `https://contentup.cc`，既有回调地址保留。此次配置未修改 Google Provider、共享 Auth 触发器或 AIGC 对象。认证流程通过依据用户实测，不将其表述为自动化端到端测试。
+
+Data API 暴露列表尚缺独立核对记录，本次文档同步不重新检查云端，也不沿用旧文档“当前未暴露”的结论。后续 API 验收按最小权限核对 `edm`，保留既有 schema；`edm_private` 不暴露。其他未覆盖场景见 `supabase/verification.md`，不阻塞本次用户确认的 P1 收尾。
+
+本地回调使用 `http://localhost:3105/auth/callback`（密码重置附带 `?next=/reset-password`）；本地白名单未单独记录验收，不能由正式站点验证推断其已配置。
 
 ## 验证命令
 
