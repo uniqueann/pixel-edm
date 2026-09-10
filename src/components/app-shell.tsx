@@ -108,16 +108,18 @@ export function AppShell({
         </div>
       </section>
       <nav className="tabs" aria-label="邮局导航">
-        {tabs.map(([slug, label]) => (
-          <Link
-            key={slug}
-            href={`/${slug}`}
-            aria-current={pathname === `/${slug}` ? "page" : undefined}
-            className={pathname === `/${slug}` ? "tab active" : "tab"}
-          >
-            {label}
-          </Link>
-        ))}
+        {tabs
+          .filter(([slug]) => slug !== "logs" || role === "admin")
+          .map(([slug, label]) => (
+            <Link
+              key={slug}
+              href={`/${slug}`}
+              aria-current={pathname === `/${slug}` ? "page" : undefined}
+              className={pathname === `/${slug}` ? "tab active" : "tab"}
+            >
+              {label}
+            </Link>
+          ))}
       </nav>
       <main id="main-content" className="view" key={workspaceId}>
         {children}

@@ -23,4 +23,4 @@
 
 ## 下一批
 
-名单粘贴/CSV 导入、订阅与抑制模型已在下一批完成，详见 `development-checklist-p2-imports.md`。模板管理和业务审计后续接入；迁移前已有客户统一为“未确认”，不因既有资料自动视为已同意订阅。
+名单粘贴/CSV 导入、订阅与抑制模型已完成，详见 `development-checklist-p2-imports.md`；模板管理和全部 P2 业务审计也已完成，详见 `development-checklist-p2-templates-audit.md`。迁移前已有客户统一为“未确认”，不因既有资料自动视为已同意订阅。

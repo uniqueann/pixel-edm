@@ -109,6 +109,11 @@ const server = createServer(async (req, res) => {
         "list_contact_imports",
         "export_contact_import",
         "unsubscribe_contact",
+        "save_template",
+        "duplicate_template",
+        "set_template_archived",
+        "list_templates",
+        "list_activity_logs",
       ].includes(rpc)
     ) {
       const result = await asUser(

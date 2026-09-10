@@ -9,6 +9,51 @@ type Json =
 export type Database = {
   edm: {
     Tables: {
+      activity_logs: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          actor_id: string | null;
+          actor_name: string;
+          actor_role: string;
+          action: string;
+          target_type: string;
+          target_id: string | null;
+          target_label: string;
+          metadata: Json;
+          dedupe_key: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          actor_id?: string | null;
+          actor_name: string;
+          actor_role: string;
+          action: string;
+          target_type: string;
+          target_id?: string | null;
+          target_label?: string;
+          metadata?: Json;
+          dedupe_key?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          actor_id?: string | null;
+          actor_name?: string;
+          actor_role?: string;
+          action?: string;
+          target_type?: string;
+          target_id?: string | null;
+          target_label?: string;
+          metadata?: Json;
+          dedupe_key?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       contact_import_rows: {
         Row: {
           import_id: string;
@@ -80,7 +125,7 @@ export type Database = {
           total_source_rows: number;
           total_groups: number;
           processed_groups: number;
-          summary: string;
+          summary: Json;
           created_by: string;
           created_at: string;
           updated_at: string;
@@ -98,7 +143,7 @@ export type Database = {
           total_source_rows: number;
           total_groups: number;
           processed_groups?: number;
-          summary?: string;
+          summary?: Json;
           created_by: string;
           created_at?: string;
           updated_at?: string;
@@ -116,7 +161,7 @@ export type Database = {
           total_source_rows?: number;
           total_groups?: number;
           processed_groups?: number;
-          summary?: string;
+          summary?: Json;
           created_by?: string;
           created_at?: string;
           updated_at?: string;
@@ -213,7 +258,7 @@ export type Database = {
           consent_at: string | null;
           import_id: string | null;
           import_item_no: number | null;
-          metadata: string;
+          metadata: Json;
           created_by: string | null;
           created_at: string;
         };
@@ -228,7 +273,7 @@ export type Database = {
           consent_at?: string | null;
           import_id?: string | null;
           import_item_no?: number | null;
-          metadata?: string;
+          metadata?: Json;
           created_by?: string | null;
           created_at?: string;
         };
@@ -243,7 +288,7 @@ export type Database = {
           consent_at?: string | null;
           import_id?: string | null;
           import_item_no?: number | null;
-          metadata?: string;
+          metadata?: Json;
           created_by?: string | null;
           created_at?: string;
         };
@@ -294,6 +339,57 @@ export type Database = {
           name?: string;
           normalized_name?: string | null;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      templates: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          category: string;
+          subject: string;
+          body: string;
+          default_key: string | null;
+          source_template_id: string | null;
+          archived_at: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          category: string;
+          subject: string;
+          body: string;
+          default_key?: string | null;
+          source_template_id?: string | null;
+          archived_at?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          category?: string;
+          subject?: string;
+          body?: string;
+          default_key?: string | null;
+          source_template_id?: string | null;
+          archived_at?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          version?: number;
         };
         Relationships: [];
       };
@@ -371,6 +467,11 @@ export type Database = {
       list_contact_imports: { Args: { payload: Json }; Returns: Json };
       export_contact_import: { Args: { payload: Json }; Returns: Json };
       unsubscribe_contact: { Args: { payload: Json }; Returns: string };
+      save_template: { Args: { payload: Json }; Returns: string };
+      duplicate_template: { Args: { payload: Json }; Returns: string };
+      set_template_archived: { Args: { payload: Json }; Returns: string };
+      list_templates: { Args: { payload: Json }; Returns: Json };
+      list_activity_logs: { Args: { payload: Json }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

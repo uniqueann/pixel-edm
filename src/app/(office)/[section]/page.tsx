@@ -6,6 +6,9 @@ import { SettingsForm } from "@/components/settings-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listContacts } from "@/features/contacts/actions";
+import { listTemplates } from "@/features/templates/actions";
+import { listActivityLogs } from "@/features/audit/actions";
+import { activityLabels } from "@/features/audit/model";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -116,7 +119,15 @@ export default async function Page({
           <p className="hint mt-4">成员邀请和角色管理将在团队协作阶段开放。</p>
         </>
       );
-    const contactSummary = await listContacts({});
+    const [contactSummary, templateSummary, recentActivity] = await Promise.all(
+      [
+        listContacts({}),
+        listTemplates({}),
+        role === "admin"
+          ? listActivityLogs({ pageSize: 5 })
+          : Promise.resolve(null),
+      ],
+    );
     return (
       <>
         <div className="welcome">
@@ -127,7 +138,7 @@ export default async function Page({
         <div className="stat-grid">
           {[
             ["客户数", String(contactSummary.active_count)],
-            ["模板数", "—"],
+            ["模板数", String(templateSummary.active_count)],
             ["工作区成员", String(members.length)],
             ["平均打开率", "—"],
           ].map(([label, value]) => (
@@ -139,14 +150,44 @@ export default async function Page({
             </Card>
           ))}
         </div>
-        <p className="hint">客户数仅包含未归档客户；模板和回执统计待接入。</p>
+        <p className="hint">客户数与模板数仅包含未归档记录；回执统计待接入。</p>
         <div className="section-heading">
           <h2>最近动态</h2>
         </div>
-        <EmptyState
-          title="邮局已经准备好了"
-          description="客户管理已接入；操作动态将在业务审计接入后展示。"
-        />
+        {recentActivity?.items.length ? (
+          <Card>
+            <CardContent className="pt-3">
+              {recentActivity.items.map((item) => (
+                <div className="member-row" key={item.id}>
+                  <span className="avatar">{item.actor_name.slice(0, 2)}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate">
+                      {activityLabels[item.action] ?? item.action}
+                      {item.target_label ? ` · ${item.target_label}` : ""}
+                    </p>
+                    <p className="hint m-0">
+                      {item.actor_name} ·{" "}
+                      {new Intl.DateTimeFormat("zh-CN", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                        timeZone: "Asia/Shanghai",
+                      }).format(new Date(item.created_at))}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : (
+          <EmptyState
+            title={role === "admin" ? "还没有操作记录" : "动态仅管理员可见"}
+            description={
+              role === "admin"
+                ? "完成客户、导入或模板操作后，记录会出现在这里。"
+                : "管理员可以在总览和日志页查看业务审计。"
+            }
+          />
+        )}
       </>
     );
   }

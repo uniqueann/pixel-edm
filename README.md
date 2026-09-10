@@ -2,7 +2,7 @@
 
 基于交互原型构建的邮件营销管理应用。第一批已实现工程基础、真实 Auth 接入、EDM 用户和工作区数据库、七页应用外壳及基础设置。
 
-进度更新：2026-09-10，P1 已收尾；P2 客户管理与名单导入/订阅模型已实现。用户已实际验证 Google 登录与邮箱重置。
+进度更新：2026-09-10，P1 已收尾；P2 客户、名单导入、模板管理与业务审计已实现。用户已实际验证 Google 登录与邮箱重置。
 
 ## 正式部署
 
@@ -39,7 +39,7 @@ npm run dev
 
 首次登录后通过幂等 RPC 创建 EDM 用户和个人工作区。EDM 停用不会修改 AIGC 状态，也不会删除共享 Auth 账号。没有改写现有注册触发器；EDM 新注册账号仍会触发 content-up 现有资料/额度初始化。
 
-已应用迁移：`supabase/migrations/20260909072930_edm_foundation.sql`，本地文件版本已与云端记录对齐。
+已应用 EDM 迁移：`20260909072930_edm_foundation`、`20260910035224_edm_contacts`、`20260910081147_edm_contact_imports`、`20260910092601_p2_templates_audit`；本地文件版本均与云端记录对齐。
 
 ### 云端认证与验证记录
 
@@ -82,8 +82,10 @@ npm run db:types
 
 P2 客户管理第一部分已实现并部署：客户新增编辑、标签、搜索分页、归档恢复及工作区权限，总览展示真实未归档客户数。云端已应用 `20260910035224_edm_contacts`，逐项记录见 [客户管理交付记录](development-checklist-p2-contacts.md)。
 
-P2 名单导入与订阅模型已实现：支持粘贴/CSV、邮箱去重、错误报告、同意证据、订阅筛选、手动退订和独立抑制；云端已应用 `20260910081147_edm_contact_imports`。应用代码尚未提交或部署，详见 [名单导入交付记录](development-checklist-p2-imports.md)。
+P2 名单导入与订阅模型已实现：支持粘贴/CSV、邮箱去重、错误报告、同意证据、订阅筛选、手动退订和独立抑制；云端已应用 `20260910081147_edm_contact_imports`，详见 [名单导入交付记录](development-checklist-p2-imports.md)。
 
-后续批次：六套默认模板、活动草稿和 CSV、真实 ESP、公开退订与回执、团队邀请及完整审计。
+P2 模板管理与业务审计已实现：支持纯文本编辑、七个变量插入与校验、可编辑预览、预览复制、模板复制归档、六套默认模板一次性初始化，以及全部 P2 业务审计和管理员日志页；云端已应用 `20260910092601_p2_templates_audit`。应用代码待提交部署，详见 [模板与审计交付记录](development-checklist-p2-templates-audit.md)。
 
-设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 `development-checklist-p1.md`；原始交互文件归档于 `references/seller-post-office-premium.html`。
+后续批次：活动草稿、收件人预览与 CSV 导出、真实 ESP、公开退订与回执、团队邀请。
+
+设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 P1 与三个 P2 交付清单；原始交互文件归档于 `references/seller-post-office-premium.html`。
