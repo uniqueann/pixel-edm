@@ -31,6 +31,14 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
     page.getByText("test-secret-that-is-never-rendered"),
   ).toHaveCount(0);
 
+  await page.getByRole("button", { name: "发送测试邮件" }).click();
+  await expect(page.getByText("测试邮件已被 DirectMail 接收")).toBeVisible();
+  await expect(page.getByText("已验证", { exact: true })).toBeVisible();
+  await expect(page.getByText(/收件人 o\*\*\*@example\.test/)).toBeVisible();
+  await expect(
+    page.getByText("DirectMail 已接收", { exact: false }),
+  ).toBeVisible();
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "更新发信通道" }).click();
   dialog = page.getByRole("dialog");

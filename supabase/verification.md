@@ -94,3 +94,15 @@
 - 迁移前后按同一查询计算 AIGC 表、字段、策略和函数，共 56 个组成部分，指纹均为 `50a385c10ae2215b91ed351d4aded716`。
 - Supabase 安全 Advisor 未发现新增 EDM 问题；性能 Advisor 只提示两项新通道外键索引尚未使用，空表阶段属于预期信息。共享项目既有 `aigc/public/Auth` 提示保持不变。
 - 本地 60 项单元/数据库测试和 6 项端到端测试，以及 lint、类型检查和生产构建均通过；没有调用 DirectMail、修改 DNS 或创建云端测试凭据。
+
+### P4-2 DirectMail 内部测试发送迁移（2026-09-12）
+
+- 仅应用新增迁移 `20260911155319_p4_directmail_test_delivery`；新增 `edm.delivery_test_attempts` 和测试发送 RPC，只修改 `edm`、`edm_private`。
+- 测试记录表为空且启用 RLS；`authenticated` 无直接表权限，只能执行准备和读取安全摘要两项入口，worker 领取与完成仅授予 `service_role`，`anon` 与 `aigc_api` 均无权限。
+- 测试收件人固定取当前管理员已验证登录邮箱，数据库仅保存掩码；审计不含完整邮箱、完整 DirectMail 回执、正文、nonce、密文或 AccessKey。
+- `edm-directmail-test` Edge Function v1 已部署为 Active；函数使用 `@supabase/server` 自行验证用户 JWT，因此平台旧式 `verify_jwt` 开关关闭，业务鉴权并未关闭。
+- 迁移前后按同一查询计算 AIGC 表、字段、策略和函数，共 62 个组成部分，指纹均为 `b70351784f68989a15a09e7f76aa582e`。
+- 权限核对结果：新表 RLS 已开启、0 行；`authenticated` 有 2 项入口 RPC、0 项表权限、0 项 worker 权限；`aigc_api` 对本批对象 0 项授权。
+- Supabase Advisor 未发现新增 EDM 安全问题；两项新索引尚无使用统计符合空表预期，其他提示均属于共享 `aigc`、`public` 或 Auth 的既有事项。
+- 本地 67 项单元/数据库测试、DirectMail 设置页端到端测试、lint、类型检查和生产构建均通过；真实邮件尚未发送。
+- 2026-09-12 已创建 `EDM_CREDENTIAL_KEYRING` Edge Function Secret，并与 Vercel Production 使用同一份密钥环。同步前只读确认 `edm.delivery_channels` 和 `edm_private.delivery_channel_credentials` 均为 0 行；未触碰 `aigc`，密钥值未进入仓库或本文档。

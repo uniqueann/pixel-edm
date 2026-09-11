@@ -453,6 +453,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      delivery_test_attempts: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          channel_id: string;
+          idempotency_key: string;
+          requested_by: string;
+          channel_version: number;
+          credential_version: number;
+          status: string;
+          recipient_hint: string | null;
+          provider_request_id: string | null;
+          provider_event_id: string | null;
+          error_category: string | null;
+          error_code: string | null;
+          started_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          workspace_id: string;
+          channel_id: string;
+          idempotency_key: string;
+          requested_by: string;
+          channel_version: number;
+          credential_version: number;
+          status?: string;
+          recipient_hint?: string | null;
+          provider_request_id?: string | null;
+          provider_event_id?: string | null;
+          error_category?: string | null;
+          error_code?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          channel_id?: string;
+          idempotency_key?: string;
+          requested_by?: string;
+          channel_version?: number;
+          credential_version?: number;
+          status?: string;
+          recipient_hint?: string | null;
+          provider_request_id?: string | null;
+          provider_event_id?: string | null;
+          error_category?: string | null;
+          error_code?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       members: {
         Row: {
           user_id: string;
@@ -718,6 +775,8 @@ export type Database = {
       get_delivery_channel: { Args: { payload: Json }; Returns: Json };
       save_delivery_channel: { Args: { payload: Json }; Returns: Json };
       disconnect_delivery_channel: { Args: { payload: Json }; Returns: Json };
+      prepare_delivery_test: { Args: { payload: Json }; Returns: Json };
+      get_delivery_test_summary: { Args: { payload: Json }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

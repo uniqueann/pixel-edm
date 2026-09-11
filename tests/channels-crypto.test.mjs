@@ -10,6 +10,7 @@ import {
   DeliveryAdapterError,
   directMailEndpointForRegion,
 } from "../src/features/channels/provider.ts";
+import { openCredentialEnvelope } from "../supabase/functions/_shared/credential-envelope.ts";
 
 const keyA = Buffer.alloc(32, 1).toString("base64");
 const keyB = Buffer.alloc(32, 2).toString("base64");
@@ -36,6 +37,32 @@ test("DirectMail 凭据使用 AES-GCM 加密且可按密钥版本解密", () => 
     accessKeyId: "test-access-key-id",
     accessKeySecret: "test-access-key-secret",
   });
+});
+
+test("Node 加密信封可由 Edge WebCrypto 使用同一 AAD 解密", async () => {
+  const source = JSON.stringify({
+    active: "key-a",
+    keys: { "key-a": keyA },
+  });
+  const encrypted = sealCredentialPayload(
+    parseCredentialKeyring(source),
+    context,
+    {
+      accessKeyId: "test-access-key-id",
+      accessKeySecret: "test-access-key-secret",
+    },
+  );
+  assert.deepEqual(
+    await openCredentialEnvelope({
+      keyringSource: source,
+      context,
+      envelope: encrypted,
+    }),
+    {
+      accessKeyId: "test-access-key-id",
+      accessKeySecret: "test-access-key-secret",
+    },
+  );
 });
 
 test("密文篡改、AAD 变化与错误密钥都会阻止解密", () => {

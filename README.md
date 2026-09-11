@@ -2,7 +2,7 @@
 
 基于交互原型构建的邮件营销管理应用。第一批已实现工程基础、真实 Auth 接入、EDM 用户和工作区数据库、七页应用外壳及基础设置。
 
-进度更新：2026-09-11，P1 已收尾；P2 客户、名单导入、模板管理与业务审计已实现并部署；P3-0 至 P3-4 已完成活动草稿、管理界面、动态收件人校验、前三位预览、不可变确认快照与安全 CSV 导出。P3-4 数据库迁移已应用，应用代码尚待提交部署。用户已实际验证 Google 登录与邮箱重置。
+进度更新：2026-09-12，P1、P2 和 P3 已完成；P4-0 至 P4-2 已实现 DirectMail 通道、加密凭据、管理员内部测试信和验证状态回写。P4-2 数据库迁移与 Edge Function 已部署，Vercel 与 Supabase Edge Functions 已同步密钥环，应用代码尚待提交；真实测试信仍待保存 RAM AccessKey 后验收。用户已实际验证 Google 登录与邮箱重置。
 
 ## 正式部署
 
@@ -28,6 +28,7 @@ npm run dev
 - `NEXT_PUBLIC_SUPABASE_URL`：Supabase 项目地址。
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`：公开客户端密钥；不使用 service role。
 - `NEXT_PUBLIC_SITE_URL`：本站完整 origin，本地为 `http://localhost:3105`。
+- `EDM_CREDENTIAL_KEYRING`：服务端与 Supabase Edge Function 共用的 AES-256-GCM 密钥环，只能保存为 Secret，不能使用 `NEXT_PUBLIC_` 前缀。
 
 ## 数据库归属与隔离
 
@@ -39,7 +40,7 @@ npm run dev
 
 首次登录后通过幂等 RPC 创建 EDM 用户和个人工作区。EDM 停用不会修改 AIGC 状态，也不会删除共享 Auth 账号。没有改写现有注册触发器；EDM 新注册账号仍会触发 content-up 现有资料/额度初始化。
 
-已应用 EDM 迁移：`20260909072930_edm_foundation`、`20260910035224_edm_contacts`、`20260910081147_edm_contact_imports`、`20260910092601_p2_templates_audit`、`20260910135553_p3_campaign_foundation`、`20260910144358_p3_campaign_editor_options`、`20260910223857_p3_campaign_preview`、`20260911015336_p3_campaign_confirmation`；本地文件版本均与云端记录对齐。
+已应用 EDM 迁移：`20260909072930_edm_foundation`、`20260910035224_edm_contacts`、`20260910081147_edm_contact_imports`、`20260910092601_p2_templates_audit`、`20260910135553_p3_campaign_foundation`、`20260910144358_p3_campaign_editor_options`、`20260910223857_p3_campaign_preview`、`20260911015336_p3_campaign_confirmation`、`20260911055101_p4_directmail_channels`、`20260911155319_p4_directmail_test_delivery`；本地文件版本均与云端记录对齐。
 
 ### 云端认证与验证记录
 
@@ -88,6 +89,8 @@ P2 模板管理与业务审计已实现并部署：支持纯文本编辑、七�
 
 P3-0 至 P3-4 已完成：活动草稿、角色权限、动态名单、变量校验、前三位预览、原子确认、不可变活动与收件人快照、历史查看和安全 CSV 导出均已实现。确认冻结模板版本及合并后的主题和正文，后续客户或模板变化不影响历史结果；重复确认只返回同一快照。云端最新迁移为 `20260911015336_p3_campaign_confirmation`，应用代码尚待提交触发部署，逐项状态见 [P3 活动管理交付清单](development-checklist-p3-campaigns.md)。
 
-后续批次：进入 P4，选择并接入首个真实 ESP，完成凭据、发件身份、测试信、发送队列、限速、幂等和异常恢复；之后实现公开退订与回执、团队邀请。
+P4-0 至 P4-2 已实现：首家 ESP 为阿里云 DirectMail，支持工作区级加密凭据、管理员内部测试信、幂等领取、验证状态回写和脱敏审计。`send.contentup.cc` 与 `edm@send.contentup.cc` 已在阿里云侧创建，Vercel Production 与 Supabase Edge Functions 已同步密钥环；真实测试信尚待保存专用 RAM AccessKey 后验收，详见 [P4 发信闭环交付清单](development-checklist-p4-delivery.md)。
+
+后续批次：P4-3 正式发送队列、限速、幂等恢复和人工核对；之后实现公开退订与回执、团队邀请。
 
 设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 P1 与三个 P2 交付清单；原始交互文件归档于 `references/seller-post-office-premium.html`。

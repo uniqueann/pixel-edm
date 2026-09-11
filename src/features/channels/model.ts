@@ -140,3 +140,28 @@ export type DeliveryChannel = {
   updated_at: string;
   version: number;
 };
+
+export const deliveryTestStatuses = [
+  "pending",
+  "processing",
+  "accepted",
+  "failed",
+  "unknown",
+] as const;
+
+export type DeliveryTestStatus = (typeof deliveryTestStatuses)[number];
+
+export type DeliveryTestAttempt = {
+  id: string;
+  workspace_id: string;
+  channel_id: string;
+  status: DeliveryTestStatus;
+  recipient_hint?: string;
+  provider_request_hint?: string;
+  provider_event_hint?: string;
+  error_category?: string;
+  error_code?: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+};

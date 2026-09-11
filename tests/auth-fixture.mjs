@@ -166,6 +166,40 @@ const server = createServer(async (req, res) => {
       return uid ? send(user(uid)) : send({ message: "需要登录" }, 401);
     if (url.pathname === "/auth/v1/logout") return send({});
     if (!uid) return send({ message: "需要登录" }, 401);
+    if (url.pathname === "/functions/v1/edm-directmail-test") {
+      const prepared = (
+        await asUser(
+          db,
+          uid,
+          `select edm.prepare_delivery_test('${JSON.stringify(input).replaceAll("'", "''")}'::jsonb) as result`,
+        )
+      ).rows[0].result;
+      if (!prepared.is_new)
+        return send({ data: prepared.attempt, reused: true });
+      const claim = (
+        await db.query(
+          `select edm.worker_claim_delivery_test('${JSON.stringify({
+            workspace_id: input.workspace_id,
+            attempt_id: input.attempt_id,
+            recipient_email: user(uid).email,
+          }).replaceAll("'", "''")}'::jsonb) as result`,
+        )
+      ).rows[0].result;
+      if (!claim.claim_acquired)
+        return send({ data: claim.attempt, reused: true });
+      const completed = (
+        await db.query(
+          `select edm.worker_complete_delivery_test('${JSON.stringify({
+            workspace_id: input.workspace_id,
+            attempt_id: input.attempt_id,
+            status: "accepted",
+            provider_request_id: "fixture-request-123456",
+            provider_event_id: "fixture-event-654321",
+          }).replaceAll("'", "''")}'::jsonb) as result`,
+        )
+      ).rows[0].result;
+      return send({ data: completed });
+    }
     if (url.pathname === "/rest/v1/rpc/initialize_member") {
       const result = await asUser(
         db,
@@ -209,6 +243,8 @@ const server = createServer(async (req, res) => {
         "get_delivery_channel",
         "save_delivery_channel",
         "disconnect_delivery_channel",
+        "prepare_delivery_test",
+        "get_delivery_test_summary",
       ].includes(rpc)
     ) {
       const result = await asUser(

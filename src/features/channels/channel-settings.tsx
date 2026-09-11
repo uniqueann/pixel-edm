@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound, MailCheck, ShieldCheck } from "lucide-react";
+import { KeyRound, MailCheck, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,13 +27,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { disconnectDeliveryChannel, saveDeliveryChannel } from "./actions";
+import {
+  disconnectDeliveryChannel,
+  saveDeliveryChannel,
+  sendDeliveryChannelTest,
+} from "./actions";
 import {
   deliveryChannelInput,
   deliveryChannelStatusLabels,
   directMailRegionLabels,
   type DeliveryChannel,
   type DeliveryChannelInput,
+  type DeliveryTestAttempt,
 } from "./model";
 import { directMailRegions } from "./provider";
 
@@ -47,9 +52,9 @@ function defaults(input: {
     workspace_id: input.workspaceId,
     id: channel?.id,
     expected_version: channel?.version,
-    region: channel?.region ?? "ap-southeast-1",
+    region: channel?.region ?? "cn-hangzhou",
     sender_domain: channel?.sender_domain ?? "send.contentup.cc",
-    sender_address: channel?.sender_address ?? "",
+    sender_address: channel?.sender_address ?? "edm@send.contentup.cc",
     sender_alias: channel?.sender_alias ?? input.workspaceName.slice(0, 14),
     reply_to_address: channel?.reply_to_address ?? "",
     access_key_id: "",
@@ -72,20 +77,27 @@ export function ChannelSettings({
   workspaceId,
   workspaceName,
   initialChannel,
+  initialTest,
+  testRecipient,
   canEdit,
   canStoreCredentials,
 }: {
   workspaceId: string;
   workspaceName: string;
   initialChannel: DeliveryChannel | null;
+  initialTest: DeliveryTestAttempt | null;
+  testRecipient: string;
   canEdit: boolean;
   canStoreCredentials: boolean;
 }) {
   const router = useRouter();
   const [channel, setChannel] = useState(initialChannel);
+  const [lastTest, setLastTest] = useState(initialTest);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [disconnecting, startDisconnect] = useTransition();
+  const [testing, startTesting] = useTransition();
+  const testIdempotency = useRef<string | null>(null);
   const form = useForm<DeliveryChannelInput>({
     resolver: zodResolver(deliveryChannelInput),
     defaultValues: defaults({ workspaceId, workspaceName, channel }),
@@ -114,6 +126,33 @@ export function ChannelSettings({
       }
       setChannel(result.data);
       toast.success("发信通道已断开，凭据已删除");
+      router.refresh();
+    });
+  }
+
+  function sendTest() {
+    if (!channel || testing) return;
+    const idempotencyKey = testIdempotency.current ?? crypto.randomUUID();
+    testIdempotency.current = idempotencyKey;
+    startTesting(async () => {
+      const result = await sendDeliveryChannelTest({
+        workspace_id: workspaceId,
+        channel_id: channel.id,
+        expected_version: channel.version,
+        idempotency_key: idempotencyKey,
+      });
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      testIdempotency.current = null;
+      setLastTest(result.data);
+      if (result.channel) setChannel(result.channel);
+      if (result.data.status === "accepted")
+        toast.success("测试邮件已被 DirectMail 接收");
+      else if (result.data.status === "unknown")
+        toast.warning("发送结果未知，请先核对邮箱和 DirectMail 控制台");
+      else toast.error(`测试发送失败：${result.data.error_code ?? "UNKNOWN"}`);
       router.refresh();
     });
   }
@@ -165,12 +204,23 @@ export function ChannelSettings({
                   : "未保存"
               }
             />
+            <Detail
+              label="最近验证"
+              value={
+                channel.last_verified_at
+                  ? new Intl.DateTimeFormat("zh-CN", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }).format(new Date(channel.last_verified_at))
+                  : "尚未通过测试发送"
+              }
+            />
           </div>
         ) : (
           <div className="rounded-xl border border-dashed p-4">
             <p className="text-sm">尚未配置发信通道。</p>
             <p className="hint m-0">
-              先保存配置；有可用账号后再进入验证与测试发送阶段。
+              保存区域、已验证发件身份和专用 RAM AccessKey 后即可测试发送。
             </p>
           </div>
         )}
@@ -179,9 +229,37 @@ export function ChannelSettings({
           <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <p className="hint m-0">
             AccessKey 使用 AES-256-GCM 加密后存入私密 schema，页面不会回显
-            Secret。本阶段保存配置不会发送邮件。
+            Secret。测试邮件只发送到当前管理员的已验证登录邮箱。
           </p>
         </div>
+
+        {lastTest && (
+          <div className="rounded-xl border p-4 text-sm">
+            <p className="font-medium">
+              最近测试：
+              {
+                {
+                  pending: "等待发送",
+                  processing: "发送中",
+                  accepted: "DirectMail 已接收",
+                  failed: "发送失败",
+                  unknown: "发送结果未知",
+                }[lastTest.status]
+              }
+            </p>
+            <p className="hint mt-1 mb-0">
+              {lastTest.recipient_hint &&
+                `收件人 ${lastTest.recipient_hint} · `}
+              {lastTest.completed_at
+                ? new Intl.DateTimeFormat("zh-CN", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }).format(new Date(lastTest.completed_at))
+                : "尚未完成"}
+              {lastTest.error_code && ` · ${lastTest.error_code}`}
+            </p>
+          </div>
+        )}
 
         {!canStoreCredentials && canEdit && (
           <p role="alert" className="field-error">
@@ -214,8 +292,8 @@ export function ChannelSettings({
                     {connected ? "更新阿里云发信通道" : "连接阿里云发信通道"}
                   </DialogTitle>
                   <DialogDescription>
-                    当前只保存区域、发件身份和加密凭据，不会调用
-                    DirectMail，也不会发送测试邮件。
+                    保存区域、发件身份和加密凭据；只有点击“发送测试邮件”才会调用
+                    DirectMail。
                   </DialogDescription>
                 </DialogHeader>
                 <form
@@ -369,13 +447,24 @@ export function ChannelSettings({
               </DialogContent>
             </Dialog>
             {connected && (
-              <Button
-                variant="outline"
-                disabled={disconnecting}
-                onClick={disconnect}
-              >
-                {disconnecting ? "断开中…" : "断开发信通道"}
-              </Button>
+              <>
+                <Button
+                  variant="secondary"
+                  disabled={testing || !channel.credential_configured}
+                  onClick={sendTest}
+                  title={testRecipient ? `发送至 ${testRecipient}` : undefined}
+                >
+                  <Send aria-hidden="true" />
+                  {testing ? "测试发送中…" : "发送测试邮件"}
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={disconnecting || testing}
+                  onClick={disconnect}
+                >
+                  {disconnecting ? "断开中…" : "断开发信通道"}
+                </Button>
+              </>
             )}
           </div>
         )}

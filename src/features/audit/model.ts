@@ -22,6 +22,10 @@ export const activityLabels: Record<string, string> = {
   "delivery_channel.updated": "更新发信通道",
   "delivery_channel.credentials_rotated": "轮换发信凭据",
   "delivery_channel.disconnected": "断开发信通道",
+  "delivery_channel.test_started": "开始测试发信",
+  "delivery_channel.test_accepted": "测试发信已接收",
+  "delivery_channel.test_failed": "测试发信失败",
+  "delivery_channel.test_unknown": "测试发信结果未知",
 };
 
 export type ActivityLog = {

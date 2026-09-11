@@ -9,7 +9,11 @@ import {
   credentialStorageReady,
   sealDirectMailCredentials,
 } from "./credentials";
-import { deliveryChannelInput, type DeliveryChannel } from "./model";
+import {
+  deliveryChannelInput,
+  type DeliveryChannel,
+  type DeliveryTestAttempt,
+} from "./model";
 
 async function adminWorkspace(workspaceId: string) {
   const context = await getContext();
@@ -30,6 +34,8 @@ function actionError(error: unknown) {
     "重新连接必须",
     "首次连接必须",
     "服务器尚未配置",
+    "测试发送过于频繁",
+    "登录邮箱尚未验证",
   ];
   return {
     error: safeMessages.some((prefix) => message.startsWith(prefix))
@@ -53,6 +59,17 @@ export async function getDeliveryChannel() {
   const { workspace } = await getContext();
   const db = await serverClient();
   return loadChannel(db, workspace.id);
+}
+
+export async function getDeliveryTestSummary(channelId: string) {
+  const { workspace, role } = await getContext();
+  if (role !== "admin") return null;
+  const db = await serverClient();
+  const { data, error } = await db.rpc("get_delivery_test_summary", {
+    payload: { workspace_id: workspace.id, channel_id: channelId },
+  });
+  if (error) throw new Error("测试发送结果加载失败，请重试。");
+  return data as unknown as DeliveryTestAttempt | null;
 }
 
 export async function saveDeliveryChannel(input: unknown) {
@@ -125,6 +142,32 @@ export async function disconnectDeliveryChannel(input: unknown) {
     revalidatePath("/logs");
     revalidatePath("/dashboard");
     return { data: data as unknown as DeliveryChannel };
+  } catch (error) {
+    return actionError(error);
+  }
+}
+
+const deliveryTestInput = z.object({
+  workspace_id: z.string().uuid(),
+  channel_id: z.string().uuid(),
+  expected_version: z.number().int().positive(),
+  idempotency_key: z.string().uuid(),
+});
+
+export async function sendDeliveryChannelTest(input: unknown) {
+  try {
+    const parsed = deliveryTestInput.parse(input);
+    const db = await adminWorkspace(parsed.workspace_id);
+    const { data, error } = await db.functions.invoke("edm-directmail-test", {
+      body: { ...parsed, attempt_id: parsed.idempotency_key },
+    });
+    if (error) throw new Error("测试邮件发送失败，请稍后重试。");
+    if (!data?.data)
+      throw new Error(data?.error ?? "测试邮件发送失败，请稍后重试。");
+    const channel = await loadChannel(db, parsed.workspace_id);
+    revalidatePath("/settings");
+    revalidatePath("/logs");
+    return { data: data.data as DeliveryTestAttempt, channel };
   } catch (error) {
     return actionError(error);
   }

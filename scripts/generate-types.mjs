@@ -50,6 +50,8 @@ try {
     "get_delivery_channel: { Args: {payload:Json}; Returns:Json }",
     "save_delivery_channel: { Args: {payload:Json}; Returns:Json }",
     "disconnect_delivery_channel: { Args: {payload:Json}; Returns:Json }",
+    "prepare_delivery_test: { Args: {payload:Json}; Returns:Json }",
+    "get_delivery_test_summary: { Args: {payload:Json}; Returns:Json }",
   ].join(";");
   await writeFile(
     "src/lib/supabase/database.types.ts",
