@@ -206,6 +206,9 @@ const server = createServer(async (req, res) => {
         "confirm_campaign",
         "duplicate_confirmed_campaign",
         "get_campaign_export_chunk",
+        "get_delivery_channel",
+        "save_delivery_channel",
+        "disconnect_delivery_channel",
       ].includes(rpc)
     ) {
       const result = await asUser(

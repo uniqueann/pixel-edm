@@ -83,3 +83,14 @@
 - 匿名 Data API 调用确认 RPC 返回 HTTP 401 / PostgreSQL 42501。迁移前后按同一查询计算 AIGC 表、字段、策略和函数，共 62 个组成部分，指纹均为 `1029237874df0991da81b78cbad0027c`。
 - Supabase 安全 Advisor 未发现新增 EDM 问题；性能 Advisor 仅提示三项新索引尚未使用，空表阶段属于预期信息。现有 `aigc/public/Auth` 安全提示和共享项目性能提示保持不变，按隔离约束未修改。
 - 本地 49 项单元/数据库测试、5 项端到端测试，以及 lint、类型、格式和生产构建均通过；云端没有创建测试活动或修改既有业务数据。
+
+### P4-0 / P4-1 DirectMail 通道迁移（2026-09-11）
+
+- 仅应用新增迁移 `20260911055101_p4_directmail_channels`；只修改 `edm` 和 `edm_private`，未重放或改写其他项目迁移。
+- 新增 `edm.delivery_channels` 安全摘要表和 `edm_private.delivery_channel_credentials` 加密凭据表；两表均启用 RLS，云端当前均为 0 行。
+- `authenticated` 对两表均无直接读取权限，只能执行获取摘要、保存配置和断开连接三项 `edm` 调用者权限包装；内部固定空搜索路径实现继续校验工作区管理员。
+- `anon` 和 `aigc_api` 均不能执行新 RPC；`aigc_api` 对 `edm`、`edm_private` 仍无 USAGE。公开返回不包含 nonce、密文或 Secret。
+- 断开连接在同一事务内物理删除私密凭据并写安全审计；重复断开幂等，重新连接必须提交新凭据。
+- 迁移前后按同一查询计算 AIGC 表、字段、策略和函数，共 56 个组成部分，指纹均为 `50a385c10ae2215b91ed351d4aded716`。
+- Supabase 安全 Advisor 未发现新增 EDM 问题；性能 Advisor 只提示两项新通道外键索引尚未使用，空表阶段属于预期信息。共享项目既有 `aigc/public/Auth` 提示保持不变。
+- 本地 60 项单元/数据库测试和 6 项端到端测试，以及 lint、类型检查和生产构建均通过；没有调用 DirectMail、修改 DNS 或创建云端测试凭据。

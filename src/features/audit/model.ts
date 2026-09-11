@@ -18,6 +18,10 @@ export const activityLabels: Record<string, string> = {
   "campaign.confirmed": "确认并冻结活动",
   "campaign.csv_exported": "导出活动 CSV",
   "campaign.duplicated": "复制活动草稿",
+  "delivery_channel.configured": "连接发信通道",
+  "delivery_channel.updated": "更新发信通道",
+  "delivery_channel.credentials_rotated": "轮换发信凭据",
+  "delivery_channel.disconnected": "断开发信通道",
 };
 
 export type ActivityLog = {

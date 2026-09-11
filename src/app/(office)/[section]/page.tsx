@@ -9,6 +9,9 @@ import { listContacts } from "@/features/contacts/actions";
 import { listTemplates } from "@/features/templates/actions";
 import { listActivityLogs } from "@/features/audit/actions";
 import { activityLabels } from "@/features/audit/model";
+import { getDeliveryChannel } from "@/features/channels/actions";
+import { ChannelSettings } from "@/features/channels/channel-settings";
+import { credentialStorageReady } from "@/features/channels/credentials";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -45,7 +48,8 @@ export default async function Page({
   )
     notFound();
   const { member, workspace, role, user } = await getContext();
-  if (section === "settings")
+  if (section === "settings") {
+    const deliveryChannel = await getDeliveryChannel();
     return (
       <>
         <div className="section-heading">
@@ -64,15 +68,26 @@ export default async function Page({
             />
           </CardContent>
         </Card>
-        <div className="mt-7">
-          <h2>发信通道</h2>
-          <p className="hint mt-2">
-            后续可连接你自己的发信账号，验证发件人并发送测试邮件。
-          </p>
-          <Badge variant="outline">尚未接入</Badge>
+        <div className="mt-7 space-y-3">
+          <div>
+            <h2>发信通道</h2>
+            <p className="hint mt-2 mb-0">
+              保存工作区自己的阿里云 DirectMail
+              配置；验证与测试发送将在下一批接入。
+            </p>
+          </div>
+          <ChannelSettings
+            key={workspace.id}
+            workspaceId={workspace.id}
+            workspaceName={workspace.name}
+            initialChannel={deliveryChannel}
+            canEdit={role === "admin"}
+            canStoreCredentials={credentialStorageReady()}
+          />
         </div>
       </>
     );
+  }
   if (section === "dashboard" || section === "team") {
     const db = await serverClient();
     const { data: members, error } = await db

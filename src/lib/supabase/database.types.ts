@@ -387,6 +387,72 @@ export type Database = {
         };
         Relationships: [];
       };
+      delivery_channels: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          provider: string;
+          status: string;
+          region: string;
+          sender_domain: string;
+          sender_address: string;
+          sender_alias: string;
+          reply_to_address: string | null;
+          access_key_hint: string | null;
+          credential_version: number;
+          last_verified_at: string | null;
+          last_error_code: string | null;
+          created_by: string;
+          updated_by: string;
+          created_at: string;
+          updated_at: string;
+          disconnected_at: string | null;
+          version: number;
+        };
+        Insert: {
+          id: string;
+          workspace_id: string;
+          provider?: string;
+          status?: string;
+          region: string;
+          sender_domain: string;
+          sender_address: string;
+          sender_alias: string;
+          reply_to_address?: string | null;
+          access_key_hint?: string | null;
+          credential_version?: number;
+          last_verified_at?: string | null;
+          last_error_code?: string | null;
+          created_by: string;
+          updated_by: string;
+          created_at?: string;
+          updated_at?: string;
+          disconnected_at?: string | null;
+          version?: number;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          provider?: string;
+          status?: string;
+          region?: string;
+          sender_domain?: string;
+          sender_address?: string;
+          sender_alias?: string;
+          reply_to_address?: string | null;
+          access_key_hint?: string | null;
+          credential_version?: number;
+          last_verified_at?: string | null;
+          last_error_code?: string | null;
+          created_by?: string;
+          updated_by?: string;
+          created_at?: string;
+          updated_at?: string;
+          disconnected_at?: string | null;
+          version?: number;
+        };
+        Relationships: [];
+      };
       members: {
         Row: {
           user_id: string;
@@ -649,6 +715,9 @@ export type Database = {
       save_campaign: { Args: { payload: Json }; Returns: string };
       set_campaign_archived: { Args: { payload: Json }; Returns: string };
       get_campaign_editor_options: { Args: { payload: Json }; Returns: Json };
+      get_delivery_channel: { Args: { payload: Json }; Returns: Json };
+      save_delivery_channel: { Args: { payload: Json }; Returns: Json };
+      disconnect_delivery_channel: { Args: { payload: Json }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

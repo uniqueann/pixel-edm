@@ -24,6 +24,8 @@ export default defineConfig({
         NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54329",
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-public-key",
         NEXT_PUBLIC_SITE_URL: "http://localhost:3100",
+        EDM_CREDENTIAL_KEYRING:
+          '{"active":"test-v1","keys":{"test-v1":"MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="}}',
       },
     },
   ],
