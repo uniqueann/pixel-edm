@@ -329,7 +329,7 @@ test("P3-3 动态收件人、变量完整性与前三封预览", async (t) => {
     );
   });
 
-  await t.test("预览不创建快照、收件人表或业务日志", async () => {
+  await t.test("预览不会写入快照、持久化人数或业务日志", async () => {
     const tables = (
       await db.query(
         `select table_name from information_schema.tables
@@ -337,7 +337,19 @@ test("P3-3 动态收件人、变量完整性与前三封预览", async (t) => {
            and (table_name like 'campaign_recipient%' or table_name like 'campaign_snapshot%')`,
       )
     ).rows;
-    assert.deepEqual(tables, []);
+    assert.deepEqual(tables.map((item) => item.table_name).sort(), [
+      "campaign_recipient_snapshots",
+      "campaign_snapshots",
+    ]);
+    assert.equal(
+      (
+        await db.query(
+          "select count(*)::int n from edm.campaign_snapshots where workspace_id=$1",
+          [workspace],
+        )
+      ).rows[0].n,
+      0,
+    );
     assert.equal(
       (
         await db.query(

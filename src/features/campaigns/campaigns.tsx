@@ -17,6 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  confirmCampaign,
+  duplicateConfirmedCampaign,
   getCampaign,
   getCampaignPreview,
   saveCampaign,
@@ -50,7 +52,8 @@ function formattedDate(value: string) {
 function statusVariant(status: CampaignStatus) {
   if (status === "failed" || status === "completed_with_errors")
     return "destructive" as const;
-  if (status === "completed") return "default" as const;
+  if (status === "confirmed" || status === "completed")
+    return "default" as const;
   if (status === "draft") return "secondary" as const;
   return "outline" as const;
 }
@@ -81,6 +84,9 @@ export function Campaigns({
   const [previewError, setPreviewError] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [editing, setEditing] = useState<CampaignDetail | null | undefined>();
+  const [duplicateSource, setDuplicateSource] = useState<CampaignSummary>();
+  const [duplicateTemplateId, setDuplicateTemplateId] = useState("");
+  const [duplicateError, setDuplicateError] = useState("");
   const [name, setName] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [audienceType, setAudienceType] = useState<"all" | "tag">("all");
@@ -250,7 +256,7 @@ export function Campaigns({
       });
       if ("error" in result) toast.error(result.error);
       else {
-        toast.success(archived ? "活动草稿已恢复" : "活动草稿已归档");
+        toast.success(archived ? "活动已恢复" : "活动已归档");
         router.refresh();
       }
     } catch {
@@ -258,6 +264,77 @@ export function Campaigns({
     } finally {
       setBusy(false);
     }
+  }
+
+  async function confirmPreview() {
+    if (!previewing || !preview || !preview.validation.valid) return;
+    if (
+      !window.confirm(
+        `确认“${preview.campaign.name}”并冻结 ${preview.recipients.eligible_count} 位收件人？确认后不可撤回或编辑。`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const result = await confirmCampaign({
+        workspace_id: workspace,
+        id: previewing.id,
+        expected_campaign_version: preview.campaign.version,
+        expected_template_version: preview.template.version,
+      });
+      if ("error" in result) {
+        setPreviewError(result.error ?? "活动确认失败，请重新预览。");
+        return;
+      }
+      previewRequest.current += 1;
+      setPreviewing(undefined);
+      setPreview(undefined);
+      toast.success(`活动已确认，冻结 ${result.data.recipient_count} 位收件人`);
+      router.refresh();
+    } catch {
+      setPreviewError("活动确认失败，请重新预览后重试。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function duplicateCampaign(
+    campaign: CampaignSummary,
+    replacementTemplateId?: string,
+  ) {
+    setBusy(true);
+    setDuplicateError("");
+    try {
+      const result = await duplicateConfirmedCampaign({
+        workspace_id: workspace,
+        id: campaign.id,
+        template_id: replacementTemplateId || undefined,
+      });
+      if ("error" in result) {
+        setDuplicateError(result.error ?? "活动复制失败，请重试。");
+        if (!campaign.template_archived) toast.error(result.error);
+        return;
+      }
+      setDuplicateSource(undefined);
+      setDuplicateTemplateId("");
+      toast.success("已复制为新的活动草稿");
+      router.refresh();
+    } catch {
+      setDuplicateError("活动复制失败，请重试。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function openDuplicate(campaign: CampaignSummary) {
+    if (!campaign.template_archived) {
+      void duplicateCampaign(campaign);
+      return;
+    }
+    returnFocus.current = document.activeElement as HTMLElement | null;
+    setDuplicateSource(campaign);
+    setDuplicateTemplateId("");
+    setDuplicateError("");
   }
 
   return (
@@ -331,33 +408,69 @@ export function Campaigns({
                   {formattedDate(campaign.created_at)}
                 </p>
               </div>
-              {canEdit && campaign.status === "draft" && (
-                <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
-                  {!archived && (
-                    <>
-                      <Button
-                        variant="outline"
-                        disabled={busy || Boolean(loadingCampaignId)}
-                        onClick={() => openPreview(campaign)}
-                      >
-                        预览
-                      </Button>
-                      <Button
-                        variant="outline"
-                        disabled={busy || Boolean(loadingCampaignId)}
-                        onClick={() => openEditor(campaign)}
-                      >
-                        {loadingCampaignId === campaign.id ? "加载中…" : "编辑"}
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    variant="outline"
-                    disabled={busy || Boolean(loadingCampaignId)}
-                    onClick={() => archiveCampaign(campaign)}
-                  >
-                    {archived ? "恢复" : "归档"}
-                  </Button>
+              {canEdit &&
+                (campaign.status === "draft" ||
+                  campaign.status === "confirmed") && (
+                  <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
+                    {!archived && campaign.status === "draft" && (
+                      <>
+                        <Button
+                          variant="outline"
+                          disabled={busy || Boolean(loadingCampaignId)}
+                          onClick={() => openPreview(campaign)}
+                        >
+                          预览
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={busy || Boolean(loadingCampaignId)}
+                          onClick={() => openEditor(campaign)}
+                        >
+                          {loadingCampaignId === campaign.id
+                            ? "加载中…"
+                            : "编辑"}
+                        </Button>
+                      </>
+                    )}
+                    {campaign.status === "confirmed" && (
+                      <>
+                        <Button asChild variant="outline">
+                          <a href={`/campaigns/${campaign.id}/export`}>
+                            下载 CSV
+                          </a>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => openDuplicate(campaign)}
+                        >
+                          复制为草稿
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      variant="outline"
+                      disabled={busy || Boolean(loadingCampaignId)}
+                      onClick={() => archiveCampaign(campaign)}
+                    >
+                      {archived ? "恢复" : "归档"}
+                    </Button>
+                  </div>
+                )}
+              {campaign.status === "confirmed" && (
+                <div className="w-full border-t pt-3 text-sm sm:w-auto sm:min-w-48 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                  <p className="m-0 font-medium">
+                    冻结 {campaign.recipient_count ?? 0} 位收件人
+                  </p>
+                  <p className="hint m-0">
+                    {campaign.confirmed_at
+                      ? formattedDate(campaign.confirmed_at)
+                      : "确认时间不可用"}
+                  </p>
+                  <p className="hint m-0">
+                    {campaign.confirmed_by_name ?? "工作区成员"} · 模板版本{" "}
+                    {campaign.snapshot_template_version ?? "-"}
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -476,6 +589,13 @@ export function Campaigns({
                 )}
 
               {preview.validation.valid &&
+                preview.recipients.eligible_count > 10000 && (
+                  <p className="field-error" role="alert">
+                    单个活动最多确认 10000 位收件人，请拆分标签后重试。
+                  </p>
+                )}
+
+              {preview.validation.valid &&
                 preview.recipients.sample.length > 0 && (
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -515,6 +635,17 @@ export function Campaigns({
           )}
 
           <div className="flex flex-wrap gap-2">
+            {preview?.validation.valid &&
+              preview.recipients.eligible_count > 0 &&
+              preview.recipients.eligible_count <= 10000 && (
+                <Button
+                  type="button"
+                  disabled={busy || previewLoading}
+                  onClick={() => void confirmPreview()}
+                >
+                  {busy ? "确认中…" : "确认并冻结活动"}
+                </Button>
+              )}
             <Button
               type="button"
               variant="outline"
@@ -549,6 +680,73 @@ export function Campaigns({
               </Button>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(duplicateSource)}
+        onOpenChange={(open) => {
+          if (!open && !busy) setDuplicateSource(undefined);
+        }}
+      >
+        <DialogContent
+          placement="bottom"
+          className="bottom-sheet max-h-[90dvh] overflow-y-auto"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            returnFocus.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>复制为活动草稿</DialogTitle>
+            <DialogDescription>
+              原模板已归档，请选择一套使用中的模板。受众规则和活动变量会从确认快照复制。
+            </DialogDescription>
+          </DialogHeader>
+          {editorOptions.templates.length ? (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="duplicate-campaign-template">邮件模板</Label>
+                <select
+                  id="duplicate-campaign-template"
+                  className="w-full rounded-md border bg-white px-3 py-2"
+                  value={duplicateTemplateId}
+                  onChange={(event) =>
+                    setDuplicateTemplateId(event.target.value)
+                  }
+                >
+                  <option value="">请选择模板</option>
+                  {editorOptions.templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.category} · {template.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {duplicateError && (
+                <p className="field-error" role="alert">
+                  {duplicateError}
+                </p>
+              )}
+              <Button
+                type="button"
+                disabled={busy || !duplicateTemplateId}
+                onClick={() =>
+                  duplicateSource &&
+                  void duplicateCampaign(duplicateSource, duplicateTemplateId)
+                }
+              >
+                {busy ? "复制中…" : "创建活动草稿"}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="field-error">当前没有使用中的模板。</p>
+              <Button asChild variant="outline">
+                <Link href="/templates">前往模板库</Link>
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

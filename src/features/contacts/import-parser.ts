@@ -71,9 +71,3 @@ export function parseImportText(
   if (!rows.length) throw new Error("名单中没有数据行");
   return { rows, warnings };
 }
-
-export function csvCell(value: unknown) {
-  let text = Array.isArray(value) ? value.join("|") : String(value ?? "");
-  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
-  return `"${text.replaceAll('"', '""')}"`;
-}

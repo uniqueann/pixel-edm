@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { csvCell } from "@/lib/csv";
 import {
   confirmContactImport,
   exportContactImport,
@@ -15,7 +16,7 @@ import {
   prepareContactImport,
   processContactImportBatch,
 } from "./import-actions";
-import { csvCell, parseImportText } from "./import-parser";
+import { parseImportText } from "./import-parser";
 import type { ContactImportDetail, ContactImportHistory } from "./import-model";
 
 const resultLabels: Record<string, string> = {

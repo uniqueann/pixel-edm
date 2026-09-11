@@ -54,6 +54,120 @@ export type Database = {
         };
         Relationships: [];
       };
+      campaign_recipient_snapshots: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          snapshot_id: string;
+          position: number;
+          contact_id: string;
+          email: string;
+          name: string;
+          subject: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          snapshot_id: string;
+          position: number;
+          contact_id: string;
+          email: string;
+          name: string;
+          subject: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          snapshot_id?: string;
+          position?: number;
+          contact_id?: string;
+          email?: string;
+          name?: string;
+          subject?: string;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      campaign_snapshots: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          campaign_id: string;
+          campaign_name: string;
+          template_id: string;
+          template_name: string;
+          template_subject: string;
+          template_body: string;
+          template_version: number;
+          audience_type: string;
+          tag_id: string | null;
+          tag_name: string | null;
+          variables: Json;
+          audience_count: number;
+          recipient_count: number;
+          excluded_archived_count: number;
+          excluded_suppressed_count: number;
+          excluded_not_subscribed_count: number;
+          confirmed_by: string;
+          confirmed_by_name: string;
+          confirmed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          campaign_id: string;
+          campaign_name: string;
+          template_id: string;
+          template_name: string;
+          template_subject: string;
+          template_body: string;
+          template_version: number;
+          audience_type: string;
+          tag_id?: string | null;
+          tag_name?: string | null;
+          variables: Json;
+          audience_count: number;
+          recipient_count: number;
+          excluded_archived_count: number;
+          excluded_suppressed_count: number;
+          excluded_not_subscribed_count: number;
+          confirmed_by: string;
+          confirmed_by_name: string;
+          confirmed_at: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          campaign_id?: string;
+          campaign_name?: string;
+          template_id?: string;
+          template_name?: string;
+          template_subject?: string;
+          template_body?: string;
+          template_version?: number;
+          audience_type?: string;
+          tag_id?: string | null;
+          tag_name?: string | null;
+          variables?: Json;
+          audience_count?: number;
+          recipient_count?: number;
+          excluded_archived_count?: number;
+          excluded_suppressed_count?: number;
+          excluded_not_subscribed_count?: number;
+          confirmed_by?: string;
+          confirmed_by_name?: string;
+          confirmed_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       campaigns: {
         Row: {
           id: string;
@@ -526,6 +640,12 @@ export type Database = {
       list_campaigns: { Args: { payload: Json }; Returns: Json };
       get_campaign: { Args: { payload: Json }; Returns: Json };
       get_campaign_preview: { Args: { payload: Json }; Returns: Json };
+      confirm_campaign: { Args: { payload: Json }; Returns: Json };
+      duplicate_confirmed_campaign: {
+        Args: { payload: Json };
+        Returns: string;
+      };
+      get_campaign_export_chunk: { Args: { payload: Json }; Returns: Json };
       save_campaign: { Args: { payload: Json }; Returns: string };
       set_campaign_archived: { Args: { payload: Json }; Returns: string };
       get_campaign_editor_options: { Args: { payload: Json }; Returns: Json };

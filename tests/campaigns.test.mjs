@@ -140,7 +140,8 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
       assert.equal(list.items[0].name, "秋季活动");
       assert.equal(list.items[0].tag_name, "VIP");
       assert.equal("variables" in list.items[0], false);
-      assert.equal("recipient_count" in list.items[0], false);
+      assert.equal(list.items[0].recipient_count, null);
+      assert.equal(list.items[0].confirmed_at, null);
       assert.equal("subject" in list.items[0], false);
 
       await assert.rejects(
@@ -394,7 +395,7 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
         expected_version: 4,
         archived: true,
       }),
-      /只有草稿/,
+      /当前活动状态/,
     );
     await assert.rejects(
       rpc("save_campaign", {
@@ -411,7 +412,7 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
   });
 
   await t.test(
-    "活动审计不记录变量值或模板正文，P3-1 不创建快照表",
+    "活动审计不记录变量值或模板正文，P3-4 快照表已隔离",
     async () => {
       for (const action of [
         "campaign.created",
@@ -446,7 +447,10 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
           "select table_name from information_schema.tables where table_schema='edm' and (table_name like 'campaign_recipient%' or table_name like 'campaign_snapshot%')",
         )
       ).rows;
-      assert.deepEqual(tables, []);
+      assert.deepEqual(tables.map((item) => item.table_name).sort(), [
+        "campaign_recipient_snapshots",
+        "campaign_snapshots",
+      ]);
     },
   );
 });

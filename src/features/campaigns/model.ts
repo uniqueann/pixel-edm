@@ -70,6 +70,7 @@ export const campaignInput = z
 
 export type CampaignStatus =
   | "draft"
+  | "confirmed"
   | "queued"
   | "sending"
   | "completed"
@@ -78,6 +79,7 @@ export type CampaignStatus =
 
 export const campaignStatusLabels: Record<CampaignStatus, string> = {
   draft: "草稿",
+  confirmed: "已确认",
   queued: "排队中",
   sending: "发送中",
   completed: "已完成",
@@ -130,6 +132,33 @@ export type CampaignPreview = {
   };
 };
 
+export type CampaignConfirmation = {
+  campaign_id: string;
+  campaign_version: number;
+  snapshot_id: string;
+  recipient_count: number;
+  confirmed_at: string;
+  template_version: number;
+  already_confirmed: boolean;
+};
+
+export type CampaignExportRow = {
+  position: number;
+  email: string;
+  name: string;
+  subject: string;
+  body: string;
+};
+
+export type CampaignExportChunk = {
+  campaign_name: string;
+  confirmed_at: string;
+  recipient_count: number;
+  rows: CampaignExportRow[];
+  next_position: number;
+  has_more: boolean;
+};
+
 export type CampaignSummary = {
   id: string;
   workspace_id: string;
@@ -148,6 +177,10 @@ export type CampaignSummary = {
   created_by: string;
   created_by_name: string;
   version: number;
+  recipient_count: number | null;
+  confirmed_at: string | null;
+  confirmed_by_name: string | null;
+  snapshot_template_version: number | null;
 };
 
 export type CampaignList = {

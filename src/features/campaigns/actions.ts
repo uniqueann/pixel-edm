@@ -6,6 +6,7 @@ import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
 import {
   campaignInput,
+  type CampaignConfirmation,
   type CampaignDetail,
   type CampaignEditorOptions,
   type CampaignList,
@@ -91,6 +92,47 @@ export async function getCampaignPreview(input: unknown) {
   } catch (error) {
     if (error instanceof z.ZodError)
       return { error: error.issues[0]?.message ?? "活动标识无效。" };
+    return actionError(error);
+  }
+}
+
+export async function confirmCampaign(input: unknown) {
+  try {
+    const parsed = campaignReference
+      .extend({
+        expected_campaign_version: z.number().int().positive(),
+        expected_template_version: z.number().int().positive(),
+      })
+      .parse(input);
+    const db = await authorizedWorkspace(parsed.workspace_id, true);
+    const { data, error } = await db.rpc("confirm_campaign", {
+      payload: parsed,
+    });
+    if (error) throw new Error(error.message);
+    refreshCampaignViews();
+    return { data: data as unknown as CampaignConfirmation };
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return { error: error.issues[0]?.message ?? "活动确认参数无效。" };
+    return actionError(error);
+  }
+}
+
+export async function duplicateConfirmedCampaign(input: unknown) {
+  try {
+    const parsed = campaignReference
+      .extend({ template_id: z.string().uuid().optional() })
+      .parse(input);
+    const db = await authorizedWorkspace(parsed.workspace_id, true);
+    const { data, error } = await db.rpc("duplicate_confirmed_campaign", {
+      payload: parsed,
+    });
+    if (error) throw new Error(error.message);
+    refreshCampaignViews();
+    return { success: true, id: data };
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return { error: error.issues[0]?.message ?? "活动复制参数无效。" };
     return actionError(error);
   }
 }

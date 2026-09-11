@@ -21,10 +21,13 @@ const vipTag = (
   )
 ).rows[0].id;
 const previewContacts = [
-  ["preview-alpha@example.test", "预览甲", "subscribed", false],
+  ["preview-alpha@example.test", "=2+2", "subscribed", false],
   ["preview-blank@example.test", "", "subscribed", false],
-  ["preview-charlie@example.test", "预览丙", "subscribed", false],
-  ["preview-delta@example.test", "预览丁", "subscribed", false],
+  ["preview-charlie@example.test", "+SUM(1,1)", "subscribed", false],
+  ["preview-delta@example.test", "-10", "subscribed", false],
+  ["preview-echo@example.test", "@cmd", "subscribed", false],
+  ["preview-tab@example.test", "\tTAB", "subscribed", false],
+  ["preview-cr@example.test", "\rCR", "subscribed", false],
   ["preview-archived@example.test", "归档客户", "subscribed", true],
   ["preview-pending@example.test", "未确认客户", "unconfirmed", false],
   ["preview-suppressed@example.test", "抑制客户", "subscribed", false],
@@ -200,6 +203,9 @@ const server = createServer(async (req, res) => {
         "set_campaign_archived",
         "get_campaign_editor_options",
         "get_campaign_preview",
+        "confirm_campaign",
+        "duplicate_confirmed_campaign",
+        "get_campaign_export_chunk",
       ].includes(rpc)
     ) {
       const result = await asUser(
