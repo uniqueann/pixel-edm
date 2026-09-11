@@ -40,7 +40,7 @@
 - [x] 本地 60 项单元/数据库测试和 6 条端到端测试通过；lint、类型检查和生产构建通过。
 - [x] 新增迁移应用至 content-up 云端，并复核表、RPC、授权、Advisor 与 AIGC 指纹。
 - [x] Vercel Production 已配置仅 Production 生效的 Secret `EDM_CREDENTIAL_KEYRING`，密钥值不可回显。
-- [ ] 推送 `main` 触发生产部署，并验证设置页可使用服务端密钥环。
+- [x] 推送 `main` 后生产部署进入 Ready；正式域名 `/settings` 返回 200，设置页使用已配置的服务端密钥环。
 
 ## 明确暂缓至 P4-2 以后
 
@@ -55,3 +55,4 @@
 - 两表均启用 RLS；`authenticated` 无直接表读取权限，只能执行三项受控公开 RPC；`anon` 与 `aigc_api` 无 RPC 执行权限。
 - 迁移前后按同一查询计算 AIGC 表、字段、策略和函数，共 56 个组成部分，指纹均为 `50a385c10ae2215b91ed351d4aded716`。
 - Supabase 安全 Advisor 未发现新增 EDM 问题；性能 Advisor 只提示两项新外键索引尚未使用，空表阶段属于预期信息。共享项目既有 `aigc`、`public` 和 Auth 提示保持不变。
+- Vercel Production 已保存不可回显的 `EDM_CREDENTIAL_KEYRING`；提交 `5775786` 的生产部署 `dpl_EqavNr2X7hR3AY2YAppRHaYyhxoE` 状态为 Ready，`https://edm.contentup.cc/settings` 返回 200。
