@@ -11,6 +11,7 @@ import {
   directMailEndpointForRegion,
 } from "../src/features/channels/provider.ts";
 import { openCredentialEnvelope } from "../supabase/functions/_shared/credential-envelope.ts";
+import { resolveCjsConstructor } from "../supabase/functions/_shared/cjs-interop.ts";
 
 const keyA = Buffer.alloc(32, 1).toString("base64");
 const keyB = Buffer.alloc(32, 2).toString("base64");
@@ -145,5 +146,23 @@ test("P4-0 适配器契约固定区域端点并保留明确失败分类", async 
       textBody: "测试正文",
     }),
     (error) => error.category === "unknown",
+  );
+});
+
+test("Edge Runtime 可解包阿里云 CommonJS 构造器", () => {
+  class FakeConstructor {}
+
+  assert.equal(resolveCjsConstructor(FakeConstructor), FakeConstructor);
+  assert.equal(
+    resolveCjsConstructor({ default: { default: FakeConstructor } }),
+    FakeConstructor,
+  );
+  assert.equal(
+    resolveCjsConstructor({ default: { Config: FakeConstructor } }, "Config"),
+    FakeConstructor,
+  );
+  assert.throws(
+    () => resolveCjsConstructor({ default: {} }, "Config"),
+    /ALIYUN_SDK_MODULE_INCOMPATIBLE/,
   );
 });

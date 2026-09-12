@@ -2,7 +2,7 @@
 
 基于交互原型构建的邮件营销管理应用。第一批已实现工程基础、真实 Auth 接入、EDM 用户和工作区数据库、七页应用外壳及基础设置。
 
-进度更新：2026-09-12，P1、P2 和 P3 已完成；P4-0 至 P4-2 已实现 DirectMail 通道、加密凭据、管理员内部测试信和验证状态回写。P4-2 数据库迁移与 Edge Function 已部署，Vercel 与 Supabase Edge Functions 已同步密钥环，应用代码尚待提交；真实测试信仍待保存 RAM AccessKey 后验收。用户已实际验证 Google 登录与邮箱重置。
+进度更新：2026-09-12，P1、P2 和 P3 已完成；P4-0 至 P4-2 已完成 DirectMail 通道、加密凭据、管理员内部测试信和验证状态回写。P4-2 数据库迁移与 Edge Function 已部署，Vercel 与 Supabase Edge Functions 已同步密钥环；RAM AccessKey 已保存，测试发送 worker 权限及阿里云 CommonJS SDK 兼容故障均已修复。管理员已收到真实测试信，通道已进入 `verified`，P4-2 验收通过。用户已实际验证 Google 登录与邮箱重置。
 
 ## 正式部署
 
@@ -87,9 +87,9 @@ P2 名单导入与订阅模型已实现：支持粘贴/CSV、邮箱去重、错�
 
 P2 模板管理与业务审计已实现并部署：支持纯文本编辑、七个变量插入与校验、可编辑预览、预览复制、模板复制归档、六套默认模板一次性初始化，以及全部 P2 业务审计和管理员日志页；云端已应用 `20260910092601_p2_templates_audit`，详见 [模板与审计交付记录](development-checklist-p2-templates-audit.md)。
 
-P3-0 至 P3-4 已完成：活动草稿、角色权限、动态名单、变量校验、前三位预览、原子确认、不可变活动与收件人快照、历史查看和安全 CSV 导出均已实现。确认冻结模板版本及合并后的主题和正文，后续客户或模板变化不影响历史结果；重复确认只返回同一快照。云端最新迁移为 `20260911015336_p3_campaign_confirmation`，应用代码尚待提交触发部署，逐项状态见 [P3 活动管理交付清单](development-checklist-p3-campaigns.md)。
+P3-0 至 P3-4 已完成并部署：活动草稿、角色权限、动态名单、变量校验、前三位预览、原子确认、不可变活动与收件人快照、历史查看和安全 CSV 导出均已实现。确认冻结模板版本及合并后的主题和正文，后续客户或模板变化不影响历史结果；重复确认只返回同一快照。云端最新迁移为 `20260911015336_p3_campaign_confirmation`，逐项状态见 [P3 活动管理交付清单](development-checklist-p3-campaigns.md)。
 
-P4-0 至 P4-2 已实现：首家 ESP 为阿里云 DirectMail，支持工作区级加密凭据、管理员内部测试信、幂等领取、验证状态回写和脱敏审计。`send.contentup.cc` 与 `edm@send.contentup.cc` 已在阿里云侧创建，Vercel Production 与 Supabase Edge Functions 已同步密钥环；真实测试信尚待保存专用 RAM AccessKey 后验收，详见 [P4 发信闭环交付清单](development-checklist-p4-delivery.md)。
+P4-0 至 P4-2 已完成并通过真实发送验收：首家 ESP 为阿里云 DirectMail，支持工作区级加密凭据、管理员内部测试信、幂等领取、验证状态回写和脱敏审计。`send.contentup.cc` 与 `edm@send.contentup.cc` 已在阿里云侧创建，Vercel Production 与 Supabase Edge Functions 已同步密钥环，专用 RAM AccessKey 已保存；管理员已收到真实测试信，通道已进入 `verified`，详见 [P4 发信闭环交付清单](development-checklist-p4-delivery.md)。
 
 后续批次：P4-3 正式发送队列、限速、幂等恢复和人工核对；之后实现公开退订与回执、团队邀请。
 

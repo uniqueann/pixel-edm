@@ -1,8 +1,7 @@
-import Dm20151123, {
-  SingleSendMailRequest,
-} from "npm:@alicloud/dm20151123@1.11.0";
-import * as $OpenApi from "npm:@alicloud/openapi-core@1.0.8";
+import Dm20151123, * as $Dm from "npm:@alicloud/dm20151123@1.11.0";
+import * as $OpenApiUtil from "npm:@alicloud/openapi-core@1.0.8/dist/utils.js";
 import * as $dara from "npm:@darabonba/typescript@1.0.5";
+import { resolveCjsConstructor } from "./cjs-interop.ts";
 
 export type DirectMailErrorCategory =
   | "authentication"
@@ -87,13 +86,30 @@ export async function sendDirectMailTest(input: {
   recipientEmail: string;
 }) {
   if (!allowedRegions.has(input.region)) throw new Error("REGION_UNSUPPORTED");
-  const config = new $OpenApi.Config({
+  const Config = resolveCjsConstructor<typeof $OpenApiUtil.Config>(
+    $OpenApiUtil,
+    "Config",
+  );
+  const RetryOptions = resolveCjsConstructor<typeof $dara.RetryOptions>(
+    $dara,
+    "RetryOptions",
+  );
+  const RuntimeOptions = resolveCjsConstructor<typeof $dara.RuntimeOptions>(
+    $dara,
+    "RuntimeOptions",
+  );
+  const DirectMailClient = resolveCjsConstructor<typeof Dm20151123>(Dm20151123);
+  const SingleSendMailRequest = resolveCjsConstructor<
+    typeof $Dm.SingleSendMailRequest
+  >($Dm, "SingleSendMailRequest");
+
+  const config = new Config({
     accessKeyId: input.accessKeyId,
     accessKeySecret: input.accessKeySecret,
     regionId: input.region,
-    retryOptions: new $dara.RetryOptions({ retryable: false }),
+    retryOptions: new RetryOptions({ retryable: false }),
   });
-  const client = new Dm20151123(config);
+  const client = new DirectMailClient(config);
   const request = new SingleSendMailRequest({
     accountName: input.senderAddress,
     addressType: 1,
@@ -108,10 +124,10 @@ export async function sendDirectMailTest(input: {
     unSubscribeLinkType: "disabled",
     unSubscribeFilterLevel: "disabled",
   });
-  const runtime = new $dara.RuntimeOptions({
+  const runtime = new RuntimeOptions({
     connectTimeout: 10_000,
     readTimeout: 20_000,
-    retryOptions: new $dara.RetryOptions({ retryable: false }),
+    retryOptions: new RetryOptions({ retryable: false }),
   });
   const response = await client.singleSendMailWithOptions(request, runtime);
   const requestId = response.body?.requestId;

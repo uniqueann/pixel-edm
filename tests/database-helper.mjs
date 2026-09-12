@@ -3,7 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 export async function createDatabase() {
   const db = new PGlite();
   await db.exec(`
-    create role anon; create role authenticated; create role aigc_api;
+    create role anon; create role authenticated; create role service_role; create role aigc_api;
     create schema auth;
     create table auth.users(id uuid primary key);
     create function auth.uid() returns uuid language sql stable as $$

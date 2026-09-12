@@ -23,6 +23,13 @@ function credential(version = 1) {
   };
 }
 
+async function asServiceRole(db, sql) {
+  return db.transaction(async (tx) => {
+    await tx.exec("set local role service_role");
+    return tx.query(sql);
+  });
+}
+
 test("P4-2 测试发送幂等、权限、验证回写与审计隔离", async (t) => {
   const db = await createDatabase();
   try {
@@ -121,6 +128,25 @@ test("P4-2 测试发送幂等、权限、验证回写与审计隔离", async (t)
       );
     });
 
+    await t.test(
+      "service_role 只能进入 EDM schema 并执行 worker RPC",
+      async () => {
+        const privileges = (
+          await db.query(`select
+          has_schema_privilege('service_role','edm','usage') as edm_usage,
+          has_schema_privilege('service_role','edm_private','usage') as private_usage,
+          has_table_privilege('service_role','edm.delivery_test_attempts','select') as table_select,
+          has_function_privilege('service_role','edm.worker_claim_delivery_test(jsonb)','execute') as claim_execute,
+          has_function_privilege('service_role','edm.worker_complete_delivery_test(jsonb)','execute') as complete_execute`)
+        ).rows[0];
+        assert.equal(privileges.edm_usage, true);
+        assert.equal(privileges.private_usage, false);
+        assert.equal(privileges.table_select, false);
+        assert.equal(privileges.claim_execute, true);
+        assert.equal(privileges.complete_execute, true);
+      },
+    );
+
     await t.test("服务端领取一次并以 DirectMail 回执完成验证", async () => {
       const claimPayload = {
         workspace_id: workspaceId,
@@ -128,7 +154,7 @@ test("P4-2 测试发送幂等、权限、验证回写与审计隔离", async (t)
         recipient_email: "owner@example.test",
       };
       const claim = (
-        await db.query(rpc("worker_claim_delivery_test", claimPayload))
+        await asServiceRole(db, rpc("worker_claim_delivery_test", claimPayload))
       ).rows[0].result;
       assert.equal(claim.claim_acquired, true);
       assert.equal(claim.recipient_email, "owner@example.test");
@@ -136,14 +162,15 @@ test("P4-2 测试发送幂等、权限、验证回写与审计隔离", async (t)
       assert.equal(claim.credential.key_id, "test-v1");
 
       const duplicateClaim = (
-        await db.query(rpc("worker_claim_delivery_test", claimPayload))
+        await asServiceRole(db, rpc("worker_claim_delivery_test", claimPayload))
       ).rows[0].result;
       assert.equal(duplicateClaim.claim_acquired, false);
       assert.equal(duplicateClaim.attempt.status, "processing");
       assert.equal("credential" in duplicateClaim, false);
 
       const completed = (
-        await db.query(
+        await asServiceRole(
+          db,
           rpc("worker_complete_delivery_test", {
             workspace_id: workspaceId,
             attempt_id: attemptId,
@@ -159,7 +186,8 @@ test("P4-2 测试发送幂等、权限、验证回写与审计隔离", async (t)
       assert.equal("provider_request_id" in completed, false);
 
       const repeated = (
-        await db.query(
+        await asServiceRole(
+          db,
           rpc("worker_complete_delivery_test", {
             workspace_id: workspaceId,
             attempt_id: attemptId,
@@ -210,7 +238,8 @@ test("P4-2 测试发送幂等、权限、验证回写与审计隔离", async (t)
         }),
       );
       const claim = (
-        await db.query(
+        await asServiceRole(
+          db,
           rpc("worker_claim_delivery_test", {
             workspace_id: workspaceId,
             attempt_id: secondAttempt,

@@ -140,6 +140,20 @@ const handler = {
         };
       } catch (error) {
         const failure = classifyDirectMailError(error);
+        const stackFrame =
+          error instanceof Error
+            ? error.stack
+                ?.split("\n")
+                .slice(1, 3)
+                .map((line) => line.trim())
+                .join(" | ")
+            : undefined;
+        console.error("[edm-directmail-test] DirectMail 调用失败", {
+          attempt_id: body.attempt_id,
+          error_name: error instanceof Error ? error.name : typeof error,
+          error_code: failure.error_code,
+          stack_frame: stackFrame,
+        });
         completion = {
           workspace_id: body.workspace_id,
           attempt_id: body.attempt_id,

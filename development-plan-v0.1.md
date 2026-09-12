@@ -2,7 +2,7 @@
 
 创建日期：2026-09-09；更新日期：2026-09-11。依据：`architecture-draft-v1.3.md`；已补充核对用户提供的 `1-seller-post-office-premium.html` 交互原型。
 
-本文记录实施方案，未确认的产品取舍仍保持待讨论状态。原架构草案保留不变。P1 工程与身份、P2 客户与模板、P3 活动管理 A 版均已完成；用户于 2026-09-10 确认 Google 登录、邮箱重置均已验证通过。P4 首家 ESP 为阿里云邮件推送 DirectMail；P4-0 适配边界、P4-1 工作区通道配置和 P4-2 内部测试发送已完成工程实现与 Supabase 部署，逐项记录见 `development-checklist-p4-delivery.md`。`send.contentup.cc` 与发件人 `edm@send.contentup.cc` 已创建，Vercel 与 Supabase Edge Functions 已同步密钥环，尚待保存专用 RAM AccessKey 并执行真实测试信验收；正式活动队列仍未开始。
+本文记录实施方案，未确认的产品取舍仍保持待讨论状态。原架构草案保留不变。P1 工程与身份、P2 客户与模板、P3 活动管理 A 版均已完成；用户于 2026-09-10 确认 Google 登录、邮箱重置均已验证通过。P4 首家 ESP 为阿里云邮件推送 DirectMail；P4-0 适配边界、P4-1 工作区通道配置和 P4-2 内部测试发送已完成工程实现、Supabase 部署与真实测试信验收，逐项记录见 `development-checklist-p4-delivery.md`。`send.contentup.cc` 与发件人 `edm@send.contentup.cc` 已创建，Vercel 与 Supabase Edge Functions 已同步密钥环，专用 RAM AccessKey 已保存，worker 权限及阿里云 CommonJS SDK 兼容故障均已修复；管理员已收到测试信，通道已进入 `verified`。正式活动队列仍未开始。
 
 已确认部署约束：复用 Supabase **content-up**（项目引用 `gnrhyahjegvcicektebh`），EDM 业务数据使用 **`edm` schema**。第一批可勾选任务及共享项目边界见 [第一批开发清单](development-checklist-p1.md)。此约束优先于本文先前的独立项目与注册初始化假设。
 
@@ -215,6 +215,6 @@ P3 按可独立验收的子批次推进：
 
 P3-0 至 P3-4 已于 2026-09-11 完成工程实现、本地验证、云端数据库迁移和生产部署。动态预览实时读取最新客户、订阅与抑制状态，确认后冻结活动、模板版本和逐位合并结果，并允许重复下载经过公式注入防护的 UTF-8 CSV。首个 ESP 在 P4 接入。查看者只读活动摘要，管理员和编辑者管理、预览、确认、复制及导出活动。
 
-P4-0 至 P4-2 已于 2026-09-12 完成工程实现和 Supabase 部署：每工作区保存 DirectMail 安全摘要与 AES-GCM 加密凭据，管理员可向自己的已验证登录邮箱发起幂等测试发送。数据库不保存完整测试收件邮箱，Edge Function 不自动重试未知结果；Vercel Production 与 Supabase Edge Functions 已同步密钥环，真实测试信仍以 RAM AccessKey 和受控邮箱验收为完成条件。
+P4-0 至 P4-2 已于 2026-09-12 完成工程实现、Supabase 部署和真实测试信验收：每工作区保存 DirectMail 安全摘要与 AES-GCM 加密凭据，管理员可向自己的已验证登录邮箱发起幂等测试发送。数据库不保存完整测试收件邮箱，Edge Function 不自动重试未知结果；Vercel Production 与 Supabase Edge Functions 已同步密钥环，专用 RAM AccessKey 已保存，worker 权限及阿里云 CommonJS SDK 兼容故障均已修复。管理员已收到测试信，通道已进入 `verified`。
 
 这一调整减少了视觉探索和交互定义的不确定性；数据库、发送通道和服务端权限仍需完整实现，不能按原型页面已经可点击就视为完成。

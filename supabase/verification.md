@@ -100,9 +100,27 @@
 - 仅应用新增迁移 `20260911155319_p4_directmail_test_delivery`；新增 `edm.delivery_test_attempts` 和测试发送 RPC，只修改 `edm`、`edm_private`。
 - 测试记录表为空且启用 RLS；`authenticated` 无直接表权限，只能执行准备和读取安全摘要两项入口，worker 领取与完成仅授予 `service_role`，`anon` 与 `aigc_api` 均无权限。
 - 测试收件人固定取当前管理员已验证登录邮箱，数据库仅保存掩码；审计不含完整邮箱、完整 DirectMail 回执、正文、nonce、密文或 AccessKey。
-- `edm-directmail-test` Edge Function v1 已部署为 Active；函数使用 `@supabase/server` 自行验证用户 JWT，因此平台旧式 `verify_jwt` 开关关闭，业务鉴权并未关闭。
+- `edm-directmail-test` Edge Function 初始 v1 已部署；函数使用 `@supabase/server` 自行验证用户 JWT，因此平台旧式 `verify_jwt` 开关关闭，业务鉴权并未关闭。后续 worker 权限和 SDK 兼容修复已随当前 v3 部署，详见下方两节。
 - 迁移前后按同一查询计算 AIGC 表、字段、策略和函数，共 62 个组成部分，指纹均为 `b70351784f68989a15a09e7f76aa582e`。
 - 权限核对结果：新表 RLS 已开启、0 行；`authenticated` 有 2 项入口 RPC、0 项表权限、0 项 worker 权限；`aigc_api` 对本批对象 0 项授权。
 - Supabase Advisor 未发现新增 EDM 安全问题；两项新索引尚无使用统计符合空表预期，其他提示均属于共享 `aigc`、`public` 或 Auth 的既有事项。
-- 本地 67 项单元/数据库测试、DirectMail 设置页端到端测试、lint、类型检查和生产构建均通过；真实邮件尚未发送。
+- 本地 67 项单元/数据库测试、DirectMail 设置页端到端测试、lint、类型检查和生产构建均通过；后续 SDK 兼容修复部署后，真实邮件发送验收已通过。
 - 2026-09-12 已创建 `EDM_CREDENTIAL_KEYRING` Edge Function Secret，并与 Vercel Production 使用同一份密钥环。同步前只读确认 `edm.delivery_channels` 和 `edm_private.delivery_channel_credentials` 均为 0 行；未触碰 `aigc`，密钥值未进入仓库或本文档。
+
+### P4-2 worker schema 权限修复（2026-09-12）
+
+- 线上首次测试产生 3 条 `pending` 记录，但没有 `started_at`、完成结果或阿里云错误。以 `service_role` 直接调用领取 RPC 复现 PostgreSQL `42501 permission denied for schema edm`，确认请求尚未到达 DirectMail，AccessKey 是否有效当时仍未被验证。
+- 仅应用新增迁移 `20260912061206_p4_service_role_schema_usage`：授予 `service_role` 对 `edm` schema 的 `USAGE`，保留两项 worker RPC 的既有 `EXECUTE`；没有授予 `edm.delivery_test_attempts` 表权限，也没有授予 `edm_private` schema 权限。
+- 3 条迁移前遗留 `pending` 记录统一收尾为 `failed/configuration/EDGE_WORKER_SCHEMA_PERMISSION_MISSING`，各写一条不含邮箱、凭据或正文的系统审计；通道仍为 `configured`，`last_error_code` 仍为空。
+- 修复后在事务中临时恢复一条任务并以真实 `service_role` 调用领取 RPC，结果为 `claim_acquired=true`，随后回滚；没有调用 DirectMail。最终 `pending=0`、`processing=0`。
+- AIGC 按表、字段、策略和函数的同一查询口径在迁移前后均为 62 个组成部分，本次记录的指纹均为 `72b82d88856d76859c254ad75d90b81e`；未修改 `aigc`、共享 Auth 或其他项目对象。
+- Supabase Advisor 没有新增 EDM 安全或性能告警；显示内容仍是共享 `aigc`、`public`、Auth 的既有提示及空表阶段未使用索引。
+- 本地数据库测试新增 `service_role` 真实角色边界，验证其可进入 `edm` 并执行 worker RPC，同时不能进入 `edm_private` 或直接读取测试记录表；全量 68 项测试通过。
+
+### P4-2 阿里云 SDK Edge Runtime 兼容修复（2026-09-12）
+
+- 权限修复后的两次真实测试均已成功领取，收件人掩码正确，并在约 90ms 内以 `unknown/TypeError` 完成；这证明数据库、凭据读取和结果回写链路已通过，失败点位于 DirectMail SDK 初始化。
+- 使用实际固定版本 `@alicloud/dm20151123@1.11.0` 复现：该包是 CommonJS，ESM 加载后的 Client 构造器位于双层 `default`；`@alicloud/openapi-core@1.0.8` 主入口不导出 `Config`，原代码执行 `new $OpenApi.Config()` 会抛出 `TypeError: Config is not a constructor`。
+- 适配器改为从 `openapi-core/dist/utils.js` 解析 `Config`，并对 Client、请求、Config、RetryOptions 和 RuntimeOptions 统一执行最多两层 CommonJS `default` 解包；新增不记录 AccessKey、收件邮箱或正文的结构化错误日志。
+- 实际 npm 包探针已成功构造 `Client`、`Config`、`SingleSendMailRequest` 和 `RuntimeOptions`，杭州区域 Endpoint 为 `dm.aliyuncs.com`；新增 CommonJS 互操作回归测试后全量 69 项测试、lint 与格式检查通过。
+- `edm-directmail-test` Edge Function v3 已成功打包并部署为 `ACTIVE`；管理员随后在设置页重新发起测试，真实测试信成功收到，DirectMail 回执完成回写，通道状态进入 `verified`。该结果依据管理员实际验收记录，不表述为自动化端到端测试。
