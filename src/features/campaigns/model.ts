@@ -73,6 +73,8 @@ export type CampaignStatus =
   | "confirmed"
   | "queued"
   | "sending"
+  | "paused"
+  | "needs_review"
   | "completed"
   | "completed_with_errors"
   | "failed";
@@ -82,9 +84,62 @@ export const campaignStatusLabels: Record<CampaignStatus, string> = {
   confirmed: "已确认",
   queued: "排队中",
   sending: "发送中",
+  paused: "已暂停",
+  needs_review: "待核对",
   completed: "已完成",
   completed_with_errors: "部分失败",
   failed: "失败",
+};
+
+export type DeliveryCounts = {
+  pending: number;
+  processing: number;
+  accepted: number;
+  failed: number;
+  skipped: number;
+  unknown: number;
+};
+
+export type CampaignDeliverySummary = {
+  id: string;
+  campaign_id: string;
+  status: Exclude<CampaignStatus, "draft" | "confirmed">;
+  version: number;
+  recipient_count: number;
+  started_at: string;
+  paused_at: string | null;
+  pause_reason: string | null;
+  completed_at: string | null;
+  counts: DeliveryCounts;
+};
+
+export type CampaignDeliveryTask = {
+  id: string;
+  position: number;
+  email: string;
+  name: string;
+  status:
+    "pending" | "processing" | "accepted" | "failed" | "skipped" | "unknown";
+  attempt_count: number;
+  next_attempt_at: string;
+  error_category: string | null;
+  error_code: string | null;
+  skip_reason: string | null;
+  accepted_at: string | null;
+  completed_at: string | null;
+  attempt_id: string | null;
+  provider_request_id: string | null;
+  provider_event_id: string | null;
+  resolved_as: "accepted" | "failed" | null;
+  resolved_at: string | null;
+  resolution_note: string | null;
+};
+
+export type CampaignDeliveryTaskList = {
+  items: CampaignDeliveryTask[];
+  total: number;
+  page: number;
+  page_size: number;
 };
 
 export type CampaignEditorTemplate = {
@@ -181,6 +236,7 @@ export type CampaignSummary = {
   confirmed_at: string | null;
   confirmed_by_name: string | null;
   snapshot_template_version: number | null;
+  delivery: CampaignDeliverySummary | null;
 };
 
 export type CampaignList = {

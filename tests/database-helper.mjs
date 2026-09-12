@@ -21,7 +21,11 @@ export async function createDatabase() {
   for (const file of (await readdir("supabase/migrations"))
     .filter((f) => f.endsWith(".sql"))
     .sort()) {
-    await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
+    const migration = await readFile(`supabase/migrations/${file}`, "utf8");
+    // 云端运维迁移依赖 Supabase 托管扩展，不属于 PGlite 的能力范围。
+    if (migration.includes("-- cloud-only: supabase-managed-extensions"))
+      continue;
+    await db.exec(migration);
   }
   return db;
 }

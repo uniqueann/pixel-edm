@@ -17,18 +17,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  abortCampaignDelivery,
   confirmCampaign,
   duplicateConfirmedCampaign,
   getCampaign,
   getCampaignPreview,
+  listCampaignDeliveryTasks,
+  resolveDeliveryUnknown,
   saveCampaign,
+  setCampaignDeliveryPaused,
   setCampaignArchived,
+  startCampaignDelivery,
 } from "./actions";
 import {
   campaignStatusLabels,
   campaignVariableFields,
   campaignVariableKeysFromTemplate,
   type CampaignDetail,
+  type CampaignDeliveryTaskList,
   type CampaignEditorOptions,
   type CampaignEditorTemplate,
   type CampaignList,
@@ -63,6 +69,7 @@ export function Campaigns({
   workspaceName,
   memberName,
   canEdit,
+  canSend,
   data,
   editorOptions,
   filters,
@@ -71,6 +78,7 @@ export function Campaigns({
   workspaceName: string;
   memberName: string;
   canEdit: boolean;
+  canSend: boolean;
   data: CampaignList;
   editorOptions: CampaignEditorOptions;
   filters: Record<string, string>;
@@ -93,6 +101,23 @@ export function Campaigns({
   const [tagId, setTagId] = useState("");
   const [variables, setVariables] = useState<CampaignVariables>({});
   const [error, setError] = useState("");
+  const [deliveryConfirmation, setDeliveryConfirmation] = useState<{
+    campaign: CampaignSummary;
+    mode: "start" | "abort";
+    idempotencyKey: string;
+  }>();
+  const [confirmationName, setConfirmationName] = useState("");
+  const [deliveryError, setDeliveryError] = useState("");
+  const [deliveryDetails, setDeliveryDetails] = useState<CampaignSummary>();
+  const [taskList, setTaskList] = useState<CampaignDeliveryTaskList>();
+  const [taskStatus, setTaskStatus] = useState<
+    "" | "unknown" | "failed" | "accepted" | "skipped"
+  >("");
+  const [taskPage, setTaskPage] = useState(1);
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [resolutionNotes, setResolutionNotes] = useState<
+    Record<string, string>
+  >({});
   const returnFocus = useRef<HTMLElement | null>(null);
   const previewRequest = useRef(0);
   const archived = filters.status === "archived";
@@ -158,6 +183,155 @@ export function Campaigns({
       router.replace(`/campaigns?${params}`);
     }
   }, [data.page, filters, router]);
+
+  useEffect(() => {
+    if (
+      !data.items.some((item) =>
+        ["queued", "sending", "paused"].includes(item.status),
+      )
+    )
+      return;
+    const timer = window.setInterval(() => router.refresh(), 5000);
+    return () => window.clearInterval(timer);
+  }, [data.items, router]);
+
+  async function loadDeliveryTasks(
+    campaign: CampaignSummary,
+    status = taskStatus,
+    page = taskPage,
+  ) {
+    if (!campaign.delivery) return;
+    setTaskLoading(true);
+    setDeliveryError("");
+    try {
+      const result = await listCampaignDeliveryTasks({
+        workspace_id: workspace,
+        run_id: campaign.delivery.id,
+        status: status || undefined,
+        page,
+      });
+      if ("error" in result)
+        setDeliveryError(result.error ?? "发送明细加载失败。");
+      else setTaskList(result.data);
+    } catch {
+      setDeliveryError("发送明细加载失败，请重试。");
+    } finally {
+      setTaskLoading(false);
+    }
+  }
+
+  function openDeliveryDetails(campaign: CampaignSummary) {
+    returnFocus.current = document.activeElement as HTMLElement | null;
+    setDeliveryDetails(campaign);
+    const initialStatus = campaign.status === "needs_review" ? "unknown" : "";
+    setTaskStatus(initialStatus);
+    setTaskPage(1);
+    setTaskList(undefined);
+    setDeliveryError("");
+    void loadDeliveryTasks(campaign, initialStatus, 1);
+  }
+
+  function openDeliveryConfirmation(
+    campaign: CampaignSummary,
+    mode: "start" | "abort",
+  ) {
+    returnFocus.current = document.activeElement as HTMLElement | null;
+    setConfirmationName("");
+    setDeliveryError("");
+    setDeliveryConfirmation({
+      campaign,
+      mode,
+      idempotencyKey: crypto.randomUUID(),
+    });
+  }
+
+  async function submitDeliveryConfirmation() {
+    if (!deliveryConfirmation) return;
+    const { campaign, mode, idempotencyKey } = deliveryConfirmation;
+    setBusy(true);
+    setDeliveryError("");
+    try {
+      const result =
+        mode === "start"
+          ? await startCampaignDelivery({
+              workspace_id: workspace,
+              campaign_id: campaign.id,
+              expected_version: campaign.version,
+              idempotency_key: idempotencyKey,
+              confirmation_name: confirmationName,
+            })
+          : await abortCampaignDelivery({
+              workspace_id: workspace,
+              run_id: campaign.delivery?.id,
+              expected_version: campaign.delivery?.version,
+              confirmation_name: confirmationName,
+            });
+      if ("error" in result) {
+        setDeliveryError(result.error ?? "操作失败，请重试。");
+        return;
+      }
+      setDeliveryConfirmation(undefined);
+      toast.success(
+        mode === "start" ? "正式发送任务已创建" : "已放弃剩余待发送任务",
+      );
+      router.refresh();
+    } catch {
+      setDeliveryError("操作失败，请重试。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleDeliveryPaused(campaign: CampaignSummary) {
+    if (!campaign.delivery) return;
+    setBusy(true);
+    try {
+      const paused = campaign.status !== "paused";
+      const result = await setCampaignDeliveryPaused({
+        workspace_id: workspace,
+        run_id: campaign.delivery.id,
+        expected_version: campaign.delivery.version,
+        paused,
+      });
+      if ("error" in result) toast.error(result.error);
+      else {
+        toast.success(paused ? "正式发送已暂停" : "正式发送已继续");
+        router.refresh();
+      }
+    } catch {
+      toast.error("操作失败，请重试。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resolveUnknown(
+    taskId: string,
+    resolution: "accepted" | "failed",
+  ) {
+    if (!deliveryDetails) return;
+    setBusy(true);
+    setDeliveryError("");
+    try {
+      const result = await resolveDeliveryUnknown({
+        workspace_id: workspace,
+        task_id: taskId,
+        resolution,
+        note: resolutionNotes[taskId] ?? "",
+      });
+      if ("error" in result) {
+        setDeliveryError(result.error ?? "人工核对失败。");
+        return;
+      }
+      toast.success("未知发送结果已核对");
+      await loadDeliveryTasks(deliveryDetails, taskStatus, taskPage);
+      router.refresh();
+    } catch {
+      setDeliveryError("人工核对失败，请重试。");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function openNew() {
     if (!editorOptions.templates.length) return;
@@ -344,8 +518,7 @@ export function Campaigns({
         <span>{data.total} 条</span>
       </div>
       <p className="hint">
-        收件人和前三封预览会按最新订阅与抑制状态动态计算；CSV
-        导出将在后续步骤完成。
+        草稿预览按最新订阅与抑制状态计算；确认后可导出冻结快照，管理员可创建正式发送任务。
       </p>
       <div className="mb-4 flex flex-wrap gap-3">
         {canEdit && (
@@ -410,7 +583,12 @@ export function Campaigns({
               </div>
               {canEdit &&
                 (campaign.status === "draft" ||
-                  campaign.status === "confirmed") && (
+                  [
+                    "confirmed",
+                    "completed",
+                    "completed_with_errors",
+                    "failed",
+                  ].includes(campaign.status)) && (
                   <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
                     {!archived && campaign.status === "draft" && (
                       <>
@@ -432,8 +610,32 @@ export function Campaigns({
                         </Button>
                       </>
                     )}
-                    {campaign.status === "confirmed" && (
+                    {[
+                      "confirmed",
+                      "completed",
+                      "completed_with_errors",
+                      "failed",
+                    ].includes(campaign.status) && (
                       <>
+                        {canSend &&
+                          !archived &&
+                          campaign.status === "confirmed" && (
+                            <Button
+                              disabled={
+                                busy || (campaign.recipient_count ?? 0) > 500
+                              }
+                              title={
+                                (campaign.recipient_count ?? 0) > 500
+                                  ? "正式发送每个活动最多 500 位收件人"
+                                  : undefined
+                              }
+                              onClick={() =>
+                                openDeliveryConfirmation(campaign, "start")
+                              }
+                            >
+                              正式发送
+                            </Button>
+                          )}
                         <Button asChild variant="outline">
                           <a href={`/campaigns/${campaign.id}/export`}>
                             下载 CSV
@@ -448,24 +650,73 @@ export function Campaigns({
                         </Button>
                       </>
                     )}
-                    <Button
-                      variant="outline"
-                      disabled={busy || Boolean(loadingCampaignId)}
-                      onClick={() => archiveCampaign(campaign)}
-                    >
-                      {archived ? "恢复" : "归档"}
-                    </Button>
+                    {["draft", "confirmed"].includes(campaign.status) && (
+                      <Button
+                        variant="outline"
+                        disabled={busy || Boolean(loadingCampaignId)}
+                        onClick={() => archiveCampaign(campaign)}
+                      >
+                        {archived ? "恢复" : "归档"}
+                      </Button>
+                    )}
                   </div>
                 )}
-              {campaign.status === "confirmed" && (
+              {canSend && campaign.delivery && (
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
+                  <Button
+                    variant="outline"
+                    onClick={() => openDeliveryDetails(campaign)}
+                  >
+                    {campaign.status === "needs_review"
+                      ? "核对结果"
+                      : "发送明细"}
+                  </Button>
+                  {["queued", "sending", "paused"].includes(
+                    campaign.status,
+                  ) && (
+                    <Button
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => void toggleDeliveryPaused(campaign)}
+                    >
+                      {campaign.status === "paused" ? "继续发送" : "暂停发送"}
+                    </Button>
+                  )}
+                  {campaign.status === "paused" && (
+                    <Button
+                      variant="destructive"
+                      disabled={busy}
+                      onClick={() =>
+                        openDeliveryConfirmation(campaign, "abort")
+                      }
+                    >
+                      放弃剩余
+                    </Button>
+                  )}
+                </div>
+              )}
+              {(campaign.status === "confirmed" || campaign.delivery) && (
                 <div className="w-full border-t pt-3 text-sm sm:w-auto sm:min-w-48 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                   <p className="m-0 font-medium">
-                    冻结 {campaign.recipient_count ?? 0} 位收件人
+                    {campaign.delivery
+                      ? `已受理 ${campaign.delivery.counts.accepted} / ${campaign.delivery.recipient_count}`
+                      : `冻结 ${campaign.recipient_count ?? 0} 位收件人`}
                   </p>
+                  {campaign.delivery && (
+                    <p className="hint m-0">
+                      待发 {campaign.delivery.counts.pending} · 处理中{" "}
+                      {campaign.delivery.counts.processing} · 失败{" "}
+                      {campaign.delivery.counts.failed} · 未知{" "}
+                      {campaign.delivery.counts.unknown} · 跳过{" "}
+                      {campaign.delivery.counts.skipped}
+                    </p>
+                  )}
                   <p className="hint m-0">
-                    {campaign.confirmed_at
-                      ? formattedDate(campaign.confirmed_at)
-                      : "确认时间不可用"}
+                    {campaign.delivery?.completed_at
+                      ? `完成于 ${formattedDate(campaign.delivery.completed_at)}`
+                      : campaign.confirmed_at
+                        ? formattedDate(campaign.confirmed_at)
+                        : "确认时间不可用"}
                   </p>
                   <p className="hint m-0">
                     {campaign.confirmed_by_name ?? "工作区成员"} · 模板版本{" "}
@@ -744,6 +995,231 @@ export function Campaigns({
               <p className="field-error">当前没有使用中的模板。</p>
               <Button asChild variant="outline">
                 <Link href="/templates">前往模板库</Link>
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deliveryConfirmation)}
+        onOpenChange={(open) => {
+          if (!open && !busy) setDeliveryConfirmation(undefined);
+        }}
+      >
+        <DialogContent
+          placement="bottom"
+          className="bottom-sheet max-h-[90dvh] overflow-y-auto"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            returnFocus.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {deliveryConfirmation?.mode === "start"
+                ? "确认正式发送"
+                : "确认放弃剩余任务"}
+            </DialogTitle>
+            <DialogDescription>
+              {deliveryConfirmation?.mode === "start"
+                ? `将向冻结快照中的 ${deliveryConfirmation.campaign.recipient_count ?? 0} 位收件人创建发送任务。供应商受理不等于最终投递。`
+                : "只会跳过尚未开始的收件人；已受理、处理中及待人工核对的记录会保留。"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="delivery-confirmation-name">
+                输入完整活动名称“{deliveryConfirmation?.campaign.name}”确认
+              </Label>
+              <Input
+                id="delivery-confirmation-name"
+                autoComplete="off"
+                value={confirmationName}
+                onChange={(event) => setConfirmationName(event.target.value)}
+              />
+            </div>
+            {deliveryError && (
+              <p className="field-error" role="alert">
+                {deliveryError}
+              </p>
+            )}
+            <Button
+              type="button"
+              variant={
+                deliveryConfirmation?.mode === "abort"
+                  ? "destructive"
+                  : "default"
+              }
+              disabled={
+                busy || confirmationName !== deliveryConfirmation?.campaign.name
+              }
+              onClick={() => void submitDeliveryConfirmation()}
+            >
+              {busy
+                ? "处理中…"
+                : deliveryConfirmation?.mode === "start"
+                  ? "创建正式发送任务"
+                  : "放弃剩余待发送任务"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deliveryDetails)}
+        onOpenChange={(open) => {
+          if (!open && !busy) {
+            setDeliveryDetails(undefined);
+            setTaskList(undefined);
+            setDeliveryError("");
+          }
+        }}
+      >
+        <DialogContent
+          placement="bottom"
+          className="bottom-sheet max-h-[90dvh] overflow-y-auto sm:max-w-3xl"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            returnFocus.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{deliveryDetails?.name ?? "发送明细"}</DialogTitle>
+            <DialogDescription>
+              展示供应商调用结果。“未知”代表调用边界无法确认，必须核对后人工标记，系统不会自动重试。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label htmlFor="delivery-task-status">结果筛选</Label>
+            <select
+              id="delivery-task-status"
+              className="rounded-md border bg-white px-3 py-2"
+              value={taskStatus}
+              onChange={(event) => {
+                const value = event.target.value as typeof taskStatus;
+                setTaskStatus(value);
+                setTaskPage(1);
+                if (deliveryDetails)
+                  void loadDeliveryTasks(deliveryDetails, value, 1);
+              }}
+            >
+              <option value="">全部</option>
+              <option value="unknown">未知</option>
+              <option value="failed">失败</option>
+              <option value="accepted">已受理</option>
+              <option value="skipped">已跳过</option>
+            </select>
+            {taskLoading && <span className="hint">加载中…</span>}
+          </div>
+          {deliveryError && (
+            <p className="field-error" role="alert">
+              {deliveryError}
+            </p>
+          )}
+          <div className="space-y-3">
+            {taskList?.items.map((task) => (
+              <div className="rounded-lg border p-3" key={task.id}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="m-0 break-words font-medium">
+                      #{task.position} · {task.name}
+                    </p>
+                    <p className="hint m-0 break-all">{task.email}</p>
+                  </div>
+                  <Badge
+                    variant={
+                      task.status === "failed" || task.status === "unknown"
+                        ? "destructive"
+                        : "outline"
+                    }
+                  >
+                    {task.status} · {task.attempt_count} 次
+                  </Badge>
+                </div>
+                {(task.error_category || task.error_code) && (
+                  <p className="hint mt-2 mb-0">
+                    {task.error_category ?? "-"} / {task.error_code ?? "-"}
+                  </p>
+                )}
+                {task.status === "unknown" && (
+                  <div className="mt-3 space-y-2">
+                    <Label htmlFor={`resolution-note-${task.id}`}>
+                      核对说明（10–500 字）
+                    </Label>
+                    <textarea
+                      id={`resolution-note-${task.id}`}
+                      className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
+                      maxLength={500}
+                      value={resolutionNotes[task.id] ?? ""}
+                      onChange={(event) =>
+                        setResolutionNotes({
+                          ...resolutionNotes,
+                          [task.id]: event.target.value,
+                        })
+                      }
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        disabled={
+                          busy ||
+                          (resolutionNotes[task.id]?.trim().length ?? 0) < 10
+                        }
+                        onClick={() => void resolveUnknown(task.id, "accepted")}
+                      >
+                        标记已受理
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={
+                          busy ||
+                          (resolutionNotes[task.id]?.trim().length ?? 0) < 10
+                        }
+                        onClick={() => void resolveUnknown(task.id, "failed")}
+                      >
+                        标记失败
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            {!taskLoading && taskList && !taskList.items.length && (
+              <p className="py-6 text-center hint">当前筛选下没有发送记录。</p>
+            )}
+          </div>
+          {taskList && taskList.total > taskList.page_size && (
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                disabled={taskLoading || taskPage <= 1}
+                onClick={() => {
+                  const page = taskPage - 1;
+                  setTaskPage(page);
+                  if (deliveryDetails)
+                    void loadDeliveryTasks(deliveryDetails, taskStatus, page);
+                }}
+              >
+                上一页
+              </Button>
+              <span>
+                {taskPage} / {Math.ceil(taskList.total / taskList.page_size)}
+              </span>
+              <Button
+                variant="outline"
+                disabled={
+                  taskLoading || taskPage * taskList.page_size >= taskList.total
+                }
+                onClick={() => {
+                  const page = taskPage + 1;
+                  setTaskPage(page);
+                  if (deliveryDetails)
+                    void loadDeliveryTasks(deliveryDetails, taskStatus, page);
+                }}
+              >
+                下一页
               </Button>
             </div>
           )}

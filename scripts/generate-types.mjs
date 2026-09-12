@@ -52,6 +52,15 @@ try {
     "disconnect_delivery_channel: { Args: {payload:Json}; Returns:Json }",
     "prepare_delivery_test: { Args: {payload:Json}; Returns:Json }",
     "get_delivery_test_summary: { Args: {payload:Json}; Returns:Json }",
+    "start_campaign_delivery: { Args: {payload:Json}; Returns:Json }",
+    "set_campaign_delivery_paused: { Args: {payload:Json}; Returns:Json }",
+    "abort_campaign_delivery: { Args: {payload:Json}; Returns:Json }",
+    "get_campaign_delivery_summaries: { Args: {payload:Json}; Returns:Json }",
+    "list_campaign_delivery_tasks: { Args: {payload:Json}; Returns:Json }",
+    "resolve_delivery_unknown: { Args: {payload:Json}; Returns:Json }",
+    "worker_recover_expired_delivery_leases: { Args: Record<string,never>; Returns:number }",
+    "worker_claim_delivery_batch: { Args: {payload:Json}; Returns:Json }",
+    "worker_complete_delivery_task: { Args: {payload:Json}; Returns:Json }",
   ].join(";");
   await writeFile(
     "src/lib/supabase/database.types.ts",

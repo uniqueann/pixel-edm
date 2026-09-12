@@ -245,6 +245,12 @@ const server = createServer(async (req, res) => {
         "disconnect_delivery_channel",
         "prepare_delivery_test",
         "get_delivery_test_summary",
+        "start_campaign_delivery",
+        "set_campaign_delivery_paused",
+        "abort_campaign_delivery",
+        "get_campaign_delivery_summaries",
+        "list_campaign_delivery_tasks",
+        "resolve_delivery_unknown",
       ].includes(rpc)
     ) {
       const result = await asUser(

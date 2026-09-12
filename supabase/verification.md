@@ -1,6 +1,6 @@
 # EDM 基础迁移验证记录
 
-基础迁移验证日期：2026-09-09。进度更新日期：2026-09-11。目标：content-up / `gnrhyahjegvcicektebh`。
+基础迁移验证日期：2026-09-09。进度更新日期：2026-09-12。目标：content-up / `gnrhyahjegvcicektebh`。
 
 - 已应用 `20260909072930_edm_foundation`。
 - `edm.members`、`edm.workspaces`、`edm.workspace_members` 三表均启用 RLS。
@@ -124,3 +124,13 @@
 - 适配器改为从 `openapi-core/dist/utils.js` 解析 `Config`，并对 Client、请求、Config、RetryOptions 和 RuntimeOptions 统一执行最多两层 CommonJS `default` 解包；新增不记录 AccessKey、收件邮箱或正文的结构化错误日志。
 - 实际 npm 包探针已成功构造 `Client`、`Config`、`SingleSendMailRequest` 和 `RuntimeOptions`，杭州区域 Endpoint 为 `dm.aliyuncs.com`；新增 CommonJS 互操作回归测试后全量 69 项测试、lint 与格式检查通过。
 - `edm-directmail-test` Edge Function v3 已成功打包并部署为 `ACTIVE`；管理员随后在设置页重新发起测试，真实测试信成功收到，DirectMail 回执完成回写，通道状态进入 `verified`。该结果依据管理员实际验收记录，不表述为自动化端到端测试。
+
+### P4-3 正式活动发送队列（2026-09-12）
+
+- 已应用 `20260912131426_p4_campaign_delivery_queue`、`20260912133619_p4_delivery_worker_schedule`、`20260912133757_p4_delivery_fk_indexes` 与 `20260912134451_p4_delivery_resume_finalize`；新增正式发送运行、任务和尝试三表及受控 RPC，只扩展 EDM 活动状态。
+- 正式发送限制为每活动 500 位冻结收件人；管理员输入完整活动名后幂等建队列。worker 原子领取、90 秒租约、每工作区每秒 5 次和上海时区每日 2000 次限额均由数据库实现。
+- 临时和限流错误按 30 秒、2 分钟、10 分钟最多重试 3 次；调用边界不明或租约过期进入 `unknown`，只能由管理员填写说明并人工核对，不自动重发。
+- 通道鉴权/配置错误自动暂停；主动暂停后可继续或放弃剩余待发任务。进行中禁止变更发件身份或断开通道，暂停后允许轮换凭据并要求重新验证。
+- `edm-directmail-worker` v2 已部署为 `ACTIVE`。`pg_cron` 每 10 秒通过 `pg_net` 调用；令牌随机生成并仅存 Vault，校验 RPC 只授予 `service_role`。最近一次 cron 成功、HTTP 200、空队列返回 `claimed=0`。
+- 云端三张队列表均为 0 行，未触发正式邮件。安全 Advisor 没有新增 EDM 告警；性能 Advisor 的五项新外键索引提示已由补充迁移消除，剩余 EDM 提示均为空表未使用索引。
+- 本地 75 项全量测试、6 条端到端测试、lint、类型检查和生产构建通过；新增测试覆盖幂等、角色隔离、临时重试、暂停/继续、暂停期间任务收敛、通道变更保护、未知核对、放弃剩余任务及结束后导出/复制。

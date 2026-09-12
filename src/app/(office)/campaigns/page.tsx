@@ -21,6 +21,7 @@ export default async function Page({
   );
   const context = await getContext();
   const canEdit = context.role !== "viewer";
+  const canSend = context.role === "admin";
   const [data, options] = await Promise.all([
     listCampaigns(filters),
     canEdit ? getCampaignEditorOptions() : Promise.resolve(emptyOptions),
@@ -33,6 +34,7 @@ export default async function Page({
       workspaceName={context.workspace.name}
       memberName={context.member.display_name}
       canEdit={canEdit}
+      canSend={canSend}
       data={data}
       editorOptions={options}
       filters={filters}

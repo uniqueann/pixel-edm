@@ -2,7 +2,7 @@
 
 基于交互原型构建的邮件营销管理应用。第一批已实现工程基础、真实 Auth 接入、EDM 用户和工作区数据库、七页应用外壳及基础设置。
 
-进度更新：2026-09-12，P1、P2 和 P3 已完成；P4-0 至 P4-2 已完成 DirectMail 通道、加密凭据、管理员内部测试信和验证状态回写。P4-2 数据库迁移与 Edge Function 已部署，Vercel 与 Supabase Edge Functions 已同步密钥环；RAM AccessKey 已保存，测试发送 worker 权限及阿里云 CommonJS SDK 兼容故障均已修复。管理员已收到真实测试信，通道已进入 `verified`，P4-2 验收通过。用户已实际验证 Google 登录与邮箱重置。
+进度更新：2026-09-12，P1、P2、P3 和 P4 已完成工程交付。P4-3 已部署正式活动队列、限速、重试、租约恢复、暂停/继续、放弃剩余任务和未知结果人工核对；云端 cron 与 worker 空队列验收通过。P4-2 的 DirectMail 真实测试信已由管理员验收，正式活动尚未执行真实名单发送。用户已实际验证 Google 登录与邮箱重置。
 
 ## 正式部署
 
@@ -89,8 +89,8 @@ P2 模板管理与业务审计已实现并部署：支持纯文本编辑、七�
 
 P3-0 至 P3-4 已完成并部署：活动草稿、角色权限、动态名单、变量校验、前三位预览、原子确认、不可变活动与收件人快照、历史查看和安全 CSV 导出均已实现。确认冻结模板版本及合并后的主题和正文，后续客户或模板变化不影响历史结果；重复确认只返回同一快照。云端最新迁移为 `20260911015336_p3_campaign_confirmation`，逐项状态见 [P3 活动管理交付清单](development-checklist-p3-campaigns.md)。
 
-P4-0 至 P4-2 已完成并通过真实发送验收：首家 ESP 为阿里云 DirectMail，支持工作区级加密凭据、管理员内部测试信、幂等领取、验证状态回写和脱敏审计。`send.contentup.cc` 与 `edm@send.contentup.cc` 已在阿里云侧创建，Vercel Production 与 Supabase Edge Functions 已同步密钥环，专用 RAM AccessKey 已保存；管理员已收到真实测试信，通道已进入 `verified`，详见 [P4 发信闭环交付清单](development-checklist-p4-delivery.md)。
+P4 已完成工程交付：首家 ESP 为阿里云 DirectMail，支持工作区级加密凭据、管理员内部测试信、正式活动持久队列、每工作区限速与日配额、明确重试、租约恢复、暂停/继续、放弃剩余任务、未知结果人工核对和脱敏审计。`send.contentup.cc` 与 `edm@send.contentup.cc` 已在阿里云侧创建；管理员已收到真实测试信，通道为 `verified`，详见 [P4 发信闭环交付清单](development-checklist-p4-delivery.md)。
 
-后续批次：P4-3 正式发送队列、限速、幂等恢复和人工核对；之后实现公开退订与回执、团队邀请。
+后续批次：P5 公开退订与送达/退信/投诉回执；之后实现团队邀请。
 
 设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 P1 与三个 P2 交付清单；原始交互文件归档于 `references/seller-post-office-premium.html`。

@@ -76,7 +76,7 @@ export function classifyDirectMailError(error: unknown): DirectMailFailure {
   return { status: "failed", error_category: "unknown", error_code: code };
 }
 
-export async function sendDirectMailTest(input: {
+export async function sendDirectMailMessage(input: {
   accessKeyId: string;
   accessKeySecret: string;
   region: string;
@@ -84,6 +84,8 @@ export async function sendDirectMailTest(input: {
   senderAlias: string;
   replyToAddress?: string | null;
   recipientEmail: string;
+  subject: string;
+  textBody: string;
 }) {
   if (!allowedRegions.has(input.region)) throw new Error("REGION_UNSUPPORTED");
   const Config = resolveCjsConstructor<typeof $OpenApiUtil.Config>(
@@ -117,9 +119,8 @@ export async function sendDirectMailTest(input: {
     replyAddress: input.replyToAddress || undefined,
     toAddress: input.recipientEmail,
     fromAlias: input.senderAlias,
-    subject: "[卖家邮局] DirectMail 发信通道测试",
-    textBody:
-      "这是一封由卖家邮局发送的 DirectMail 通道测试邮件。收到此邮件表示 AccessKey、区域与发件身份已通过实际发送验证。",
+    subject: input.subject,
+    textBody: input.textBody,
     clickTrace: "0",
     unSubscribeLinkType: "disabled",
     unSubscribeFilterLevel: "disabled",
@@ -134,4 +135,18 @@ export async function sendDirectMailTest(input: {
   const eventId = response.body?.envId;
   if (!requestId || !eventId) throw new Error("PROVIDER_RECEIPT_INCOMPLETE");
   return { requestId, eventId };
+}
+
+export async function sendDirectMailTest(
+  input: Omit<
+    Parameters<typeof sendDirectMailMessage>[0],
+    "subject" | "textBody"
+  >,
+) {
+  return sendDirectMailMessage({
+    ...input,
+    subject: "[卖家邮局] DirectMail 发信通道测试",
+    textBody:
+      "这是一封由卖家邮局发送的 DirectMail 通道测试邮件。收到此邮件表示 AccessKey、区域与发件身份已通过实际发送验证。",
+  });
 }
