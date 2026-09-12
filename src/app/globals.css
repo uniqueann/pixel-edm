@@ -88,7 +88,8 @@
   }
 }
 .app-shell {
-  max-width: 740px;
+  width: 100%;
+  max-width: 1180px;
   margin: 0 auto;
   padding-bottom: 40px;
 }
@@ -321,6 +322,11 @@
   max-height: 90dvh;
   overflow: auto;
   padding: 28px 24px;
+}
+@media (min-width: 640px) {
+  .bottom-sheet {
+    border-radius: 20px;
+  }
 }
 .skip-link {
   position: fixed;

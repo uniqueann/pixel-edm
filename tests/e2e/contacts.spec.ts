@@ -6,7 +6,20 @@ test("客户新增、标签、编辑、归档恢复与窄屏", async ({ page }) 
   await page.getByRole("button", { name: "登录邮局" }).click();
   await expect(page).toHaveURL(/dashboard/);
   await page.goto("/contacts");
+  const desktopShell = await page.locator(".app-shell").boundingBox();
+  expect(desktopShell).not.toBeNull();
+  expect(desktopShell!.width).toBeGreaterThanOrEqual(1100);
+  expect(desktopShell!.width).toBeLessThanOrEqual(1180);
   await page.getByRole("button", { name: "添加客户", exact: true }).click();
+  const desktopDialogBox = await page.getByRole("dialog").boundingBox();
+  expect(desktopDialogBox).not.toBeNull();
+  expect(
+    Math.abs(
+      desktopDialogBox!.y +
+        desktopDialogBox!.height / 2 -
+        (await page.evaluate(() => window.innerHeight)) / 2,
+    ),
+  ).toBeLessThan(2);
   await page.getByLabel("邮箱", { exact: true }).fill("customer@example.test");
   await page.getByLabel("姓名（选填）").fill("测试客户");
   await page.getByLabel("标签", { exact: true }).fill("VIP");

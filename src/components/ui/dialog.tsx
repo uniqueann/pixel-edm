@@ -66,7 +66,7 @@ function DialogContent({
           "fixed z-50 grid gap-4 border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           placement === "center"
             ? "top-[50%] left-[50%] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] rounded-lg sm:max-w-lg"
-            : "right-4 bottom-0 left-4 mx-auto w-auto max-w-[740px] rounded-t-[20px]",
+            : "right-4 bottom-0 left-4 mx-auto w-auto max-w-[740px] rounded-t-[20px] sm:top-[50%] sm:right-auto sm:bottom-auto sm:left-[50%] sm:w-full sm:max-w-[740px] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[20px]",
           className,
         )}
         {...props}
