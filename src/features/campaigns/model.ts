@@ -129,7 +129,15 @@ export type CampaignDeliveryTask = {
   completed_at: string | null;
   attempt_id: string | null;
   provider_request_id: string | null;
-  provider_event_id: string | null;
+  provider_env_id: string | null;
+  delivery_status: string;
+  delivery_status_at: string | null;
+  feedback_status: string;
+  feedback_status_at: string | null;
+  provider_message_id: string | null;
+  first_opened_at: string | null;
+  first_clicked_at: string | null;
+  last_event_at: string | null;
   resolved_as: "accepted" | "failed" | null;
   resolved_at: string | null;
   resolution_note: string | null;

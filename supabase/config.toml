@@ -34,3 +34,6 @@ enable_confirmations = true
 [local_smtp]
 enabled = true
 port = 54324
+
+[functions.edm-directmail-events]
+verify_jwt = false

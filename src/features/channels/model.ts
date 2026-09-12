@@ -139,6 +139,16 @@ export type DeliveryChannel = {
   created_at: string;
   updated_at: string;
   version: number;
+  webhook?: {
+    configured: boolean;
+    endpoint: string;
+    token_hint?: string;
+    token_version?: number;
+    configured_at?: string;
+    last_authenticated_at?: string;
+    last_event_at?: string;
+    revoked_at?: string;
+  };
 };
 
 export const deliveryTestStatuses = [

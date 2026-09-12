@@ -39,6 +39,28 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
     page.getByText("DirectMail 已接收", { exact: false }),
   ).toBeVisible();
 
+  await expect(
+    page.getByRole("heading", { name: "投递回执 Webhook" }),
+  ).toBeVisible();
+  await expect(page.getByText("未配置", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "生成令牌" }).click();
+  await expect(page.getByText("Webhook 令牌已生成")).toBeVisible();
+  const firstWebhookToken = await page
+    .getByRole("textbox", { name: "Webhook 令牌", exact: true })
+    .inputValue();
+  expect(firstWebhookToken.length).toBeGreaterThanOrEqual(40);
+  await expect(page.getByText("等待首个事件", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("textbox", { name: "Webhook 令牌", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "轮换令牌" }).click();
+  await expect(page.getByText("Webhook 令牌已轮换")).toBeVisible();
+  const rotatedWebhookToken = await page
+    .getByRole("textbox", { name: "Webhook 令牌", exact: true })
+    .inputValue();
+  expect(rotatedWebhookToken).not.toBe(firstWebhookToken);
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "更新发信通道" }).click();
   dialog = page.getByRole("dialog");
@@ -68,6 +90,11 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   await expect(
     page.getByRole("button", { name: "重新连接发信通道" }),
   ).toBeVisible();
+  await expect(page.getByText("等待首个事件", { exact: true })).toBeVisible();
+  page.once("dialog", (confirmation) => confirmation.accept());
+  await page.getByRole("button", { name: "停用 Webhook" }).click();
+  await expect(page.getByText("回执 Webhook 已停用")).toBeVisible();
+  await expect(page.getByText("未配置", { exact: true })).toBeVisible();
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("combobox", { name: "当前工作区" }).click();

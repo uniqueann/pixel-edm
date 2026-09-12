@@ -19,7 +19,7 @@ export type DeliveryRequest = {
 export type DeliveryResult = {
   provider: "directmail";
   requestId: string;
-  eventId: string;
+  envId: string;
   acceptedAt: string;
 };
 

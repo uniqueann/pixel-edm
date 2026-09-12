@@ -97,7 +97,7 @@ Deno.serve(async (request) => {
         completion = {
           status: "accepted",
           provider_request_id: receipt.requestId,
-          provider_event_id: receipt.eventId,
+          provider_env_id: receipt.envId,
         };
       } catch (deliveryError) {
         completion = classifyDirectMailError(deliveryError);

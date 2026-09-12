@@ -1,10 +1,11 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
+import { supabaseConfig } from "@/lib/supabase/config";
 import {
   credentialStorageReady,
   sealDirectMailCredentials,
@@ -36,6 +37,7 @@ function actionError(error: unknown) {
     "服务器尚未配置",
     "测试发送过于频繁",
     "登录邮箱尚未验证",
+    "Webhook 配置已变化",
   ];
   return {
     error: safeMessages.some((prefix) => message.startsWith(prefix))
@@ -52,7 +54,19 @@ async function loadChannel(
     payload: { workspace_id: workspaceId },
   });
   if (error) throw new Error("发信通道加载失败，请重试。");
-  return data as unknown as DeliveryChannel | null;
+  const channel = data as unknown as DeliveryChannel | null;
+  if (!channel) return null;
+  const { url } = supabaseConfig();
+  const baseUrl = url.replace(/\/+$/, "");
+  return {
+    ...channel,
+    webhook: channel.webhook
+      ? {
+          ...channel.webhook,
+          endpoint: `${baseUrl}/functions/v1/edm-directmail-events?channel_id=${channel.id}`,
+        }
+      : undefined,
+  };
 }
 
 export async function getDeliveryChannel() {
@@ -142,6 +156,65 @@ export async function disconnectDeliveryChannel(input: unknown) {
     revalidatePath("/logs");
     revalidatePath("/dashboard");
     return { data: data as unknown as DeliveryChannel };
+  } catch (error) {
+    return actionError(error);
+  }
+}
+
+const deliveryWebhookInput = z.object({
+  workspace_id: z.string().uuid(),
+  channel_id: z.string().uuid(),
+  expected_token_version: z.number().int().positive().optional(),
+});
+
+export async function configureDeliveryWebhook(input: unknown) {
+  try {
+    const parsed = deliveryWebhookInput.parse(input);
+    const db = await adminWorkspace(parsed.workspace_id);
+    const current = await loadChannel(db, parsed.workspace_id);
+    if (!current || current.id !== parsed.channel_id)
+      throw new Error("发信通道已被修改，请重新加载后重试。");
+    if (current.webhook?.token_version !== parsed.expected_token_version) {
+      throw new Error("Webhook 配置已变化，请重新加载后重试。");
+    }
+
+    const token = randomBytes(32).toString("base64url");
+    const tokenDigest = createHash("sha256").update(token).digest("hex");
+    const { error } = await db.rpc("configure_delivery_webhook", {
+      payload: {
+        ...parsed,
+        token_digest: tokenDigest,
+        token_hint: token.slice(-4),
+      },
+    });
+    if (error) throw new Error(error.message);
+    const channel = await loadChannel(db, parsed.workspace_id);
+    if (!channel) throw new Error("发信通道加载失败，请重试。");
+    revalidatePath("/settings");
+    revalidatePath("/logs");
+    return { data: channel, token };
+  } catch (error) {
+    return actionError(error);
+  }
+}
+
+const revokeWebhookInput = deliveryWebhookInput.extend({
+  expected_token_version: z.number().int().positive(),
+});
+
+export async function revokeDeliveryWebhook(input: unknown) {
+  try {
+    const parsed = revokeWebhookInput.parse(input);
+    const db = await adminWorkspace(parsed.workspace_id);
+    const { error } = await db.rpc("revoke_delivery_webhook", {
+      payload: parsed,
+    });
+    if (error) throw new Error(error.message);
+    const channel = await loadChannel(db, parsed.workspace_id);
+    if (!channel) throw new Error("发信通道加载失败，请重试。");
+    revalidatePath("/settings");
+    revalidatePath("/logs");
+    return { data: channel };
   } catch (error) {
     return actionError(error);
   }

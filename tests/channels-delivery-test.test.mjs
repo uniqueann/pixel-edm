@@ -176,7 +176,7 @@ test("P4-2 测试发送幂等、权限、验证回写与审计隔离", async (t)
             attempt_id: attemptId,
             status: "accepted",
             provider_request_id: "request-sensitive-123456",
-            provider_event_id: "event-sensitive-654321",
+            provider_event_id: "env-sensitive-654321",
           }),
         )
       ).rows[0].result;
@@ -193,7 +193,7 @@ test("P4-2 测试发送幂等、权限、验证回写与审计隔离", async (t)
             attempt_id: attemptId,
             status: "accepted",
             provider_request_id: "different-request",
-            provider_event_id: "different-event",
+            provider_event_id: "different-env",
           }),
         )
       ).rows[0].result;

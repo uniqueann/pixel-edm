@@ -50,6 +50,10 @@ try {
     "get_delivery_channel: { Args: {payload:Json}; Returns:Json }",
     "save_delivery_channel: { Args: {payload:Json}; Returns:Json }",
     "disconnect_delivery_channel: { Args: {payload:Json}; Returns:Json }",
+    "configure_delivery_webhook: { Args: {payload:Json}; Returns:Json }",
+    "revoke_delivery_webhook: { Args: {payload:Json}; Returns:Json }",
+    "webhook_authorize_delivery_event: { Args: {payload:Json}; Returns:Json }",
+    "webhook_ingest_delivery_event: { Args: {payload:Json}; Returns:Json }",
     "prepare_delivery_test: { Args: {payload:Json}; Returns:Json }",
     "get_delivery_test_summary: { Args: {payload:Json}; Returns:Json }",
     "start_campaign_delivery: { Args: {payload:Json}; Returns:Json }",
@@ -61,6 +65,8 @@ try {
     "worker_recover_expired_delivery_leases: { Args: Record<string,never>; Returns:number }",
     "worker_claim_delivery_batch: { Args: {payload:Json}; Returns:Json }",
     "worker_complete_delivery_task: { Args: {payload:Json}; Returns:Json }",
+    "worker_reconcile_delivery_events: { Args: {payload:Json}; Returns:Json }",
+    "worker_cleanup_delivery_events: { Args: {payload:Json}; Returns:Json }",
   ].join(";");
   await writeFile(
     "src/lib/supabase/database.types.ts",

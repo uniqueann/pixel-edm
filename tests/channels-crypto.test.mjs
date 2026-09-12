@@ -122,7 +122,7 @@ test("P4-0 适配器契约固定区域端点并保留明确失败分类", async 
   const accepted = {
     provider: "directmail",
     requestId: "request-1",
-    eventId: "event-1",
+    envId: "env-1",
     acceptedAt: "2026-09-11T00:00:00.000Z",
   };
   assert.deepEqual(

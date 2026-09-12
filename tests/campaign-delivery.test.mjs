@@ -445,4 +445,293 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
     assert.equal(aborted.skipped_count, 2);
     assert.equal(aborted.status, "completed_with_errors");
   });
+
+  await t.test("P5-1 回执幂等投影、抑制优先级与令牌轮换", async () => {
+    const task = (
+      await db.query(
+        `select task.id,task.active_attempt_id,recipient.email
+         from edm.campaign_delivery_tasks task
+         join edm.campaign_recipient_snapshots recipient on recipient.id=task.recipient_snapshot_id
+         where task.run_id=$1 and task.status='accepted' limit 1`,
+        [runId],
+      )
+    ).rows[0];
+    assert.ok(task);
+    await db.query(
+      "update edm.campaign_delivery_attempts set provider_env_id='env-p5-1' where id=$1",
+      [task.active_attempt_id],
+    );
+
+    const digestA = "a".repeat(64);
+    const digestB = "b".repeat(64);
+    const configured = (
+      await asUser(
+        db,
+        admin,
+        rpc("configure_delivery_webhook", {
+          workspace_id: workspace,
+          channel_id: channelId,
+          token_digest: digestA,
+          token_hint: "aaaa",
+        }),
+      )
+    ).rows[0].result;
+    assert.equal(configured.webhook.configured, true);
+    await assert.rejects(
+      asUser(
+        db,
+        editor,
+        rpc("configure_delivery_webhook", {
+          workspace_id: workspace,
+          channel_id: channelId,
+          expected_token_version: 1,
+          token_digest: digestB,
+          token_hint: "bbbb",
+        }),
+      ),
+      /只有管理员/,
+    );
+    await assert.rejects(
+      asUser(db, admin, "select * from edm.campaign_delivery_events"),
+      /permission denied/,
+    );
+    await assert.rejects(
+      asUser(
+        db,
+        admin,
+        rpc("webhook_authorize_delivery_event", {
+          channel_id: channelId,
+          token_digest: digestA,
+        }),
+      ),
+      /permission denied/,
+    );
+
+    const event = (id, eventType, occurredAt, extra = {}) => ({
+      channel_id: channelId,
+      token_digest: digestA,
+      provider_event_id: id,
+      provider_event_type: "dm:test",
+      event_type: eventType,
+      provider_env_id: "env-p5-1",
+      provider_message_id: "message-p5-1",
+      sender_address: "edm@send.example.test",
+      recipient_email: task.email,
+      occurred_at: occurredAt,
+      payload_sha256: Buffer.from(id)
+        .toString("hex")
+        .padEnd(64, "0")
+        .slice(0, 64),
+      ...extra,
+    });
+    const delivered = event(
+      "1-delivered",
+      "delivery_succeeded",
+      "2026-09-13T10:00:00Z",
+      { provider_status: "0" },
+    );
+    const first = (
+      await asServiceRole(db, rpc("webhook_ingest_delivery_event", delivered))
+    ).rows[0].result;
+    const duplicate = (
+      await asServiceRole(db, rpc("webhook_ingest_delivery_event", delivered))
+    ).rows[0].result;
+    assert.equal(first.duplicate, false);
+    assert.equal(duplicate.duplicate, true);
+    await assert.rejects(
+      asServiceRole(
+        db,
+        rpc("webhook_ingest_delivery_event", {
+          ...delivered,
+          payload_sha256: "f".repeat(64),
+        }),
+      ),
+      /WEBHOOK_EVENT_ID_CONFLICT/,
+    );
+
+    await asServiceRole(
+      db,
+      rpc(
+        "webhook_ingest_delivery_event",
+        event("2-bounce", "delivery_failed", "2026-09-13T11:00:00Z", {
+          provider_status: "2",
+          error_code: "554",
+          failure_type: "SmtpNxBox",
+        }),
+      ),
+    );
+    await asServiceRole(
+      db,
+      rpc(
+        "webhook_ingest_delivery_event",
+        event("3-old-success", "delivery_succeeded", "2026-09-13T10:30:00Z", {
+          provider_status: "0",
+        }),
+      ),
+    );
+    await asServiceRole(
+      db,
+      rpc(
+        "webhook_ingest_delivery_event",
+        event("4-unsubscribe", "provider_unsubscribed", "2026-09-13T12:00:00Z"),
+      ),
+    );
+    const resubscribe = (
+      await asServiceRole(
+        db,
+        rpc(
+          "webhook_ingest_delivery_event",
+          event(
+            "5-resubscribe",
+            "provider_resubscribed",
+            "2026-09-13T12:05:00Z",
+          ),
+        ),
+      )
+    ).rows[0].result;
+    assert.equal(resubscribe.status, "ignored");
+    await asServiceRole(
+      db,
+      rpc(
+        "webhook_ingest_delivery_event",
+        event("6-open", "opened", "2026-09-13T12:10:00Z"),
+      ),
+    );
+    await asServiceRole(
+      db,
+      rpc(
+        "webhook_ingest_delivery_event",
+        event("7-click", "clicked", "2026-09-13T12:11:00Z"),
+      ),
+    );
+    await asServiceRole(
+      db,
+      rpc(
+        "webhook_ingest_delivery_event",
+        event("8-fbl", "fbl_complaint", "2026-09-13T12:12:00Z"),
+      ),
+    );
+
+    const projected = (
+      await db.query(
+        `select delivery_status,feedback_status,first_opened_at is not null opened,
+          first_clicked_at is not null clicked,provider_message_id
+         from edm.campaign_delivery_tasks where id=$1`,
+        [task.id],
+      )
+    ).rows[0];
+    assert.deepEqual(projected, {
+      delivery_status: "hard_bounced",
+      feedback_status: "complained",
+      opened: true,
+      clicked: true,
+      provider_message_id: "message-p5-1",
+    });
+    const contact = (
+      await db.query(
+        "select subscription_status from edm.contacts where email=$1",
+        [task.email],
+      )
+    ).rows[0];
+    assert.equal(contact.subscription_status, "complained");
+
+    const unmatched = (
+      await asServiceRole(
+        db,
+        rpc(
+          "webhook_ingest_delivery_event",
+          event(
+            "9-unmatched-unsubscribe",
+            "provider_unsubscribed",
+            "2026-09-13T12:20:00Z",
+            {
+              provider_env_id: "env-not-found",
+              provider_message_id: "",
+              recipient_email: "unmatched@example.test",
+            },
+          ),
+        ),
+      )
+    ).rows[0].result;
+    assert.equal(unmatched.status, "pending");
+    assert.equal(
+      (
+        await db.query(
+          "select count(*)::int n from edm.suppressions where workspace_id=$1 and email='unmatched@example.test'",
+          [workspace],
+        )
+      ).rows[0].n,
+      1,
+    );
+    await db.query(
+      `update edm.campaign_delivery_events set received_at=now()-interval '31 days',next_match_at=now()
+       where id=$1`,
+      [unmatched.event_id],
+    );
+    await asServiceRole(
+      db,
+      rpc("worker_reconcile_delivery_events", { limit: 100 }),
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select processing_status from edm.campaign_delivery_events where id=$1",
+          [unmatched.event_id],
+        )
+      ).rows[0].processing_status,
+      "unmatched",
+    );
+    await db.query(
+      "update edm.campaign_delivery_events set received_at=now()-interval '181 days' where id=$1",
+      [unmatched.event_id],
+    );
+    const cleanup = (
+      await asServiceRole(db, rpc("worker_cleanup_delivery_events", {}))
+    ).rows[0].result;
+    assert.equal(cleanup.deleted, 1);
+
+    await asUser(
+      db,
+      admin,
+      rpc("configure_delivery_webhook", {
+        workspace_id: workspace,
+        channel_id: channelId,
+        expected_token_version: 1,
+        token_digest: digestB,
+        token_hint: "bbbb",
+      }),
+    );
+    assert.ok(
+      (
+        await asServiceRole(
+          db,
+          rpc("webhook_authorize_delivery_event", {
+            channel_id: channelId,
+            token_digest: digestA,
+          }),
+        )
+      ).rows[0].result,
+    );
+    await asUser(
+      db,
+      admin,
+      rpc("revoke_delivery_webhook", {
+        workspace_id: workspace,
+        channel_id: channelId,
+        expected_token_version: 2,
+      }),
+    );
+    assert.equal(
+      (
+        await asServiceRole(
+          db,
+          rpc("webhook_authorize_delivery_event", {
+            channel_id: channelId,
+            token_digest: digestB,
+          }),
+        )
+      ).rows[0].result,
+      null,
+    );
+  });
 });

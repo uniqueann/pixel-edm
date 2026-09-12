@@ -4,7 +4,16 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound, MailCheck, Send, ShieldCheck } from "lucide-react";
+import {
+  Ban,
+  Copy,
+  KeyRound,
+  MailCheck,
+  RotateCw,
+  Send,
+  ShieldCheck,
+  Webhook,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +38,8 @@ import {
 } from "@/components/ui/select";
 import {
   disconnectDeliveryChannel,
+  configureDeliveryWebhook,
+  revokeDeliveryWebhook,
   saveDeliveryChannel,
   sendDeliveryChannelTest,
 } from "./actions";
@@ -41,6 +52,23 @@ import {
   type DeliveryTestAttempt,
 } from "./model";
 import { directMailRegions } from "./provider";
+
+const eventPattern = JSON.stringify(
+  {
+    source: ["acs.dm"],
+    type: [
+      "dm:Deliver:Succeed",
+      "dm:Deliver:Fail",
+      "dm:Feedback:FblReport",
+      "dm:Feedback:Subscribe",
+      "dm:Feedback:UnSubscribe",
+      "dm:Trace:Open",
+      "dm:Trace:Click",
+    ],
+  },
+  null,
+  2,
+);
 
 function defaults(input: {
   workspaceId: string;
@@ -95,8 +123,10 @@ export function ChannelSettings({
   const [lastTest, setLastTest] = useState(initialTest);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
+  const [webhookToken, setWebhookToken] = useState<string | null>(null);
   const [disconnecting, startDisconnect] = useTransition();
   const [testing, startTesting] = useTransition();
+  const [updatingWebhook, startWebhookUpdate] = useTransition();
   const testIdempotency = useRef<string | null>(null);
   const form = useForm<DeliveryChannelInput>({
     resolver: zodResolver(deliveryChannelInput),
@@ -153,6 +183,60 @@ export function ChannelSettings({
       else if (result.data.status === "unknown")
         toast.warning("发送结果未知，请先核对邮箱和 DirectMail 控制台");
       else toast.error(`测试发送失败：${result.data.error_code ?? "UNKNOWN"}`);
+      router.refresh();
+    });
+  }
+
+  function copy(value: string, label: string) {
+    void navigator.clipboard.writeText(value).then(
+      () => toast.success(`${label}已复制`),
+      () => toast.error(`${label}复制失败，请手动复制`),
+    );
+  }
+
+  function configureWebhook() {
+    if (!channel || updatingWebhook) return;
+    startWebhookUpdate(async () => {
+      const result = await configureDeliveryWebhook({
+        workspace_id: workspaceId,
+        channel_id: channel.id,
+        expected_token_version: channel.webhook?.token_version,
+      });
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      setChannel(result.data);
+      setWebhookToken(result.token);
+      toast.success(
+        channel.webhook?.configured
+          ? "Webhook 令牌已轮换"
+          : "Webhook 令牌已生成",
+      );
+      router.refresh();
+    });
+  }
+
+  function revokeWebhook() {
+    if (
+      !channel?.webhook?.configured ||
+      !channel.webhook.token_version ||
+      !window.confirm("确认停用回执 Webhook？EventBridge 后续请求将被拒绝。")
+    )
+      return;
+    startWebhookUpdate(async () => {
+      const result = await revokeDeliveryWebhook({
+        workspace_id: workspaceId,
+        channel_id: channel.id,
+        expected_token_version: channel.webhook?.token_version,
+      });
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      setChannel(result.data);
+      setWebhookToken(null);
+      toast.success("回执 Webhook 已停用");
       router.refresh();
     });
   }
@@ -222,6 +306,127 @@ export function ChannelSettings({
             <p className="hint m-0">
               保存区域、已验证发件身份和专用 RAM AccessKey 后即可测试发送。
             </p>
+          </div>
+        )}
+
+        {channel && canEdit && channel.webhook && (
+          <div className="space-y-4 rounded-xl border p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <Webhook className="mt-0.5 size-5" aria-hidden="true" />
+                <div>
+                  <h3 className="text-sm font-semibold">投递回执 Webhook</h3>
+                  <p className="hint mt-1 mb-0">
+                    接收投递、投诉、退订及行为事件；断开发信通道不会自动停用回执。
+                  </p>
+                </div>
+              </div>
+              <Badge variant="outline">
+                {!channel.webhook.configured
+                  ? "未配置"
+                  : channel.webhook.last_event_at
+                    ? "正在接收"
+                    : "等待首个事件"}
+              </Badge>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="webhook-endpoint">HTTPS 目标地址</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="webhook-endpoint"
+                  readOnly
+                  value={channel.webhook.endpoint}
+                  className="font-mono text-xs"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="复制 Webhook 地址"
+                  onClick={() =>
+                    copy(channel.webhook!.endpoint, "Webhook 地址")
+                  }
+                >
+                  <Copy aria-hidden="true" />
+                </Button>
+              </div>
+            </div>
+
+            {webhookToken && (
+              <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                <p className="text-sm font-medium">
+                  请立即保存令牌，仅本次显示
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={webhookToken}
+                    className="bg-background font-mono text-xs"
+                    aria-label="Webhook 令牌"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="复制 Webhook 令牌"
+                    onClick={() => copy(webhookToken, "Webhook 令牌")}
+                  >
+                    <Copy aria-hidden="true" />
+                  </Button>
+                </div>
+                <p className="m-0 text-xs">
+                  在 EventBridge HTTP 目标高级选项中将它填入 Token；请求头名称为
+                  x-eventbridge-signature-token。
+                </p>
+              </div>
+            )}
+
+            <details className="rounded-lg bg-muted p-3">
+              <summary className="cursor-pointer text-sm font-medium">
+                EventBridge 事件规则
+              </summary>
+              <p className="hint mt-2 mb-2">
+                事件源请选择 acs.dm，消息体选择“完整事件”，不要选择
+                acs.directmail。生产环境请启用指数退避并配置 MNS 死信队列。
+              </p>
+              <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
+                {eventPattern}
+              </pre>
+            </details>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={channel.webhook.configured ? "outline" : "default"}
+                disabled={updatingWebhook}
+                onClick={configureWebhook}
+              >
+                {channel.webhook.configured && <RotateCw aria-hidden="true" />}
+                {updatingWebhook
+                  ? "处理中…"
+                  : channel.webhook.configured
+                    ? "轮换令牌"
+                    : "生成令牌"}
+              </Button>
+              {channel.webhook.configured && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={updatingWebhook}
+                  onClick={revokeWebhook}
+                >
+                  <Ban aria-hidden="true" />
+                  停用 Webhook
+                </Button>
+              )}
+            </div>
+            {channel.webhook.configured && (
+              <p className="hint m-0">
+                当前令牌尾号 ••••{channel.webhook.token_hint}。轮换后旧令牌保留
+                15 分钟宽限期，便于无中断更新 EventBridge。
+              </p>
+            )}
           </div>
         )}
 

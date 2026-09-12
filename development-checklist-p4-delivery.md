@@ -10,7 +10,8 @@
 - [x] P4-2 真实测试信验收通过：管理员已收到测试信，通道已更新为 `verified`。
 - [x] P4-3 正式活动发送队列、worker、限速、重试、暂停与人工核对完成并已部署。
 - [x] P4-3 正式发送真实验收通过：云端 2 个发送运行均完成，3 个收件人任务均获 DirectMail 受理。
-- [ ] P5 送达/退信/投诉回执和公开退订尚未开始。
+- [x] P5-1 回执事件、状态模型、Webhook 鉴权与幂等已完成本地工程实现；云端部署和真实验收待进行。
+- [ ] P5-2 公开退订与 P5-3 回执统计尚未开始。
 - [x] 本阶段只操作 `edm`、`edm_private`、`edm-directmail-test` 与 `edm-directmail-worker`，未修改 `aigc` 或共享 Auth 对象。
 
 ## P4-0 发送边界与适配契约
@@ -85,9 +86,11 @@
 - [x] Vercel Production 已配置仅 Production 生效的 Secret `EDM_CREDENTIAL_KEYRING`，密钥值不可回显。
 - [x] 推送 `main` 后生产部署进入 Ready；正式域名 `/settings` 返回 200，设置页使用已配置的服务端密钥环。
 
-## 明确暂缓至 P5 以后
+## P5 衔接状态
 
-- [ ] DirectMail webhook、最终送达/退信/投诉统计和公开退订。
+- [x] DirectMail Webhook、最终送达/退信/投诉状态底座已在 P5-1 实现，详见 [P5 回执与退订交付清单](development-checklist-p5-receipts.md)。
+- [ ] P5-1 云端部署与真实回执验收。
+- [ ] P5-2 公开退订和 P5-3 统计界面。
 
 ## 云端迁移记录
 

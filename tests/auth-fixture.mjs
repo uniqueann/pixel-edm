@@ -194,7 +194,7 @@ const server = createServer(async (req, res) => {
             attempt_id: input.attempt_id,
             status: "accepted",
             provider_request_id: "fixture-request-123456",
-            provider_event_id: "fixture-event-654321",
+            provider_event_id: "fixture-env-654321",
           }).replaceAll("'", "''")}'::jsonb) as result`,
         )
       ).rows[0].result;
@@ -243,6 +243,8 @@ const server = createServer(async (req, res) => {
         "get_delivery_channel",
         "save_delivery_channel",
         "disconnect_delivery_channel",
+        "configure_delivery_webhook",
+        "revoke_delivery_webhook",
         "prepare_delivery_test",
         "get_delivery_test_summary",
         "start_campaign_delivery",

@@ -132,9 +132,9 @@ export async function sendDirectMailMessage(input: {
   });
   const response = await client.singleSendMailWithOptions(request, runtime);
   const requestId = response.body?.requestId;
-  const eventId = response.body?.envId;
-  if (!requestId || !eventId) throw new Error("PROVIDER_RECEIPT_INCOMPLETE");
-  return { requestId, eventId };
+  const envId = response.body?.envId;
+  if (!requestId || !envId) throw new Error("PROVIDER_RECEIPT_INCOMPLETE");
+  return { requestId, envId };
 }
 
 export async function sendDirectMailTest(
