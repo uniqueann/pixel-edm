@@ -1,6 +1,6 @@
 # P4 发信闭环交付清单
 
-更新日期：2026-09-12。首家 ESP 为阿里云邮件推送 DirectMail；`send.contentup.cc` 已验证，实际发件人 `edm@send.contentup.cc` 已创建。P4-0 至 P4-3 工程实现和 Supabase 部署均已完成；管理员已收到测试信，通道已进入 `verified`。P4-3 云端调度空队列验收通过，正式活动真实名单发送尚未执行。
+更新日期：2026-09-12。首家 ESP 为阿里云邮件推送 DirectMail；`send.contentup.cc` 已验证，实际发件人 `edm@send.contentup.cc` 已创建。P4-0 至 P4-3 工程实现和 Supabase 部署均已完成；管理员已收到测试信，通道已进入 `verified`。P4-3 正式活动发送真实验收已通过，活动入队、worker 调度和 DirectMail 受理链路正常。
 
 ## 当前完成状态
 
@@ -9,8 +9,9 @@
 - [x] P4-2 数据库、Edge Function、权限修复及 SDK 运行时兼容修复完成并已部署。
 - [x] P4-2 真实测试信验收通过：管理员已收到测试信，通道已更新为 `verified`。
 - [x] P4-3 正式活动发送队列、worker、限速、重试、暂停与人工核对完成并已部署。
+- [x] P4-3 正式发送真实验收通过：云端 2 个发送运行均完成，3 个收件人任务均获 DirectMail 受理。
 - [ ] P5 送达/退信/投诉回执和公开退订尚未开始。
-- [x] 本阶段只操作 `edm`、`edm_private` 与 `edm-directmail-test`，未修改 `aigc` 或共享 Auth 对象。
+- [x] 本阶段只操作 `edm`、`edm_private`、`edm-directmail-test` 与 `edm-directmail-worker`，未修改 `aigc` 或共享 Auth 对象。
 
 ## P4-0 发送边界与适配契约
 
@@ -71,7 +72,8 @@
 - [x] 活动页每 5 秒刷新发送进度；结束后仍可导出冻结 CSV 和复制为草稿。
 - [x] `edm-directmail-worker` v2 已部署；Vault 令牌仅供 `service_role` 校验，`pg_cron` 每 10 秒触发，最近一次空队列调用 HTTP 200。
 - [x] P4-3 新表启用 RLS；普通成员无直接表权限，worker RPC 仅 `service_role` 可执行，`aigc_api` 无 EDM schema 权限。
-- [x] 本地 75 项全量测试、lint、类型检查和生产构建通过；云端队列为 0，未触发正式邮件。
+- [x] 本地 75 项全量测试、lint、类型检查和生产构建通过；部署时空队列未误发邮件，随后完成受控正式发送真实验收。
+- [x] 验收时云端 2 个正式发送运行均为 `completed`，3 个收件人任务均为 `accepted`，无待处理、未知或失败任务。
 
 ## 验证
 
