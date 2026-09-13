@@ -68,12 +68,22 @@ export function assertEventBridgeCertificateUrl(source, region) {
   return url;
 }
 
-export function buildEventBridgeStringToSign(url, headers, rawBody) {
+export function buildEventBridgeStringToSign(
+  url,
+  headers,
+  rawBody,
+  { includeToken = true, trailingNewline = true } = {},
+) {
   const fixedHeaders = headerOrder
-    .filter((name) => headers[name])
+    .filter(
+      (name) =>
+        headers[name] &&
+        (includeToken || name !== "x-eventbridge-signature-token"),
+    )
     .map((name) => `${name}: ${headers[name]}`)
     .join("\n");
-  return `${url}\n${fixedHeaders}\n${rawBody}`;
+  // 阿里云文档公式未展示末尾换行，但官方 Java 参考实现会追加；保留选项以兼容线上实现差异。
+  return `${url}\n${fixedHeaders}\n${rawBody}${trailingNewline ? "\n" : ""}`;
 }
 
 function decodeBase64(value) {

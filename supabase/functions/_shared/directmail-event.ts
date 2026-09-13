@@ -17,7 +17,9 @@ function record(value: unknown): RecordValue {
 }
 
 function string(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return undefined;
 }
 
 function timestamp(value: unknown, fallback?: string, defaultSuffix = "Z") {

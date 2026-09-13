@@ -118,11 +118,31 @@ Deno.serve(async (request) => {
       (channel as { region: string }).region,
     );
     const publicKey = await certificateKey(certificateUrl);
-    const verified = await verifyEventBridgeSignature({
-      publicKey,
-      signature: headers["x-eventbridge-signature-v2"],
-      stringToSign: buildEventBridgeStringToSign(request.url, headers, rawBody),
-    });
+    const canonicalWebhookUrl = `${supabaseUrl}/functions/v1/edm-directmail-events?channel_id=${channelId}`;
+    const candidateUrls = [...new Set([request.url, canonicalWebhookUrl])];
+    const candidateStrings = candidateUrls.flatMap((url) =>
+      [true, false].flatMap((includeToken) =>
+        [true, false].map((trailingNewline) =>
+          buildEventBridgeStringToSign(url, headers, rawBody, {
+            includeToken,
+            trailingNewline,
+          }),
+        ),
+      ),
+    );
+    let verified = false;
+    for (const stringToSign of candidateStrings) {
+      if (
+        await verifyEventBridgeSignature({
+          publicKey,
+          signature: headers["x-eventbridge-signature-v2"],
+          stringToSign,
+        })
+      ) {
+        verified = true;
+        break;
+      }
+    }
     if (!verified) return json({ error: "回执签名无效" }, 401);
 
     const normalized = parseDirectMailEvent(JSON.parse(rawBody));
@@ -139,9 +159,6 @@ Deno.serve(async (request) => {
     ) {
       return json({ error: "回执发件地址不匹配" }, 400);
     }
-    if (!normalized.provider_event_id)
-      return json({ error: "回执事件标识缺失" }, 400);
-
     const payloadSha256 = await sha256Hex(rawBytes);
     const { data, error } = await admin.rpc("webhook_ingest_delivery_event", {
       payload: {
@@ -149,6 +166,8 @@ Deno.serve(async (request) => {
         token_digest: tokenDigest,
         payload_sha256: payloadSha256,
         ...normalized,
+        provider_event_id:
+          normalized.provider_event_id ?? `sha256:${payloadSha256}`,
       },
     });
     if (error) {

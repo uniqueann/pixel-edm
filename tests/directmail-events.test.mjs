@@ -45,6 +45,34 @@ test("EventBridge 固定头、时间窗、证书白名单与 RSA-SHA256 签名",
     "https://example.supabase.co/functions/v1/edm-directmail-events?channel_id=abc";
   const body = '{"id":"event-1"}';
   const stringToSign = buildEventBridgeStringToSign(url, parsedHeaders, body);
+  assert.equal(
+    stringToSign,
+    [
+      url,
+      `x-eventbridge-signature-timestamp: ${now}`,
+      "x-eventbridge-hash-method: SHA256",
+      "x-eventbridge-signature-version: 1.0",
+      `x-eventbridge-signature-url: ${certificateUrl}`,
+      "x-eventbridge-signature-token: one-time-test-token",
+      body,
+      "",
+    ].join("\n"),
+  );
+  assert.equal(
+    buildEventBridgeStringToSign(url, parsedHeaders, body, {
+      includeToken: false,
+      trailingNewline: true,
+    }),
+    [
+      url,
+      `x-eventbridge-signature-timestamp: ${now}`,
+      "x-eventbridge-hash-method: SHA256",
+      "x-eventbridge-signature-version: 1.0",
+      `x-eventbridge-signature-url: ${certificateUrl}`,
+      body,
+      "",
+    ].join("\n"),
+  );
   const keys = await crypto.subtle.generateKey(
     {
       name: "RSASSA-PKCS1-v1_5",
@@ -125,4 +153,28 @@ test("DirectMail 七类事件仅提取安全归一化字段", () => {
     () => parseDirectMailEvent([{ id: "one" }, { id: "two" }]),
     /BATCH_UNSUPPORTED/,
   );
+});
+
+test("DirectMail 真实投递成功载荷兼容缺失 CloudEvents 标识与数字状态", () => {
+  const value = parseDirectMailEvent({
+    datacontenttype: "application/json;charset=utf-8",
+    data: {
+      rcpt: "USER@example.test",
+      deliver_time: "2026-09-13T03:03:37",
+      err_code: "250",
+      failed_type: "SendOk",
+      env_id: "600000353205569856",
+      send_time: "2026-09-13T03:03:32",
+      from: "edm@send.example.test",
+      event: "dm:Deliver:Succeed",
+      region: "cn-hangzhou",
+      msg_id: "message-1@example.test",
+      status: 0,
+    },
+    source: "acs.dm",
+    type: "dm:Deliver:Succeed",
+  });
+  assert.equal(value.provider_event_id, undefined);
+  assert.equal(value.provider_status, "0");
+  assert.equal(value.occurred_at, "2026-09-13T03:03:37.000Z");
 });
