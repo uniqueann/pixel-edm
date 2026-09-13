@@ -1,6 +1,6 @@
 # P5 回执与退订交付清单
 
-更新日期：2026-09-13。P5-1 的事件表、状态模型、Webhook 鉴权与幂等已完成工程实现和本地验证；尚未向 content-up 应用迁移或部署 `edm-directmail-events`，因此不能标记为云端真实验收通过。P5-2 公开退订和 P5-3 回执统计界面仍待实施。
+更新日期：2026-09-13。P5-1 的事件表、状态模型、Webhook 鉴权与幂等已完成工程实现和本地验证；content-up 数据库迁移、`edm-directmail-events` 与生产前端均已部署。EventBridge、MNS 死信队列和真实回执尚未配置验收，因此不能标记为云端真实验收通过。P5-2 公开退订和 P5-3 回执统计界面仍待实施。
 
 ## 当前完成状态
 
@@ -11,7 +11,8 @@
 - [x] P5-1 实现投诉、供应商退订、无效地址和垃圾邮件反馈的即时抑制；供应商重新订阅不会自动解除抑制。
 - [x] P5-1 设置页支持生成、轮换、单次展示和停用令牌，并提供 EventBridge 事件规则。
 - [x] P5-1 只保存归一化安全字段和原始正文 SHA-256，不保存原始正文、IP、User-Agent 或完整点击 URL。
-- [ ] P5-1 应用云端迁移、部署 Edge Function、配置 EventBridge/MNS 死信队列并完成真实回执验收。
+- [x] P5-1 已向 content-up 应用云端迁移并部署 `edm-directmail-events` Edge Function。
+- [ ] P5-1 配置 EventBridge/MNS 死信队列并完成真实回执验收。
 - [ ] P5-2 公开退订入口与签名退订链接。
 - [ ] P5-3 活动级送达、退信、投诉、退订和行为统计界面。
 
@@ -40,8 +41,8 @@
 
 ## 云端验收待办
 
-1. 复核远端迁移历史与 AIGC 指纹，只应用两个 P5-1 前向迁移。
-2. 部署 `edm-directmail-events`，确认 `verify_jwt=false` 且函数为 Active。
+1. [x] 已复核远端迁移历史与 AIGC 基线；已应用事件、定时任务和外键索引三个 P5-1 前向迁移，未修改共享迁移历史。
+2. [x] 已部署 `edm-directmail-events` v1，确认 `verify_jwt=false` 且函数为 Active；生产前端提交 `96c93b4` 的 Vercel 部署为 Ready。
 3. 在设置页生成令牌；EventBridge 使用 `acs.dm`、7 类完整事件、HTTPS 目标、Token、指数退避和 MNS DLQ。
 4. 用受控邮件分别验证投递成功、硬退信和退订/投诉中的可行事件；核对幂等、客户抑制、任务投影和无敏感日志。
 5. 复核 Advisor、RLS/RPC 授权、AIGC 指纹、定时任务和 180 天清理任务，再标记 P5-1 云端验收通过。
