@@ -5,6 +5,12 @@ import {
   classifyDirectMailError,
   sendDirectMailMessage,
 } from "../_shared/directmail.ts";
+import {
+  appendUnsubscribeFooter,
+  signUnsubscribeToken,
+  unsubscribeHeaders,
+  unsubscribeUrls,
+} from "../_shared/unsubscribe-token.ts";
 
 type CredentialEnvelope = {
   key_id: string;
@@ -22,6 +28,8 @@ type DeliveryClaim = {
   recipient_email: string;
   subject: string;
   body: string;
+  workspace_name: string;
+  mailing_address: string;
   channel: {
     id: string;
     region: string;
@@ -46,7 +54,15 @@ Deno.serve(async (request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const keyringSource = Deno.env.get("EDM_CREDENTIAL_KEYRING");
-  if (!supabaseUrl || !serviceRoleKey || !keyringSource)
+  const unsubscribeKeyring = Deno.env.get("EDM_UNSUBSCRIBE_KEYRING");
+  const unsubscribeSiteUrl = Deno.env.get("EDM_PUBLIC_SITE_URL");
+  if (
+    !supabaseUrl ||
+    !serviceRoleKey ||
+    !keyringSource ||
+    !unsubscribeKeyring ||
+    !unsubscribeSiteUrl
+  )
     return json({ error: "工作进程配置不完整" }, 500);
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
@@ -75,6 +91,17 @@ Deno.serve(async (request) => {
     claims.map(async (claim) => {
       let completion: Record<string, unknown>;
       try {
+        const unsubscribeToken = await signUnsubscribeToken({
+          keyringSource: unsubscribeKeyring,
+          taskId: claim.task_id,
+        });
+        const urls = unsubscribeUrls(unsubscribeSiteUrl, unsubscribeToken);
+        const textBody = appendUnsubscribeFooter({
+          body: claim.body,
+          workspaceName: claim.workspace_name,
+          mailingAddress: claim.mailing_address,
+          pageUrl: urls.pageUrl,
+        });
         const credentials = await openCredentialEnvelope({
           keyringSource,
           context: {
@@ -92,7 +119,8 @@ Deno.serve(async (request) => {
           replyToAddress: claim.channel.reply_to_address,
           recipientEmail: claim.recipient_email,
           subject: claim.subject,
-          textBody: claim.body,
+          textBody,
+          headers: unsubscribeHeaders(urls.oneClickUrl),
         });
         completion = {
           status: "accepted",

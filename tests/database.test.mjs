@@ -52,7 +52,7 @@ test("EDM 迁移、用户初始化、工作区权限与 AIGC 隔离", async (t) 
           await asUser(
             db,
             a,
-            `update edm.workspaces set name='我的店铺' where id='${wa}' returning name`,
+            `update edm.workspaces set name='我的店铺',mailing_address='上海市测试路 1 号' where id='${wa}' returning name`,
           )
         ).rows[0].name,
         "我的店铺",

@@ -5,7 +5,11 @@ export const workspaceSettings = z.object({
     .trim()
     .min(1, "请填写工作区名称")
     .max(80, "名称不能超过 80 字"),
-  mailing_address: z.string().trim().max(500, "地址不能超过 500 字"),
+  mailing_address: z
+    .string()
+    .trim()
+    .min(1, "请填写真实的发件人联系地址")
+    .max(500, "地址不能超过 500 字"),
 });
 export const credentials = z.object({
   email: z.string().email("请输入有效邮箱"),

@@ -1,6 +1,6 @@
 # EDM 基础迁移验证记录
 
-基础迁移验证日期：2026-09-09。进度更新日期：2026-09-12。目标：content-up / `gnrhyahjegvcicektebh`。
+基础迁移验证日期：2026-09-09。进度更新日期：2026-09-13。目标：content-up / `gnrhyahjegvcicektebh`。
 
 - 已应用 `20260909072930_edm_foundation`。
 - `edm.members`、`edm.workspaces`、`edm.workspace_members` 三表均启用 RLS。
@@ -135,3 +135,13 @@
 - 部署启用时云端三张队列表均为 0 行，确认定时任务不会在空队列下误发邮件。安全 Advisor 没有新增 EDM 告警；性能 Advisor 的五项新外键索引提示已由补充迁移消除，剩余 EDM 提示均为空表未使用索引。
 - 随后由管理员完成 P4-3 正式发送真实验收。验收核对时云端累计 2 个正式发送运行，状态均为 `completed`；3 个收件人任务状态均为 `accepted`，无其他任务状态，确认活动入队、定时调度、worker 与 DirectMail 受理闭环正常。该结论不等同于最终送达，送达、退信、投诉和退订回执由 P5 实现。
 - 本地 75 项全量测试、6 条端到端测试、lint、类型检查和生产构建通过；新增测试覆盖幂等、角色隔离、临时重试、暂停/继续、暂停期间任务收敛、通道变更保护、未知核对、放弃剩余任务及结束后导出/复制。
+
+### P5-2 公开退订与抑制闭环（2026-09-13）
+
+- 已应用 `20260913100530_p5_public_unsubscribe`；只扩展 `edm` 和 `edm_private`，新增退订事件来源任务关联、发送运行工作区名称/地址快照及两个仅授予 `service_role` 的公开退订 RPC。
+- 迁移前无 `queued`、`sending` 或 `paused` 运行；迁移后历史发送运行的地址快照均非空。两个工作区中有一个当前未填写联系地址，该工作区的新正式发送会被数据库门禁拒绝，未替用户填入虚构地址。
+- 页面 GET 不产生退订，确认页 Server Action 和 RFC one-click POST 共用签名校验与数据库事务；请求重复、两个入口交叉提交和并发提交均由任务行锁、邮箱 advisory lock 与唯一索引收敛。
+- `EDM_UNSUBSCRIBE_KEYRING` 和 `EDM_PUBLIC_SITE_URL` 已保存为 Edge Function Secrets，密钥与发信凭据密钥分离且未进入仓库。`edm-unsubscribe` v3 和 `edm-directmail-worker` v6 均为 Active。
+- Vercel 生产部署 `dpl_AHUjK1BRM2mNH8PhfFCKYk3wUajv` 为 Ready，`edm.contentup.cc` 已绑定；无效公开令牌返回 404，无效 Worker 调用返回 401，确认两端配置完整并仍受自身鉴权保护。
+- Supabase Advisor 未新增 EDM 安全或外键告警；现有安全提示仍只涉及共享 `public`、`aigc` 和 Auth 基线，新索引未使用属于刚上线阶段的预期信息。
+- 本地 86 项数据库/单元测试、8 项浏览器端到端测试、lint、类型、格式和生产构建通过。真实邮件的正文页脚、原始 one-click 头、两种退订入口及后续发送排除待使用受控邮箱验收，当前不标记为真实验收通过。

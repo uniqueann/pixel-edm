@@ -7,9 +7,15 @@ const a = "10000000-0000-0000-0000-000000000001",
 await db.exec(`insert into auth.users values('${a}'),('${b}')`);
 const wb = (await asUser(db, b, "select edm.initialize_member() as id")).rows[0]
   .id;
-await db.exec(`update edm.workspaces set name='协作邮局' where id='${wb}'`);
+await db.exec(
+  `update edm.workspaces set name='协作邮局',mailing_address='上海市测试路 2 号' where id='${wb}'`,
+);
 const wa = (await asUser(db, a, "select edm.initialize_member() as id")).rows[0]
   .id;
+await db.query(
+  "update edm.workspaces set mailing_address='上海市测试路 1 号' where id=$1",
+  [wa],
+);
 await db.query(
   "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'viewer') on conflict do nothing",
   [wb, a],
@@ -115,6 +121,7 @@ const token = (id) =>
     ).toString("base64url"),
     "test-signature",
   ].join(".");
+const publicUnsubscribedTokens = new Set(["already.suppressed"]);
 const server = createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3100");
   res.setHeader(
@@ -137,6 +144,29 @@ const server = createServer(async (req, res) => {
     for await (const chunk of req) body += chunk;
     const input = body ? JSON.parse(body) : {};
     if (url.pathname === "/health") return send({ ok: true });
+    if (url.pathname === "/functions/v1/edm-unsubscribe") {
+      const publicToken = req.headers["x-edm-unsubscribe-token"];
+      if (typeof publicToken !== "string" || publicToken === "invalid.invalid")
+        return send({ error: "退订链接无效" }, 404);
+      if (req.method === "GET")
+        return send({
+          status: publicUnsubscribedTokens.has(publicToken)
+            ? "already_suppressed"
+            : "ready",
+          workspace_name: "公开测试店铺",
+          masked_email: "c***@example.test",
+        });
+      if (req.method === "POST") {
+        publicUnsubscribedTokens.add(publicToken);
+        return send({
+          status: "unsubscribed",
+          workspace_name: "公开测试店铺",
+          masked_email: "c***@example.test",
+          already_applied: false,
+        });
+      }
+      return send({ error: "请求方式无效" }, 405);
+    }
     if (url.pathname === "/auth/v1/token") {
       if (
         input.email !== "owner@example.test" ||

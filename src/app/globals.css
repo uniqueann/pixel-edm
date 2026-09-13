@@ -312,6 +312,35 @@
   color: var(--muted-foreground);
   margin-top: 25px;
 }
+.unsubscribe-wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
+.unsubscribe-card {
+  margin-top: 28px;
+  padding: 34px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px #1c2b4505;
+}
+.unsubscribe-card h1 {
+  margin: 8px 0 14px;
+}
+.unsubscribe-card p {
+  margin: 8px 0;
+  color: var(--muted-foreground);
+}
+.unsubscribe-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 26px;
+}
+.unsubscribe-result h1 {
+  color: var(--green);
+}
 .field-error {
   font-size: 12px;
   color: var(--destructive);
@@ -354,6 +383,12 @@
     padding-top: 30px;
   }
   .auth-card {
+    padding: 24px;
+  }
+  .unsubscribe-wrap {
+    padding-top: 30px;
+  }
+  .unsubscribe-card {
     padding: 24px;
   }
 }

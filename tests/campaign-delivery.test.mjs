@@ -26,6 +26,10 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
   const workspace = (
     await asUser(db, admin, "select edm.initialize_member() id")
   ).rows[0].id;
+  await db.query(
+    "update edm.workspaces set mailing_address='上海市测试路 1 号' where id=$1",
+    [workspace],
+  );
   await asUser(db, editor, "select edm.initialize_member()");
   await db.query(
     "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'editor')",
@@ -121,6 +125,20 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
       idempotency_key: idempotencyKey,
       confirmation_name: "P4-3 正式发送验收",
     };
+    await db.query("update edm.workspaces set mailing_address='' where id=$1", [
+      workspace,
+    ]);
+    let missingAddressError;
+    try {
+      await asUser(db, admin, rpc("start_campaign_delivery", payload));
+    } catch (error) {
+      missingAddressError = error;
+    }
+    await db.query(
+      "update edm.workspaces set mailing_address='上海市测试路 1 号' where id=$1",
+      [workspace],
+    );
+    assert.match(String(missingAddressError), /发件人联系地址/);
     await assert.rejects(
       asUser(db, editor, rpc("start_campaign_delivery", payload)),
       /只有管理员/,

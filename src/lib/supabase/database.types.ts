@@ -235,6 +235,8 @@ export type Database = {
           completed_at: string | null;
           updated_at: string;
           version: number;
+          sender_workspace_name: string;
+          sender_mailing_address: string;
         };
         Insert: {
           id?: string;
@@ -260,6 +262,8 @@ export type Database = {
           completed_at?: string | null;
           updated_at?: string;
           version?: number;
+          sender_workspace_name: string;
+          sender_mailing_address: string;
         };
         Update: {
           id?: string;
@@ -285,6 +289,8 @@ export type Database = {
           completed_at?: string | null;
           updated_at?: string;
           version?: number;
+          sender_workspace_name?: string;
+          sender_mailing_address?: string;
         };
         Relationships: [];
       };
@@ -873,6 +879,7 @@ export type Database = {
           metadata: Json;
           created_by: string | null;
           created_at: string;
+          delivery_task_id: string | null;
         };
         Insert: {
           id?: string;
@@ -888,6 +895,7 @@ export type Database = {
           metadata?: Json;
           created_by?: string | null;
           created_at?: string;
+          delivery_task_id?: string | null;
         };
         Update: {
           id?: string;
@@ -903,6 +911,7 @@ export type Database = {
           metadata?: Json;
           created_by?: string | null;
           created_at?: string;
+          delivery_task_id?: string | null;
         };
         Relationships: [];
       };
@@ -1131,6 +1140,8 @@ export type Database = {
         Args: { payload: Json };
         Returns: Json;
       };
+      resolve_public_unsubscribe: { Args: { payload: Json }; Returns: Json };
+      apply_public_unsubscribe: { Args: { payload: Json }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

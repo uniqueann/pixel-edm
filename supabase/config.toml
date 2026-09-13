@@ -37,3 +37,6 @@ port = 54324
 
 [functions.edm-directmail-events]
 verify_jwt = false
+
+[functions.edm-unsubscribe]
+verify_jwt = false

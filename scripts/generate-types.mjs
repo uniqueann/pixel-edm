@@ -67,6 +67,8 @@ try {
     "worker_complete_delivery_task: { Args: {payload:Json}; Returns:Json }",
     "worker_reconcile_delivery_events: { Args: {payload:Json}; Returns:Json }",
     "worker_cleanup_delivery_events: { Args: {payload:Json}; Returns:Json }",
+    "resolve_public_unsubscribe: { Args: {payload:Json}; Returns:Json }",
+    "apply_public_unsubscribe: { Args: {payload:Json}; Returns:Json }",
   ].join(";");
   await writeFile(
     "src/lib/supabase/database.types.ts",

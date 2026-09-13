@@ -17,6 +17,19 @@ export type DirectMailFailure = {
   error_code: string;
 };
 
+export type DirectMailMessageInput = {
+  accessKeyId: string;
+  accessKeySecret: string;
+  region: string;
+  senderAddress: string;
+  senderAlias: string;
+  replyToAddress?: string | null;
+  recipientEmail: string;
+  subject: string;
+  textBody: string;
+  headers?: Record<string, string>;
+};
+
 const allowedRegions = new Set([
   "cn-hangzhou",
   "ap-southeast-1",
@@ -56,7 +69,7 @@ export function classifyDirectMailError(error: unknown): DirectMailFailure {
       error_code: code,
     };
   if (
-    /account|sender|mailfrom|domain|reply|parameter|invalid.*address|credential|keyring|region/.test(
+    /account|sender|mailfrom|domain|reply|parameter|invalid.*address|credential|keyring|region|unsubscribe|site_url/.test(
       normalized,
     )
   )
@@ -76,17 +89,24 @@ export function classifyDirectMailError(error: unknown): DirectMailFailure {
   return { status: "failed", error_category: "unknown", error_code: code };
 }
 
-export async function sendDirectMailMessage(input: {
-  accessKeyId: string;
-  accessKeySecret: string;
-  region: string;
-  senderAddress: string;
-  senderAlias: string;
-  replyToAddress?: string | null;
-  recipientEmail: string;
-  subject: string;
-  textBody: string;
-}) {
+export function buildDirectMailRequest(input: DirectMailMessageInput) {
+  return {
+    accountName: input.senderAddress,
+    addressType: 1,
+    replyToAddress: Boolean(input.replyToAddress),
+    replyAddress: input.replyToAddress || undefined,
+    toAddress: input.recipientEmail,
+    fromAlias: input.senderAlias,
+    subject: input.subject,
+    textBody: input.textBody,
+    headers: input.headers ? JSON.stringify(input.headers) : undefined,
+    clickTrace: "0",
+    unSubscribeLinkType: "disabled",
+    unSubscribeFilterLevel: "disabled",
+  };
+}
+
+export async function sendDirectMailMessage(input: DirectMailMessageInput) {
   if (!allowedRegions.has(input.region)) throw new Error("REGION_UNSUPPORTED");
   const Config = resolveCjsConstructor<typeof $OpenApiUtil.Config>(
     $OpenApiUtil,
@@ -112,19 +132,7 @@ export async function sendDirectMailMessage(input: {
     retryOptions: new RetryOptions({ retryable: false }),
   });
   const client = new DirectMailClient(config);
-  const request = new SingleSendMailRequest({
-    accountName: input.senderAddress,
-    addressType: 1,
-    replyToAddress: Boolean(input.replyToAddress),
-    replyAddress: input.replyToAddress || undefined,
-    toAddress: input.recipientEmail,
-    fromAlias: input.senderAlias,
-    subject: input.subject,
-    textBody: input.textBody,
-    clickTrace: "0",
-    unSubscribeLinkType: "disabled",
-    unSubscribeFilterLevel: "disabled",
-  });
+  const request = new SingleSendMailRequest(buildDirectMailRequest(input));
   const runtime = new RuntimeOptions({
     connectTimeout: 10_000,
     readTimeout: 20_000,

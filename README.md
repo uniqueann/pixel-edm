@@ -2,7 +2,7 @@
 
 基于交互原型构建的邮件营销管理应用。第一批已实现工程基础、真实 Auth 接入、EDM 用户和工作区数据库、七页应用外壳及基础设置。
 
-进度更新：2026-09-13，P1、P2、P3、P4 和 P5-1 已完成工程交付。P4-2 的 DirectMail 真实测试信已由管理员验收；P4-3 正式活动发送真实验收通过。P5-1 的云端迁移、Edge Functions、EventBridge、MNS 死信队列均已部署，两条真实投递成功事件已签名入库、精确关联并将任务投影为 `delivered`。P5-2 公开退订和 P5-3 统计界面尚未实施。用户已实际验证 Google 登录与邮箱重置。
+进度更新：2026-09-13，P1、P2、P3、P4、P5-1 和 P5-2 已完成工程交付。P4-2 的 DirectMail 真实测试信已由管理员验收；P4-3 正式活动发送真实验收通过。P5-1 已完成真实投递成功回执验收；P5-2 的签名退订链接、公开确认页、RFC one-click、工作区级抑制和生产部署均已完成，受控真实退订验收待执行。P5-3 统计界面尚未实施。用户已实际验证 Google 登录与邮箱重置。
 
 ## 正式部署
 
@@ -29,6 +29,8 @@ npm run dev
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`：公开客户端密钥；不使用 service role。
 - `NEXT_PUBLIC_SITE_URL`：本站完整 origin，本地为 `http://localhost:3105`。
 - `EDM_CREDENTIAL_KEYRING`：服务端与 Supabase Edge Function 共用的 AES-256-GCM 密钥环，只能保存为 Secret，不能使用 `NEXT_PUBLIC_` 前缀。
+- `EDM_UNSUBSCRIBE_KEYRING`：Supabase Edge Functions 专用的 HMAC-SHA256 退订签名密钥环，与凭据加密密钥分离并支持旧密钥继续验签。
+- `EDM_PUBLIC_SITE_URL`：Edge Function 生成退订链接时使用的正式站点 origin，生产为 `https://edm.contentup.cc`。
 
 ## 数据库归属与隔离
 
@@ -93,6 +95,8 @@ P4 已完成工程交付并通过真实验收：首家 ESP 为阿里云 DirectMa
 
 P5-1 已完成工程实现、云端部署和真实投递成功验收：接收 DirectMail 7 类 EventBridge 事件，以 RSA-SHA256 签名和每通道令牌双重鉴权，幂等写入回执并投影送达/反馈状态；投诉、退订和硬退信即时进入工作区抑制，供应商重新订阅不会自动解封。详见 [P5 回执与退订交付清单](development-checklist-p5-receipts.md)。
 
-后续批次：实施 P5-2 公开退订和 P5-3 回执统计；之后实现团队邀请。
+P5-2 已完成工程实现和生产部署：每封正式邮件使用仅含发送任务标识的长期 HMAC 签名令牌，正文包含中英双语退订链接、工作区名称和发送时冻结的联系地址，并附带标准 `List-Unsubscribe` / `List-Unsubscribe-Post` 邮件头。页面 GET 只展示确认，确认页和 one-click POST 共用一个幂等事务；退订后立即进入工作区抑制，排队中的后续邮件在实际领取前会被跳过。受控真实邮件的页脚、原始邮件头和退订后再发送排除验收尚待执行。
+
+后续批次：完成 P5-2 受控真实退订验收，再实施 P5-3 回执统计；之后实现团队邀请。
 
 设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 P1 与三个 P2 交付清单；原始交互文件归档于 `references/seller-post-office-premium.html`。
