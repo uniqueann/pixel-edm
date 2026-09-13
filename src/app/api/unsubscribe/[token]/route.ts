@@ -6,6 +6,21 @@ const headers = {
   "x-robots-tag": "noindex, nofollow",
 };
 
+export async function GET(
+  request: Request,
+  context: RouteContext<"/api/unsubscribe/[token]">,
+) {
+  const { token } = await context.params;
+  const confirmationUrl = new URL(
+    `/unsubscribe/${encodeURIComponent(token)}`,
+    request.url,
+  );
+  return new Response(null, {
+    status: 307,
+    headers: { ...headers, location: confirmationUrl.toString() },
+  });
+}
+
 export async function POST(
   request: Request,
   context: RouteContext<"/api/unsubscribe/[token]">,

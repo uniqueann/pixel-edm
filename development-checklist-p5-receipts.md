@@ -38,7 +38,7 @@
 ## P5-2 公开退订闭环
 
 - 令牌只包含版本、用途、密钥编号和发送任务 UUID，不包含邮箱、联系人、工作区或活动信息；HMAC-SHA256 使用独立密钥环，保留旧密钥即可继续验证历史邮件。
-- 公开页面路径为 `/unsubscribe/[token]`，GET 只解析并展示工作区名称与掩码邮箱；用户明确确认后才写入退订。`/api/unsubscribe/[token]` 只接受 `application/x-www-form-urlencoded` 且正文必须包含 `List-Unsubscribe=One-Click`。
+- 公开页面路径为 `/unsubscribe/[token]`，GET 只解析并展示工作区名称与掩码邮箱；用户明确确认后才写入退订。`/api/unsubscribe/[token]` 的标准 POST 只接受 `application/x-www-form-urlencoded` 且正文必须包含 `List-Unsubscribe=One-Click`；不支持 one-click 的邮箱客户端若以 GET 打开该地址，会安全跳转到公开确认页而不会直接退订。
 - 两个入口都转发给关闭平台 JWT、执行自身签名校验的 `edm-unsubscribe` Edge Function；Vercel 只使用公开 Supabase key，不保存签名密钥或 service role。
 - 数据库事务锁定来源任务及工作区邮箱，退订事件以来源任务唯一、重复提交幂等；联系人当前邮箱已变化时只抑制发送时邮箱。已有投诉状态不会被退订降级。
 - 正式发送运行冻结工作区名称与联系地址；地址为空时数据库拒绝新发送。每封文本正文追加中英双语退订链接和联系地址，并发送标准 `List-Unsubscribe` 与 `List-Unsubscribe-Post` 邮件头；DirectMail 内建退订链接保持关闭。

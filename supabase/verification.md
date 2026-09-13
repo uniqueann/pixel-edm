@@ -140,7 +140,7 @@
 
 - 已应用 `20260913100530_p5_public_unsubscribe`；只扩展 `edm` 和 `edm_private`，新增退订事件来源任务关联、发送运行工作区名称/地址快照及两个仅授予 `service_role` 的公开退订 RPC。
 - 迁移前无 `queued`、`sending` 或 `paused` 运行；迁移后历史发送运行的地址快照均非空。两个工作区中有一个当前未填写联系地址，该工作区的新正式发送会被数据库门禁拒绝，未替用户填入虚构地址。
-- 页面 GET 不产生退订，确认页 Server Action 和 RFC one-click POST 共用签名校验与数据库事务；请求重复、两个入口交叉提交和并发提交均由任务行锁、邮箱 advisory lock 与唯一索引收敛。
+- 页面 GET 不产生退订，确认页 Server Action 和 RFC one-click POST 共用签名校验与数据库事务；邮箱客户端将 one-click URL 当普通网页打开时，GET 会跳转到确认页而不会直接退订。请求重复、两个入口交叉提交和并发提交均由任务行锁、邮箱 advisory lock 与唯一索引收敛。
 - `EDM_UNSUBSCRIBE_KEYRING` 和 `EDM_PUBLIC_SITE_URL` 已保存为 Edge Function Secrets，密钥与发信凭据密钥分离且未进入仓库。`edm-unsubscribe` v3 和 `edm-directmail-worker` v6 均为 Active。
 - Vercel 生产部署 `dpl_AHUjK1BRM2mNH8PhfFCKYk3wUajv` 为 Ready，`edm.contentup.cc` 已绑定；无效公开令牌返回 404，无效 Worker 调用返回 401，确认两端配置完整并仍受自身鉴权保护。
 - Supabase Advisor 未新增 EDM 安全或外键告警；现有安全提示仍只涉及共享 `public`、`aigc` 和 Auth 基线，新索引未使用属于刚上线阶段的预期信息。

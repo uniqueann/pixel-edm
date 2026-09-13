@@ -59,6 +59,9 @@ test("标准 one-click POST 严格校验请求并保持幂等", async ({ request
     options,
   );
   expect(invalid.status()).toBe(404);
-  const get = await request.get("/api/unsubscribe/get.signature");
-  expect(get.status()).toBe(405);
+  const get = await request.get("/api/unsubscribe/get.signature", {
+    maxRedirects: 0,
+  });
+  expect(get.status()).toBe(307);
+  expect(get.headers().location).toContain("/unsubscribe/get.signature");
 });
