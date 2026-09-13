@@ -142,6 +142,8 @@
 - 迁移前无 `queued`、`sending` 或 `paused` 运行；迁移后历史发送运行的地址快照均非空。两个工作区中有一个当前未填写联系地址，该工作区的新正式发送会被数据库门禁拒绝，未替用户填入虚构地址。
 - 页面 GET 不产生退订，确认页 Server Action 和 RFC one-click POST 共用签名校验与数据库事务；邮箱客户端将 one-click URL 当普通网页打开时，GET 会跳转到确认页而不会直接退订。请求重复、两个入口交叉提交和并发提交均由任务行锁、邮箱 advisory lock 与唯一索引收敛。
 - `EDM_UNSUBSCRIBE_KEYRING` 和 `EDM_PUBLIC_SITE_URL` 已保存为 Edge Function Secrets，密钥与发信凭据密钥分离且未进入仓库。`edm-unsubscribe` v3 和 `edm-directmail-worker` v6 均为 Active。
-- Vercel 生产部署 `dpl_AHUjK1BRM2mNH8PhfFCKYk3wUajv` 为 Ready，`edm.contentup.cc` 已绑定；无效公开令牌返回 404，无效 Worker 调用返回 401，确认两端配置完整并仍受自身鉴权保护。
+- Vercel 生产部署为 Ready，`edm.contentup.cc` 已绑定；邮箱客户端以 GET 打开 one-click API 地址的兼容修复部署 `dpl_4T8FpYSQ9K57KT7EyFyKG4mpUVUB` 已上线。无效公开令牌返回 404，无效 Worker 调用返回 401，确认两端配置完整并仍受自身鉴权保护。
 - Supabase Advisor 未新增 EDM 安全或外键告警；现有安全提示仍只涉及共享 `public`、`aigc` 和 Auth 基线，新索引未使用属于刚上线阶段的预期信息。
-- 本地 86 项数据库/单元测试、8 项浏览器端到端测试、lint、类型、格式和生产构建通过。真实邮件的正文页脚、原始 one-click 头、两种退订入口及后续发送排除待使用受控邮箱验收，当前不标记为真实验收通过。
+- 本地 86 项数据库/单元测试、8 项浏览器端到端测试、lint、类型、格式和生产构建通过。
+- 用户于 2026-09-13 确认受控真实退订验收通过。客户端顶部“取消订阅”入口实际执行 GET，兼容修复后安全跳转到确认页；两个不同的工作区邮箱完成确认。脱敏云端复核显示 2 条 `public_page` 退订事件分别关联 2 个投递任务，并各自同步形成抑制记录、联系人 `unsubscribed` 状态和来源任务 `unsubscribed` 反馈投影，闭环数据一致。
+- 此次真实客户端未触发标准 RFC one-click POST，且验收后尚无新建的投递任务，因此 one-click POST 和退订后新活动排除继续作为扩展真实回归项；两项已有自动化测试覆盖，不将其误记为本次真实证据。
