@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Ban,
+  ChartNoAxesCombined,
   Copy,
   KeyRound,
   MailCheck,
@@ -39,6 +40,7 @@ import {
 import {
   disconnectDeliveryChannel,
   configureDeliveryWebhook,
+  configureDeliveryTracking,
   revokeDeliveryWebhook,
   saveDeliveryChannel,
   sendDeliveryChannelTest,
@@ -124,9 +126,17 @@ export function ChannelSettings({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [webhookToken, setWebhookToken] = useState<string | null>(null);
+  const [trackingEnabled, setTrackingEnabled] = useState(
+    initialChannel?.tracking_enabled ?? false,
+  );
+  const [trackingTagName, setTrackingTagName] = useState(
+    initialChannel?.tracking_tag_name ?? "",
+  );
+  const [trackingError, setTrackingError] = useState("");
   const [disconnecting, startDisconnect] = useTransition();
   const [testing, startTesting] = useTransition();
   const [updatingWebhook, startWebhookUpdate] = useTransition();
+  const [updatingTracking, startTrackingUpdate] = useTransition();
   const testIdempotency = useRef<string | null>(null);
   const form = useForm<DeliveryChannelInput>({
     resolver: zodResolver(deliveryChannelInput),
@@ -241,6 +251,31 @@ export function ChannelSettings({
     });
   }
 
+  function saveTracking() {
+    if (!channel || updatingTracking) return;
+    setTrackingError("");
+    startTrackingUpdate(async () => {
+      const result = await configureDeliveryTracking({
+        workspace_id: workspaceId,
+        channel_id: channel.id,
+        expected_version: channel.version,
+        tracking_enabled: trackingEnabled,
+        tracking_tag_name: trackingTagName,
+      });
+      if ("error" in result) {
+        setTrackingError(result.error);
+        return;
+      }
+      setChannel(result.data);
+      setTrackingEnabled(result.data.tracking_enabled);
+      setTrackingTagName(result.data.tracking_tag_name ?? "");
+      toast.success(
+        result.data.tracking_enabled ? "行为追踪已开启" : "行为追踪已关闭",
+      );
+      router.refresh();
+    });
+  }
+
   const connected = channel && channel.status !== "disconnected";
 
   return (
@@ -297,6 +332,14 @@ export function ChannelSettings({
                       timeStyle: "short",
                     }).format(new Date(channel.last_verified_at))
                   : "尚未通过测试发送"
+              }
+            />
+            <Detail
+              label="行为追踪"
+              value={
+                channel.tracking_enabled
+                  ? `已开启 · ${channel.tracking_tag_name ?? "标签缺失"}`
+                  : "未开启"
               }
             />
           </div>
@@ -427,6 +470,75 @@ export function ChannelSettings({
                 15 分钟宽限期，便于无中断更新 EventBridge。
               </p>
             )}
+          </div>
+        )}
+
+        {connected && canEdit && (
+          <div className="space-y-4 rounded-xl border p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <ChartNoAxesCombined
+                  className="mt-0.5 size-5"
+                  aria-hidden="true"
+                />
+                <div>
+                  <h3 className="text-sm font-semibold">打开与点击追踪</h3>
+                  <p className="hint mt-1 mb-0">
+                    显式开启后，正式邮件会使用阿里云行为追踪；历史活动口径不受影响。
+                  </p>
+                </div>
+              </div>
+              <Badge variant="outline">
+                {channel.tracking_enabled ? "已开启" : "未开启"}
+              </Badge>
+            </div>
+            <label className="flex items-start gap-3 rounded-lg bg-muted p-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1 size-4"
+                checked={trackingEnabled}
+                onChange={(event) => setTrackingEnabled(event.target.checked)}
+              />
+              <span>
+                <span className="block font-medium">
+                  为未来正式活动开启追踪
+                </span>
+                <span className="hint m-0 block">
+                  会采集供应商打开与点击信号；邮件客户端的隐私代理可能影响准确性。
+                </span>
+              </span>
+            </label>
+            <div className="space-y-2">
+              <Label htmlFor="tracking-tag-name">DirectMail 标签</Label>
+              <Input
+                id="tracking-tag-name"
+                value={trackingTagName}
+                maxLength={128}
+                placeholder="pixel_edm_tracking"
+                onChange={(event) => setTrackingTagName(event.target.value)}
+              />
+              <p className="hint m-0">
+                标签须先在当前阿里云邮件推送账号中创建，仅支持字母、数字和下划线。
+              </p>
+            </div>
+            {trackingError && (
+              <p role="alert" className="field-error">
+                {trackingError}
+              </p>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                updatingTracking ||
+                (trackingEnabled && !trackingTagName.trim()) ||
+                (trackingEnabled === channel.tracking_enabled &&
+                  trackingTagName.trim() === (channel.tracking_tag_name ?? ""))
+              }
+              onClick={saveTracking}
+            >
+              {updatingTracking ? "保存中…" : "保存追踪设置"}
+            </Button>
           </div>
         )}
 

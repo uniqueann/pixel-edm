@@ -7,6 +7,7 @@ import {
 } from "../_shared/directmail.ts";
 import {
   appendUnsubscribeFooter,
+  renderTrackedHtmlBody,
   signUnsubscribeToken,
   unsubscribeHeaders,
   unsubscribeUrls,
@@ -37,6 +38,8 @@ type DeliveryClaim = {
     sender_alias: string;
     reply_to_address?: string | null;
     credential_version: number;
+    tracking_enabled: boolean;
+    tracking_tag_name?: string | null;
   };
   credential: CredentialEnvelope;
 };
@@ -91,6 +94,8 @@ Deno.serve(async (request) => {
     claims.map(async (claim) => {
       let completion: Record<string, unknown>;
       try {
+        if (claim.channel.tracking_enabled && !claim.channel.tracking_tag_name)
+          throw new Error("TRACKING_TAG_REQUIRED");
         const unsubscribeToken = await signUnsubscribeToken({
           keyringSource: unsubscribeKeyring,
           taskId: claim.task_id,
@@ -102,6 +107,14 @@ Deno.serve(async (request) => {
           mailingAddress: claim.mailing_address,
           pageUrl: urls.pageUrl,
         });
+        const htmlBody = claim.channel.tracking_enabled
+          ? renderTrackedHtmlBody({
+              body: claim.body,
+              workspaceName: claim.workspace_name,
+              mailingAddress: claim.mailing_address,
+              pageUrl: urls.pageUrl,
+            })
+          : undefined;
         const credentials = await openCredentialEnvelope({
           keyringSource,
           context: {
@@ -120,6 +133,10 @@ Deno.serve(async (request) => {
           recipientEmail: claim.recipient_email,
           subject: claim.subject,
           textBody,
+          htmlBody,
+          trackingTagName: claim.channel.tracking_enabled
+            ? (claim.channel.tracking_tag_name ?? undefined)
+            : undefined,
           headers: unsubscribeHeaders(urls.oneClickUrl),
         });
         completion = {

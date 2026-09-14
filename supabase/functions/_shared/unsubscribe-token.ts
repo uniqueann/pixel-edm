@@ -206,6 +206,67 @@ export function appendUnsubscribeFooter(input: {
   return `${input.body.trimEnd()}\n\n—\n${workspaceName}\nContact address / 联系地址: ${mailingAddress}\nUnsubscribe / 退订: ${input.pageUrl}`;
 }
 
+function escapeHtml(value: string) {
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[character] ?? character,
+  );
+}
+
+function linkifyPlainText(value: string) {
+  const pattern = /https?:\/\/[^\s<>"']+/g;
+  let result = "";
+  let cursor = 0;
+  for (const match of value.matchAll(pattern)) {
+    const start = match.index ?? 0;
+    let url = match[0];
+    let suffix = "";
+    while (/[),.!?;:\]}，。！？；：）】》]$/.test(url)) {
+      suffix = url.slice(-1) + suffix;
+      url = url.slice(0, -1);
+    }
+    result += escapeHtml(value.slice(cursor, start));
+    if (url) {
+      const safeUrl = escapeHtml(url);
+      result += `<a href="${safeUrl}" rel="noopener noreferrer">${safeUrl}</a>`;
+    }
+    result += escapeHtml(suffix);
+    cursor = start + match[0].length;
+  }
+  return (result + escapeHtml(value.slice(cursor))).replaceAll("\n", "<br>\n");
+}
+
+export function renderTrackedHtmlBody(input: {
+  body: string;
+  workspaceName: string;
+  mailingAddress: string;
+  pageUrl: string;
+}) {
+  const workspaceName = input.workspaceName.replace(/[\r\n]+/g, " ").trim();
+  const mailingAddress = input.mailingAddress.replace(/[\r\n]+/g, " ").trim();
+  if (!workspaceName || !mailingAddress)
+    throw new Error("UNSUBSCRIBE_SENDER_INVALID");
+  const pageUrl = escapeHtml(input.pageUrl);
+  return `<!doctype html>
+<html lang="zh-CN">
+<body style="margin:0;padding:24px;background:#ffffff;color:#1c2b45;font-family:Arial,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.65">
+<div style="white-space:normal">${linkifyPlainText(input.body.trimEnd())}</div>
+<div style="margin-top:28px;padding-top:18px;border-top:1px solid #e4e8ef;color:#667085;font-size:12px">
+<div>${escapeHtml(workspaceName)}</div>
+<div>Contact address / 联系地址: ${escapeHtml(mailingAddress)}</div>
+<div><a href="${pageUrl}" data-alidm-traceoff rel="nofollow">Unsubscribe / 退订</a></div>
+</div>
+</body>
+</html>`;
+}
+
 export function unsubscribeHeaders(oneClickUrl: string) {
   return {
     "List-Unsubscribe": `<${oneClickUrl}>`,

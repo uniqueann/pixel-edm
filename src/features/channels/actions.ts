@@ -12,6 +12,7 @@ import {
 } from "./credentials";
 import {
   deliveryChannelInput,
+  deliveryTrackingInput,
   type DeliveryChannel,
   type DeliveryTestAttempt,
 } from "./model";
@@ -38,12 +39,32 @@ function actionError(error: unknown) {
     "测试发送过于频繁",
     "登录邮箱尚未验证",
     "Webhook 配置已变化",
+    "行为追踪",
+    "阿里云标签",
   ];
   return {
     error: safeMessages.some((prefix) => message.startsWith(prefix))
       ? message
       : "发信通道保存失败，请检查配置后重试。",
   };
+}
+
+export async function configureDeliveryTracking(input: unknown) {
+  try {
+    const parsed = deliveryTrackingInput.parse(input);
+    const db = await adminWorkspace(parsed.workspace_id);
+    const { data, error } = await db.rpc("configure_delivery_tracking", {
+      payload: parsed,
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath("/settings");
+    revalidatePath("/campaigns");
+    revalidatePath("/dashboard");
+    revalidatePath("/logs");
+    return { data: data as unknown as DeliveryChannel };
+  } catch (error) {
+    return actionError(error);
+  }
 }
 
 async function loadChannel(

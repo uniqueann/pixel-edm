@@ -21,6 +21,7 @@ import {
   confirmCampaign,
   duplicateConfirmedCampaign,
   getCampaign,
+  getCampaignDeliveryStatistics,
   getCampaignPreview,
   listCampaignDeliveryTasks,
   resolveDeliveryUnknown,
@@ -33,7 +34,9 @@ import {
   campaignStatusLabels,
   campaignVariableFields,
   campaignVariableKeysFromTemplate,
+  deliveryResultFilters,
   type CampaignDetail,
+  type CampaignDeliveryStatistics,
   type CampaignDeliveryTaskList,
   type CampaignEditorOptions,
   type CampaignEditorTemplate,
@@ -43,6 +46,7 @@ import {
   type CampaignSummary,
   type CampaignVariableKey,
   type CampaignVariables,
+  type DeliveryResultFilter,
 } from "./model";
 
 type SelectableTemplate = CampaignEditorTemplate & { archived: boolean };
@@ -62,6 +66,75 @@ function statusVariant(status: CampaignStatus) {
     return "default" as const;
   if (status === "draft") return "secondary" as const;
   return "outline" as const;
+}
+
+const deliveryResultLabels: Record<DeliveryResultFilter, string> = {
+  pending: "待发送",
+  processing: "处理中",
+  accepted: "已受理",
+  failed: "发送失败",
+  skipped: "已跳过",
+  unknown: "结果未知",
+  awaiting_receipt: "等待回执",
+  delivered: "已送达",
+  delivery_failed: "投递失败",
+  hard_bounced: "硬退信",
+  unsubscribed: "已退订",
+  complained: "已投诉",
+  opened: "已打开",
+  clicked: "已点击",
+};
+
+const deliveryStatusLabels: Record<string, string> = {
+  awaiting_receipt: "等待回执",
+  delivered: "已送达",
+  delivery_failed: "投递失败",
+  hard_bounced: "硬退信",
+};
+
+const feedbackStatusLabels: Record<string, string> = {
+  none: "无反馈",
+  unsubscribed: "已退订",
+  complained: "已投诉",
+};
+
+function rateValue(numerator: number, denominator: number) {
+  return denominator > 0 ? Math.round((numerator / denominator) * 100) : null;
+}
+
+function rateLabel(numerator: number, denominator: number) {
+  const value = rateValue(numerator, denominator);
+  return value === null ? "—" : `${value}%`;
+}
+
+function MetricBar({
+  label,
+  value,
+  total,
+  unavailable = false,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  unavailable?: boolean;
+}) {
+  const percentage = rateValue(value, total);
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between gap-3 text-xs">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium">
+          {unavailable ? "未启用" : `${value} · ${rateLabel(value, total)}`}
+        </span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary transition-[width]"
+          style={{ width: `${unavailable ? 0 : (percentage ?? 0)}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function Campaigns({
@@ -109,10 +182,10 @@ export function Campaigns({
   const [confirmationName, setConfirmationName] = useState("");
   const [deliveryError, setDeliveryError] = useState("");
   const [deliveryDetails, setDeliveryDetails] = useState<CampaignSummary>();
+  const [deliveryStatistics, setDeliveryStatistics] =
+    useState<CampaignDeliveryStatistics>();
   const [taskList, setTaskList] = useState<CampaignDeliveryTaskList>();
-  const [taskStatus, setTaskStatus] = useState<
-    "" | "unknown" | "failed" | "accepted" | "skipped"
-  >("");
+  const [taskStatus, setTaskStatus] = useState<"" | DeliveryResultFilter>("");
   const [taskPage, setTaskPage] = useState(1);
   const [taskLoading, setTaskLoading] = useState(false);
   const [resolutionNotes, setResolutionNotes] = useState<
@@ -207,7 +280,7 @@ export function Campaigns({
       const result = await listCampaignDeliveryTasks({
         workspace_id: workspace,
         run_id: campaign.delivery.id,
-        status: status || undefined,
+        result_filter: status || undefined,
         page,
       });
       if ("error" in result)
@@ -223,12 +296,38 @@ export function Campaigns({
   function openDeliveryDetails(campaign: CampaignSummary) {
     returnFocus.current = document.activeElement as HTMLElement | null;
     setDeliveryDetails(campaign);
-    const initialStatus = campaign.status === "needs_review" ? "unknown" : "";
+    setDeliveryStatistics(campaign.delivery?.statistics);
+    const initialStatus =
+      canSend && campaign.status === "needs_review" ? "unknown" : "";
     setTaskStatus(initialStatus);
     setTaskPage(1);
     setTaskList(undefined);
     setDeliveryError("");
-    void loadDeliveryTasks(campaign, initialStatus, 1);
+    if (canSend) void loadDeliveryTasks(campaign, initialStatus, 1);
+  }
+
+  async function refreshDeliveryDetails() {
+    if (!deliveryDetails?.delivery) return;
+    setTaskLoading(true);
+    setDeliveryError("");
+    try {
+      const statisticsResult = await getCampaignDeliveryStatistics({
+        workspace_id: workspace,
+        run_id: deliveryDetails.delivery.id,
+      });
+      if ("error" in statisticsResult) {
+        setDeliveryError(statisticsResult.error ?? "活动统计加载失败。");
+        return;
+      }
+      setDeliveryStatistics(statisticsResult.data);
+      if (canSend)
+        await loadDeliveryTasks(deliveryDetails, taskStatus, taskPage);
+      router.refresh();
+    } catch {
+      setDeliveryError("活动统计加载失败，请重试。");
+    } finally {
+      setTaskLoading(false);
+    }
   }
 
   function openDeliveryConfirmation(
@@ -325,6 +424,14 @@ export function Campaigns({
       }
       toast.success("未知发送结果已核对");
       await loadDeliveryTasks(deliveryDetails, taskStatus, taskPage);
+      if (deliveryDetails.delivery) {
+        const statisticsResult = await getCampaignDeliveryStatistics({
+          workspace_id: workspace,
+          run_id: deliveryDetails.delivery.id,
+        });
+        if (!("error" in statisticsResult))
+          setDeliveryStatistics(statisticsResult.data);
+      }
       router.refresh();
     } catch {
       setDeliveryError("人工核对失败，请重试。");
@@ -511,6 +618,9 @@ export function Campaigns({
     setDuplicateError("");
   }
 
+  const activeStatistics =
+    deliveryStatistics ?? deliveryDetails?.delivery?.statistics;
+
   return (
     <>
       <div className="section-heading">
@@ -661,28 +771,27 @@ export function Campaigns({
                     )}
                   </div>
                 )}
-              {canSend && campaign.delivery && (
+              {campaign.delivery && (
                 <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
                   <Button
                     variant="outline"
                     onClick={() => openDeliveryDetails(campaign)}
                   >
-                    {campaign.status === "needs_review"
-                      ? "核对结果"
-                      : "发送明细"}
+                    {canSend ? "统计与明细" : "查看统计"}
                   </Button>
-                  {["queued", "sending", "paused"].includes(
-                    campaign.status,
-                  ) && (
-                    <Button
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() => void toggleDeliveryPaused(campaign)}
-                    >
-                      {campaign.status === "paused" ? "继续发送" : "暂停发送"}
-                    </Button>
-                  )}
-                  {campaign.status === "paused" && (
+                  {canSend &&
+                    ["queued", "sending", "paused"].includes(
+                      campaign.status,
+                    ) && (
+                      <Button
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => void toggleDeliveryPaused(campaign)}
+                      >
+                        {campaign.status === "paused" ? "继续发送" : "暂停发送"}
+                      </Button>
+                    )}
+                  {canSend && campaign.status === "paused" && (
                     <Button
                       variant="destructive"
                       disabled={busy}
@@ -703,13 +812,39 @@ export function Campaigns({
                       : `冻结 ${campaign.recipient_count ?? 0} 位收件人`}
                   </p>
                   {campaign.delivery && (
-                    <p className="hint m-0">
-                      待发 {campaign.delivery.counts.pending} · 处理中{" "}
-                      {campaign.delivery.counts.processing} · 失败{" "}
-                      {campaign.delivery.counts.failed} · 未知{" "}
-                      {campaign.delivery.counts.unknown} · 跳过{" "}
-                      {campaign.delivery.counts.skipped}
-                    </p>
+                    <div className="mt-3 space-y-2">
+                      <MetricBar
+                        label="送达率"
+                        value={campaign.delivery.statistics.counts.delivered}
+                        total={campaign.delivery.statistics.counts.accepted}
+                      />
+                      <MetricBar
+                        label="打开率"
+                        value={campaign.delivery.statistics.counts.opened}
+                        total={campaign.delivery.statistics.counts.delivered}
+                        unavailable={
+                          !campaign.delivery.statistics.tracking_enabled
+                        }
+                      />
+                      <MetricBar
+                        label="点击率"
+                        value={campaign.delivery.statistics.counts.clicked}
+                        total={campaign.delivery.statistics.counts.delivered}
+                        unavailable={
+                          !campaign.delivery.statistics.tracking_enabled
+                        }
+                      />
+                      <p className="hint m-0">
+                        等待回执{" "}
+                        {campaign.delivery.statistics.counts.awaiting_receipt} ·
+                        投递失败{" "}
+                        {campaign.delivery.statistics.counts.delivery_failed} ·
+                        硬退信{" "}
+                        {campaign.delivery.statistics.counts.hard_bounced} ·
+                        已退订{" "}
+                        {campaign.delivery.statistics.counts.unsubscribed}
+                      </p>
+                    </div>
                   )}
                   <p className="hint m-0">
                     {campaign.delivery?.completed_at
@@ -1085,112 +1220,236 @@ export function Campaigns({
           }}
         >
           <DialogHeader>
-            <DialogTitle>{deliveryDetails?.name ?? "发送明细"}</DialogTitle>
+            <DialogTitle>{deliveryDetails?.name ?? "活动统计"}</DialogTitle>
             <DialogDescription>
-              展示供应商调用结果。“未知”代表调用边界无法确认，必须核对后人工标记，系统不会自动重试。
+              送达率按已受理计算；打开、点击、退订与投诉率按已送达计算，且按收件人去重。
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-wrap items-center gap-2">
-            <Label htmlFor="delivery-task-status">结果筛选</Label>
-            <select
-              id="delivery-task-status"
-              className="rounded-md border bg-white px-3 py-2"
-              value={taskStatus}
-              onChange={(event) => {
-                const value = event.target.value as typeof taskStatus;
-                setTaskStatus(value);
-                setTaskPage(1);
-                if (deliveryDetails)
-                  void loadDeliveryTasks(deliveryDetails, value, 1);
-              }}
-            >
-              <option value="">全部</option>
-              <option value="unknown">未知</option>
-              <option value="failed">失败</option>
-              <option value="accepted">已受理</option>
-              <option value="skipped">已跳过</option>
-            </select>
-            {taskLoading && <span className="hint">加载中…</span>}
-          </div>
+          {activeStatistics && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  { label: "已受理", value: activeStatistics.counts.accepted },
+                  {
+                    label: "已送达",
+                    value: activeStatistics.counts.delivered,
+                    rate: rateLabel(
+                      activeStatistics.counts.delivered,
+                      activeStatistics.counts.accepted,
+                    ),
+                  },
+                  {
+                    label: "等待回执",
+                    value: activeStatistics.counts.awaiting_receipt,
+                  },
+                  {
+                    label: "投递失败",
+                    value: activeStatistics.counts.delivery_failed,
+                  },
+                  {
+                    label: "硬退信",
+                    value: activeStatistics.counts.hard_bounced,
+                  },
+                  {
+                    label: "已退订",
+                    value: activeStatistics.counts.unsubscribed,
+                    rate: rateLabel(
+                      activeStatistics.counts.unsubscribed,
+                      activeStatistics.counts.delivered,
+                    ),
+                  },
+                  {
+                    label: "已投诉",
+                    value: activeStatistics.counts.complained,
+                    rate: rateLabel(
+                      activeStatistics.counts.complained,
+                      activeStatistics.counts.delivered,
+                    ),
+                  },
+                  {
+                    label: "发送失败",
+                    value: activeStatistics.counts.send_failed,
+                  },
+                ].map(({ label, value, rate }) => (
+                  <div className="rounded-lg border bg-white p-3" key={label}>
+                    <p className="hint m-0">{label}</p>
+                    <p className="text-xl font-semibold">
+                      {value}
+                      {rate && (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          {rate}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="grid gap-3 rounded-lg border p-4 sm:grid-cols-3">
+                <MetricBar
+                  label="送达率"
+                  value={activeStatistics.counts.delivered}
+                  total={activeStatistics.counts.accepted}
+                />
+                <MetricBar
+                  label="打开率"
+                  value={activeStatistics.counts.opened}
+                  total={activeStatistics.counts.delivered}
+                  unavailable={!activeStatistics.tracking_enabled}
+                />
+                <MetricBar
+                  label="点击率"
+                  value={activeStatistics.counts.clicked}
+                  total={activeStatistics.counts.delivered}
+                  unavailable={!activeStatistics.tracking_enabled}
+                />
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="hint m-0">
+                  行为追踪：
+                  {activeStatistics.tracking_enabled
+                    ? `已启用 · ${activeStatistics.tracking_tag_name}`
+                    : "未启用"}
+                  {activeStatistics.last_event_at
+                    ? ` · 最后回执 ${formattedDate(activeStatistics.last_event_at)}`
+                    : " · 尚无回执"}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={taskLoading}
+                  onClick={() => void refreshDeliveryDetails()}
+                >
+                  {taskLoading ? "刷新中…" : "刷新统计"}
+                </Button>
+              </div>
+            </div>
+          )}
+          {!canSend && (
+            <p className="hint m-0">逐收件人发送明细仅工作区管理员可见。</p>
+          )}
+          {canSend && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Label htmlFor="delivery-task-status">结果筛选</Label>
+              <select
+                id="delivery-task-status"
+                className="rounded-md border bg-white px-3 py-2"
+                value={taskStatus}
+                onChange={(event) => {
+                  const value = event.target.value as typeof taskStatus;
+                  setTaskStatus(value);
+                  setTaskPage(1);
+                  if (deliveryDetails)
+                    void loadDeliveryTasks(deliveryDetails, value, 1);
+                }}
+              >
+                <option value="">全部</option>
+                {deliveryResultFilters.map((filter) => (
+                  <option key={filter} value={filter}>
+                    {deliveryResultLabels[filter]}
+                  </option>
+                ))}
+              </select>
+              {taskLoading && <span className="hint">加载中…</span>}
+            </div>
+          )}
           {deliveryError && (
             <p className="field-error" role="alert">
               {deliveryError}
             </p>
           )}
-          <div className="space-y-3">
-            {taskList?.items.map((task) => (
-              <div className="rounded-lg border p-3" key={task.id}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="m-0 break-words font-medium">
-                      #{task.position} · {task.name}
-                    </p>
-                    <p className="hint m-0 break-all">{task.email}</p>
-                  </div>
-                  <Badge
-                    variant={
-                      task.status === "failed" || task.status === "unknown"
-                        ? "destructive"
-                        : "outline"
-                    }
-                  >
-                    {task.status} · {task.attempt_count} 次
-                  </Badge>
-                </div>
-                {(task.error_category || task.error_code) && (
-                  <p className="hint mt-2 mb-0">
-                    {task.error_category ?? "-"} / {task.error_code ?? "-"}
-                  </p>
-                )}
-                {task.status === "unknown" && (
-                  <div className="mt-3 space-y-2">
-                    <Label htmlFor={`resolution-note-${task.id}`}>
-                      核对说明（10–500 字）
-                    </Label>
-                    <textarea
-                      id={`resolution-note-${task.id}`}
-                      className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
-                      maxLength={500}
-                      value={resolutionNotes[task.id] ?? ""}
-                      onChange={(event) =>
-                        setResolutionNotes({
-                          ...resolutionNotes,
-                          [task.id]: event.target.value,
-                        })
-                      }
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        disabled={
-                          busy ||
-                          (resolutionNotes[task.id]?.trim().length ?? 0) < 10
-                        }
-                        onClick={() => void resolveUnknown(task.id, "accepted")}
-                      >
-                        标记已受理
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={
-                          busy ||
-                          (resolutionNotes[task.id]?.trim().length ?? 0) < 10
-                        }
-                        onClick={() => void resolveUnknown(task.id, "failed")}
-                      >
-                        标记失败
-                      </Button>
+          {canSend && (
+            <div className="space-y-3">
+              {taskList?.items.map((task) => (
+                <div className="rounded-lg border p-3" key={task.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="m-0 break-words font-medium">
+                        #{task.position} · {task.name}
+                      </p>
+                      <p className="hint m-0 break-all">{task.email}</p>
                     </div>
+                    <Badge
+                      variant={
+                        task.status === "failed" || task.status === "unknown"
+                          ? "destructive"
+                          : "outline"
+                      }
+                    >
+                      {deliveryResultLabels[task.status]} · {task.attempt_count}{" "}
+                      次
+                    </Badge>
                   </div>
-                )}
-              </div>
-            ))}
-            {!taskLoading && taskList && !taskList.items.length && (
-              <p className="py-6 text-center hint">当前筛选下没有发送记录。</p>
-            )}
-          </div>
-          {taskList && taskList.total > taskList.page_size && (
+                  <p className="hint mt-2 mb-0">
+                    回执：{deliveryStatusLabels[task.delivery_status] ?? "尚无"}{" "}
+                    · 反馈：
+                    {feedbackStatusLabels[task.feedback_status] ?? "尚无"}
+                    {task.first_opened_at
+                      ? ` · 首次打开 ${formattedDate(task.first_opened_at)}`
+                      : ""}
+                    {task.first_clicked_at
+                      ? ` · 首次点击 ${formattedDate(task.first_clicked_at)}`
+                      : ""}
+                  </p>
+                  {(task.error_category || task.error_code) && (
+                    <p className="hint mt-2 mb-0">
+                      {task.error_category ?? "-"} / {task.error_code ?? "-"}
+                    </p>
+                  )}
+                  {task.status === "unknown" && (
+                    <div className="mt-3 space-y-2">
+                      <Label htmlFor={`resolution-note-${task.id}`}>
+                        核对说明（10–500 字）
+                      </Label>
+                      <textarea
+                        id={`resolution-note-${task.id}`}
+                        className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
+                        maxLength={500}
+                        value={resolutionNotes[task.id] ?? ""}
+                        onChange={(event) =>
+                          setResolutionNotes({
+                            ...resolutionNotes,
+                            [task.id]: event.target.value,
+                          })
+                        }
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          disabled={
+                            busy ||
+                            (resolutionNotes[task.id]?.trim().length ?? 0) < 10
+                          }
+                          onClick={() =>
+                            void resolveUnknown(task.id, "accepted")
+                          }
+                        >
+                          标记已受理
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={
+                            busy ||
+                            (resolutionNotes[task.id]?.trim().length ?? 0) < 10
+                          }
+                          onClick={() => void resolveUnknown(task.id, "failed")}
+                        >
+                          标记失败
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {!taskLoading && taskList && !taskList.items.length && (
+                <p className="py-6 text-center hint">
+                  当前筛选下没有发送记录。
+                </p>
+              )}
+            </div>
+          )}
+          {canSend && taskList && taskList.total > taskList.page_size && (
             <div className="flex items-center justify-between">
               <Button
                 variant="outline"

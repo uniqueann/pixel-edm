@@ -237,6 +237,8 @@ export type Database = {
           version: number;
           sender_workspace_name: string;
           sender_mailing_address: string;
+          tracking_enabled: boolean;
+          tracking_tag_name: string | null;
         };
         Insert: {
           id?: string;
@@ -264,6 +266,8 @@ export type Database = {
           version?: number;
           sender_workspace_name: string;
           sender_mailing_address: string;
+          tracking_enabled?: boolean;
+          tracking_tag_name?: string | null;
         };
         Update: {
           id?: string;
@@ -291,6 +295,8 @@ export type Database = {
           version?: number;
           sender_workspace_name?: string;
           sender_mailing_address?: string;
+          tracking_enabled?: boolean;
+          tracking_tag_name?: string | null;
         };
         Relationships: [];
       };
@@ -738,6 +744,8 @@ export type Database = {
           updated_at: string;
           disconnected_at: string | null;
           version: number;
+          tracking_enabled: boolean;
+          tracking_tag_name: string | null;
         };
         Insert: {
           id: string;
@@ -759,6 +767,8 @@ export type Database = {
           updated_at?: string;
           disconnected_at?: string | null;
           version?: number;
+          tracking_enabled?: boolean;
+          tracking_tag_name?: string | null;
         };
         Update: {
           id?: string;
@@ -780,6 +790,8 @@ export type Database = {
           updated_at?: string;
           disconnected_at?: string | null;
           version?: number;
+          tracking_enabled?: boolean;
+          tracking_tag_name?: string | null;
         };
         Relationships: [];
       };
@@ -1109,6 +1121,7 @@ export type Database = {
       save_delivery_channel: { Args: { payload: Json }; Returns: Json };
       disconnect_delivery_channel: { Args: { payload: Json }; Returns: Json };
       configure_delivery_webhook: { Args: { payload: Json }; Returns: Json };
+      configure_delivery_tracking: { Args: { payload: Json }; Returns: Json };
       revoke_delivery_webhook: { Args: { payload: Json }; Returns: Json };
       webhook_authorize_delivery_event: {
         Args: { payload: Json };
@@ -1121,6 +1134,14 @@ export type Database = {
       set_campaign_delivery_paused: { Args: { payload: Json }; Returns: Json };
       abort_campaign_delivery: { Args: { payload: Json }; Returns: Json };
       get_campaign_delivery_summaries: {
+        Args: { payload: Json };
+        Returns: Json;
+      };
+      get_campaign_delivery_statistics: {
+        Args: { payload: Json };
+        Returns: Json;
+      };
+      get_workspace_campaign_statistics: {
         Args: { payload: Json };
         Returns: Json;
       };

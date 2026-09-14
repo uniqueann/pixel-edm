@@ -2,6 +2,12 @@ import Dm20151123, * as $Dm from "npm:@alicloud/dm20151123@1.11.0";
 import * as $OpenApiUtil from "npm:@alicloud/openapi-core@1.0.8/dist/utils.js";
 import * as $dara from "npm:@darabonba/typescript@1.0.5";
 import { resolveCjsConstructor } from "./cjs-interop.ts";
+import {
+  buildDirectMailRequest,
+  type DirectMailRequestInput,
+} from "./directmail-request.ts";
+
+export { buildDirectMailRequest } from "./directmail-request.ts";
 
 export type DirectMailErrorCategory =
   | "authentication"
@@ -17,17 +23,10 @@ export type DirectMailFailure = {
   error_code: string;
 };
 
-export type DirectMailMessageInput = {
+export type DirectMailMessageInput = DirectMailRequestInput & {
   accessKeyId: string;
   accessKeySecret: string;
   region: string;
-  senderAddress: string;
-  senderAlias: string;
-  replyToAddress?: string | null;
-  recipientEmail: string;
-  subject: string;
-  textBody: string;
-  headers?: Record<string, string>;
 };
 
 const allowedRegions = new Set([
@@ -69,7 +68,7 @@ export function classifyDirectMailError(error: unknown): DirectMailFailure {
       error_code: code,
     };
   if (
-    /account|sender|mailfrom|domain|reply|parameter|invalid.*address|credential|keyring|region|unsubscribe|site_url/.test(
+    /account|sender|mailfrom|domain|reply|parameter|invalid.*address|credential|keyring|region|unsubscribe|site_url|tag|trace|tracking/.test(
       normalized,
     )
   )
@@ -87,23 +86,6 @@ export function classifyDirectMailError(error: unknown): DirectMailFailure {
   if (/invalid|rejected|denied|unsupported/.test(normalized))
     return { status: "failed", error_category: "permanent", error_code: code };
   return { status: "failed", error_category: "unknown", error_code: code };
-}
-
-export function buildDirectMailRequest(input: DirectMailMessageInput) {
-  return {
-    accountName: input.senderAddress,
-    addressType: 1,
-    replyToAddress: Boolean(input.replyToAddress),
-    replyAddress: input.replyToAddress || undefined,
-    toAddress: input.recipientEmail,
-    fromAlias: input.senderAlias,
-    subject: input.subject,
-    textBody: input.textBody,
-    headers: input.headers ? JSON.stringify(input.headers) : undefined,
-    clickTrace: "0",
-    unSubscribeLinkType: "disabled",
-    unSubscribeFilterLevel: "disabled",
-  };
 }
 
 export async function sendDirectMailMessage(input: DirectMailMessageInput) {

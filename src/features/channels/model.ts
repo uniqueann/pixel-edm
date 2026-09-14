@@ -120,6 +120,36 @@ export const deliveryChannelInput = z
 
 export type DeliveryChannelInput = z.infer<typeof deliveryChannelInput>;
 
+export const deliveryTrackingInput = z
+  .object({
+    workspace_id: z.string().uuid(),
+    channel_id: z.string().uuid(),
+    expected_version: z.number().int().positive(),
+    tracking_enabled: z.boolean(),
+    tracking_tag_name: z.string().trim().max(128, "阿里云标签最多 128 个字符"),
+  })
+  .superRefine((value, context) => {
+    if (value.tracking_enabled && !value.tracking_tag_name) {
+      context.addIssue({
+        code: "custom",
+        path: ["tracking_tag_name"],
+        message: "开启追踪前请填写阿里云标签",
+      });
+    }
+    if (
+      value.tracking_tag_name &&
+      !/^[A-Za-z0-9_]+$/.test(value.tracking_tag_name)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["tracking_tag_name"],
+        message: "阿里云标签仅支持字母、数字和下划线",
+      });
+    }
+  });
+
+export type DeliveryTrackingInput = z.infer<typeof deliveryTrackingInput>;
+
 export type DeliveryChannel = {
   id: string;
   workspace_id: string;
@@ -133,6 +163,8 @@ export type DeliveryChannel = {
   credential_configured: boolean;
   access_key_hint?: string;
   credential_version?: number;
+  tracking_enabled: boolean;
+  tracking_tag_name?: string;
   last_verified_at?: string;
   last_error_code?: string;
   disconnected_at?: string;

@@ -274,6 +274,7 @@ const server = createServer(async (req, res) => {
         "save_delivery_channel",
         "disconnect_delivery_channel",
         "configure_delivery_webhook",
+        "configure_delivery_tracking",
         "revoke_delivery_webhook",
         "prepare_delivery_test",
         "get_delivery_test_summary",
@@ -281,6 +282,8 @@ const server = createServer(async (req, res) => {
         "set_campaign_delivery_paused",
         "abort_campaign_delivery",
         "get_campaign_delivery_summaries",
+        "get_campaign_delivery_statistics",
+        "get_workspace_campaign_statistics",
         "list_campaign_delivery_tasks",
         "resolve_delivery_unknown",
       ].includes(rpc)

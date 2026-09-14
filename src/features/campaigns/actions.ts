@@ -9,10 +9,13 @@ import {
   type CampaignConfirmation,
   type CampaignDetail,
   type CampaignDeliverySummary,
+  type CampaignDeliveryStatistics,
   type CampaignDeliveryTaskList,
   type CampaignEditorOptions,
   type CampaignList,
   type CampaignPreview,
+  type WorkspaceCampaignStatistics,
+  deliveryResultFilters,
 } from "./model";
 
 async function authorizedWorkspace(workspaceId: string, write = false) {
@@ -288,16 +291,7 @@ export async function listCampaignDeliveryTasks(input: unknown) {
   try {
     const parsed = deliveryReference
       .extend({
-        status: z
-          .enum([
-            "pending",
-            "processing",
-            "accepted",
-            "failed",
-            "skipped",
-            "unknown",
-          ])
-          .optional(),
+        result_filter: z.enum(deliveryResultFilters).optional(),
         page: z.number().int().positive().max(1000000).default(1),
       })
       .parse(input);
@@ -312,6 +306,32 @@ export async function listCampaignDeliveryTasks(input: unknown) {
       return { error: error.issues[0]?.message ?? "发送明细参数无效。" };
     return actionError(error);
   }
+}
+
+export async function getCampaignDeliveryStatistics(input: unknown) {
+  try {
+    const parsed = deliveryReference.parse(input);
+    const db = await authorizedWorkspace(parsed.workspace_id);
+    const { data, error } = await db.rpc("get_campaign_delivery_statistics", {
+      payload: parsed,
+    });
+    if (error) throw new Error(error.message);
+    return { data: data as unknown as CampaignDeliveryStatistics };
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return { error: error.issues[0]?.message ?? "统计参数无效。" };
+    return actionError(error);
+  }
+}
+
+export async function getWorkspaceCampaignStatistics() {
+  const { workspace } = await getContext();
+  const db = await authorizedWorkspace(workspace.id);
+  const { data, error } = await db.rpc("get_workspace_campaign_statistics", {
+    payload: { workspace_id: workspace.id },
+  });
+  if (error) throw new Error("工作区统计加载失败，请重试。");
+  return data as unknown as WorkspaceCampaignStatistics;
 }
 
 export async function resolveDeliveryUnknown(input: unknown) {

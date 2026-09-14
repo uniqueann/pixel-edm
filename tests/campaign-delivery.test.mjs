@@ -60,6 +60,53 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
     [channelId],
   );
 
+  await t.test("P5-3 行为追踪仅管理员可配置并默认影响未来活动", async () => {
+    await assert.rejects(
+      asUser(
+        db,
+        editor,
+        rpc("configure_delivery_tracking", {
+          workspace_id: workspace,
+          channel_id: channelId,
+          expected_version: 1,
+          tracking_enabled: true,
+          tracking_tag_name: "pixel_edm_tracking",
+        }),
+      ),
+      /只有管理员/,
+    );
+    const configured = (
+      await asUser(
+        db,
+        admin,
+        rpc("configure_delivery_tracking", {
+          workspace_id: workspace,
+          channel_id: channelId,
+          expected_version: 1,
+          tracking_enabled: true,
+          tracking_tag_name: "pixel_edm_tracking",
+        }),
+      )
+    ).rows[0].result;
+    assert.equal(configured.tracking_enabled, true);
+    assert.equal(configured.tracking_tag_name, "pixel_edm_tracking");
+    assert.equal(configured.version, 2);
+    await assert.rejects(
+      asUser(
+        db,
+        admin,
+        rpc("configure_delivery_tracking", {
+          workspace_id: workspace,
+          channel_id: channelId,
+          expected_version: 1,
+          tracking_enabled: true,
+          tracking_tag_name: "pixel edm",
+        }),
+      ),
+      /字母、数字和下划线/,
+    );
+  });
+
   const template = (
     await db.query(
       "select id from edm.templates where workspace_id=$1 and archived_at is null order by id limit 1",
@@ -185,6 +232,8 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
         firstClaim.recipient_email,
       ),
     );
+    assert.equal(firstClaim.channel.tracking_enabled, true);
+    assert.equal(firstClaim.channel.tracking_tag_name, "pixel_edm_tracking");
     const completed = (
       await asServiceRole(
         db,
@@ -465,6 +514,8 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
   });
 
   await t.test("P5-1 回执幂等投影、抑制优先级与令牌轮换", async () => {
+    const occurredAt = (minutes) =>
+      new Date(Date.now() + minutes * 60_000).toISOString();
     const task = (
       await db.query(
         `select task.id,task.active_attempt_id,recipient.email
@@ -545,7 +596,7 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
     const delivered = event(
       "1-delivered",
       "delivery_succeeded",
-      "2026-09-13T10:00:00Z",
+      occurredAt(1),
       { provider_status: "0" },
     );
     const first = (
@@ -571,7 +622,7 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
       db,
       rpc(
         "webhook_ingest_delivery_event",
-        event("2-bounce", "delivery_failed", "2026-09-13T11:00:00Z", {
+        event("2-bounce", "delivery_failed", occurredAt(2), {
           provider_status: "2",
           error_code: "554",
           failure_type: "SmtpNxBox",
@@ -582,7 +633,7 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
       db,
       rpc(
         "webhook_ingest_delivery_event",
-        event("3-old-success", "delivery_succeeded", "2026-09-13T10:30:00Z", {
+        event("3-old-success", "delivery_succeeded", occurredAt(1.5), {
           provider_status: "0",
         }),
       ),
@@ -591,7 +642,7 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
       db,
       rpc(
         "webhook_ingest_delivery_event",
-        event("4-unsubscribe", "provider_unsubscribed", "2026-09-13T12:00:00Z"),
+        event("4-unsubscribe", "provider_unsubscribed", occurredAt(3)),
       ),
     );
     const resubscribe = (
@@ -599,11 +650,7 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
         db,
         rpc(
           "webhook_ingest_delivery_event",
-          event(
-            "5-resubscribe",
-            "provider_resubscribed",
-            "2026-09-13T12:05:00Z",
-          ),
+          event("5-resubscribe", "provider_resubscribed", occurredAt(4)),
         ),
       )
     ).rows[0].result;
@@ -612,21 +659,21 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
       db,
       rpc(
         "webhook_ingest_delivery_event",
-        event("6-open", "opened", "2026-09-13T12:10:00Z"),
+        event("6-open", "opened", occurredAt(5)),
       ),
     );
     await asServiceRole(
       db,
       rpc(
         "webhook_ingest_delivery_event",
-        event("7-click", "clicked", "2026-09-13T12:11:00Z"),
+        event("7-click", "clicked", occurredAt(6)),
       ),
     );
     await asServiceRole(
       db,
       rpc(
         "webhook_ingest_delivery_event",
-        event("8-fbl", "fbl_complaint", "2026-09-13T12:12:00Z"),
+        event("8-fbl", "fbl_complaint", occurredAt(7)),
       ),
     );
 
@@ -661,7 +708,7 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
           event(
             "9-unmatched-unsubscribe",
             "provider_unsubscribed",
-            "2026-09-13T12:20:00Z",
+            occurredAt(8),
             {
               provider_env_id: "env-not-found",
               provider_message_id: "",
@@ -751,5 +798,65 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
       ).rows[0].result,
       null,
     );
+  });
+
+  await t.test("P5-3 聚合统计去重、结果筛选与成员只读权限", async () => {
+    const statistics = (
+      await asUser(
+        db,
+        editor,
+        rpc("get_campaign_delivery_statistics", {
+          workspace_id: workspace,
+          run_id: runId,
+        }),
+      )
+    ).rows[0].result;
+    assert.equal(statistics.tracking_enabled, true);
+    assert.equal(statistics.tracking_tag_name, "pixel_edm_tracking");
+    assert.equal(statistics.counts.recipients, 2);
+    assert.equal(statistics.counts.hard_bounced, 1);
+    assert.equal(statistics.counts.complained, 1);
+    assert.equal(statistics.counts.opened, 1);
+    assert.equal(statistics.counts.clicked, 1);
+
+    const filtered = (
+      await asUser(
+        db,
+        admin,
+        rpc("list_campaign_delivery_tasks", {
+          workspace_id: workspace,
+          run_id: runId,
+          result_filter: "clicked",
+        }),
+      )
+    ).rows[0].result;
+    assert.equal(filtered.total, 1);
+    assert.equal(filtered.items[0].first_clicked_at !== null, true);
+    await assert.rejects(
+      asUser(
+        db,
+        editor,
+        rpc("list_campaign_delivery_tasks", {
+          workspace_id: workspace,
+          run_id: runId,
+          result_filter: "clicked",
+        }),
+      ),
+      /只有管理员/,
+    );
+
+    const workspaceStatistics = (
+      await asUser(
+        db,
+        editor,
+        rpc("get_workspace_campaign_statistics", {
+          workspace_id: workspace,
+        }),
+      )
+    ).rows[0].result;
+    assert.equal(workspaceStatistics.window_days, 30);
+    assert.equal(workspaceStatistics.tracked_campaigns, 2);
+    assert.equal(workspaceStatistics.opened, 1);
+    assert.equal(workspaceStatistics.clicked, 1);
   });
 });

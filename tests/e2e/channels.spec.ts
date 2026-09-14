@@ -40,6 +40,17 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   ).toBeVisible();
 
   await expect(
+    page.getByRole("heading", { name: "打开与点击追踪" }),
+  ).toBeVisible();
+  await page.getByRole("checkbox", { name: /为未来正式活动开启追踪/ }).check();
+  await page.getByLabel("DirectMail 标签").fill("pixel_edm_tracking");
+  await page.getByRole("button", { name: "保存追踪设置" }).click();
+  await expect(page.getByText("行为追踪已开启", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("已开启 · pixel_edm_tracking", { exact: true }),
+  ).toBeVisible();
+
+  await expect(
     page.getByRole("heading", { name: "投递回执 Webhook" }),
   ).toBeVisible();
   await expect(page.getByText("未配置", { exact: true })).toBeVisible();

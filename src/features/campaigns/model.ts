@@ -111,7 +111,59 @@ export type CampaignDeliverySummary = {
   pause_reason: string | null;
   completed_at: string | null;
   counts: DeliveryCounts;
+  statistics: CampaignDeliveryStatistics;
 };
+
+export type CampaignDeliveryStatisticsCounts = {
+  recipients: number;
+  accepted: number;
+  send_failed: number;
+  skipped: number;
+  unknown: number;
+  awaiting_receipt: number;
+  delivered: number;
+  delivery_failed: number;
+  hard_bounced: number;
+  unsubscribed: number;
+  complained: number;
+  opened: number;
+  clicked: number;
+};
+
+export type CampaignDeliveryStatistics = {
+  tracking_enabled: boolean;
+  tracking_tag_name: string | null;
+  last_event_at: string | null;
+  counts: CampaignDeliveryStatisticsCounts;
+};
+
+export type WorkspaceCampaignStatistics = {
+  window_days: 30;
+  tracked_campaigns: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  last_event_at: string | null;
+};
+
+export const deliveryResultFilters = [
+  "pending",
+  "processing",
+  "accepted",
+  "failed",
+  "skipped",
+  "unknown",
+  "awaiting_receipt",
+  "delivered",
+  "delivery_failed",
+  "hard_bounced",
+  "unsubscribed",
+  "complained",
+  "opened",
+  "clicked",
+] as const;
+
+export type DeliveryResultFilter = (typeof deliveryResultFilters)[number];
 
 export type CampaignDeliveryTask = {
   id: string;

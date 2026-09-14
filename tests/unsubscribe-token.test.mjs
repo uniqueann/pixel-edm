@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   appendUnsubscribeFooter,
+  renderTrackedHtmlBody,
   signUnsubscribeToken,
   unsubscribeHeaders,
   unsubscribeUrls,
@@ -79,5 +80,23 @@ test("P5-2 邮件页脚、公开地址与 one-click 邮件头固定", async () =
   assert.throws(
     () => unsubscribeUrls("http://edm.contentup.cc", token),
     /UNSUBSCRIBE_SITE_URL_INVALID/,
+  );
+});
+
+test("P5-3 追踪邮件 HTML 安全转义、链接化且退订链接不计点击", () => {
+  const html = renderTrackedHtmlBody({
+    body: '新品 <script>alert("x")</script>\n查看 https://example.test/deal?x=1&y=2。',
+    workspaceName: "测试 & 店铺",
+    mailingAddress: "上海 <测试路>",
+    pageUrl: "https://edm.contentup.cc/unsubscribe/signed-token",
+  });
+  assert.doesNotMatch(html, /<script>/);
+  assert.match(html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
+  assert.match(html, /href="https:\/\/example\.test\/deal\?x=1&amp;y=2"/);
+  assert.match(html, /测试 &amp; 店铺/);
+  assert.match(html, /上海 &lt;测试路&gt;/);
+  assert.match(
+    html,
+    /href="https:\/\/edm\.contentup\.cc\/unsubscribe\/signed-token" data-alidm-traceoff/,
   );
 });

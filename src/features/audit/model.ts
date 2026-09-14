@@ -26,6 +26,7 @@ export const activityLabels: Record<string, string> = {
   "delivery_channel.test_accepted": "测试发信已接收",
   "delivery_channel.test_failed": "测试发信失败",
   "delivery_channel.test_unknown": "测试发信结果未知",
+  "delivery_tracking.configured": "更新行为追踪",
 };
 
 export type ActivityLog = {
