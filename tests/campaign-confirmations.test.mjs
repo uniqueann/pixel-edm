@@ -11,7 +11,7 @@ test("P3-4 活动确认、不可变快照、导出与权限", async (t) => {
   const viewer = "61000000-0000-0000-0000-000000000003";
   const outsider = "61000000-0000-0000-0000-000000000004";
   await db.exec(
-    `insert into auth.users values('${admin}'),('${editor}'),('${viewer}'),('${outsider}')`,
+    `insert into auth.users(id) values('${admin}'),('${editor}'),('${viewer}'),('${outsider}')`,
   );
   const workspace = (
     await asUser(db, admin, "select edm.initialize_member() id")

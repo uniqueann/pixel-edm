@@ -11,7 +11,7 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
   const viewer = "50000000-0000-0000-0000-000000000003";
   const outsider = "50000000-0000-0000-0000-000000000004";
   await db.exec(
-    `insert into auth.users values('${admin}'),('${editor}'),('${viewer}'),('${outsider}')`,
+    `insert into auth.users(id) values('${admin}'),('${editor}'),('${viewer}'),('${outsider}')`,
   );
   const workspace = (
     await asUser(db, admin, "select edm.initialize_member() id")

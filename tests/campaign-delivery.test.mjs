@@ -22,7 +22,7 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
   const db = await createDatabase();
   t.after(() => db.close());
 
-  await db.exec(`insert into auth.users values('${admin}'),('${editor}')`);
+  await db.exec(`insert into auth.users(id) values('${admin}'),('${editor}')`);
   const workspace = (
     await asUser(db, admin, "select edm.initialize_member() id")
   ).rows[0].id;

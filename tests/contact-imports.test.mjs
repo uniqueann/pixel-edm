@@ -7,7 +7,7 @@ test("名单导入、订阅证据与抑制保护", async (t) => {
   t.after(() => db.close());
   const owner = "30000000-0000-0000-0000-000000000001";
   const viewer = "30000000-0000-0000-0000-000000000002";
-  await db.exec(`insert into auth.users values('${owner}'),('${viewer}')`);
+  await db.exec(`insert into auth.users(id) values('${owner}'),('${viewer}')`);
   const workspace = (
     await asUser(db, owner, "select edm.initialize_member() id")
   ).rows[0].id;

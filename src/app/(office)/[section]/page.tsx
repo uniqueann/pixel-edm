@@ -16,6 +16,8 @@ import {
 } from "@/features/channels/actions";
 import { ChannelSettings } from "@/features/channels/channel-settings";
 import { credentialStorageReady } from "@/features/channels/credentials";
+import { listTeam } from "@/features/team/actions";
+import { TeamManager } from "@/features/team/team-manager";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -51,7 +53,7 @@ export default async function Page({
     !["dashboard", "team", "settings", ...Object.keys(pages)].includes(section)
   )
     notFound();
-  const { member, workspace, role, user } = await getContext();
+  const { workspace, role, user } = await getContext();
   if (section === "settings") {
     const deliveryChannel = await getDeliveryChannel();
     const deliveryTest = deliveryChannel
@@ -105,44 +107,29 @@ export default async function Page({
       .eq("workspace_id", workspace.id)
       .eq("status", "active");
     if (error) throw new Error("成员信息加载失败，请重试。");
-    if (section === "team")
+    if (section === "team") {
+      const team = await listTeam(workspace.id);
       return (
         <>
           <div className="section-heading">
-            <h1>团队成员</h1>
-            <span className="hint m-0">{members.length} 人</span>
+            <div>
+              <h1>团队成员</h1>
+              <p className="hint mt-1 mb-0">
+                {team.workspace.type === "team"
+                  ? "邀请同事协作管理客户、模板和活动草稿。"
+                  : "创建第一条邀请后，个人工作区会转换为团队工作区。"}
+              </p>
+            </div>
+            <span className="hint m-0">{team.members.length} 人</span>
           </div>
-          <Card>
-            <CardContent className="pt-3">
-              {members.map((m) => (
-                <div key={m.user_id} className="member-row">
-                  <span className="avatar">
-                    {m.user_id === user.id
-                      ? member.display_name.slice(0, 2)
-                      : "成"}
-                  </span>
-                  <div className="flex-1">
-                    <p>
-                      {m.user_id === user.id
-                        ? member.display_name
-                        : "工作区成员"}
-                    </p>
-                    <p className="hint m-0">
-                      {m.user_id === user.id ? "当前账号" : "已加入工作区"}
-                    </p>
-                  </div>
-                  <Badge variant="secondary">
-                    {{ admin: "管理员", editor: "运营", viewer: "查看者" }[
-                      m.role
-                    ] ?? m.role}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-          <p className="hint mt-4">成员邀请和角色管理将在团队协作阶段开放。</p>
+          <TeamManager
+            initialData={team}
+            currentUserId={user.id}
+            canManage={role === "admin"}
+          />
         </>
       );
+    }
     const [
       contactSummary,
       templateSummary,

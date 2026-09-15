@@ -90,7 +90,10 @@
 
 - [x] DirectMail Webhook、最终送达/退信/投诉状态底座已在 P5-1 实现，详见 [P5 回执与退订交付清单](development-checklist-p5-receipts.md)。
 - [x] P5-1 云端部署与真实回执验收。
-- [ ] P5-2 公开退订和 P5-3 统计界面。
+- [x] P5-2 公开退订、工作区抑制与真实退订验收。
+- [x] P5-3 回执统计、行为追踪与真实闭环验收。
+
+P5 已完成，后续团队协作实现与验收见 [P6 团队协作交付清单](development-checklist-p6-team.md)。
 
 ## 云端迁移记录
 

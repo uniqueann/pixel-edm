@@ -72,6 +72,15 @@ try {
     "worker_cleanup_delivery_events: { Args: {payload:Json}; Returns:Json }",
     "resolve_public_unsubscribe: { Args: {payload:Json}; Returns:Json }",
     "apply_public_unsubscribe: { Args: {payload:Json}; Returns:Json }",
+    "create_workspace_invitation: { Args: {payload:Json}; Returns:Json }",
+    "resend_workspace_invitation: { Args: {payload:Json}; Returns:Json }",
+    "revoke_workspace_invitation: { Args: {payload:Json}; Returns:Json }",
+    "accept_workspace_invitation: { Args: {payload:Json}; Returns:Json }",
+    "list_workspace_team: { Args: {payload:Json}; Returns:Json }",
+    "get_workspace_invitation_preview: { Args: {payload:Json}; Returns:Json }",
+    "change_workspace_member_role: { Args: {payload:Json}; Returns:Json }",
+    "remove_workspace_member: { Args: {payload:Json}; Returns:Json }",
+    "transfer_workspace_ownership: { Args: {payload:Json}; Returns:Json }",
   ].join(";");
   await writeFile(
     "src/lib/supabase/database.types.ts",

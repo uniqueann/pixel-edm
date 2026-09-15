@@ -1026,6 +1026,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_invitations: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          email_normalized: string;
+          role: string;
+          token_hash: string;
+          token_hint: string;
+          status: string;
+          expires_at: string;
+          invited_by: string;
+          accepted_by: string | null;
+          accepted_at: string | null;
+          revoked_by: string | null;
+          revoked_at: string | null;
+          created_at: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          email_normalized: string;
+          role: string;
+          token_hash: string;
+          token_hint: string;
+          status?: string;
+          expires_at: string;
+          invited_by: string;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          revoked_by?: string | null;
+          revoked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          email_normalized?: string;
+          role?: string;
+          token_hash?: string;
+          token_hint?: string;
+          status?: string;
+          expires_at?: string;
+          invited_by?: string;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          revoked_by?: string | null;
+          revoked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [];
+      };
       workspace_members: {
         Row: {
           workspace_id: string;
@@ -1033,6 +1090,9 @@ export type Database = {
           role: string;
           status: string;
           joined_at: string;
+          removed_at: string | null;
+          updated_at: string;
+          version: number;
         };
         Insert: {
           workspace_id: string;
@@ -1040,6 +1100,9 @@ export type Database = {
           role: string;
           status?: string;
           joined_at?: string;
+          removed_at?: string | null;
+          updated_at?: string;
+          version?: number;
         };
         Update: {
           workspace_id?: string;
@@ -1047,6 +1110,9 @@ export type Database = {
           role?: string;
           status?: string;
           joined_at?: string;
+          removed_at?: string | null;
+          updated_at?: string;
+          version?: number;
         };
         Relationships: [];
       };
@@ -1163,6 +1229,18 @@ export type Database = {
       };
       resolve_public_unsubscribe: { Args: { payload: Json }; Returns: Json };
       apply_public_unsubscribe: { Args: { payload: Json }; Returns: Json };
+      create_workspace_invitation: { Args: { payload: Json }; Returns: Json };
+      resend_workspace_invitation: { Args: { payload: Json }; Returns: Json };
+      revoke_workspace_invitation: { Args: { payload: Json }; Returns: Json };
+      accept_workspace_invitation: { Args: { payload: Json }; Returns: Json };
+      list_workspace_team: { Args: { payload: Json }; Returns: Json };
+      get_workspace_invitation_preview: {
+        Args: { payload: Json };
+        Returns: Json;
+      };
+      change_workspace_member_role: { Args: { payload: Json }; Returns: Json };
+      remove_workspace_member: { Args: { payload: Json }; Returns: Json };
+      transfer_workspace_ownership: { Args: { payload: Json }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

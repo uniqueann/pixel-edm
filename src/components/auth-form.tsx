@@ -18,7 +18,13 @@ const titles: Record<Mode, string> = {
   forgot: "找回密码",
   reset: "设置新密码",
 };
-export function AuthForm({ mode }: { mode: Mode }) {
+export function AuthForm({
+  mode,
+  nextPath,
+}: {
+  mode: Mode;
+  nextPath?: string;
+}) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [oauthPending, setOauthPending] = useState(false);
@@ -36,6 +42,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
     defaultValues: { email: "", password: "" },
   });
   const busy = form.formState.isSubmitting || oauthPending;
+  const destination =
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+      ? nextPath
+      : "/onboarding";
+  const nextQuery =
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+      ? `?next=${encodeURIComponent(nextPath)}`
+      : "";
   async function submit(values: { email?: string; password?: string }) {
     setMessage("");
     try {
@@ -66,11 +80,13 @@ export function AuthForm({ mode }: { mode: Mode }) {
         const { data, error } = await db.auth.signUp({
           email: values.email!,
           password: values.password!,
-          options: { emailRedirectTo: `${siteUrl()}/auth/callback` },
+          options: {
+            emailRedirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(destination)}`,
+          },
         });
         if (error) throw error;
         if (data.session) {
-          router.replace("/onboarding");
+          router.replace(destination);
           router.refresh();
         } else
           setMessage(
@@ -82,7 +98,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
           password: values.password!,
         });
         if (error) throw error;
-        router.replace("/onboarding");
+        router.replace(destination);
         router.refresh();
       }
     } catch {
@@ -95,7 +111,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
     try {
       const { error } = await browserClient().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${siteUrl()}/auth/callback` },
+        options: {
+          redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(destination)}`,
+        },
       });
       if (error) throw error;
     } catch {
@@ -166,7 +184,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </Button>
       )}
       <div className="auth-links">
-        <Link href={mode === "login" ? "/register" : "/login"}>
+        <Link href={`${mode === "login" ? "/register" : "/login"}${nextQuery}`}>
           {mode === "login" ? "创建账号" : "返回登录"}
         </Link>
         <Link href="/forgot-password">忘记密码？</Link>

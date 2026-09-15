@@ -8,7 +8,7 @@ test("EDM 迁移、用户初始化、工作区权限与 AIGC 隔离", async (t) 
   const db = await createDatabase();
   try {
     await db.exec(
-      `insert into auth.users values('${a}'),('${b}'),('${c}'); insert into aigc.members(user_id) values('${a}'),('${c}');`,
+      `insert into auth.users(id) values('${a}'),('${b}'),('${c}'); insert into aigc.members(user_id) values('${a}'),('${c}');`,
     );
     let wa, wb;
     await t.test(

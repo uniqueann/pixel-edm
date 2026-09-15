@@ -4,7 +4,11 @@ import { createDatabase, asUser } from "./database-helper.mjs";
 const db = await createDatabase();
 const a = "10000000-0000-0000-0000-000000000001",
   b = "10000000-0000-0000-0000-000000000002";
-await db.exec(`insert into auth.users values('${a}'),('${b}')`);
+await db.exec(`
+  insert into auth.users(id,email,email_confirmed_at) values
+    ('${a}','owner@example.test',now()),
+    ('${b}','viewer@example.test',now())
+`);
 const wb = (await asUser(db, b, "select edm.initialize_member() as id")).rows[0]
   .id;
 await db.exec(
@@ -286,6 +290,7 @@ const server = createServer(async (req, res) => {
         "get_workspace_campaign_statistics",
         "list_campaign_delivery_tasks",
         "resolve_delivery_unknown",
+        "list_workspace_team",
       ].includes(rpc)
     ) {
       const result = await asUser(

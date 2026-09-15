@@ -11,7 +11,7 @@ test("P3-3 动态收件人、变量完整性与前三封预览", async (t) => {
   const viewer = "51000000-0000-0000-0000-000000000003";
   const outsider = "51000000-0000-0000-0000-000000000004";
   await db.exec(
-    `insert into auth.users values('${admin}'),('${editor}'),('${viewer}'),('${outsider}')`,
+    `insert into auth.users(id) values('${admin}'),('${editor}'),('${viewer}'),('${outsider}')`,
   );
   const workspace = (
     await asUser(db, admin, "select edm.initialize_member() id")

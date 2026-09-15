@@ -9,7 +9,7 @@ test("模板初始化、变量校验、权限与 P2 业务审计", async (t) => 
   const editor = "40000000-0000-0000-0000-000000000002";
   const viewer = "40000000-0000-0000-0000-000000000003";
   await db.exec(
-    `insert into auth.users values('${admin}'),('${editor}'),('${viewer}')`,
+    `insert into auth.users(id) values('${admin}'),('${editor}'),('${viewer}')`,
   );
   const workspace = (
     await asUser(db, admin, "select edm.initialize_member() id")

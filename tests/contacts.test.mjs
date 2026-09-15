@@ -6,7 +6,7 @@ test("客户事务、标签、搜索分页及授权", async (t) => {
   t.after(() => db.close());
   const a = "20000000-0000-0000-0000-000000000001",
     b = "20000000-0000-0000-0000-000000000002";
-  await db.exec(`insert into auth.users values('${a}'),('${b}')`);
+  await db.exec(`insert into auth.users(id) values('${a}'),('${b}')`);
   const wa = (await asUser(db, a, "select edm.initialize_member() id")).rows[0]
     .id;
   const wb = (await asUser(db, b, "select edm.initialize_member() id")).rows[0]

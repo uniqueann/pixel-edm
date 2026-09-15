@@ -40,7 +40,7 @@ test("P4 DirectMail 通道、私密凭据、权限与审计隔离", async (t) =>
   const db = await createDatabase();
   try {
     await db.exec(
-      `insert into auth.users values('${admin}'),('${viewer}'),('${outsider}'); insert into aigc.members(user_id) values('${outsider}');`,
+      `insert into auth.users(id) values('${admin}'),('${viewer}'),('${outsider}'); insert into aigc.members(user_id) values('${outsider}');`,
     );
     const adminWorkspace = (
       await asUser(db, admin, "select edm.initialize_member() as id")

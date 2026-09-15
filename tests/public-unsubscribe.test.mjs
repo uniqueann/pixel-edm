@@ -76,7 +76,7 @@ async function createDelivery(db, workspace, template, name, key) {
 test("P5-2 公开退订事务、幂等归因与发送前抑制闭环", async (t) => {
   const db = await createDatabase();
   t.after(() => db.close());
-  await db.exec(`insert into auth.users values('${admin}'),('${editor}')`);
+  await db.exec(`insert into auth.users(id) values('${admin}'),('${editor}')`);
   const workspace = (
     await asUser(db, admin, "select edm.initialize_member() id")
   ).rows[0].id;

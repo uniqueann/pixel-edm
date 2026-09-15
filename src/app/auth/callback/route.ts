@@ -3,9 +3,12 @@ import { serverClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/supabase/config";
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
+  const requestedNext = request.nextUrl.searchParams.get("next");
   const next =
-    request.nextUrl.searchParams.get("next") === "/reset-password"
-      ? "/reset-password"
+    requestedNext &&
+    (requestedNext === "/reset-password" ||
+      requestedNext.startsWith("/invite/"))
+      ? requestedNext
       : "/onboarding";
   if (code) {
     const { error } = await (
