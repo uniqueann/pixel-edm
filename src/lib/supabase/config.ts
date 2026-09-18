@@ -16,3 +16,15 @@ export function siteUrl() {
   if (!value) throw new Error("请配置本站回调地址");
   return new URL(value).origin;
 }
+
+export function authCallbackUrl(next?: string) {
+  const callback = `${siteUrl()}/auth/callback`;
+  const supportedNext =
+    next === "/reset-password" ||
+    (typeof next === "string" && next.startsWith("/invite/"))
+      ? next
+      : null;
+  return supportedNext
+    ? `${callback}?next=${encodeURIComponent(supportedNext)}`
+    : callback;
+}

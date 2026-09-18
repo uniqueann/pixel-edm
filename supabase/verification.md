@@ -21,6 +21,13 @@
 - 上述两项认证结果来自用户实测确认；本次仅同步文档，没有新增数据库测试、云端操作或自动化认证验收。
 - 用户明确 P1 收尾只需同步文档，完成后进入 P2 客户与模板开发。
 
+### 2026-09-16 Google 回调回退修复
+
+- 根因：P6-3 邀请接受流程让普通登录把回调地址扩展为 `https://edm.contentup.cc/auth/callback?next=/onboarding`，该地址未命中当时的 Supabase Redirect URLs，Auth 按共享 Site URL 回退到 `https://contentup.cc`。
+- 代码已调整为普通登录/注册使用精确 `/auth/callback`，只有邀请登录保留受控 `next` 参数；本地白名单同步对应路径。
+- 云端仅新增 EDM 回调白名单 `https://edm.contentup.cc/auth/callback?next=/onboarding`、`https://edm.contentup.cc/auth/callback?next=/invite/*` 和 `https://edm.contentup.cc/auth/callback?next=**`，保留共享 Site URL、既有 content-up/AIGC 回调、Google Provider、Auth 触发器及 `aigc` 不变。
+- 用户当前 Chrome 实测：Google 登录完成后回到 `https://edm.contentup.cc/onboarding`，随后正常进入 EDM 工作台。
+
 ## 后续验证记录
 
 ### P2 客户管理迁移（2026-09-10）

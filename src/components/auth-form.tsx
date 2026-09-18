@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { browserClient } from "@/lib/supabase/client";
-import { isConfigured, siteUrl } from "@/lib/supabase/config";
+import { authCallbackUrl, isConfigured, siteUrl } from "@/lib/supabase/config";
 import { credentials } from "@/lib/validation";
 type Mode = "login" | "register" | "forgot" | "reset";
 const titles: Record<Mode, string> = {
@@ -81,7 +81,7 @@ export function AuthForm({
           email: values.email!,
           password: values.password!,
           options: {
-            emailRedirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(destination)}`,
+            emailRedirectTo: authCallbackUrl(destination),
           },
         });
         if (error) throw error;
@@ -112,7 +112,7 @@ export function AuthForm({
       const { error } = await browserClient().auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(destination)}`,
+          redirectTo: authCallbackUrl(destination),
         },
       });
       if (error) throw error;

@@ -23,7 +23,12 @@ enabled = false
 [auth]
 enabled = true
 site_url = "http://localhost:3105"
-additional_redirect_urls = ["http://localhost:3105/auth/callback", "http://localhost:3105/auth/callback?next=/reset-password"]
+additional_redirect_urls = [
+  "http://localhost:3105/auth/callback",
+  "http://localhost:3105/auth/callback?next=/reset-password",
+  "http://localhost:3105/auth/callback?next=/onboarding",
+  "http://localhost:3105/auth/callback?next=/invite/*",
+]
 jwt_expiry = 3600
 enable_signup = true
 

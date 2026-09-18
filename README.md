@@ -48,6 +48,8 @@ npm run dev
 
 Auth Redirect URLs 已加入 `https://edm.contentup.cc/auth/callback`；应用的密码重置请求使用同一路径并携带 `?next=/reset-password`。用户于 2026-09-10 确认正式站点 Google 登录及邮箱重置均已验证通过。
 
+2026-09-16 修复共享 Auth 回调回退问题：P6-3 为保留邀请登录路径曾让普通登录携带 `?next=/onboarding`，该地址未命中原有白名单，Supabase 因而回退到共享 Site URL `https://contentup.cc`。现在普通登录和注册使用精确的 `/auth/callback`，邀请登录才携带受控的 `next`；云端新增 `https://edm.contentup.cc/auth/callback?next=/onboarding`、`https://edm.contentup.cc/auth/callback?next=/invite/*` 与 `https://edm.contentup.cc/auth/callback?next=**` 兼容旧客户端、邀请 token 和 URL 编码，Site URL 及既有 content-up/AIGC 回调保持不变。用户已在 Chrome 实测 Google 登录回到 EDM 并正常进入工作台。
+
 共享 Site URL 保持 `https://contentup.cc`，既有回调地址保留。此次配置未修改 Google Provider、共享 Auth 触发器或 AIGC 对象。认证流程通过依据用户实测，不将其表述为自动化端到端测试。
 
 P3-2 至 P3-4 已复核活动编辑、动态预览、确认、复制与分块导出 RPC 的最小权限：仅 `authenticated` 可执行公开包装，内部再按管理员/编辑者角色授权；`anon` 和 `aigc_api` 均不可执行，匿名 Data API 请求返回 HTTP 401 / PostgreSQL 42501。快照表不授予客户端直接读取权限，`edm_private` 不作为客户端数据接口。其他未覆盖场景见 `supabase/verification.md`。
