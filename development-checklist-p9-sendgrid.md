@@ -1,6 +1,6 @@
 # P9 SendGrid 接入交付清单
 
-更新日期：2026-09-19。状态：P9-0 契约已定稿，P9-1 数据库登记已在本地与 content-up 完成。  
+更新日期：2026-09-19。状态：P9-0/P9-1 已完成；P9-2 适配器与回执函数已实现，待合并部署。  
 前提：DirectMail 生产可用；`amazon_ses` 仍可保持 `enabled=false`；SendGrid 首版 **`enabled=false` 登记**，验收后再开放。
 
 契约细节见 [docs/sendgrid-p9-0-contract.md](docs/sendgrid-p9-0-contract.md)。
