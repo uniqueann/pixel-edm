@@ -58,7 +58,7 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
       [workspace, viewer],
     );
 
-    await t.test("注册表登记两家厂商且未开放的厂商不能配置", async () => {
+    await t.test("注册表登记三家厂商且未开放的厂商不能配置", async () => {
       const providers = (
         await asUser(
           db,
@@ -72,6 +72,7 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
       assert.deepEqual(Object.keys(byId).sort(), [
         "aliyun_directmail",
         "amazon_ses",
+        "sendgrid",
       ]);
       assert.equal(byId.aliyun_directmail.enabled, true);
       assert.equal(byId.aliyun_directmail.sender_alias_max_length, 14);
@@ -84,28 +85,39 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
         byId.amazon_ses.requires_webhook_subscription_confirmation,
         true,
       );
-
-      await assert.rejects(
-        asUser(
-          db,
-          admin,
-          rpc(
-            "save_delivery_channel",
-            channelPayload(workspace, {
-              provider: "amazon_ses",
-              region: "us-east-1",
-            }),
-          ),
-        ),
-        /暂未开放/,
+      assert.equal(byId.sendgrid.enabled, false);
+      assert.equal(byId.sendgrid.requires_sender_domain, true);
+      assert.equal(byId.sendgrid.default_rate_per_second, 10);
+      assert.equal(
+        byId.sendgrid.requires_webhook_subscription_confirmation,
+        false,
       );
+
+      for (const provider of ["amazon_ses", "sendgrid"]) {
+        await assert.rejects(
+          asUser(
+            db,
+            admin,
+            rpc(
+              "save_delivery_channel",
+              channelPayload(workspace, {
+                provider,
+                region: provider === "amazon_ses" ? "us-east-1" : "global",
+                sender_domain: "send.example.test",
+                sender_address: "hello@send.example.test",
+              }),
+            ),
+          ),
+          /暂未开放/,
+        );
+      }
       await assert.rejects(
         asUser(
           db,
           admin,
           rpc(
             "save_delivery_channel",
-            channelPayload(workspace, { provider: "sendgrid" }),
+            channelPayload(workspace, { provider: "postmark" }),
           ),
         ),
         /不支持的发信服务商/,
@@ -144,6 +156,38 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
         sns_topic_arn: "arn:aws:sns:eu-west-1:123456789012:pixel-edm",
       });
 
+      const sendgrid = (
+        await db.query(
+          `select edm_private.delivery_provider_config(
+             'sendgrid',
+             '{"api_host":" eu ","region":"drop"}'::jsonb
+           ) as result`,
+        )
+      ).rows[0].result;
+      assert.deepEqual(sendgrid, { api_host: "eu" });
+
+      assert.equal(
+        (
+          await db.query(
+            `select edm_private.delivery_tracking_configured(
+               'sendgrid','{"api_host":"global"}'::jsonb
+             ) as ok`,
+          )
+        ).rows[0].ok,
+        true,
+      );
+
+      assert.deepEqual(
+        (
+          await db.query(
+            `select
+               edm_private.delivery_failure_class('sendgrid',null,'blocked') as hard,
+               edm_private.delivery_failure_class('sendgrid',null,'expired') as soft`,
+          )
+        ).rows[0],
+        { hard: "hard_bounce", soft: "soft_bounce" },
+      );
+
       for (const [provider, config, pattern] of [
         ["aliyun_directmail", '{"region":"eu-west-1"}', /阿里云区域无效/],
         [
@@ -167,6 +211,7 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
           '{"region":"cn-north-1","sns_topic_arn":"arn:aws:sns:cn-north-1:123456789012:pixel-edm"}',
           /Topic ARN/,
         ],
+        ["sendgrid", '{"api_host":"us"}', /SendGrid 数据中心无效/],
       ]) {
         await assert.rejects(
           db.query(

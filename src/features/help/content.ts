@@ -93,6 +93,14 @@ export const helpSections: HelpSection[] = [
     note: "更完整的运维记录见仓库内 docs/edm-directmail-go-live-checklist.md 与 supabase/verification.md。",
   },
   {
+    id: "sendgrid-future",
+    title: "关于 SendGrid",
+    bullets: [
+      "SendGrid 已在系统注册表中登记，当前与 SES 相同为尚未开放状态，待 P9 适配器与人工验收完成后开放。",
+      "规划能力：Mail Send v3、Event Webhook 回执、API Key 凭据、global/eu 数据中心；详见仓库 docs/sendgrid-p9-0-contract.md。",
+    ],
+  },
+  {
     id: "ses-future",
     title: "关于 Amazon SES",
     bullets: [
