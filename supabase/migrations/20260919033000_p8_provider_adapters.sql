@@ -45,8 +45,8 @@ begin
       char_length(sns_topic_arn)>2048
       or sns_topic_arn !~ (
         '^arn:(aws|aws-us-gov|aws-cn):sns:'||
-        replace(region_value,'-','\-')||
-        ':[0-9]{12}:[A-Za-z0-9_-]{1,256}$'
+        region_value||
+        ':[0-9]{12}:[A-Za-z0-9_-]+$'
       )
     ) then raise exception 'SNS Topic ARN 无效或区域不匹配'; end if;
     return jsonb_strip_nulls(jsonb_build_object(
