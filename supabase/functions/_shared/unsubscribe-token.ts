@@ -248,12 +248,15 @@ export function renderTrackedHtmlBody(input: {
   workspaceName: string;
   mailingAddress: string;
   pageUrl: string;
+  provider?: "aliyun_directmail" | "amazon_ses";
 }) {
   const workspaceName = input.workspaceName.replace(/[\r\n]+/g, " ").trim();
   const mailingAddress = input.mailingAddress.replace(/[\r\n]+/g, " ").trim();
   if (!workspaceName || !mailingAddress)
     throw new Error("UNSUBSCRIBE_SENDER_INVALID");
   const pageUrl = escapeHtml(input.pageUrl);
+  const noTrackAttribute =
+    input.provider === "amazon_ses" ? "ses:no-track" : "data-alidm-traceoff";
   return `<!doctype html>
 <html lang="zh-CN">
 <body style="margin:0;padding:24px;background:#ffffff;color:#1c2b45;font-family:Arial,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.65">
@@ -261,7 +264,7 @@ export function renderTrackedHtmlBody(input: {
 <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e4e8ef;color:#667085;font-size:12px">
 <div>${escapeHtml(workspaceName)}</div>
 <div>Contact address / 联系地址: ${escapeHtml(mailingAddress)}</div>
-<div><a href="${pageUrl}" data-alidm-traceoff rel="nofollow">Unsubscribe / 退订</a></div>
+<div><a href="${pageUrl}" ${noTrackAttribute} rel="nofollow">Unsubscribe / 退订</a></div>
 </div>
 </body>
 </html>`;

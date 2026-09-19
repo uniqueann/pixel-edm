@@ -79,12 +79,16 @@ async function loadChannel(
   if (!channel) return null;
   const { url } = supabaseConfig();
   const baseUrl = url.replace(/\/+$/, "");
+  const webhookFunction =
+    channel.provider === "amazon_ses"
+      ? "edm-ses-events"
+      : "edm-directmail-events";
   return {
     ...channel,
     webhook: channel.webhook
       ? {
           ...channel.webhook,
-          endpoint: `${baseUrl}/functions/v1/edm-directmail-events?channel_id=${channel.id}`,
+          endpoint: `${baseUrl}/functions/v1/${webhookFunction}?channel_id=${channel.id}`,
         }
       : undefined,
   };
@@ -252,7 +256,7 @@ export async function sendDeliveryChannelTest(input: unknown) {
   try {
     const parsed = deliveryTestInput.parse(input);
     const db = await adminWorkspace(parsed.workspace_id);
-    const { data, error } = await db.functions.invoke("edm-directmail-test", {
+    const { data, error } = await db.functions.invoke("edm-delivery-test", {
       body: { ...parsed, attempt_id: parsed.idempotency_key },
     });
     if (error) throw new Error("测试邮件发送失败，请稍后重试。");

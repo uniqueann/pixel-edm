@@ -200,7 +200,10 @@ const server = createServer(async (req, res) => {
       return uid ? send(user(uid)) : send({ message: "需要登录" }, 401);
     if (url.pathname === "/auth/v1/logout") return send({});
     if (!uid) return send({ message: "需要登录" }, 401);
-    if (url.pathname === "/functions/v1/edm-directmail-test") {
+    if (
+      url.pathname === "/functions/v1/edm-directmail-test" ||
+      url.pathname === "/functions/v1/edm-delivery-test"
+    ) {
       const prepared = (
         await asUser(
           db,

@@ -17,9 +17,9 @@ export type DeliveryRequest = {
 };
 
 export type DeliveryResult = {
-  provider: "directmail";
+  provider: "aliyun_directmail" | "amazon_ses";
   requestId: string;
-  envId: string;
+  acceptanceId: string;
   acceptedAt: string;
 };
 
@@ -32,7 +32,17 @@ export type DeliveryErrorCategory =
   | "unknown";
 
 export type DeliveryAdapter = {
-  deliver(request: DeliveryRequest): Promise<DeliveryResult>;
+  capabilities: {
+    supportsOpenTracking: boolean;
+    supportsClickTracking: boolean;
+    requiresHtmlForTracking: boolean;
+    supportsLinkTrackingOptOut: boolean;
+    requiresWebhookSubscriptionConfirmation: boolean;
+  };
+  send(request: DeliveryRequest): Promise<DeliveryResult>;
+  classifyError(error: unknown): DeliveryAdapterError;
+  parseWebhookEvent(input: unknown): unknown[];
+  verifyWebhookSignature(input: unknown): Promise<boolean>;
 };
 
 export class DeliveryAdapterError extends Error {
@@ -60,9 +70,27 @@ export function createFakeDeliveryAdapter(
   outcome: DeliveryResult | DeliveryAdapterError,
 ): DeliveryAdapter {
   return {
-    async deliver() {
+    capabilities: {
+      supportsOpenTracking: true,
+      supportsClickTracking: true,
+      requiresHtmlForTracking: true,
+      supportsLinkTrackingOptOut: true,
+      requiresWebhookSubscriptionConfirmation: false,
+    },
+    async send() {
       if (outcome instanceof DeliveryAdapterError) throw outcome;
       return outcome;
+    },
+    classifyError(error) {
+      return error instanceof DeliveryAdapterError
+        ? error
+        : new DeliveryAdapterError("unknown", "未知服务商错误");
+    },
+    parseWebhookEvent(input) {
+      return [input];
+    },
+    async verifyWebhookSignature() {
+      return true;
     },
   };
 }

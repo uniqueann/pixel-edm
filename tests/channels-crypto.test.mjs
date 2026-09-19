@@ -120,13 +120,13 @@ test("P4-0 适配器契约固定区域端点并保留明确失败分类", async 
     "dm.ap-southeast-1.aliyuncs.com",
   );
   const accepted = {
-    provider: "directmail",
+    provider: "aliyun_directmail",
     requestId: "request-1",
-    envId: "env-1",
+    acceptanceId: "env-1",
     acceptedAt: "2026-09-11T00:00:00.000Z",
   };
   assert.deepEqual(
-    await createFakeDeliveryAdapter(accepted).deliver({
+    await createFakeDeliveryAdapter(accepted).send({
       taskId: "task-1",
       from: { address: "hello@send.contentup.cc", alias: "测试邮局" },
       to: "recipient@example.test",
@@ -138,7 +138,7 @@ test("P4-0 适配器契约固定区域端点并保留明确失败分类", async 
   await assert.rejects(
     createFakeDeliveryAdapter(
       new DeliveryAdapterError("unknown", "结果未知，不可自动重试"),
-    ).deliver({
+    ).send({
       taskId: "task-2",
       from: { address: "hello@send.contentup.cc", alias: "测试邮局" },
       to: "recipient@example.test",
