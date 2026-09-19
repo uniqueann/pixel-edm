@@ -3,7 +3,11 @@ import type { DeliveryAdapter, DeliveryProviderName } from "./types.ts";
 export function isDeliveryProvider(
   value: unknown,
 ): value is DeliveryProviderName {
-  return value === "aliyun_directmail" || value === "amazon_ses";
+  return (
+    value === "aliyun_directmail" ||
+    value === "amazon_ses" ||
+    value === "sendgrid"
+  );
 }
 
 export async function getDeliveryAdapter(
@@ -16,6 +20,10 @@ export async function getDeliveryAdapter(
       await import("./aliyun_directmail/adapter.ts");
     return directMailAdapter;
   }
-  const { sesAdapter } = await import("./amazon_ses/adapter.ts");
-  return sesAdapter;
+  if (provider === "amazon_ses") {
+    const { sesAdapter } = await import("./amazon_ses/adapter.ts");
+    return sesAdapter;
+  }
+  const { sendGridAdapter } = await import("./sendgrid/adapter.ts");
+  return sendGridAdapter;
 }

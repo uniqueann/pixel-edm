@@ -52,5 +52,8 @@ verify_jwt = false
 [functions.edm-ses-events]
 verify_jwt = false
 
+[functions.edm-sendgrid-events]
+verify_jwt = false
+
 [functions.edm-unsubscribe]
 verify_jwt = false

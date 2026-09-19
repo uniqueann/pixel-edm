@@ -19,6 +19,12 @@ import {
   type DeliveryProviderRecord,
 } from "./registry";
 
+function deliveryWebhookFunction(provider: string) {
+  if (provider === "amazon_ses") return "edm-ses-events";
+  if (provider === "sendgrid") return "edm-sendgrid-events";
+  return "edm-directmail-events";
+}
+
 async function adminWorkspace(workspaceId: string) {
   const context = await getContext();
   if (context.workspace.id !== workspaceId)
@@ -74,11 +80,7 @@ function normalizeChannel(
     webhook: channel.webhook
       ? {
           ...channel.webhook,
-          endpoint: `${baseUrl.replace(/\/+$/, "")}/functions/v1/${
-            channel.provider === "amazon_ses"
-              ? "edm-ses-events"
-              : "edm-directmail-events"
-          }?channel_id=${channel.id}`,
+          endpoint: `${baseUrl.replace(/\/+$/, "")}/functions/v1/${deliveryWebhookFunction(channel.provider)}?channel_id=${channel.id}`,
         }
       : undefined,
   };

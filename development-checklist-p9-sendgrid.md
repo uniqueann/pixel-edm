@@ -30,10 +30,12 @@
 
 ## P9-2 适配器与回执
 
-- [ ] `supabase/functions/_shared/providers/sendgrid/*`（send / error / event / webhook / adapter）。
-- [ ] `getDeliveryAdapter` 注册 `sendgrid`。
-- [ ] 新建 `edm-sendgrid-events`；worker / delivery-test 分派无需新 cron 名。
-- [ ] 单元测试：请求体、事件解析、签名、错误分类（不依赖真实 API Key）。
+- [x] `supabase/functions/_shared/providers/sendgrid/*`（send / error / event / webhook / adapter）。
+- [x] `getDeliveryAdapter` 注册 `sendgrid`；凭据 AAD 增加 `sendgrid`。
+- [x] 新建 `edm-sendgrid-events`；worker / delivery-test 分派无需新 cron 名。
+- [x] 迁移 `20260919153000_p9_sendgrid_webhook_public_key.sql` 允许 `event_webhook_public_key`。
+- [x] 单元测试 `tests/sendgrid-provider.test.mjs`：请求体、事件解析、签名、错误分类（不依赖真实 API Key）。
+- [ ] PR 合并后部署 `edm-sendgrid-events` 并在 content-up 应用 P9-2 迁移；SendGrid 仍保持 `enabled=false`。
 
 ## P9-3 配置界面
 
