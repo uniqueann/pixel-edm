@@ -234,12 +234,12 @@ P6-0 至 P6-3 已于 2026-09-15 完成工程实现，P6-4 已完成审计与自�
 - P6-3：邀请接受页保留 token 完成登录续接，仅允许已验证且邮箱匹配的账号接受；支持 7 天有效期、重发后旧令牌失效、惰性过期和一次性消费。
 - P6-4：审计及自动化测试覆盖邮箱验证、邀请生命周期、角色、owner 转移、并发管理员保护、跨工作区、被移除后失权、查看者权限、审计脱敏和 AIGC 隔离。逐项记录见 [P6 团队协作交付清单](development-checklist-p6-team.md)。
 
-P8 多 ESP 支持已于 2026-09-18 完成规划定稿，P8-1 数据库去耦已于 2026-09-19 完成并通过本地回归与云端应用；P8-2 适配器层与 worker 分发已完成工程实现，等待 PR 合并后按受控顺序发布。第二家 ESP 选定 Amazon SES，首版只支持阿里云邮件推送和 SES 两家，且同一工作区同时只有一个主发送通道，不做自动故障切换。
+P8 多 ESP 支持已于 2026-09-18 完成规划定稿，P8-1 数据库去耦已于 2026-09-19 完成并通过本地回归与云端应用；P8-2 适配器层与 worker 分发已于 2026-09-19 发布到 content-up；P8-3 配置界面按 provider 动态化已于 2026-09-19 完成工程实现。第二家 ESP 选定 Amazon SES，首版只支持阿里云邮件推送和 SES 两家，且同一工作区同时只有一个主发送通道，不做自动故障切换。
 
 P8 规划时 `aliyun_directmail` 字面量散布在 8 个迁移的 24 处，厂商专属列和退信状态码映射直接写在共享表与 SQL 里，限速同样写死在领取 RPC 中。因此 P8-1 先完成纯前向数据库去耦；生产回填已确认 2 个通道与 8 条发送运行全部迁入 `provider_config`，DirectMail 行为保持不变。
 
 P8-1 已由单文件迁移 `20260919021500_p8_delivery_provider_registry.sql` 完成：新增 `edm.delivery_providers` 注册表承载显示名、能力位与默认限速，两处 `provider` 单值约束换成注册表外键，厂商专属的区域与追踪标签迁入 `provider_config jsonb` 并由按 provider 分派的校验函数归一化，`sender_alias` 上限与发件域名是否必填改由注册表决定，退信分级归一化为事件表上的 `failure_class`，限速从注册表读取并支持通道级覆盖，发送运行同时冻结 provider 与 provider_config，主通道由 `workspace_id` 上的部分唯一索引保证唯一。既有 101 项自动化测试未修改即全部通过，另补 9 项针对注册表与去耦语义的测试。
 
-P8-2 将 `DeliveryAdapter` 扩展为发送、错误分类、回执解析、Webhook 验签和能力描述五件套。DirectMail 实现平移到 provider 目录并保留旧入口；SES 使用 v2 `SendEmail` 和 SDK SigV4，发送尝试与任务显式保存 `provider_message_id`，SNS 回执不借用 EnvId 而只按 MessageId 匹配。SNS 入口校验证书来源、Topic ARN、时间窗、RSA-SHA256 签名与通道令牌，支持订阅确认和多收件人拆分，`bounceType` 由适配器直接归一化。AES-GCM AAD 增加 provider 隔离，RFC 8058 自建退订继续作为唯一事实来源。通用 worker、测试函数和云端 cron 切换迁移已就位，120 项测试及 Edge/Next 类型、Lint、格式与构建通过；生产仍保持 `amazon_ses.enabled=false`，待 PR 合并后先部署函数、再应用数据库迁移、最后切换 cron。剩余新增工作是 P8-3 按 provider 动态化配置界面与 P8-4 两家厂商真实闭环验收，逐项状态见 [P8 多 ESP 支持交付清单](development-checklist-p8-multi-esp.md)。
+P8-2 将 `DeliveryAdapter` 扩展为发送、错误分类、回执解析、Webhook 验签和能力描述五件套。DirectMail 实现平移到 provider 目录并保留旧入口；SES 使用 v2 `SendEmail` 和 SDK SigV4，发送尝试与任务显式保存 `provider_message_id`，SNS 回执不借用 EnvId 而只按 MessageId 匹配。SNS 入口校验证书来源、Topic ARN、时间窗、RSA-SHA256 签名与通道令牌，支持订阅确认和多收件人拆分，`bounceType` 由适配器直接归一化。AES-GCM AAD 增加 provider 隔离，RFC 8058 自建退订继续作为唯一事实来源。通用 worker、测试函数和云端 cron 切换迁移已就位，120 项测试及 Edge/Next 类型、Lint、格式与构建通过；生产仍保持 `amazon_ses.enabled=false`。P8-3 已完成 provider 描述符、多通道列表、主通道切换与 SES 沙箱提示；剩余新增工作是 P8-4 两家厂商真实闭环验收，逐项状态见 [P8 多 ESP 支持交付清单](development-checklist-p8-multi-esp.md)。
 
 这一调整减少了视觉探索和交互定义的不确定性；数据库、发送通道和服务端权限仍需完整实现，不能按原型页面已经可点击就视为完成。
