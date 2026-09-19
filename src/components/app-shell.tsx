@@ -24,6 +24,7 @@ const tabs = [
   ["team", "团队"],
   ["logs", "日志"],
   ["settings", "设置"],
+  ["help", "帮助"],
 ];
 const roleNames: Record<string, string> = {
   admin: "管理员",
