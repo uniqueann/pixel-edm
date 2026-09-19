@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { directMailRegions, type DirectMailRegion } from "./provider";
 
-export type DeliveryProviderName = "aliyun_directmail" | "amazon_ses";
+export type DeliveryProviderName =
+  | "aliyun_directmail"
+  | "amazon_ses"
+  | "sendgrid";
+
+const sendGridDataCenters = ["global", "eu"] as const;
 
 export type DeliveryProviderCapabilities = {
   display_name: string;
@@ -57,7 +62,7 @@ export function createDeliveryChannelInput(options: {
   return z
     .object({
       workspace_id: z.string().uuid(),
-      provider: z.enum(["aliyun_directmail", "amazon_ses"]),
+      provider: z.enum(["aliyun_directmail", "amazon_ses", "sendgrid"]),
       id: z.string().uuid().optional(),
       expected_version: z.number().int().positive().optional(),
       region: z.string().trim().min(1, "请输入区域"),
@@ -86,8 +91,9 @@ export function createDeliveryChannelInput(options: {
           { message: "回复地址格式无效" },
         ),
       sns_topic_arn: z.string().trim().max(2048).optional(),
+      event_webhook_public_key: z.string().trim().max(8192).optional(),
       access_key_id: z.string().trim().max(128).optional(),
-      access_key_secret: z.string().max(256).optional(),
+      access_key_secret: z.string().max(512).optional(),
     })
     .superRefine((value, context) => {
       if (value.id && value.expected_version === undefined) {
@@ -103,6 +109,14 @@ export function createDeliveryChannelInput(options: {
             code: "custom",
             path: ["region"],
             message: "阿里云区域无效",
+          });
+        }
+      } else if (options.provider === "sendgrid") {
+        if (!(sendGridDataCenters as readonly string[]).includes(value.region)) {
+          context.addIssue({
+            code: "custom",
+            path: ["region"],
+            message: "SendGrid 数据中心无效",
           });
         }
       } else if (!awsRegionPattern.test(value.region)) {
@@ -151,34 +165,55 @@ export function createDeliveryChannelInput(options: {
       const hasId = Boolean(value.access_key_id);
       const hasSecret = Boolean(value.access_key_secret);
       const credentialLabel =
-        options.provider === "amazon_ses" ? "AWS 访问密钥" : "AccessKey";
-      if (hasId !== hasSecret) {
-        context.addIssue({
-          code: "custom",
-          path: hasId ? ["access_key_secret"] : ["access_key_id"],
-          message: `${credentialLabel} ID 和 Secret 必须同时填写`,
-        });
-      }
-      if (!value.id && (!hasId || !hasSecret)) {
-        context.addIssue({
-          code: "custom",
-          path: ["access_key_id"],
-          message: `首次连接必须填写完整 ${credentialLabel}`,
-        });
-      }
-      if (hasId && (value.access_key_id?.length ?? 0) < 8) {
-        context.addIssue({
-          code: "custom",
-          path: ["access_key_id"],
-          message: "访问密钥 ID 长度无效",
-        });
-      }
-      if (hasSecret && (value.access_key_secret?.length ?? 0) < 8) {
-        context.addIssue({
-          code: "custom",
-          path: ["access_key_secret"],
-          message: "访问密钥 Secret 长度无效",
-        });
+        options.provider === "amazon_ses"
+          ? "AWS 访问密钥"
+          : options.provider === "sendgrid"
+            ? "API Key"
+            : "AccessKey";
+      if (options.provider === "sendgrid") {
+        if (!value.id && !hasSecret) {
+          context.addIssue({
+            code: "custom",
+            path: ["access_key_secret"],
+            message: "首次连接必须填写 SendGrid API Key",
+          });
+        }
+        if (hasSecret && (value.access_key_secret?.length ?? 0) < 20) {
+          context.addIssue({
+            code: "custom",
+            path: ["access_key_secret"],
+            message: "API Key 长度无效",
+          });
+        }
+      } else {
+        if (hasId !== hasSecret) {
+          context.addIssue({
+            code: "custom",
+            path: hasId ? ["access_key_secret"] : ["access_key_id"],
+            message: `${credentialLabel} ID 和 Secret 必须同时填写`,
+          });
+        }
+        if (!value.id && (!hasId || !hasSecret)) {
+          context.addIssue({
+            code: "custom",
+            path: ["access_key_id"],
+            message: `首次连接必须填写完整 ${credentialLabel}`,
+          });
+        }
+        if (hasId && (value.access_key_id?.length ?? 0) < 8) {
+          context.addIssue({
+            code: "custom",
+            path: ["access_key_id"],
+            message: "访问密钥 ID 长度无效",
+          });
+        }
+        if (hasSecret && (value.access_key_secret?.length ?? 0) < 8) {
+          context.addIssue({
+            code: "custom",
+            path: ["access_key_secret"],
+            message: "访问密钥 Secret 长度无效",
+          });
+        }
       }
     });
 }
@@ -220,6 +255,8 @@ export function createDeliveryTrackingInput(provider: DeliveryProviderName) {
             message: "阿里云标签仅支持字母、数字和下划线",
           });
         }
+      } else if (provider === "sendgrid") {
+        return;
       } else {
         if (!value.configuration_set_name) {
           context.addIssue({

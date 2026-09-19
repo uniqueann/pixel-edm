@@ -66,8 +66,15 @@ function normalizeChannel(
   baseUrl: string,
 ): DeliveryChannel {
   const providerConfig = channel.provider_config ?? {};
+  const apiHost =
+    typeof providerConfig.api_host === "string"
+      ? providerConfig.api_host
+      : undefined;
   return {
     ...channel,
+    region:
+      channel.region ||
+      (channel.provider === "sendgrid" && apiHost ? apiHost : channel.region),
     configuration_set_name:
       typeof providerConfig.configuration_set_name === "string"
         ? providerConfig.configuration_set_name
@@ -182,8 +189,13 @@ export async function saveDeliveryChannel(input: unknown) {
       throw new Error("发信通道已被修改，请重新加载后重试。");
 
     const channelId = current?.id ?? randomUUID();
-    const accessKeyId = parsed.access_key_id;
-    const accessKeySecret = parsed.access_key_secret;
+    const accessKeySecret = parsed.access_key_secret?.trim();
+    const accessKeyId =
+      parsed.provider === "sendgrid"
+        ? accessKeySecret
+          ? "sendgrid"
+          : undefined
+        : parsed.access_key_id?.trim();
     const credential =
       accessKeyId && accessKeySecret
         ? sealProviderCredentials({
@@ -196,16 +208,32 @@ export async function saveDeliveryChannel(input: unknown) {
           })
         : undefined;
 
-    const providerConfig = {
-      region: parsed.region,
-      ...(parsed.sns_topic_arn
-        ? { sns_topic_arn: parsed.sns_topic_arn }
-        : current?.provider_config?.sns_topic_arn
-          ? {
-              sns_topic_arn: String(current.provider_config.sns_topic_arn),
-            }
-          : {}),
-    };
+    const currentConfig = current?.provider_config ?? {};
+    const providerConfig =
+      parsed.provider === "sendgrid"
+        ? {
+            api_host: parsed.region,
+            region: parsed.region,
+            ...(parsed.event_webhook_public_key
+              ? {
+                  event_webhook_public_key: parsed.event_webhook_public_key,
+                }
+              : typeof currentConfig.event_webhook_public_key === "string"
+                ? {
+                    event_webhook_public_key: String(
+                      currentConfig.event_webhook_public_key,
+                    ),
+                  }
+                : {}),
+          }
+        : {
+            region: parsed.region,
+            ...(parsed.sns_topic_arn
+              ? { sns_topic_arn: parsed.sns_topic_arn }
+              : typeof currentConfig.sns_topic_arn === "string"
+                ? { sns_topic_arn: String(currentConfig.sns_topic_arn) }
+                : {}),
+          };
 
     const { data, error } = await db.rpc("save_delivery_channel", {
       payload: {

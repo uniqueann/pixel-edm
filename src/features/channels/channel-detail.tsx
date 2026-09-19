@@ -41,6 +41,7 @@ import {
   directMailRegionLabel,
   mergeProviderRecord,
   providerQuotaHint,
+  sendGridDataCenterLabel,
   trackingDisabledReason,
   trackingFieldHelp,
   trackingFieldLabel,
@@ -244,7 +245,9 @@ export function ChannelDetail({
       !window.confirm(
         provider.provider === "amazon_ses"
           ? "确认停用回执 Webhook？SNS 后续通知将被拒绝。"
-          : "确认停用回执 Webhook？EventBridge 后续请求将被拒绝。",
+          : provider.provider === "sendgrid"
+            ? "确认停用回执 Webhook？SendGrid 后续事件将被拒绝。"
+            : "确认停用回执 Webhook？EventBridge 后续请求将被拒绝。",
       )
     )
       return;
@@ -311,17 +314,29 @@ export function ChannelDetail({
     });
   }
 
+  const webhookPublicKeyConfigured = Boolean(
+    channel?.provider_config &&
+      typeof channel.provider_config.event_webhook_public_key === "string" &&
+      channel.provider_config.event_webhook_public_key.trim(),
+  );
+
   const regionLabel =
     provider.provider === "aliyun_directmail"
       ? directMailRegionLabel(channel?.region)
-      : (channel?.region ?? "未设置");
+      : provider.provider === "sendgrid"
+        ? sendGridDataCenterLabel(channel?.region)
+        : (channel?.region ?? "未设置");
 
   const trackingDetail =
     channel?.tracking_enabled && provider.provider === "aliyun_directmail"
       ? `已开启 · ${channel.tracking_tag_name ?? "标签缺失"}`
       : channel?.tracking_enabled && provider.provider === "amazon_ses"
         ? `已开启 · ${channel.configuration_set_name ?? "配置集缺失"}`
-        : "未开启";
+        : channel?.tracking_enabled && provider.provider === "sendgrid"
+          ? "已开启"
+          : "未开启";
+
+  const trackingFieldName = trackingFieldLabel(provider.provider);
 
   return (
     <Card>
@@ -384,11 +399,19 @@ export function ChannelDetail({
               label="回复地址"
               value={channel.reply_to_address || "跟随发件地址"}
             />
+            {provider.provider === "sendgrid" && (
+              <Detail
+                label="Webhook 验签公钥"
+                value={webhookPublicKeyConfigured ? "已保存" : "未保存"}
+              />
+            )}
             <Detail
               label={
                 provider.provider === "amazon_ses"
                   ? "AWS 访问密钥"
-                  : "AccessKey"
+                  : provider.provider === "sendgrid"
+                    ? "API Key"
+                    : "AccessKey"
               }
               value={
                 channel.credential_configured
@@ -430,7 +453,9 @@ export function ChannelDetail({
                   <p className="hint mt-1 mb-0">
                     {provider.provider === "amazon_ses"
                       ? "通过 SNS 接收 SES 事件；首次通知会触发订阅握手。"
-                      : "接收投递、投诉、退订及行为事件；断开发信通道不会自动停用回执。"}
+                      : provider.provider === "sendgrid"
+                        ? "在 SendGrid Event Webhook 中启用 Signed Event，将 HTTPS 目标指向上方地址并填入验签公钥。"
+                        : "接收投递、投诉、退订及行为事件；断开发信通道不会自动停用回执。"}
                   </p>
                 </div>
               </div>
@@ -495,7 +520,9 @@ export function ChannelDetail({
                 <p className="m-0 text-xs">
                   {provider.provider === "amazon_ses"
                     ? "将令牌作为查询参数 token= 或请求头 x-edm-webhook-token 传给 SNS HTTPS 订阅。"
-                    : "在 EventBridge HTTP 目标高级选项中将它填入 Token；请求头名称为 x-eventbridge-signature-token。"}
+                    : provider.provider === "sendgrid"
+                      ? "Webhook URL 须包含 token= 查询参数，或使用请求头 x-edm-webhook-token。"
+                      : "在 EventBridge HTTP 目标高级选项中将它填入 Token；请求头名称为 x-eventbridge-signature-token。"}
                 </p>
               </div>
             )}
@@ -520,6 +547,14 @@ export function ChannelDetail({
                 在 SES 配置集中启用 SNS 事件发布，并将 HTTPS
                 订阅指向上方地址。Topic ARN
                 须与通道配置一致，首次订阅由系统自动确认。
+              </p>
+            )}
+
+            {provider.provider === "sendgrid" && (
+              <p className="hint m-0">
+                入口函数为 edm-sendgrid-events；POST JSON
+                数组。请在通道配置中保存 SendGrid 控制台提供的 Signed Webhook
+                公钥，否则回执会被拒绝。
               </p>
             )}
 
@@ -572,7 +607,9 @@ export function ChannelDetail({
                   <p className="hint mt-1 mb-0">
                     {provider.provider === "aliyun_directmail"
                       ? "显式开启后，正式邮件会使用阿里云行为追踪；历史活动口径不受影响。"
-                      : "显式开启后，正式邮件会使用 SES Configuration Set 追踪；历史活动口径不受影响。"}
+                      : provider.provider === "sendgrid"
+                        ? "显式开启后，正式邮件会在 Mail Send 请求中启用 SendGrid 打开/点击追踪。"
+                        : "显式开启后，正式邮件会使用 SES Configuration Set 追踪；历史活动口径不受影响。"}
                   </p>
                 </div>
               </div>
@@ -598,33 +635,41 @@ export function ChannelDetail({
                 </span>
               </span>
             </label>
-            <div className="space-y-2">
-              <Label htmlFor={`tracking-field-${channel.id}`}>
-                {trackingFieldLabel(provider.provider)}
-              </Label>
-              <Input
-                id={`tracking-field-${channel.id}`}
-                value={
-                  provider.provider === "aliyun_directmail"
-                    ? trackingTagName
-                    : configurationSetName
-                }
-                maxLength={provider.provider === "aliyun_directmail" ? 128 : 64}
-                placeholder={
-                  provider.provider === "aliyun_directmail"
-                    ? "pixel_edm_tracking"
-                    : "pixel-edm-tracking"
-                }
-                disabled={Boolean(trackingDisabled)}
-                aria-label={trackingFieldLabel(provider.provider)}
-                onChange={(event) =>
-                  provider.provider === "aliyun_directmail"
-                    ? setTrackingTagName(event.target.value)
-                    : setConfigurationSetName(event.target.value)
-                }
-              />
+            {trackingFieldName ? (
+              <div className="space-y-2">
+                <Label htmlFor={`tracking-field-${channel.id}`}>
+                  {trackingFieldName}
+                </Label>
+                <Input
+                  id={`tracking-field-${channel.id}`}
+                  value={
+                    provider.provider === "aliyun_directmail"
+                      ? trackingTagName
+                      : configurationSetName
+                  }
+                  maxLength={
+                    provider.provider === "aliyun_directmail" ? 128 : 64
+                  }
+                  placeholder={
+                    provider.provider === "aliyun_directmail"
+                      ? "pixel_edm_tracking"
+                      : "pixel-edm-tracking"
+                  }
+                  disabled={Boolean(trackingDisabled)}
+                  aria-label={trackingFieldName}
+                  onChange={(event) =>
+                    provider.provider === "aliyun_directmail"
+                      ? setTrackingTagName(event.target.value)
+                      : setConfigurationSetName(event.target.value)
+                  }
+                />
+              </div>
+            ) : (
               <p className="hint m-0">{trackingFieldHelp(provider.provider)}</p>
-            </div>
+            )}
+            {trackingFieldName && (
+              <p className="hint m-0">{trackingFieldHelp(provider.provider)}</p>
+            )}
             {trackingError && (
               <p role="alert" className="field-error">
                 {trackingError}
@@ -637,15 +682,21 @@ export function ChannelDetail({
                 Boolean(trackingDisabled) ||
                 updatingTracking ||
                 (trackingEnabled &&
-                  !(provider.provider === "aliyun_directmail"
-                    ? trackingTagName.trim()
-                    : configurationSetName.trim())) ||
+                  provider.provider === "aliyun_directmail" &&
+                  !trackingTagName.trim()) ||
+                (trackingEnabled &&
+                  provider.provider === "amazon_ses" &&
+                  !configurationSetName.trim()) ||
                 (trackingEnabled === channel.tracking_enabled &&
-                  (provider.provider === "aliyun_directmail"
-                    ? trackingTagName.trim() ===
-                      (channel.tracking_tag_name ?? "")
-                    : configurationSetName.trim() ===
-                      (channel.configuration_set_name ?? "")))
+                  provider.provider === "aliyun_directmail" &&
+                  trackingTagName.trim() ===
+                    (channel.tracking_tag_name ?? "")) ||
+                (trackingEnabled === channel.tracking_enabled &&
+                  provider.provider === "amazon_ses" &&
+                  configurationSetName.trim() ===
+                    (channel.configuration_set_name ?? "")) ||
+                (trackingEnabled === channel.tracking_enabled &&
+                  provider.provider === "sendgrid")
               }
               onClick={saveTracking}
             >

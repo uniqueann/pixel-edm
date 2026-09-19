@@ -29,6 +29,8 @@ import {
   directMailRegionOptions,
   mergeProviderRecord,
   regionFieldKind,
+  regionFieldLabel,
+  sendGridDataCenterOptions,
   type DeliveryProviderRecord,
 } from "./registry";
 
@@ -47,7 +49,11 @@ function defaults(input: {
     expected_version: channel?.version,
     region:
       channel?.region ??
-      (provider.provider === "aliyun_directmail" ? "cn-hangzhou" : "us-east-1"),
+      (provider.provider === "aliyun_directmail"
+        ? "cn-hangzhou"
+        : provider.provider === "sendgrid"
+          ? "global"
+          : "us-east-1"),
     sender_domain:
       channel?.sender_domain ??
       (provider.requires_sender_domain ? "send.contentup.cc" : ""),
@@ -62,6 +68,10 @@ function defaults(input: {
     reply_to_address: channel?.reply_to_address ?? "",
     sns_topic_arn:
       typeof config.sns_topic_arn === "string" ? config.sns_topic_arn : "",
+    event_webhook_public_key:
+      typeof config.event_webhook_public_key === "string"
+        ? config.event_webhook_public_key
+        : "",
     access_key_id: "",
     access_key_secret: "",
   };
@@ -105,6 +115,14 @@ export function ChannelFormDialog({
     provider.provider === "aliyun_directmail"
       ? "阿里云发信通道"
       : `${provider.display_name} 发信通道`;
+  const regionOptions =
+    provider.provider === "aliyun_directmail"
+      ? directMailRegionOptions()
+      : sendGridDataCenterOptions.map((option) => ({
+          value: option.value,
+          label: option.label,
+        }));
+  const showCredentialId = provider.provider !== "sendgrid";
 
   return (
     <Dialog
@@ -141,9 +159,7 @@ export function ChannelFormDialog({
         >
           <div className="space-y-2">
             <Label htmlFor="channel-region">
-              {provider.provider === "aliyun_directmail"
-                ? "阿里云区域"
-                : "AWS 区域"}
+              {regionFieldLabel(provider.provider)}
             </Label>
             {regionKind === "select" ? (
               <Controller
@@ -154,12 +170,12 @@ export function ChannelFormDialog({
                     <SelectTrigger
                       id="channel-region"
                       className="w-full"
-                      aria-label="发信区域"
+                      aria-label={regionFieldLabel(provider.provider)}
                     >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {directMailRegionOptions().map((option) => (
+                      {regionOptions.map((option) => (
                         <SelectItem value={option.value} key={option.value}>
                           {option.label}
                         </SelectItem>
@@ -237,6 +253,28 @@ export function ChannelFormDialog({
             </div>
           </div>
 
+          {provider.provider === "sendgrid" && (
+            <div className="space-y-2">
+              <Label htmlFor="event-webhook-public-key">
+                Event Webhook 验签公钥（选填）
+              </Label>
+              <textarea
+                id="event-webhook-public-key"
+                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-24 w-full rounded-md border px-3 py-2 font-mono text-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                placeholder="SendGrid 控制台 Signed Event Webhook 公钥（PEM 或单行 Base64）"
+                spellCheck={false}
+                {...form.register("event_webhook_public_key")}
+              />
+              <p className="hint m-0">
+                保存后用于 edm-sendgrid-events 校验回执签名；可在配置 Webhook
+                前留空，但收到事件前必须填写。
+              </p>
+              <p className="field-error">
+                {form.formState.errors.event_webhook_public_key?.message}
+              </p>
+            </div>
+          )}
+
           {provider.provider === "amazon_ses" && (
             <div className="space-y-2">
               <Label htmlFor="sns-topic-arn">SNS Topic ARN（选填）</Label>
@@ -267,21 +305,29 @@ export function ChannelFormDialog({
                 留空会保留现有凭据；同时填写两项会创建新凭据版本。
               </p>
             )}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="access-key-id">
-                  {provider.credentialIdLabel}
-                </Label>
-                <Input
-                  id="access-key-id"
-                  autoComplete="off"
-                  spellCheck={false}
-                  {...form.register("access_key_id")}
-                />
-                <p className="field-error">
-                  {form.formState.errors.access_key_id?.message}
-                </p>
-              </div>
+            <div
+              className={
+                showCredentialId
+                  ? "grid gap-4 sm:grid-cols-2"
+                  : "space-y-2"
+              }
+            >
+              {showCredentialId && (
+                <div className="space-y-2">
+                  <Label htmlFor="access-key-id">
+                    {provider.credentialIdLabel}
+                  </Label>
+                  <Input
+                    id="access-key-id"
+                    autoComplete="off"
+                    spellCheck={false}
+                    {...form.register("access_key_id")}
+                  />
+                  <p className="field-error">
+                    {form.formState.errors.access_key_id?.message}
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="access-key-secret">
                   {provider.credentialSecretLabel}
@@ -291,6 +337,9 @@ export function ChannelFormDialog({
                   type="password"
                   autoComplete="new-password"
                   spellCheck={false}
+                  placeholder={
+                    provider.provider === "sendgrid" ? "SG.xxxxx" : undefined
+                  }
                   {...form.register("access_key_secret")}
                 />
                 <p className="field-error">

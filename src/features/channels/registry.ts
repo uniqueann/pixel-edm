@@ -67,7 +67,28 @@ const providerUiCopy: Record<
     sandboxNotice:
       "新 SES 账号默认处于沙箱：仅可向已验证邮箱发送，约 200 封/日、1 封/秒。生产权限需单独向 AWS 申请，沙箱限制不是配置错误。",
   },
+  sendgrid: {
+    tagline: "每个工作区使用自己的 SendGrid 账号与 Domain Authentication 发件域。",
+    credentialIdLabel: "API Key 标识",
+    credentialSecretLabel: "API Key",
+    acceptedTestLabel: "SendGrid 已接收",
+    sandboxNotice:
+      "SendGrid 须完成 Domain Authentication 与 Event Webhook（Signed）配置；API Key 需具备 Mail Send 权限。",
+  },
 };
+
+export const sendGridDataCenterOptions = [
+  { value: "global", label: "全球（api.sendgrid.com）" },
+  { value: "eu", label: "欧盟（api.eu.sendgrid.com）" },
+] as const;
+
+export function sendGridDataCenterLabel(value: string | undefined) {
+  if (!value) return "未设置";
+  return (
+    sendGridDataCenterOptions.find((option) => option.value === value)?.label ??
+    value
+  );
+}
 
 export function mergeProviderRecord(
   record: DeliveryProviderRecord,
@@ -81,7 +102,16 @@ export function directMailRegionLabel(region: string | undefined) {
 }
 
 export function regionFieldKind(provider: DeliveryProviderName) {
-  return provider === "aliyun_directmail" ? "select" : "text";
+  if (provider === "aliyun_directmail" || provider === "sendgrid") {
+    return "select";
+  }
+  return "text";
+}
+
+export function regionFieldLabel(provider: DeliveryProviderName) {
+  if (provider === "aliyun_directmail") return "阿里云区域";
+  if (provider === "sendgrid") return "SendGrid 数据中心";
+  return "AWS 区域";
 }
 
 export function directMailRegionOptions() {
@@ -97,6 +127,9 @@ export function validateProviderRegion(
 ) {
   if (provider === "aliyun_directmail") {
     return (directMailRegions as readonly string[]).includes(region);
+  }
+  if (provider === "sendgrid") {
+    return sendGridDataCenterOptions.some((option) => option.value === region);
   }
   return awsRegionPattern.test(region);
 }
@@ -137,15 +170,19 @@ export function providerQuotaHint(provider: DeliveryProviderRecord) {
 }
 
 export function trackingFieldLabel(provider: DeliveryProviderName) {
-  return provider === "aliyun_directmail"
-    ? "DirectMail 标签"
-    : "SES 配置集名称";
+  if (provider === "aliyun_directmail") return "DirectMail 标签";
+  if (provider === "sendgrid") return null;
+  return "SES 配置集名称";
 }
 
 export function trackingFieldHelp(provider: DeliveryProviderName) {
-  return provider === "aliyun_directmail"
-    ? "标签须先在当前阿里云邮件推送账号中创建，仅支持字母、数字和下划线。"
-    : "配置集须已在 SES 控制台创建并启用事件发布，仅支持字母、数字、下划线和连字符。";
+  if (provider === "aliyun_directmail") {
+    return "标签须先在当前阿里云邮件推送账号中创建，仅支持字母、数字和下划线。";
+  }
+  if (provider === "sendgrid") {
+    return "SendGrid 在 Mail Send 请求中开关打开/点击追踪，无需额外配置字段。";
+  }
+  return "配置集须已在 SES 控制台创建并启用事件发布，仅支持字母、数字、下划线和连字符。";
 }
 
 export function trackingDisabledReason(
