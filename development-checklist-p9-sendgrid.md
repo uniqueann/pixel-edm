@@ -1,6 +1,6 @@
 # P9 SendGrid 接入交付清单
 
-更新日期：2026-09-19。状态：P9-0 契约已定稿，P9-1 数据库登记进行中。  
+更新日期：2026-09-19。状态：P9-0 契约已定稿，P9-1 数据库登记已在本地与 content-up 完成。  
 前提：DirectMail 生产可用；`amazon_ses` 仍可保持 `enabled=false`；SendGrid 首版 **`enabled=false` 登记**，验收后再开放。
 
 契约细节见 [docs/sendgrid-p9-0-contract.md](docs/sendgrid-p9-0-contract.md)。
@@ -26,7 +26,7 @@
 - [x] 迁移：`INSERT sendgrid` 至 `edm.delivery_providers`（`20260919101800_p9_sendgrid_provider_registry.sql`）。
 - [x] 扩展 `edm_private.delivery_provider_config` / `delivery_tracking_configured` / `delivery_failure_class`。
 - [x] PGlite：`delivery-providers.test.mjs` 登记三家、SendGrid 未开放不可 save、config 校验。
-- [ ] 云端应用迁移；不修改 `aigc`、共享 Auth。
+- [x] 云端应用迁移；不修改 `aigc`、共享 Auth。content-up 记录为 `20260919145034_p9_sendgrid_provider_registry`（本地文件 `20260919101800_p9_sendgrid_provider_registry.sql`）；注册表三家为 DirectMail 启用、SES/SendGrid 未启用；SendGrid `sender_alias_max_length=64`；Security Advisor 无新增 `edm` 条目。
 
 ## P9-2 适配器与回执
 

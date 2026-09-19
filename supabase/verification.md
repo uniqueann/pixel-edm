@@ -195,3 +195,10 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 4. **SES 生产放量前**：申请移出沙箱；确认 `send.contentup.cc` 的阿里云与 AWS DNS 记录不冲突。
 
 人工验收通过后，再单独应用 `amazon_ses` 启用迁移并记录于本文档。
+
+### P9-1 SendGrid 服务商登记（2026-09-19）
+
+- 仅应用新增迁移，云端记录为 `20260919145034_p9_sendgrid_provider_registry`；只修改 `edm` 和 `edm_private`，未重放或改写 `aigc`、共享 Auth 及其他项目迁移。本地文件名时间戳为 `20260919101800`，与云端记录版本的差异沿用本项目既有惯例。
+- 注册表新增 `sendgrid`（未启用，10 次/秒、100000 次/日、`UTC`，`sender_alias_max_length=64`）；`aliyun_directmail` 仍为启用，`amazon_ses` 仍为未启用。未创建 SendGrid 通道、未写入凭据或发送任务。
+- 扩展 `edm_private.delivery_provider_config`（`api_host` 为 `global` | `eu`）、`delivery_tracking_configured`（SendGrid 恒为已配置追踪）与 `delivery_failure_class`（SendGrid blocked/invalid/hard 与 expired/soft 分级）；DirectMail 与 SES 分支行为与 P8-1 一致。
+- Security Advisor 无任何 `edm` 条目，现有提示仍只涉及共享 `aigc`、`public` 与 Auth 基线。SendGrid 实际发信与 Event Webhook 待 P9-2 适配器与 `edm-sendgrid-events` 接入后单独验收；开放用户创建通道待 P9-4 后将 `sendgrid.enabled` 置为 `true`。
