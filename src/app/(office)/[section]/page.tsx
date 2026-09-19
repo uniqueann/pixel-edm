@@ -64,9 +64,10 @@ export default async function Page({
     const channelDetails = await Promise.all(
       channelSummaries.map((summary) => getDeliveryChannel(summary.id)),
     );
-    const initialTests: Record<string, Awaited<
-      ReturnType<typeof getDeliveryTestSummary>
-    > | null> = {};
+    const initialTests: Record<
+      string,
+      Awaited<ReturnType<typeof getDeliveryTestSummary>> | null
+    > = {};
     if (role === "admin") {
       await Promise.all(
         channelSummaries.map(async (summary) => {

@@ -9,10 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ChannelDetail } from "./channel-detail";
 import { ChannelFormDialog } from "./channel-form-dialog";
 import type { DeliveryChannel, DeliveryTestAttempt } from "./model";
-import {
-  mergeProviderRecord,
-  type DeliveryChannelSummary,
-} from "./registry";
+import { mergeProviderRecord, type DeliveryChannelSummary } from "./registry";
 import { saveDeliveryChannel } from "./actions";
 
 export function ChannelSettings({
@@ -41,9 +38,9 @@ export function ChannelSettings({
   const [details, setDetails] = useState(
     Object.fromEntries(initialChannelDetails.map((row) => [row.id, row])),
   );
-  const [addProvider, setAddProvider] = useState<
-    ReturnType<typeof mergeProviderRecord> | null
-  >(null);
+  const [addProvider, setAddProvider] = useState<ReturnType<
+    typeof mergeProviderRecord
+  > | null>(null);
   const [addError, setAddError] = useState("");
 
   const providersById = useMemo(
@@ -208,7 +205,6 @@ export function ChannelSettings({
           }}
         />
       )}
-
     </div>
   );
 }

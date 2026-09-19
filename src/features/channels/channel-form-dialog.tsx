@@ -247,7 +247,8 @@ export function ChannelFormDialog({
                 {...form.register("sns_topic_arn")}
               />
               <p className="hint m-0">
-                用于回执验签；可在配置 Webhook 前填写，区域须与上方 AWS 区域一致。
+                用于回执验签；可在配置 Webhook 前填写，区域须与上方 AWS
+                区域一致。
               </p>
               <p className="field-error">
                 {form.formState.errors.sns_topic_arn?.message}

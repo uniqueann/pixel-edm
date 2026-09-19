@@ -6,10 +6,7 @@ import { z } from "zod";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
 import { supabaseConfig } from "@/lib/supabase/config";
-import {
-  credentialStorageReady,
-  sealProviderCredentials,
-} from "./credentials";
+import { credentialStorageReady, sealProviderCredentials } from "./credentials";
 import {
   createDeliveryChannelInput,
   createDeliveryTrackingInput,
@@ -301,8 +298,7 @@ export async function configureDeliveryWebhook(input: unknown) {
       parsed.workspace_id,
       parsed.channel_id,
     );
-    if (!current)
-      throw new Error("发信通道已被修改，请重新加载后重试。");
+    if (!current) throw new Error("发信通道已被修改，请重新加载后重试。");
     if (current.webhook?.token_version !== parsed.expected_token_version) {
       throw new Error("Webhook 配置已变化，请重新加载后重试。");
     }

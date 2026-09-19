@@ -60,7 +60,9 @@ function sesPayload(workspaceId, overrides = {}) {
 }
 
 async function setupWorkspace(db, userId) {
-  await db.exec(`insert into auth.users(id) values('${userId}') on conflict do nothing`);
+  await db.exec(
+    `insert into auth.users(id) values('${userId}') on conflict do nothing`,
+  );
   const workspace = (
     await asUser(db, userId, "select edm.initialize_member() as id")
   ).rows[0].id;
@@ -146,7 +148,9 @@ test("P8-4 多 ESP 自动化验收", async (t) => {
     await db.query(
       "update edm.delivery_providers set enabled=true where provider='amazon_ses'",
     );
-    await db.exec(`insert into auth.users(id) values('${admin}'),('${adminB}')`);
+    await db.exec(
+      `insert into auth.users(id) values('${admin}'),('${adminB}')`,
+    );
 
     const workspace = await setupWorkspace(db, admin);
     const workspaceB = await setupWorkspace(db, adminB);
@@ -157,7 +161,11 @@ test("P8-4 多 ESP 自动化验收", async (t) => {
       rpc("save_delivery_channel", directMailPayload(workspace)),
     );
     await verifyChannel(db, directMailChannelId);
-    await asUser(db, admin, rpc("save_delivery_channel", sesPayload(workspace)));
+    await asUser(
+      db,
+      admin,
+      rpc("save_delivery_channel", sesPayload(workspace)),
+    );
     await verifyChannel(db, sesChannelId);
 
     await asUser(
@@ -186,66 +194,72 @@ test("P8-4 多 ESP 自动化验收", async (t) => {
       )
     ).rows[0].id;
 
-    await t.test("在途冻结：切换主通道后在途仍用原通道，新活动用新通道", async () => {
-      const { started: firstRun } = await createAndStartCampaign(
-        db,
-        admin,
-        workspace,
-        template,
-        "P8-4 在途冻结 DirectMail",
-        "27200000-0000-0000-0000-000000000001",
-      );
-      const frozen = (
-        await db.query(
-          "select channel_id,provider from edm.campaign_delivery_runs where id=$1",
-          [firstRun.run_id],
-        )
-      ).rows[0];
-      assert.equal(frozen.channel_id, directMailChannelId);
-      assert.equal(frozen.provider, "aliyun_directmail");
+    await t.test(
+      "在途冻结：切换主通道后在途仍用原通道，新活动用新通道",
+      async () => {
+        const { started: firstRun } = await createAndStartCampaign(
+          db,
+          admin,
+          workspace,
+          template,
+          "P8-4 在途冻结 DirectMail",
+          "27200000-0000-0000-0000-000000000001",
+        );
+        const frozen = (
+          await db.query(
+            "select channel_id,provider from edm.campaign_delivery_runs where id=$1",
+            [firstRun.run_id],
+          )
+        ).rows[0];
+        assert.equal(frozen.channel_id, directMailChannelId);
+        assert.equal(frozen.provider, "aliyun_directmail");
 
-      const listed = (
+        const listed = (
+          await asUser(
+            db,
+            admin,
+            rpc("list_delivery_channels", { workspace_id: workspace }),
+          )
+        ).rows[0].result;
+        const ses = listed.find((row) => row.provider === "amazon_ses");
         await asUser(
           db,
           admin,
-          rpc("list_delivery_channels", { workspace_id: workspace }),
-        )
-      ).rows[0].result;
-      const ses = listed.find((row) => row.provider === "amazon_ses");
-      await asUser(
-        db,
-        admin,
-        rpc("set_primary_delivery_channel", {
-          workspace_id: workspace,
-          channel_id: ses.id,
-          expected_version: ses.version,
-        }),
-      );
+          rpc("set_primary_delivery_channel", {
+            workspace_id: workspace,
+            channel_id: ses.id,
+            expected_version: ses.version,
+          }),
+        );
 
-      const claim = (
-        await asServiceRole(db, rpc("worker_claim_delivery_batch", { limit: 1 }))
-      ).rows[0].result[0];
-      assert.equal(claim.channel.id, directMailChannelId);
-      assert.equal(claim.channel.provider, "aliyun_directmail");
-      assert.equal(claim.channel.region, "ap-southeast-1");
+        const claim = (
+          await asServiceRole(
+            db,
+            rpc("worker_claim_delivery_batch", { limit: 1 }),
+          )
+        ).rows[0].result[0];
+        assert.equal(claim.channel.id, directMailChannelId);
+        assert.equal(claim.channel.provider, "aliyun_directmail");
+        assert.equal(claim.channel.region, "ap-southeast-1");
 
-      const { started: secondRun } = await createAndStartCampaign(
-        db,
-        admin,
-        workspace,
-        template,
-        "P8-4 在途冻结 SES",
-        "27200000-0000-0000-0000-000000000002",
-      );
-      const newRun = (
-        await db.query(
-          "select channel_id,provider from edm.campaign_delivery_runs where id=$1",
-          [secondRun.run_id],
-        )
-      ).rows[0];
-      assert.equal(newRun.channel_id, sesChannelId);
-      assert.equal(newRun.provider, "amazon_ses");
-    });
+        const { started: secondRun } = await createAndStartCampaign(
+          db,
+          admin,
+          workspace,
+          template,
+          "P8-4 在途冻结 SES",
+          "27200000-0000-0000-0000-000000000002",
+        );
+        const newRun = (
+          await db.query(
+            "select channel_id,provider from edm.campaign_delivery_runs where id=$1",
+            [secondRun.run_id],
+          )
+        ).rows[0];
+        assert.equal(newRun.channel_id, sesChannelId);
+        assert.equal(newRun.provider, "amazon_ses");
+      },
+    );
 
     await t.test("跨厂商隔离：错误令牌拒绝，回执不得跨通道错配", async () => {
       const digestA = "a".repeat(64);
@@ -302,7 +316,10 @@ test("P8-4 多 ESP 自动化验收", async (t) => {
         "27200000-0000-0000-0000-000000000003",
       );
       const claim = (
-        await asServiceRole(db, rpc("worker_claim_delivery_batch", { limit: 1 }))
+        await asServiceRole(
+          db,
+          rpc("worker_claim_delivery_batch", { limit: 1 }),
+        )
       ).rows[0].result[0];
       await asServiceRole(
         db,
@@ -398,72 +415,70 @@ test("P8-4 多 ESP 自动化验收", async (t) => {
       assert.equal(event.failure_class, "soft_bounce");
     });
 
-    await t.test("厂商重订阅不解除工作区抑制（DirectMail 与 SES）", async () => {
-      const digestDm = "a".repeat(64);
-      const digestSes = "c".repeat(64);
+    await t.test(
+      "厂商重订阅不解除工作区抑制（DirectMail 与 SES）",
+      async () => {
+        const digestDm = "a".repeat(64);
+        const digestSes = "c".repeat(64);
 
-      await asServiceRole(
-        db,
-        rpc("webhook_ingest_delivery_event", {
-          channel_id: directMailChannelId,
-          token_digest: digestDm,
-          provider_event_id: "dm-hard-resub",
-          provider_event_type: "dm:Failed",
-          event_type: "delivery_failed",
-          recipient_email: "resub@example.test",
-          provider_status: "2",
-          occurred_at: new Date().toISOString(),
-          payload_sha256: "4".repeat(64),
-        }),
-      );
-      const before = (
-        await db.query(
-          "select count(*)::int n from edm.suppressions where workspace_id=$1 and email='resub@example.test'",
-          [workspace],
-        )
-      ).rows[0].n;
-      assert.equal(before, 1);
-
-      for (const [eventId, channelId, digest, providerType] of [
-        [
-          "dm-resubscribe",
-          directMailChannelId,
-          digestDm,
-          "dm:Subscribe",
-        ],
-        ["ses-resubscribe", sesChannelId, digestSes, "ses:Subscribe"],
-      ]) {
-        const result = (
-          await asServiceRole(
-            db,
-            rpc("webhook_ingest_delivery_event", {
-              channel_id: channelId,
-              token_digest: digest,
-              provider_event_id: eventId,
-              provider_event_type: providerType,
-              event_type: "provider_resubscribed",
-              recipient_email: "resub@example.test",
-              occurred_at: new Date().toISOString(),
-              payload_sha256: Buffer.from(eventId)
-                .toString("hex")
-                .padEnd(64, "0")
-                .slice(0, 64),
-            }),
-          )
-        ).rows[0].result;
-        assert.equal(result.status, "ignored");
-      }
-
-      assert.deepEqual(
-        (
+        await asServiceRole(
+          db,
+          rpc("webhook_ingest_delivery_event", {
+            channel_id: directMailChannelId,
+            token_digest: digestDm,
+            provider_event_id: "dm-hard-resub",
+            provider_event_type: "dm:Failed",
+            event_type: "delivery_failed",
+            recipient_email: "resub@example.test",
+            provider_status: "2",
+            occurred_at: new Date().toISOString(),
+            payload_sha256: "4".repeat(64),
+          }),
+        );
+        const before = (
           await db.query(
-            "select count(*)::int n, min(reason) reason from edm.suppressions where workspace_id=$1 and email='resub@example.test'",
+            "select count(*)::int n from edm.suppressions where workspace_id=$1 and email='resub@example.test'",
             [workspace],
           )
-        ).rows[0],
-        { n: 1, reason: "bounced" },
-      );
-    });
+        ).rows[0].n;
+        assert.equal(before, 1);
+
+        for (const [eventId, channelId, digest, providerType] of [
+          ["dm-resubscribe", directMailChannelId, digestDm, "dm:Subscribe"],
+          ["ses-resubscribe", sesChannelId, digestSes, "ses:Subscribe"],
+        ]) {
+          const result = (
+            await asServiceRole(
+              db,
+              rpc("webhook_ingest_delivery_event", {
+                channel_id: channelId,
+                token_digest: digest,
+                provider_event_id: eventId,
+                provider_event_type: providerType,
+                event_type: "provider_resubscribed",
+                recipient_email: "resub@example.test",
+                occurred_at: new Date().toISOString(),
+                payload_sha256: Buffer.from(eventId)
+                  .toString("hex")
+                  .padEnd(64, "0")
+                  .slice(0, 64),
+              }),
+            )
+          ).rows[0].result;
+          assert.equal(result.status, "ignored");
+        }
+
+        assert.deepEqual(
+          (
+            await db.query(
+              "select count(*)::int n, min(reason) reason from edm.suppressions where workspace_id=$1 and email='resub@example.test'",
+              [workspace],
+            )
+          ).rows[0],
+          { n: 1, reason: "bounced" },
+        );
+      },
+    );
 
     await t.test("能力降级：注册表关闭追踪时服务端拒绝配置", async () => {
       await db.query(
@@ -497,10 +512,12 @@ test("P8-4 多 ESP 自动化验收", async (t) => {
       );
     });
 
-    await t.test("审计脱敏：通道与 Webhook 操作不记录凭据或完整邮箱", async () => {
-      const logs = (
-        await db.query(
-          `select action,metadata::text as metadata
+    await t.test(
+      "审计脱敏：通道与 Webhook 操作不记录凭据或完整邮箱",
+      async () => {
+        const logs = (
+          await db.query(
+            `select action,metadata::text as metadata
            from edm.activity_logs
            where workspace_id=$1
              and action in (
@@ -510,17 +527,18 @@ test("P8-4 多 ESP 自动化验收", async (t) => {
                'delivery_tracking.configured'
              )
            order by created_at`,
-          [workspace],
-        )
-      ).rows;
-      assert.ok(logs.length >= 3);
-      for (const row of logs) {
-        assert.doesNotMatch(
-          row.metadata,
-          /ciphertext|nonce|secret|access_key|token_digest|@[^"]+\.(com|test)/i,
-        );
-      }
-    });
+            [workspace],
+          )
+        ).rows;
+        assert.ok(logs.length >= 3);
+        for (const row of logs) {
+          assert.doesNotMatch(
+            row.metadata,
+            /ciphertext|nonce|secret|access_key|token_digest|@[^"]+\.(com|test)/i,
+          );
+        }
+      },
+    );
 
     await t.test("AIGC 隔离：共享 schema 未被 EDM 迁移改写", async () => {
       assert.equal(

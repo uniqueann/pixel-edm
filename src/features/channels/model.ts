@@ -234,16 +234,16 @@ export function createDeliveryTrackingInput(provider: DeliveryProviderName) {
           context.addIssue({
             code: "custom",
             path: ["configuration_set_name"],
-            message: "SES 配置集名称仅支持 1 至 64 位字母、数字、下划线和连字符",
+            message:
+              "SES 配置集名称仅支持 1 至 64 位字母、数字、下划线和连字符",
           });
         }
       }
     });
 }
 
-export const deliveryTrackingInput = createDeliveryTrackingInput(
-  "aliyun_directmail",
-);
+export const deliveryTrackingInput =
+  createDeliveryTrackingInput("aliyun_directmail");
 
 export type DeliveryTrackingInput = z.infer<
   ReturnType<typeof createDeliveryTrackingInput>

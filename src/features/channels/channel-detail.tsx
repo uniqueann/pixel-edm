@@ -209,8 +209,7 @@ export function ChannelDetail({
         toast.warning(
           `发送结果未知，请先核对邮箱和 ${provider.display_name} 控制台`,
         );
-      else
-        toast.error(`测试发送失败：${result.data.error_code ?? "UNKNOWN"}`);
+      else toast.error(`测试发送失败：${result.data.error_code ?? "UNKNOWN"}`);
       router.refresh();
     });
   }
@@ -320,8 +319,7 @@ export function ChannelDetail({
   const trackingDetail =
     channel?.tracking_enabled && provider.provider === "aliyun_directmail"
       ? `已开启 · ${channel.tracking_tag_name ?? "标签缺失"}`
-      : channel?.tracking_enabled &&
-          provider.provider === "amazon_ses"
+      : channel?.tracking_enabled && provider.provider === "amazon_ses"
         ? `已开启 · ${channel.configuration_set_name ?? "配置集缺失"}`
         : "未开启";
 
@@ -519,8 +517,9 @@ export function ChannelDetail({
 
             {provider.provider === "amazon_ses" && (
               <p className="hint m-0">
-                在 SES 配置集中启用 SNS 事件发布，并将 HTTPS 订阅指向上方地址。Topic
-                ARN 须与通道配置一致，首次订阅由系统自动确认。
+                在 SES 配置集中启用 SNS 事件发布，并将 HTTPS
+                订阅指向上方地址。Topic ARN
+                须与通道配置一致，首次订阅由系统自动确认。
               </p>
             )}
 
@@ -581,9 +580,7 @@ export function ChannelDetail({
                 {channel.tracking_enabled ? "已开启" : "未开启"}
               </Badge>
             </div>
-            {trackingDisabled && (
-              <p className="hint m-0">{trackingDisabled}</p>
-            )}
+            {trackingDisabled && <p className="hint m-0">{trackingDisabled}</p>}
             <label className="flex items-start gap-3 rounded-lg bg-muted p-3 text-sm">
               <input
                 type="checkbox"
@@ -626,9 +623,7 @@ export function ChannelDetail({
                     : setConfigurationSetName(event.target.value)
                 }
               />
-              <p className="hint m-0">
-                {trackingFieldHelp(provider.provider)}
-              </p>
+              <p className="hint m-0">{trackingFieldHelp(provider.provider)}</p>
             </div>
             {trackingError && (
               <p role="alert" className="field-error">
