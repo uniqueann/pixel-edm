@@ -1,7 +1,12 @@
 name: 工程验证
 on:
+  # 功能分支仅通过 pull_request 跑 CI，避免与 push 重复触发两个同名 check。
   push:
+    branches: [main]
   pull_request:
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
