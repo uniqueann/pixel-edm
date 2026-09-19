@@ -527,8 +527,14 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
     ).rows[0];
     assert.ok(task);
     await db.query(
-      "update edm.campaign_delivery_attempts set provider_env_id='env-p5-1' where id=$1",
+      `update edm.campaign_delivery_attempts
+       set provider_env_id='env-p5-1',provider_message_id='message-p5-1'
+       where id=$1`,
       [task.active_attempt_id],
+    );
+    await db.query(
+      "update edm.campaign_delivery_tasks set provider_message_id='message-p5-1' where id=$1",
+      [task.id],
     );
 
     const digestA = "a".repeat(64);
@@ -597,7 +603,11 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
       "1-delivered",
       "delivery_succeeded",
       occurredAt(1),
-      { provider_status: "0" },
+      {
+        provider_status: "0",
+        // P8-2：SES 没有 EnvId，必须仅凭 MessageId 也能命中任务。
+        provider_env_id: "",
+      },
     );
     const first = (
       await asServiceRole(db, rpc("webhook_ingest_delivery_event", delivered))
@@ -858,5 +868,80 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
     assert.equal(workspaceStatistics.tracked_campaigns, 2);
     assert.equal(workspaceStatistics.opened, 1);
     assert.equal(workspaceStatistics.clicked, 1);
+  });
+
+  await t.test("P8-2 发送完成显式保存 SES MessageId 到尝试与任务", async () => {
+    await assert.rejects(
+      db.transaction(async (tx) => {
+        const task = (
+          await tx.query(
+            `select task.id,task.workspace_id,task.run_id,run.credential_version
+             from edm.campaign_delivery_tasks task
+             join edm.campaign_delivery_runs run on run.id=task.run_id
+             where task.run_id=$1 and task.status='accepted'
+             limit 1`,
+            [runId],
+          )
+        ).rows[0];
+        const attemptId = "74000000-0000-0000-0000-000000000001";
+        const leaseToken = "74000000-0000-0000-0000-000000000002";
+        await tx.query(
+          `insert into edm.campaign_delivery_attempts(
+             id,workspace_id,run_id,task_id,attempt_number,credential_version
+           ) values($1,$2,$3,$4,4,$5)`,
+          [
+            attemptId,
+            task.workspace_id,
+            task.run_id,
+            task.id,
+            task.credential_version,
+          ],
+        );
+        await tx.query(
+          `update edm.campaign_delivery_tasks set
+             status='processing',attempt_count=4,active_attempt_id=$2,
+             lease_token=$3,lease_expires_at=now()+interval '90 seconds'
+           where id=$1`,
+          [task.id, attemptId, leaseToken],
+        );
+        await tx.exec("set local role service_role");
+        const completed = (
+          await tx.query(
+            "select edm.worker_complete_delivery_task($1::jsonb) as result",
+            [
+              JSON.stringify({
+                task_id: task.id,
+                attempt_id: attemptId,
+                lease_token: leaseToken,
+                status: "accepted",
+                provider_request_id: "aws-request-1",
+                provider_message_id: "ses-message-1",
+              }),
+            ],
+          )
+        ).rows[0].result;
+        assert.equal(completed.task_status, "accepted");
+        await tx.exec("reset role");
+        assert.deepEqual(
+          (
+            await tx.query(
+              `select attempt.provider_env_id,attempt.provider_message_id,
+                      task.provider_message_id as task_message_id
+               from edm.campaign_delivery_attempts attempt
+               join edm.campaign_delivery_tasks task on task.id=attempt.task_id
+               where attempt.id=$1`,
+              [attemptId],
+            )
+          ).rows[0],
+          {
+            provider_env_id: null,
+            provider_message_id: "ses-message-1",
+            task_message_id: "ses-message-1",
+          },
+        );
+        throw new Error("ROLLBACK_P8_MESSAGE_ID_TEST");
+      }),
+      /ROLLBACK_P8_MESSAGE_ID_TEST/,
+    );
   });
 });

@@ -66,6 +66,133 @@ begin
 end;
 $$;
 
+-- DirectMail 使用 EnvId，SES 使用 MessageId；发送尝试显式保存两种受理标识。
+alter table edm.campaign_delivery_attempts
+  add column provider_message_id text check (
+    provider_message_id is null or char_length(provider_message_id)<=255
+  );
+
+create index campaign_delivery_attempts_message_idx
+  on edm.campaign_delivery_attempts(provider_message_id)
+  where provider_message_id is not null;
+
+create or replace function edm_private.worker_complete_delivery_task(payload jsonb) returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare
+  requested_task_id uuid := (payload->>'task_id')::uuid;
+  requested_attempt_id uuid := (payload->>'attempt_id')::uuid;
+  requested_lease uuid := (payload->>'lease_token')::uuid;
+  result_status text := payload->>'status';
+  category text := nullif(payload->>'error_category','');
+  code text := left(nullif(payload->>'error_code',''),100);
+  request_id text := left(nullif(payload->>'provider_request_id',''),255);
+  env_id text := left(nullif(payload->>'provider_env_id',''),255);
+  message_id text := left(nullif(payload->>'provider_message_id',''),255);
+  task_row edm.campaign_delivery_tasks;
+  run_row edm.campaign_delivery_runs;
+  next_retry timestamptz;
+  next_task_status text;
+  final_status text;
+begin
+  if result_status not in ('accepted','failed','unknown') then
+    raise exception '发送结果无效';
+  end if;
+  if result_status='accepted' and (
+    request_id is null or (env_id is null and message_id is null)
+  ) then raise exception '邮件服务商回执不完整'; end if;
+
+  select * into task_row from edm.campaign_delivery_tasks
+  where id=requested_task_id for update;
+  if not found then raise exception '正式发送任务不存在'; end if;
+  if task_row.status<>'processing'
+    or task_row.active_attempt_id<>requested_attempt_id
+    or task_row.lease_token<>requested_lease then
+    return jsonb_build_object(
+      'task_id',task_row.id,'status',task_row.status,'reused',true
+    );
+  end if;
+
+  select * into run_row from edm.campaign_delivery_runs
+  where id=task_row.run_id for update;
+  update edm.campaign_delivery_attempts set
+    status=result_status,
+    completed_at=clock_timestamp(),
+    provider_request_id=request_id,
+    provider_env_id=env_id,
+    provider_message_id=message_id,
+    error_category=category,
+    error_code=code
+  where id=requested_attempt_id;
+
+  if result_status='failed'
+    and category in ('rate_limit','temporary')
+    and task_row.attempt_count<4 then
+    next_retry=clock_timestamp()+case task_row.attempt_count
+      when 1 then interval '30 seconds'
+      when 2 then interval '2 minutes'
+      else interval '10 minutes'
+    end;
+    next_task_status='pending';
+    update edm.campaign_delivery_tasks set
+      status='pending',next_attempt_at=next_retry,
+      lease_token=null,lease_expires_at=null,
+      error_category=category,error_code=code,
+      version=version+1
+    where id=task_row.id;
+  else
+    next_task_status=result_status;
+    update edm.campaign_delivery_tasks set
+      status=result_status,
+      provider_message_id=case
+        when result_status='accepted'
+          then coalesce(provider_message_id,message_id)
+        else provider_message_id
+      end,
+      lease_token=null,lease_expires_at=null,
+      error_category=category,error_code=code,
+      accepted_at=case
+        when result_status='accepted' then clock_timestamp()
+        else null
+      end,
+      completed_at=clock_timestamp(),
+      version=version+1
+    where id=task_row.id;
+  end if;
+
+  if result_status='failed'
+    and category in ('authentication','configuration') then
+    update edm.campaign_delivery_runs set
+      status='paused',pause_reason='channel_'||category,
+      paused_at=clock_timestamp(),version=version+1
+    where id=run_row.id;
+    update edm.campaigns set
+      status='paused',updated_at=clock_timestamp(),version=version+1
+    where workspace_id=run_row.workspace_id and id=run_row.campaign_id;
+    perform edm_private.log_activity(
+      run_row.workspace_id,'campaign.delivery_paused','campaign',
+      run_row.campaign_id,null,
+      jsonb_build_object(
+        'run_id',run_row.id,
+        'reason','channel_'||category,
+        'error_code',code
+      ),
+      'campaign-delivery-auto-paused:'||requested_attempt_id::text,
+      true
+    );
+    final_status='paused';
+  else
+    final_status=edm_private.finalize_campaign_delivery(run_row.id);
+  end if;
+  return jsonb_build_object(
+    'task_id',task_row.id,
+    'task_status',next_task_status,
+    'run_status',final_status,
+    'next_attempt_at',next_retry,
+    'reused',false
+  );
+end;
+$$;
+
 -- 测试发送审计按通道 provider 取显示名，不再硬编码阿里云。
 create or replace function edm.worker_complete_delivery_test(payload jsonb) returns jsonb
 language plpgsql security definer set search_path='' as $$

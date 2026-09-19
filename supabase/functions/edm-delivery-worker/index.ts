@@ -146,8 +146,8 @@ export async function handleDeliveryWorker(request: Request) {
         completion = {
           status: "accepted",
           provider_request_id: receipt.providerRequestId,
-          // 兼容既有数据库列名；值是各厂商返回的受理标识。
-          provider_env_id: receipt.providerAcceptanceId,
+          provider_env_id: receipt.providerEnvId,
+          provider_message_id: receipt.providerMessageId,
         };
       } catch (deliveryError) {
         let failure;

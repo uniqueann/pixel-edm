@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildDirectMailRequest } from "../supabase/functions/_shared/directmail-request.ts";
+import { classifyDirectMailError } from "../supabase/functions/_shared/providers/aliyun_directmail/error.ts";
 
 const base = {
   senderAddress: "edm@send.example.test",
@@ -44,4 +45,22 @@ test("P5-3 追踪配置缺少 HTML 时拒绝发送", () => {
       }),
     /TRACKING_HTML_BODY_REQUIRED/,
   );
+});
+
+test("P8-2 DirectMail 错误分类保持既有六类语义", () => {
+  const cases = [
+    ["InvalidAccessKeyId.NotFound", "authentication", "failed"],
+    ["InvalidSenderAddress", "configuration", "failed"],
+    ["Throttling.User", "rate_limit", "failed"],
+    ["ServiceUnavailable", "temporary", "failed"],
+    ["MessageRejected", "permanent", "failed"],
+    ["TimeoutError", "unknown", "unknown"],
+  ];
+  for (const [code, category, status] of cases) {
+    assert.deepEqual(classifyDirectMailError({ code }), {
+      status,
+      error_category: category,
+      error_code: code,
+    });
+  }
 });

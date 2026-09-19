@@ -178,8 +178,6 @@ export function parseSesEvent(
       recipients.length === 1 ? baseEventId : `${baseEventId}:${index}`,
     provider_event_type: `ses:${projection.eventType}`,
     event_type: projection.event_type,
-    // 兼容现有投递尝试匹配列；SES 的值始终是 MessageId，不冒充 EnvId。
-    provider_env_id: messageId,
     provider_message_id: messageId,
     sender_address: senderAddress,
     recipient_email: email,

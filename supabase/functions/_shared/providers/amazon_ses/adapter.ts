@@ -60,7 +60,11 @@ export async function sendSes(input: DeliverySendInput) {
     const providerAcceptanceId = response.MessageId;
     if (!providerRequestId || !providerAcceptanceId)
       throw new Error("PROVIDER_RECEIPT_INCOMPLETE");
-    return { providerRequestId, providerAcceptanceId };
+    return {
+      providerRequestId,
+      providerAcceptanceId,
+      providerMessageId: providerAcceptanceId,
+    };
   } finally {
     clearTimeout(timeout);
     client.destroy();

@@ -67,6 +67,7 @@ export type Database = {
           completed_at: string | null;
           provider_request_id: string | null;
           provider_env_id: string | null;
+          provider_message_id: string | null;
           error_category: string | null;
           error_code: string | null;
           resolved_as: string | null;
@@ -87,6 +88,7 @@ export type Database = {
           completed_at?: string | null;
           provider_request_id?: string | null;
           provider_env_id?: string | null;
+          provider_message_id?: string | null;
           error_category?: string | null;
           error_code?: string | null;
           resolved_as?: string | null;
@@ -107,6 +109,7 @@ export type Database = {
           completed_at?: string | null;
           provider_request_id?: string | null;
           provider_env_id?: string | null;
+          provider_message_id?: string | null;
           error_category?: string | null;
           error_code?: string | null;
           resolved_as?: string | null;

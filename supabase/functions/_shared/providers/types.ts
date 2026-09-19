@@ -45,6 +45,8 @@ export type DeliverySendInput = {
 export type DeliveryReceipt = {
   providerRequestId: string;
   providerAcceptanceId: string;
+  providerEnvId?: string;
+  providerMessageId?: string;
 };
 
 export type NormalizedDeliveryEvent = {

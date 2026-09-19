@@ -333,7 +333,7 @@ test("P8-2 SES 回执按 MessageId 归一化送达、退信、投诉、打开与
     assert.equal(event.event_type, eventType);
     assert.equal(event.failure_class, failureClass);
     assert.equal(event.provider_message_id, "ses-message-1");
-    assert.equal(event.provider_env_id, "ses-message-1");
+    assert.equal(event.provider_env_id, undefined);
     assert.equal(event.recipient_email, "customer@example.test");
     assert.equal("link" in event, false);
   }
