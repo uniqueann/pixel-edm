@@ -250,9 +250,13 @@ const server = createServer(async (req, res) => {
       return send(result.rows[0].id);
     }
     const rpc = url.pathname.split("/").pop();
+    const noPayloadRpcs = new Set(["list_delivery_providers"]);
     if (
       url.pathname.startsWith("/rest/v1/rpc/") &&
       [
+        "list_delivery_providers",
+        "list_delivery_channels",
+        "set_primary_delivery_channel",
         "save_contact",
         "archive_contact",
         "list_contacts",
@@ -296,11 +300,10 @@ const server = createServer(async (req, res) => {
         "list_workspace_team",
       ].includes(rpc)
     ) {
-      const result = await asUser(
-        db,
-        uid,
-        `select edm.${rpc}('${JSON.stringify(input.payload).replaceAll("'", "''")}'::jsonb) as result`,
-      );
+      const sql = noPayloadRpcs.has(rpc)
+        ? `select edm.${rpc}() as result`
+        : `select edm.${rpc}('${JSON.stringify(input.payload ?? input).replaceAll("'", "''")}'::jsonb) as result`;
+      const result = await asUser(db, uid, sql);
       return send(result.rows[0].result);
     }
     const table = url.pathname.split("/").pop();

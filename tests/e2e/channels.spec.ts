@@ -13,10 +13,9 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   await page.goto("/settings");
 
   await expect(
-    page.getByRole("heading", { name: "阿里云邮件推送 DirectMail" }),
+    page.getByRole("heading", { name: "邮局设置", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("未连接", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "连接发信通道" }).click();
+  await page.getByRole("button", { name: "添加 阿里云邮件推送" }).click();
   let dialog = page.getByRole("dialog");
   await expect(dialog.getByLabel("发件域名")).toHaveValue("send.contentup.cc");
   await dialog.getByLabel("发件地址").fill("hello@send.contentup.cc");
@@ -26,6 +25,12 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
     .fill("test-secret-that-is-never-rendered");
   await dialog.getByRole("button", { name: "安全保存配置" }).click();
   await expect(page.getByText("发信通道已连接")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "阿里云邮件推送 DirectMail" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("已配置，待验证", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("••••1234", { exact: true })).toBeVisible();
   await expect(
     page.getByText("test-secret-that-is-never-rendered"),
@@ -115,10 +120,13 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   ).toContainText("协作邮局");
   await page.goto("/settings");
   await expect(
-    page.getByText("仅管理员可以连接或修改发信通道。"),
+    page.getByRole("heading", { name: "邮局设置", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: /连接发信通道/ })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("button", { name: /添加 阿里云邮件推送/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /更新发信通道|连接发信通道/ }),
+  ).toHaveCount(0);
   expect(browserErrors).toEqual([]);
 });
