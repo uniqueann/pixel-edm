@@ -94,7 +94,7 @@ Supabase 继续复用 content-up 项目，业务对象只落在 `edm` / `edm_pri
 
 - [x] 将 `DeliveryAdapter` 正式扩展为五件套：`send`、`classifyError`、`parseWebhookEvent`、`verifyWebhookSignature`、`capabilities`；Edge Runtime 使用同一契约，前端测试适配器同步收敛。
 - [x] 建立 `supabase/functions/_shared/providers/<provider>/` 目录，DirectMail 的请求构造、错误分类、事件解析和 EventBridge 验签平移到 `aliyun_directmail`，旧共享入口保留兼容导出，既有请求与七类回执测试不变。
-- [x] 实现 SES 适配器：固定 `@aws-sdk/client-sesv2@3.1136.0`，由 SDK 执行 SigV4 和 SES v2 `SendEmail`，保存 `MessageId` 受理标识，并将 `Permanent` / `Transient` bounce 分别归一化为硬退 / 软退。
+- [x] 实现 SES 适配器：固定 `@aws-sdk/client-sesv2@3.1136.0`，由 SDK 执行 SigV4 和 SES v2 `SendEmail`；发送尝试与任务显式保存 `provider_message_id`，回执只按 `MessageId` 匹配而不借用 DirectMail 的 EnvId 列；`Permanent` / `Transient` bounce 分别归一化为硬退 / 软退。
 - [x] 新增 `edm-delivery-worker` 按发送运行冻结的 provider 与 `provider_config` 分派；`edm-directmail-worker` 保留为不再自行领取任务的兼容代理，云端调度迁移会原子取消旧 cron 并切到新 worker。
 - [x] 新增 `edm-delivery-test`，按 provider 生成测试信文案并共用准备、领取和完成 RPC；前端已切到新函数，旧测试函数暂留作回退入口。
 - [x] 回执函数按厂商拆分：`edm-directmail-events` 改为复用 DirectMail 适配器，新增 `edm-ses-events`；两者均调用 `webhook_ingest_delivery_event` 写入同一张归一化事件表。
@@ -102,7 +102,7 @@ Supabase 继续复用 content-up 项目，业务对象只落在 `edm` / `edm_pri
 - [x] SES 发送显式不设置 `ListManagementOptions`，自建 RFC 8058 退订继续作为唯一事实来源。
 - [x] SES 开启点击追踪时，退订链接锚标签使用 `ses:no-track`；DirectMail 继续使用 `data-alidm-traceoff`。
 - [x] 能力降级：worker 在调用厂商前检查适配器能力，数据库 `configure_delivery_tracking` 继续按注册表能力位拒绝不支持的追踪配置，不依赖界面隐藏。
-- [x] 本地验证：118 项 Node/PGlite 测试、四个相关 Edge Function 的 Deno 冻结依赖类型检查、Next.js 类型检查、ESLint、Prettier 与生产构建均通过；DirectMail 既有行为测试无回归。
+- [x] 本地验证：120 项 Node/PGlite 测试、四个相关 Edge Function 的 Deno 冻结依赖类型检查、Next.js 类型检查、ESLint、Prettier 与生产构建均通过；DirectMail 既有行为测试无回归。
 - [ ] PR 合并后按「先部署新函数，再应用数据库迁移，最后切换 cron」的顺序发布到 content-up；发布前 `amazon_ses` 继续保持 `enabled=false`，不允许生产用户提前创建 SES 通道。
 
 ## P8-3 配置界面按 provider 动态化
