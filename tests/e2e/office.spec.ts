@@ -25,6 +25,10 @@ test("登录、初始化、七页导航、设置保存、工作区切换和退�
       page.getByRole("heading", { name: title, exact: true }),
     ).toBeVisible();
   }
+  await page.getByRole("link", { name: "设置", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "邮局设置", exact: true }),
+  ).toBeVisible();
   await page.getByLabel("店铺 / 工作区名称").fill("测试店铺");
   await page.getByRole("button", { name: "保存设置" }).click();
   await expect(page.getByText("工作区已保存")).toBeVisible();
