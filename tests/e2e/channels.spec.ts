@@ -28,9 +28,7 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   await expect(
     page.getByRole("heading", { name: "阿里云邮件推送 DirectMail" }),
   ).toBeVisible();
-  await expect(
-    page.getByText("已配置，待验证", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("已配置，待验证", { exact: true })).toBeVisible();
   await expect(page.getByText("••••1234", { exact: true })).toBeVisible();
   await expect(
     page.getByText("test-secret-that-is-never-rendered"),
