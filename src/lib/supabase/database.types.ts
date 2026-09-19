@@ -67,7 +67,6 @@ export type Database = {
           completed_at: string | null;
           provider_request_id: string | null;
           provider_env_id: string | null;
-          provider_message_id: string | null;
           error_category: string | null;
           error_code: string | null;
           resolved_as: string | null;
@@ -75,6 +74,7 @@ export type Database = {
           resolved_at: string | null;
           resolution_note: string | null;
           created_at: string;
+          provider_message_id: string | null;
         };
         Insert: {
           id?: string;
@@ -88,7 +88,6 @@ export type Database = {
           completed_at?: string | null;
           provider_request_id?: string | null;
           provider_env_id?: string | null;
-          provider_message_id?: string | null;
           error_category?: string | null;
           error_code?: string | null;
           resolved_as?: string | null;
@@ -96,6 +95,7 @@ export type Database = {
           resolved_at?: string | null;
           resolution_note?: string | null;
           created_at?: string;
+          provider_message_id?: string | null;
         };
         Update: {
           id?: string;
@@ -109,7 +109,6 @@ export type Database = {
           completed_at?: string | null;
           provider_request_id?: string | null;
           provider_env_id?: string | null;
-          provider_message_id?: string | null;
           error_category?: string | null;
           error_code?: string | null;
           resolved_as?: string | null;
@@ -117,6 +116,7 @@ export type Database = {
           resolved_at?: string | null;
           resolution_note?: string | null;
           created_at?: string;
+          provider_message_id?: string | null;
         };
         Relationships: [];
       };
@@ -150,6 +150,7 @@ export type Database = {
           next_match_at: string;
           last_error_code: string | null;
           payload_sha256: string;
+          failure_class: string | null;
         };
         Insert: {
           id?: string;
@@ -159,7 +160,7 @@ export type Database = {
           task_id?: string | null;
           attempt_id?: string | null;
           subscription_event_id?: string | null;
-          provider?: string;
+          provider: string;
           provider_event_id: string;
           provider_event_type: string;
           event_type: string;
@@ -180,6 +181,7 @@ export type Database = {
           next_match_at?: string;
           last_error_code?: string | null;
           payload_sha256: string;
+          failure_class?: string | null;
         };
         Update: {
           id?: string;
@@ -210,6 +212,7 @@ export type Database = {
           next_match_at?: string;
           last_error_code?: string | null;
           payload_sha256?: string;
+          failure_class?: string | null;
         };
         Relationships: [];
       };
@@ -222,7 +225,6 @@ export type Database = {
           channel_id: string;
           idempotency_key: string;
           status: string;
-          region: string;
           sender_address: string;
           sender_alias: string;
           reply_to_address: string | null;
@@ -241,7 +243,8 @@ export type Database = {
           sender_workspace_name: string;
           sender_mailing_address: string;
           tracking_enabled: boolean;
-          tracking_tag_name: string | null;
+          provider: string;
+          provider_config: Json;
         };
         Insert: {
           id?: string;
@@ -251,7 +254,6 @@ export type Database = {
           channel_id: string;
           idempotency_key: string;
           status?: string;
-          region: string;
           sender_address: string;
           sender_alias: string;
           reply_to_address?: string | null;
@@ -270,7 +272,8 @@ export type Database = {
           sender_workspace_name: string;
           sender_mailing_address: string;
           tracking_enabled?: boolean;
-          tracking_tag_name?: string | null;
+          provider: string;
+          provider_config?: Json;
         };
         Update: {
           id?: string;
@@ -280,7 +283,6 @@ export type Database = {
           channel_id?: string;
           idempotency_key?: string;
           status?: string;
-          region?: string;
           sender_address?: string;
           sender_alias?: string;
           reply_to_address?: string | null;
@@ -299,7 +301,8 @@ export type Database = {
           sender_workspace_name?: string;
           sender_mailing_address?: string;
           tracking_enabled?: boolean;
-          tracking_tag_name?: string | null;
+          provider?: string;
+          provider_config?: Json;
         };
         Relationships: [];
       };
@@ -732,12 +735,11 @@ export type Database = {
           workspace_id: string;
           provider: string;
           status: string;
-          region: string;
-          sender_domain: string;
+          sender_domain: string | null;
           sender_address: string;
           sender_alias: string;
           reply_to_address: string | null;
-          access_key_hint: string | null;
+          credential_hint: string | null;
           credential_version: number;
           last_verified_at: string | null;
           last_error_code: string | null;
@@ -748,19 +750,21 @@ export type Database = {
           disconnected_at: string | null;
           version: number;
           tracking_enabled: boolean;
-          tracking_tag_name: string | null;
+          provider_config: Json;
+          is_primary: boolean;
+          rate_per_second: number | null;
+          daily_quota: number | null;
         };
         Insert: {
           id: string;
           workspace_id: string;
-          provider?: string;
+          provider: string;
           status?: string;
-          region: string;
-          sender_domain: string;
+          sender_domain?: string | null;
           sender_address: string;
           sender_alias: string;
           reply_to_address?: string | null;
-          access_key_hint?: string | null;
+          credential_hint?: string | null;
           credential_version?: number;
           last_verified_at?: string | null;
           last_error_code?: string | null;
@@ -771,19 +775,21 @@ export type Database = {
           disconnected_at?: string | null;
           version?: number;
           tracking_enabled?: boolean;
-          tracking_tag_name?: string | null;
+          provider_config?: Json;
+          is_primary?: boolean;
+          rate_per_second?: number | null;
+          daily_quota?: number | null;
         };
         Update: {
           id?: string;
           workspace_id?: string;
           provider?: string;
           status?: string;
-          region?: string;
-          sender_domain?: string;
+          sender_domain?: string | null;
           sender_address?: string;
           sender_alias?: string;
           reply_to_address?: string | null;
-          access_key_hint?: string | null;
+          credential_hint?: string | null;
           credential_version?: number;
           last_verified_at?: string | null;
           last_error_code?: string | null;
@@ -794,7 +800,64 @@ export type Database = {
           disconnected_at?: string | null;
           version?: number;
           tracking_enabled?: boolean;
-          tracking_tag_name?: string | null;
+          provider_config?: Json;
+          is_primary?: boolean;
+          rate_per_second?: number | null;
+          daily_quota?: number | null;
+        };
+        Relationships: [];
+      };
+      delivery_providers: {
+        Row: {
+          provider: string;
+          display_name: string;
+          enabled: boolean;
+          sender_alias_max_length: number;
+          requires_sender_domain: boolean;
+          supports_open_tracking: boolean;
+          supports_click_tracking: boolean;
+          requires_html_for_tracking: boolean;
+          supports_link_tracking_opt_out: boolean;
+          requires_webhook_subscription_confirmation: boolean;
+          default_rate_per_second: number;
+          default_daily_quota: number;
+          quota_timezone: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          provider: string;
+          display_name: string;
+          enabled?: boolean;
+          sender_alias_max_length: number;
+          requires_sender_domain?: boolean;
+          supports_open_tracking?: boolean;
+          supports_click_tracking?: boolean;
+          requires_html_for_tracking?: boolean;
+          supports_link_tracking_opt_out?: boolean;
+          requires_webhook_subscription_confirmation?: boolean;
+          default_rate_per_second: number;
+          default_daily_quota: number;
+          quota_timezone?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          provider?: string;
+          display_name?: string;
+          enabled?: boolean;
+          sender_alias_max_length?: number;
+          requires_sender_domain?: boolean;
+          supports_open_tracking?: boolean;
+          supports_click_tracking?: boolean;
+          requires_html_for_tracking?: boolean;
+          supports_link_tracking_opt_out?: boolean;
+          requires_webhook_subscription_confirmation?: boolean;
+          default_rate_per_second?: number;
+          default_daily_quota?: number;
+          quota_timezone?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -1186,6 +1249,9 @@ export type Database = {
       save_campaign: { Args: { payload: Json }; Returns: string };
       set_campaign_archived: { Args: { payload: Json }; Returns: string };
       get_campaign_editor_options: { Args: { payload: Json }; Returns: Json };
+      list_delivery_providers: { Args: Record<string, never>; Returns: Json };
+      list_delivery_channels: { Args: { payload: Json }; Returns: Json };
+      set_primary_delivery_channel: { Args: { payload: Json }; Returns: Json };
       get_delivery_channel: { Args: { payload: Json }; Returns: Json };
       save_delivery_channel: { Args: { payload: Json }; Returns: Json };
       disconnect_delivery_channel: { Args: { payload: Json }; Returns: Json };
