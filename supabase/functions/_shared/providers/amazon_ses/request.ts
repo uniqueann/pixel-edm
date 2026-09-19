@@ -46,8 +46,8 @@ export function buildSesSendEmailInput(input: SesRequestInput) {
     ConfigurationSetName: input.configurationSetName,
     ConfigurationOverrides: {
       Tracking: {
-        OpenTrackingEnabled: input.trackingEnabled,
-        ClickTrackingEnabled: input.trackingEnabled,
+        OpenTrackingEnabled: input.trackingEnabled ? "ENABLED" : "DISABLED",
+        ClickTrackingEnabled: input.trackingEnabled ? "ENABLED" : "DISABLED",
       },
     },
     Content: {

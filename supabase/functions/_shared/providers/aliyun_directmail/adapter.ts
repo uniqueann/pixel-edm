@@ -18,6 +18,20 @@ const allowedRegions = new Set([
   "eu-central-1",
 ]);
 
+type DirectMailClientConstructor = new (
+  config: InstanceType<typeof $OpenApiUtil.Config>,
+) => {
+  singleSendMailWithOptions(
+    request: InstanceType<typeof $Dm.SingleSendMailRequest>,
+    runtime: InstanceType<typeof $dara.RuntimeOptions>,
+  ): Promise<{
+    body?: {
+      requestId?: string;
+      envId?: string;
+    };
+  }>;
+};
+
 function safeCode(error: unknown) {
   if (!error || typeof error !== "object") return "UNKNOWN";
   const candidate = error as {
@@ -93,7 +107,8 @@ export async function sendDirectMail(input: DeliverySendInput) {
     $dara,
     "RuntimeOptions",
   );
-  const DirectMailClient = resolveCjsConstructor<typeof Dm20151123>(Dm20151123);
+  const DirectMailClient =
+    resolveCjsConstructor<DirectMailClientConstructor>(Dm20151123);
   const SingleSendMailRequest = resolveCjsConstructor<
     typeof $Dm.SingleSendMailRequest
   >($Dm, "SingleSendMailRequest");

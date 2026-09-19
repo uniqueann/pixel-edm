@@ -47,7 +47,10 @@ function recipientRecords(value: unknown, key: string) {
   });
 }
 
-function recipientsForEvent(event: RecordValue, mail: RecordValue) {
+function recipientsForEvent(
+  event: RecordValue,
+  mail: RecordValue,
+): { row: RecordValue; email: string }[] {
   const eventType = string(event.eventType ?? event.notificationType);
   if (eventType === "Bounce") {
     const bounce = record(event.bounce);
@@ -63,7 +66,10 @@ function recipientsForEvent(event: RecordValue, mail: RecordValue) {
     return values.map((email) => ({ row: delivery, email: recipient(email) }));
   }
   const values = strings(mail.destination);
-  return values.map((email) => ({ row: {}, email: recipient(email) }));
+  return values.map((email) => ({
+    row: {} as RecordValue,
+    email: recipient(email),
+  }));
 }
 
 function eventProjection(event: RecordValue) {

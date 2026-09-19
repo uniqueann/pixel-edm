@@ -82,7 +82,7 @@ const handler = {
         return json({ error: "登录邮箱尚未验证" }, 400);
 
       const { data: prepared, error: prepareError } = await context.supabase
-        .schema("edm")
+        .schema("edm" as never)
         .rpc("prepare_delivery_test", { payload: body });
       if (prepareError) return json({ error: "无法开始测试发送" }, 400);
       const preparation = prepared as {
@@ -93,7 +93,7 @@ const handler = {
         return json({ data: preparation.attempt, reused: true });
 
       const { data: claimed, error: claimError } = await context.supabaseAdmin
-        .schema("edm")
+        .schema("edm" as never)
         .rpc("worker_claim_delivery_test", {
           payload: {
             workspace_id: body.workspace_id,
@@ -181,7 +181,7 @@ const handler = {
 
       const { data: completed, error: completeError } =
         await context.supabaseAdmin
-          .schema("edm")
+          .schema("edm" as never)
           .rpc("worker_complete_delivery_test", { payload: completion });
       if (completeError) return json({ error: "测试发送结果保存失败" }, 500);
       return json({ data: completed });

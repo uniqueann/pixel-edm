@@ -42,8 +42,8 @@ test("P8-2 SES v2 请求显式控制追踪且不启用厂商列表管理", () =>
   assert.match(request.FromEmailAddress, /^=\?UTF-8\?B\?/);
   assert.equal(request.ConfigurationSetName, "pixel-edm");
   assert.deepEqual(request.ConfigurationOverrides.Tracking, {
-    OpenTrackingEnabled: true,
-    ClickTrackingEnabled: true,
+    OpenTrackingEnabled: "ENABLED",
+    ClickTrackingEnabled: "ENABLED",
   });
   assert.equal(request.Content.Simple.Body.Text.Data, "纯文本内容");
   assert.equal(request.Content.Simple.Body.Html.Data, "<p>HTML 内容</p>");
