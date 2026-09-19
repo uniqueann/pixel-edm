@@ -316,8 +316,8 @@ export function ChannelDetail({
 
   const webhookPublicKeyConfigured = Boolean(
     channel?.provider_config &&
-      typeof channel.provider_config.event_webhook_public_key === "string" &&
-      channel.provider_config.event_webhook_public_key.trim(),
+    typeof channel.provider_config.event_webhook_public_key === "string" &&
+    channel.provider_config.event_webhook_public_key.trim(),
   );
 
   const regionLabel =

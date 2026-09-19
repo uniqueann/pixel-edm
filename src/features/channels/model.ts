@@ -2,9 +2,7 @@ import { z } from "zod";
 import { directMailRegions, type DirectMailRegion } from "./provider";
 
 export type DeliveryProviderName =
-  | "aliyun_directmail"
-  | "amazon_ses"
-  | "sendgrid";
+  "aliyun_directmail" | "amazon_ses" | "sendgrid";
 
 const sendGridDataCenters = ["global", "eu"] as const;
 
@@ -112,7 +110,9 @@ export function createDeliveryChannelInput(options: {
           });
         }
       } else if (options.provider === "sendgrid") {
-        if (!(sendGridDataCenters as readonly string[]).includes(value.region)) {
+        if (
+          !(sendGridDataCenters as readonly string[]).includes(value.region)
+        ) {
           context.addIssue({
             code: "custom",
             path: ["region"],

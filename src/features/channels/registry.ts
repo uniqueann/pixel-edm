@@ -68,7 +68,8 @@ const providerUiCopy: Record<
       "新 SES 账号默认处于沙箱：仅可向已验证邮箱发送，约 200 封/日、1 封/秒。生产权限需单独向 AWS 申请，沙箱限制不是配置错误。",
   },
   sendgrid: {
-    tagline: "每个工作区使用自己的 SendGrid 账号与 Domain Authentication 发件域。",
+    tagline:
+      "每个工作区使用自己的 SendGrid 账号与 Domain Authentication 发件域。",
     credentialIdLabel: "API Key 标识",
     credentialSecretLabel: "API Key",
     acceptedTestLabel: "SendGrid 已接收",

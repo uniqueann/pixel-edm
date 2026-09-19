@@ -307,9 +307,7 @@ export function ChannelFormDialog({
             )}
             <div
               className={
-                showCredentialId
-                  ? "grid gap-4 sm:grid-cols-2"
-                  : "space-y-2"
+                showCredentialId ? "grid gap-4 sm:grid-cols-2" : "space-y-2"
               }
             >
               {showCredentialId && (
