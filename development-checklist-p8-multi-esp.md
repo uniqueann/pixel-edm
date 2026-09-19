@@ -1,6 +1,6 @@
 # P8 多 ESP 支持交付清单
 
-更新日期：2026-09-18。状态：规划已定稿，尚未开始工程实现。本批目标是让工作区可以选择发信服务商，而不是只能使用阿里云邮件推送。
+更新日期：2026-09-19。状态：规划已定稿，P8-1 数据库去耦已完成并通过本地回归，云端应用待执行。本批目标是让工作区可以选择发信服务商，而不是只能使用阿里云邮件推送。
 
 Supabase 继续复用 content-up 项目，业务对象只落在 `edm` / `edm_private`。本批全部采用前向迁移，不改写 `aigc`、共享 Auth 触发器或既有迁移历史，也不使用 `DROP SCHEMA CASCADE` 作为回滚手段。
 
@@ -73,22 +73,22 @@ Supabase 继续复用 content-up 项目，业务对象只落在 `edm` / `edm_pri
 
 ## P8-1 数据库去耦
 
-先行批次。完成后 DirectMail 的界面、接口和行为必须与去耦前完全一致。
+先行批次。完成后 DirectMail 的界面、接口和行为必须与去耦前完全一致。迁移文件为 `20260919021500_p8_delivery_provider_registry.sql`，单文件单事务完成结构调整、回填与 RPC 重写，避免中途出现结构与函数不一致的窗口。
 
-- [ ] 新增 `edm.delivery_providers` 注册表，登记 `aliyun_directmail` 与 `amazon_ses`，并以外键替换两处 `provider` 单值 check 约束。
-- [ ] 通用列保留强类型：发件地址、发件人显示名、回复地址、状态、凭据版本、验证时间、错误码、追踪开关。
-- [ ] 厂商专属项收入 `provider_config jsonb`，由按 provider 分派的校验函数在受控 RPC 内校验，不放宽到客户端自由写入。
-- [ ] `region` 与 `tracking_tag_name` 迁入 `provider_config`；`sender_domain` 保留为可空通用列。
-- [ ] 放开 `sender_alias` 的 14 字符上限，改为按 provider 校验，DirectMail 仍为 14。
-- [ ] `access_key_hint` 泛化为 `credential_hint`，保留尾四位语义。
-- [ ] 把 `provider_status='2'/'3'` 的退信与投诉判定移出 SQL；SQL 只接收归一化 `event_type` 和归一化退信分级（硬退 / 软退 / 未定）。
-- [ ] 限速改为按 provider 读取配置，DirectMail 默认值保持 5 次/秒与 2000 次/日不变。
-- [ ] 放开 `unique(workspace_id,provider)` 的单通道假设，新增主通道标识及 `workspace_id` 上的部分唯一索引，保证同时只有一个主通道。
-- [ ] 发送运行冻结字段扩展为同时冻结 provider 与 channel，确保切换通道不影响在途活动。
-- [ ] 现有 RPC 对外签名保持兼容；新增参数一律带默认值，旧客户端调用行为不变。
-- [ ] 数据库测试补充：注册表约束、`provider_config` 逐厂商校验、主通道唯一性、归一化退信分级投影、限速按 provider 生效。
-- [ ] 回归确认：DirectMail 通道配置、测试信、正式发送、回执投影与统计全部无行为变化。
-- [ ] 云端应用迁移并核对 Security 与 Performance Advisor 无新增 P8 提示。
+- [x] 新增 `edm.delivery_providers` 注册表，登记 `aliyun_directmail` 与 `amazon_ses`，并以外键替换两处 `provider` 单值 check 约束。`amazon_ses` 以 `enabled=false` 预登记，服务端在配置入口直接拒绝，配置能力留给 P8-2。
+- [x] 通用列保留强类型：发件地址、发件人显示名、回复地址、状态、凭据版本、验证时间、错误码、追踪开关。
+- [x] 厂商专属项收入 `provider_config jsonb`，由 `edm_private.delivery_provider_config(provider,config)` 按 provider 分派校验并归一化，只在受控 RPC 内调用；表上仅保留 `jsonb_typeof='object'` 的兜底约束，客户端无直接写入权限。
+- [x] `region` 与 `tracking_tag_name` 迁入 `provider_config`；`sender_domain` 保留为可空通用列，是否必填由注册表的 `requires_sender_domain` 决定。
+- [x] 放开 `sender_alias` 的 14 字符上限，表级放宽到 64，实际上限由注册表 `sender_alias_max_length` 决定，DirectMail 仍为 14。
+- [x] `access_key_hint` 泛化为 `credential_hint`，保留尾四位语义；RPC 响应同时回显旧字段名。
+- [x] 把 `provider_status='2'/'3'` 的退信与投诉判定移出 SQL；事件表新增归一化 `failure_class`（`hard_bounce` / `soft_bounce` / `complaint` / `undetermined`），`apply_delivery_event` 只读这一列。适配器未提供时由 `edm_private.delivery_failure_class` 按 provider 兜底推导，P8-2 起改由适配器直接提交。
+- [x] 限速改为按 provider 读取配置，`worker_claim_delivery_batch` 从注册表取默认值并允许通道级 `rate_per_second` / `daily_quota` 覆盖；DirectMail 默认值保持 5 次/秒、2000 次/日与 `Asia/Shanghai` 日界不变。
+- [x] 保留 `unique(workspace_id,provider)`（一个工作区每家厂商一个通道），新增 `is_primary` 及 `workspace_id` 上的部分唯一索引，保证同时只有一个主通道；原先「只能有一个通道」的假设改由主通道查询承担。
+- [x] 发送运行冻结字段扩展为同时冻结 provider 与 `provider_config`，确保切换通道不影响在途活动；领取任务与继续发送均按冻结值做漂移检测。
+- [x] 现有 RPC 对外签名保持兼容；`provider` 缺省为 `aliyun_directmail`，只提交扁平 `region` 的旧调用会与既有 `provider_config` 合并，响应继续返回 `region`、`tracking_tag_name` 和 `access_key_hint`。
+- [x] 数据库测试补充：注册表约束、`provider_config` 逐厂商校验、主通道唯一性、归一化退信分级投影、限速覆盖，见 `tests/delivery-providers.test.mjs`。
+- [x] 回归确认：既有 101 项自动化测试在未修改任何测试文件的前提下全部通过，覆盖 DirectMail 通道配置、测试信、正式发送、回执投影与统计。
+- [x] 云端应用迁移并核对 Security 与 Performance Advisor 无新增 P8 提示；迁移在 content-up 记录为 `20260919024521_p8_delivery_provider_registry`，2 个通道与 8 条发送运行的 `region` 全部回填进 `provider_config`，现存通道置为主通道，8 条回执事件均非 `delivery_failed` 故 `failure_class` 保持为空。Security Advisor 无任何 `edm` 条目；Performance Advisor 的 `unindexed_foreign_keys`、`auth_rls_initplan`、`duplicate_index` 均无 `edm` 条目，仅 INFO 级 `unused_index` 新增三条（`delivery_channels_provider_idx`、`campaign_delivery_runs_provider_idx`、`campaign_delivery_events_provider_idx`），这三个索引正是用于覆盖新增服务商外键，须保留。
 
 ## P8-2 适配器层与 worker 分发
 

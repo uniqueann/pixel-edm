@@ -103,6 +103,6 @@ P5-3 已完成工程实现、生产部署和真实闭环验收：管理员可为
 
 P6-0 至 P6-3 已完成并部署，P6-4 已完成审计与自动化验收，生产双账号邀请接受的人工验收待完成：新增团队邀请表和受控 RPC，支持个人工作区有效邀请后转团队、7 天一次性链接、重发/撤销/惰性过期、已验证邮箱接受、角色变更、成员软删除、重新邀请恢复、owner 转移及并发版本保护。管理员可在团队页邀请、重发、撤销、改角色、移除成员和转移 owner；编辑者与查看者只读。审计只记录工作区、成员/邀请 ID、角色和掩码邮箱，不记录令牌、正文、变量值或完整客户数据；邀请接受页为 `/invite/[token]`。云端已应用 `20260915155134_p6_team_collaboration` 和 `20260915155553_p6_team_collaboration_hardening`，详见 [P6 团队协作交付清单](development-checklist-p6-team.md)。
 
-P8 多 ESP 支持已完成规划定稿，尚未开始工程实现：第二家 ESP 选定 Amazon SES，首版只支持阿里云邮件推送和 SES 两家，同一工作区同时只有一个主发送通道，不做自动故障切换。执行顺序为 P8-1 数据库去耦先于 P7 发布验收，因为通道表目前接近空表，现在把厂商专属列与单值约束抬出共享表是一次纯前向迁移；去耦完成后 DirectMail 行为保持不变，SES 适配器、回执函数和动态配置界面在 P7 之后接入，详见 [P8 多 ESP 支持交付清单](development-checklist-p8-multi-esp.md)。
+P8 多 ESP 支持已完成规划定稿，P8-1 数据库去耦已完成并通过本地回归与云端应用：第二家 ESP 选定 Amazon SES，首版只支持阿里云邮件推送和 SES 两家，同一工作区同时只有一个主发送通道，不做自动故障切换。去耦引入 `edm.delivery_providers` 注册表登记显示名、能力位与默认限速，厂商专属的区域和追踪标签迁入 `provider_config jsonb` 并按 provider 分派校验，`access_key_hint` 泛化为 `credential_hint`，退信分级归一化为 `failure_class` 后 SQL 不再判读阿里云状态码，限速改为从注册表读取并支持通道级覆盖，发送运行同时冻结 provider 与 provider_config。`amazon_ses` 以 `enabled=false` 预登记，配置入口在 P8-2 打开；RPC 出入参保持兼容，DirectMail 的界面与行为无变化。云端已应用 `20260919024521_p8_delivery_provider_registry`，Security 与 Performance Advisor 无新增 P8 告警。SES 适配器、回执函数和动态配置界面在 P7 之后接入，详见 [P8 多 ESP 支持交付清单](development-checklist-p8-multi-esp.md)。
 
 设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 P1、P2、P3、P4、P5、P6 与 P8 交付清单；原始交互文件归档于 `references/seller-post-office-premium.html`。
