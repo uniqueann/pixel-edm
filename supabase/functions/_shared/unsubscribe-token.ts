@@ -248,7 +248,7 @@ export function renderTrackedHtmlBody(input: {
   workspaceName: string;
   mailingAddress: string;
   pageUrl: string;
-  provider?: "aliyun_directmail" | "amazon_ses";
+  provider?: "aliyun_directmail" | "amazon_ses" | "sendgrid";
 }) {
   const workspaceName = input.workspaceName.replace(/[\r\n]+/g, " ").trim();
   const mailingAddress = input.mailingAddress.replace(/[\r\n]+/g, " ").trim();
@@ -256,7 +256,11 @@ export function renderTrackedHtmlBody(input: {
     throw new Error("UNSUBSCRIBE_SENDER_INVALID");
   const pageUrl = escapeHtml(input.pageUrl);
   const noTrackAttribute =
-    input.provider === "amazon_ses" ? "ses:no-track" : "data-alidm-traceoff";
+    input.provider === "amazon_ses"
+      ? "ses:no-track"
+      : input.provider === "sendgrid"
+        ? 'clicktracking="off"'
+        : "data-alidm-traceoff";
   return `<!doctype html>
 <html lang="zh-CN">
 <body style="margin:0;padding:24px;background:#ffffff;color:#1c2b45;font-family:Arial,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.65">

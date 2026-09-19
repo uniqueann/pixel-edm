@@ -1,6 +1,6 @@
 # P9 SendGrid 接入交付清单
 
-更新日期：2026-09-19。状态：P9-0 契约已定稿，P9-1 数据库登记已在本地与 content-up 完成。  
+更新日期：2026-09-19。状态：P9-0/P9-1 已完成；P9-2 适配器与回执函数已实现，待合并部署。  
 前提：DirectMail 生产可用；`amazon_ses` 仍可保持 `enabled=false`；SendGrid 首版 **`enabled=false` 登记**，验收后再开放。
 
 契约细节见 [docs/sendgrid-p9-0-contract.md](docs/sendgrid-p9-0-contract.md)。
@@ -30,10 +30,12 @@
 
 ## P9-2 适配器与回执
 
-- [ ] `supabase/functions/_shared/providers/sendgrid/*`（send / error / event / webhook / adapter）。
-- [ ] `getDeliveryAdapter` 注册 `sendgrid`。
-- [ ] 新建 `edm-sendgrid-events`；worker / delivery-test 分派无需新 cron 名。
-- [ ] 单元测试：请求体、事件解析、签名、错误分类（不依赖真实 API Key）。
+- [x] `supabase/functions/_shared/providers/sendgrid/*`（send / error / event / webhook / adapter）。
+- [x] `getDeliveryAdapter` 注册 `sendgrid`；凭据 AAD 增加 `sendgrid`。
+- [x] 新建 `edm-sendgrid-events`；worker / delivery-test 分派无需新 cron 名。
+- [x] 迁移 `20260919153000_p9_sendgrid_webhook_public_key.sql` 允许 `event_webhook_public_key`。
+- [x] 单元测试 `tests/sendgrid-provider.test.mjs`：请求体、事件解析、签名、错误分类（不依赖真实 API Key）。
+- [ ] PR 合并后部署 `edm-sendgrid-events` 并在 content-up 应用 P9-2 迁移；SendGrid 仍保持 `enabled=false`。
 
 ## P9-3 配置界面
 

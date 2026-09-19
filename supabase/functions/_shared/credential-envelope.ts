@@ -15,7 +15,7 @@ type CredentialContext = {
   workspaceId: string;
   channelId: string;
   credentialVersion: number;
-  provider?: "aliyun_directmail" | "amazon_ses";
+  provider?: "aliyun_directmail" | "amazon_ses" | "sendgrid";
 };
 
 type SerializedKeyring = {
@@ -49,9 +49,14 @@ function parseKeyring(source: string): SerializedKeyring {
   return keyring as SerializedKeyring;
 }
 
+function providerAadSegment(provider?: CredentialContext["provider"]) {
+  if (provider === "amazon_ses") return "amazon-ses";
+  if (provider === "sendgrid") return "sendgrid";
+  return "aliyun-directmail";
+}
+
 function additionalData(context: CredentialContext) {
-  const provider =
-    context.provider === "amazon_ses" ? "amazon-ses" : "aliyun-directmail";
+  const provider = providerAadSegment(context.provider);
   return new TextEncoder().encode(
     [
       "pixel-edm",

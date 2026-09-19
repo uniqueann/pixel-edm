@@ -1,4 +1,5 @@
-export type DeliveryProviderName = "aliyun_directmail" | "amazon_ses";
+export type DeliveryProviderName =
+  "aliyun_directmail" | "amazon_ses" | "sendgrid";
 
 export type DeliveryErrorCategory =
   | "authentication"
