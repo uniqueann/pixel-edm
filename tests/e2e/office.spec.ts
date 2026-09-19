@@ -18,6 +18,7 @@ test("登录、初始化、七页导航、设置保存、工作区切换和退�
     ["团队", "团队成员"],
     ["日志", "操作记录"],
     ["设置", "邮局设置"],
+    ["帮助", "使用帮助"],
   ]) {
     await page.getByRole("link", { name: label, exact: true }).click();
     await expect(

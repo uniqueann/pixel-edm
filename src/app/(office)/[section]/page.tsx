@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
@@ -20,6 +21,7 @@ import { ChannelSettings } from "@/features/channels/channel-settings";
 import { credentialStorageReady } from "@/features/channels/credentials";
 import { listTeam } from "@/features/team/actions";
 import { TeamManager } from "@/features/team/team-manager";
+import { HelpGuide } from "@/features/help/help-guide";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -52,10 +54,23 @@ export default async function Page({
 }) {
   const { section } = await params;
   if (
-    !["dashboard", "team", "settings", ...Object.keys(pages)].includes(section)
+    !["dashboard", "team", "settings", "help", ...Object.keys(pages)].includes(
+      section,
+    )
   )
     notFound();
   const { workspace, role, user } = await getContext();
+  if (section === "help") {
+    return (
+      <>
+        <div className="section-heading">
+          <h1>使用帮助</h1>
+          <Badge variant="secondary">文档</Badge>
+        </div>
+        <HelpGuide role={role} />
+      </>
+    );
+  }
   if (section === "settings") {
     const [providers, channelSummaries] = await Promise.all([
       listDeliveryProviders(),
@@ -98,6 +113,14 @@ export default async function Page({
             <h2>发信通道</h2>
             <p className="hint mt-2 mb-0">
               为工作区配置发信服务商与主通道，并向当前管理员的已验证邮箱发送测试邮件。
+              首次配置与上线核对见{" "}
+              <Link
+                href="/help#help-go-live"
+                className="underline underline-offset-2"
+              >
+                帮助 → DirectMail 上线核对
+              </Link>
+              。
             </p>
           </div>
           <ChannelSettings
