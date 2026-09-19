@@ -900,7 +900,8 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
         await tx.query(
           `update edm.campaign_delivery_tasks set
              status='processing',attempt_count=4,active_attempt_id=$2,
-             lease_token=$3,lease_expires_at=now()+interval '90 seconds'
+             lease_token=$3,lease_expires_at=now()+interval '90 seconds',
+             provider_message_id=null
            where id=$1`,
           [task.id, attemptId, leaseToken],
         );
