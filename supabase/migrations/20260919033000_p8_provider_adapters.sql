@@ -13,6 +13,7 @@ declare
   tag_value text;
   configuration_set text;
   sns_topic_arn text;
+  aws_partition text;
 begin
   if jsonb_typeof(source)<>'object' then raise exception '服务商配置格式无效'; end if;
   region_value=nullif(btrim(coalesce(source->>'region','')),'');
@@ -41,10 +42,15 @@ begin
       char_length(configuration_set) not between 1 and 64
       or configuration_set !~ '^[A-Za-z0-9_-]+$'
     ) then raise exception 'SES 配置集名称仅支持 1 至 64 位字母、数字、下划线和连字符'; end if;
+    aws_partition=case
+      when region_value like 'cn-%' then 'aws-cn'
+      when region_value like 'us-gov-%' then 'aws-us-gov'
+      else 'aws'
+    end;
     if sns_topic_arn is not null and (
       char_length(sns_topic_arn)>2048
       or sns_topic_arn !~ (
-        '^arn:(aws|aws-us-gov|aws-cn):sns:'||
+        '^arn:'||aws_partition||':sns:'||
         region_value||
         ':[0-9]{12}:[A-Za-z0-9_-]+$'
       )

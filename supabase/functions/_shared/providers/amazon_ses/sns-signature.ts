@@ -19,7 +19,7 @@ function requiredString(
   const result = value[key];
   if (typeof result !== "string" || !result.trim())
     throw new Error("SNS_ENVELOPE_INVALID");
-  return result.trim();
+  return result;
 }
 
 export function parseSnsEnvelope(input: unknown): SnsEnvelope {

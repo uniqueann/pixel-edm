@@ -91,7 +91,7 @@ export async function handleDeliveryWorker(request: Request) {
   const outcomes = await Promise.all(
     claims.map(async (claim) => {
       let completion: Record<string, unknown>;
-      let provider = claim.channel.provider;
+      const provider = claim.channel.provider;
       try {
         const adapter = await getDeliveryAdapter(provider);
         if (
@@ -156,7 +156,6 @@ export async function handleDeliveryWorker(request: Request) {
             deliveryError,
           );
         } catch {
-          provider = "aliyun_directmail";
           failure = {
             status: "failed",
             error_category: "configuration",

@@ -162,6 +162,11 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
           '{"region":"us-east-1","sns_topic_arn":"arn:aws:sns:eu-west-1:123456789012:pixel-edm"}',
           /Topic ARN/,
         ],
+        [
+          "amazon_ses",
+          '{"region":"cn-north-1","sns_topic_arn":"arn:aws:sns:cn-north-1:123456789012:pixel-edm"}',
+          /Topic ARN/,
+        ],
       ]) {
         await assert.rejects(
           db.query(

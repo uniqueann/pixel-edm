@@ -86,6 +86,10 @@ test("P8-2 SES 错误分类区分鉴权、配置、限流、临时与结果未�
     "configuration",
   );
   assert.equal(
+    classifySesError({ name: "CREDENTIAL_DECRYPT_FAILED" }).error_category,
+    "configuration",
+  );
+  assert.equal(
     classifySesError({ name: "TooManyRequestsException" }).error_category,
     "rate_limit",
   );

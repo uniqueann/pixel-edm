@@ -22,7 +22,17 @@ export function classifySesError(error: unknown): DeliveryFailure {
   const code = safeCode(error);
   const normalized = code.toLowerCase();
   if (
-    /credential|unrecognizedclient|invalidsignature|accessdenied|unauthorized|expiredtoken/.test(
+    /credential_keyring|credential_decrypt|credential_payload|credential_version/.test(
+      normalized,
+    )
+  )
+    return {
+      status: "failed",
+      error_category: "configuration",
+      error_code: code,
+    };
+  if (
+    /credentialsprovider|unrecognizedclient|invalidsignature|accessdenied|unauthorized|expiredtoken/.test(
       normalized,
     )
   )
