@@ -88,7 +88,7 @@ export const helpSections: HelpSection[] = [
       "（若已配 Webhook）在阿里云投递一封会触发回执的邮件 → 活动任务状态与统计更新。",
       "用活动邮件中的退订链接完成一次公开退订 → 该客户不再出现在新活动受众中。",
       "团队 → 邀请一名运营/查看者 → 确认其无法修改通道或开始正式发送。",
-      "设置 → 确认仍显示「Amazon SES（尚未开放）」且无法添加 SES 通道（符合当前单 ESP 策略）。",
+      "设置 → 确认仍显示「Amazon SES / SendGrid（尚未开放）」且无法添加对应通道（符合当前单 ESP 策略）。",
     ],
     note: "更完整的运维记录见仓库内 docs/edm-directmail-go-live-checklist.md 与 supabase/verification.md。",
   },
@@ -96,8 +96,10 @@ export const helpSections: HelpSection[] = [
     id: "sendgrid-future",
     title: "关于 SendGrid",
     bullets: [
-      "SendGrid 已在系统注册表中登记，当前与 SES 相同为尚未开放状态，待 P9 适配器与人工验收完成后开放。",
-      "规划能力：Mail Send v3、Event Webhook 回执、API Key 凭据、global/eu 数据中心；详见仓库 docs/sendgrid-p9-0-contract.md。",
+      "SendGrid 已在注册表登记并完成适配器与 edm-sendgrid-events 部署；设置页可见「SendGrid（尚未开放）」，与 SES 相同，待 P9-4 人工验收通过后再启用注册表。",
+      "开放后通道配置包括：API Key（加密存储）、数据中心 global/eu、Domain Authentication 发件域、Event Webhook 验签公钥（Signed Event Webhook）。",
+      "Webhook 地址形如 …/functions/v1/edm-sendgrid-events?channel_id=…&token=…；须与 SendGrid 控制台 Signed Webhook 公钥一致。",
+      "契约与事件映射见 docs/sendgrid-p9-0-contract.md。",
     ],
   },
   {

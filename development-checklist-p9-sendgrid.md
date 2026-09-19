@@ -1,6 +1,6 @@
 # P9 SendGrid 接入交付清单
 
-更新日期：2026-09-19。状态：P9-0/P9-1 已完成；P9-2 适配器与回执函数已实现，待合并部署。  
+更新日期：2026-09-19。状态：P9-0～P9-3 工程完成；SendGrid 注册表仍 `enabled=false`，待 P9-4 验收后开放。  
 前提：DirectMail 生产可用；`amazon_ses` 仍可保持 `enabled=false`；SendGrid 首版 **`enabled=false` 登记**，验收后再开放。
 
 契约细节见 [docs/sendgrid-p9-0-contract.md](docs/sendgrid-p9-0-contract.md)。
@@ -35,13 +35,13 @@
 - [x] 新建 `edm-sendgrid-events`；worker / delivery-test 分派无需新 cron 名。
 - [x] 迁移 `20260919153000_p9_sendgrid_webhook_public_key.sql` 允许 `event_webhook_public_key`。
 - [x] 单元测试 `tests/sendgrid-provider.test.mjs`：请求体、事件解析、签名、错误分类（不依赖真实 API Key）。
-- [ ] PR 合并后部署 `edm-sendgrid-events` 并在 content-up 应用 P9-2 迁移；SendGrid 仍保持 `enabled=false`。
+- [x] 已部署 `edm-sendgrid-events`（v1，`verify_jwt=false`）并在 content-up 应用 `20260919154610_p9_sendgrid_webhook_public_key`；SendGrid 仍保持 `enabled=false`。
 
 ## P9-3 配置界面
 
-- [ ] `DeliveryProviderName`、Zod 表单、registry 文案（API Key、数据中心、Webhook 说明）。
-- [ ] `channel-detail` Webhook URL 指向 `edm-sendgrid-events`。
-- [ ] 帮助页增加 SendGrid 章节（仍标注「尚未开放」直至启用）。
+- [x] `DeliveryProviderName`、Zod 表单、registry 文案（API Key、数据中心、Webhook 验签公钥说明）。
+- [x] `channel-detail` / actions Webhook URL 指向 `edm-sendgrid-events`。
+- [x] 帮助页 SendGrid 章节更新（仍标注「尚未开放」直至 P9-4 启用）。
 
 ## P9-4 验收
 
