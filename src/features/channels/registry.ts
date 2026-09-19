@@ -77,9 +77,7 @@ export function mergeProviderRecord(
 
 export function directMailRegionLabel(region: string | undefined) {
   if (!region) return "未设置";
-  return (
-    directMailRegionLabels[region as DirectMailRegion] ?? region
-  );
+  return directMailRegionLabels[region as DirectMailRegion] ?? region;
 }
 
 export function regionFieldKind(provider: DeliveryProviderName) {

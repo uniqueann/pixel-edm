@@ -164,3 +164,34 @@
 - 注册表落库为 `aliyun_directmail`（启用，5 次/秒、2000 次/日、`Asia/Shanghai`）与 `amazon_ses`（未启用，1 次/秒、200 次/日、`UTC`）；DirectMail 限速默认值与去耦前一致。
 - Security Advisor 无任何 `edm` 条目，现有提示仍只涉及共享 `aigc`、`public` 与 Auth 基线。Performance Advisor 的 `unindexed_foreign_keys`、`auth_rls_initplan` 与 `duplicate_index` 均无 `edm` 条目，确认三个新增服务商外键已被覆盖索引；仅 INFO 级 `unused_index` 新增 `delivery_channels_provider_idx`、`campaign_delivery_runs_provider_idx` 和 `campaign_delivery_events_provider_idx` 三条，属新建索引尚未使用，且为覆盖外键所必需，不予删除。
 - 云端未创建测试通道、测试信或发送任务，也未修改既有业务数据；本次没有真实发送验收，SES 实际发信能力待 P8-2 适配器接入后单独验收。
+
+### P8-4 多 ESP 验收（2026-09-19）
+
+#### 自动化验收（本地 PGlite，129 项测试）
+
+新增 `tests/p8-multi-esp-acceptance.test.mjs`，覆盖 P8-4 清单中可在数据库层验证的项：
+
+- 在途冻结：主通道从 DirectMail 切到 SES 后，已在途 run 仍冻结原 `channel_id` 与 `provider`；新活动使用新主通道。
+- 跨厂商隔离：错误 Webhook 令牌返回 `WEBHOOK_UNAUTHORIZED`；A 通道回执不得匹配 B 通道任务；各通道凭据独立存储。
+- 退信分级：SES `soft_bounce` 不写入 `edm.suppressions`。
+- 重订阅：`provider_resubscribed` 对 DirectMail 与 SES 均返回 `ignored`，不解除既有抑制。
+- 能力降级：注册表关闭追踪能力时 `configure_delivery_tracking` 服务端拒绝。
+- 审计脱敏：`delivery_channel.*`、`delivery_webhook.configured` 等 metadata 不含凭据或完整邮箱。
+- AIGC 隔离：`aigc` schema 未被 EDM 迁移改写。
+
+DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、`channels-database` 等测试共同覆盖；本次未新增数据库迁移。
+
+#### 生产人工验收（待用户配合）
+
+`amazon_ses` 在注册表仍为 `enabled=false`，生产用户暂不能创建 SES 通道。以下项需在 SES 沙箱/生产权限与 AWS 基础设施就绪后，由管理员在 `https://edm.contentup.cc` 逐项实测：
+
+1. **DirectMail 回归**：测试信 → 小活动发送 → 回执投影 → 公开退订（复核 P5 项无回归）。
+2. **SES 首次闭环**（先 `update delivery_providers set enabled=true where provider='amazon_ses'` 并部署，再配置 DNS/DKIM、Configuration Set、SNS Topic 与 `edm-ses-events` 订阅握手）：
+   - 设置页新增 SES 通道、保存 IAM 凭据、发送测试信；
+   - 确认沙箱提示可见；创建 SES 主通道或切换主通道；
+   - 向已验证地址发送小活动；核对送达/退信/投诉/打开/点击回执；
+   - 公开退订与 one-click 仍走自建链路，厂商 resubscribe 不解除抑制。
+3. **在途冻结人工复核**：DirectMail 活动发送中切换主通道到 SES，确认在途任务仍从 DirectMail 完成、新活动走 SES。
+4. **SES 生产放量前**：申请移出沙箱；确认 `send.contentup.cc` 的阿里云与 AWS DNS 记录不冲突。
+
+人工验收通过后，再单独应用 `amazon_ses` 启用迁移并记录于本文档。
