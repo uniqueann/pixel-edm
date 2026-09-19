@@ -88,7 +88,7 @@ Supabase 继续复用 content-up 项目，业务对象只落在 `edm` / `edm_pri
 - [x] 现有 RPC 对外签名保持兼容；`provider` 缺省为 `aliyun_directmail`，只提交扁平 `region` 的旧调用会与既有 `provider_config` 合并，响应继续返回 `region`、`tracking_tag_name` 和 `access_key_hint`。
 - [x] 数据库测试补充：注册表约束、`provider_config` 逐厂商校验、主通道唯一性、归一化退信分级投影、限速覆盖，见 `tests/delivery-providers.test.mjs`。
 - [x] 回归确认：既有 101 项自动化测试在未修改任何测试文件的前提下全部通过，覆盖 DirectMail 通道配置、测试信、正式发送、回执投影与统计。
-- [ ] 云端应用迁移并核对 Security 与 Performance Advisor 无新增 P8 提示。
+- [x] 云端应用迁移并核对 Security 与 Performance Advisor 无新增 P8 提示；迁移在 content-up 记录为 `20260919024521_p8_delivery_provider_registry`，2 个通道与 8 条发送运行的 `region` 全部回填进 `provider_config`，现存通道置为主通道，8 条回执事件均非 `delivery_failed` 故 `failure_class` 保持为空。Security Advisor 无任何 `edm` 条目；Performance Advisor 的 `unindexed_foreign_keys`、`auth_rls_initplan`、`duplicate_index` 均无 `edm` 条目，仅 INFO 级 `unused_index` 新增三条（`delivery_channels_provider_idx`、`campaign_delivery_runs_provider_idx`、`campaign_delivery_events_provider_idx`），这三个索引正是用于覆盖新增服务商外键，须保留。
 
 ## P8-2 适配器层与 worker 分发
 

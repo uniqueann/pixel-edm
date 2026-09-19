@@ -154,3 +154,13 @@
 - 本地 86 项数据库/单元测试、8 项浏览器端到端测试、lint、类型、格式和生产构建通过。
 - 用户于 2026-09-13 确认受控真实退订验收通过。客户端顶部“取消订阅”入口实际执行 GET，兼容修复后安全跳转到确认页；两个不同的工作区邮箱完成确认。脱敏云端复核显示 2 条 `public_page` 退订事件分别关联 2 个投递任务，并各自同步形成抑制记录、联系人 `unsubscribed` 状态和来源任务 `unsubscribed` 反馈投影，闭环数据一致。
 - 此次真实客户端未触发标准 RFC one-click POST，且验收后尚无新建的投递任务，因此 one-click POST 和退订后新活动排除继续作为扩展真实回归项；两项已有自动化测试覆盖，不将其误记为本次真实证据。
+
+### P8-1 发信通道多服务商去耦迁移（2026-09-19）
+
+- 仅应用新增迁移，云端记录为 `20260919024521_p8_delivery_provider_registry`；只修改 `edm` 和 `edm_private`，未重放或改写 `aigc`、共享 Auth 及其他项目迁移。本地文件名时间戳为 `20260919021500`，与云端记录版本的差异沿用本项目既有惯例。
+- 应用前核对：`edm` 与 `edm_private` 下无依赖视图或物化视图；待删除的 `region`、`tracking_tag_name`、`access_key_hint` 三列存在且 `provider_config`、`is_primary`、`failure_class` 尚未存在；五个待改约束的云端实际名称与迁移脚本一致，其中 `sender_address` 与 `sender_domain` 的联合约束在云端同样自动命名为表级 `delivery_channels_check`。
+- 应用前逐一复核被 `create or replace` 覆盖的 16 个函数均取自其最后一次定义，未回退 `p4_delivery_worker_schedule`、`p4_delivery_fk_indexes`、`p4_delivery_resume_finalize`、`p5_public_unsubscribe` 与 `p5_campaign_statistics_tracking` 的既有修订。
+- 数据回填核对：2 个通道与 8 条发送运行的 `region` 全部进入 `provider_config`，其中各有 1 条同时携带 `tracking_tag_name`；`credential_hint` 在改名后保留非空；两个工作区的现存通道均置为主通道，符合去耦前「每个工作区最多一个通道」的前提，主通道部分唯一索引未发生冲突。8 条回执事件均非 `delivery_failed`，因此 `failure_class` 全部保持为空。
+- 注册表落库为 `aliyun_directmail`（启用，5 次/秒、2000 次/日、`Asia/Shanghai`）与 `amazon_ses`（未启用，1 次/秒、200 次/日、`UTC`）；DirectMail 限速默认值与去耦前一致。
+- Security Advisor 无任何 `edm` 条目，现有提示仍只涉及共享 `aigc`、`public` 与 Auth 基线。Performance Advisor 的 `unindexed_foreign_keys`、`auth_rls_initplan` 与 `duplicate_index` 均无 `edm` 条目，确认三个新增服务商外键已被覆盖索引；仅 INFO 级 `unused_index` 新增 `delivery_channels_provider_idx`、`campaign_delivery_runs_provider_idx` 和 `campaign_delivery_events_provider_idx` 三条，属新建索引尚未使用，且为覆盖外键所必需，不予删除。
+- 云端未创建测试通道、测试信或发送任务，也未修改既有业务数据；本次没有真实发送验收，SES 实际发信能力待 P8-2 适配器接入后单独验收。
