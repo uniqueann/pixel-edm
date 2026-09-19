@@ -45,7 +45,7 @@
 
 ## P9-4 验收
 
-- [ ] 扩展多 ESP 自动化测试（SendGrid ingest 路径、软退、resubscribe ignored）。
+- [x] 扩展多 ESP 自动化测试（SendGrid ingest 路径、软退、resubscribe ignored）；见 `tests/p9-4-sendgrid-acceptance.test.mjs`。
 - [ ] 人工：Domain Authentication → 测试信 → 小活动 → Event Webhook → 公开退订。
 - [ ] 迁移或 SQL：`enabled=true`；更新 `supabase/verification.md`。
 - [ ] DirectMail 回归抽查。
