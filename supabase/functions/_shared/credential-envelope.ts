@@ -5,15 +5,17 @@ export type CredentialEnvelope = {
   credential_version: number;
 };
 
-export type DirectMailCredentials = {
+export type DeliveryCredentials = {
   accessKeyId: string;
   accessKeySecret: string;
+  sessionToken?: string;
 };
 
 type CredentialContext = {
   workspaceId: string;
   channelId: string;
   credentialVersion: number;
+  provider?: "aliyun_directmail" | "amazon_ses";
 };
 
 type SerializedKeyring = {
@@ -48,10 +50,12 @@ function parseKeyring(source: string): SerializedKeyring {
 }
 
 function additionalData(context: CredentialContext) {
+  const provider =
+    context.provider === "amazon_ses" ? "amazon-ses" : "aliyun-directmail";
   return new TextEncoder().encode(
     [
       "pixel-edm",
-      "aliyun-directmail",
+      provider,
       "v1",
       context.workspaceId,
       context.channelId,
@@ -64,7 +68,7 @@ export async function openCredentialEnvelope(input: {
   keyringSource: string;
   context: CredentialContext;
   envelope: CredentialEnvelope;
-}): Promise<DirectMailCredentials> {
+}): Promise<DeliveryCredentials> {
   const { context, envelope } = input;
   if (envelope.credential_version !== context.credentialVersion)
     throw new Error("CREDENTIAL_VERSION_MISMATCH");
@@ -107,8 +111,14 @@ export async function openCredentialEnvelope(input: {
   } catch {
     throw new Error("CREDENTIAL_PAYLOAD_INVALID");
   }
-  const credentials = value as Partial<DirectMailCredentials>;
+  const credentials = value as Partial<DeliveryCredentials>;
   if (!credentials.accessKeyId || !credentials.accessKeySecret)
     throw new Error("CREDENTIAL_PAYLOAD_INVALID");
-  return credentials as DirectMailCredentials;
+  if (
+    credentials.sessionToken !== undefined &&
+    (typeof credentials.sessionToken !== "string" ||
+      !credentials.sessionToken.trim())
+  )
+    throw new Error("CREDENTIAL_PAYLOAD_INVALID");
+  return credentials as DeliveryCredentials;
 }

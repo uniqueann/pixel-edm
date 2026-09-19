@@ -153,14 +153,17 @@ export type DeliveryTrackingInput = z.infer<typeof deliveryTrackingInput>;
 export type DeliveryChannel = {
   id: string;
   workspace_id: string;
-  provider: "aliyun_directmail";
+  provider: "aliyun_directmail" | "amazon_ses";
   status: DeliveryChannelStatus;
   region: DirectMailRegion;
+  provider_config?: Record<string, unknown>;
+  is_primary?: boolean;
   sender_domain: string;
   sender_address: string;
   sender_alias: string;
   reply_to_address?: string;
   credential_configured: boolean;
+  credential_hint?: string;
   access_key_hint?: string;
   credential_version?: number;
   tracking_enabled: boolean;

@@ -134,13 +134,14 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
         await db.query(
           `select edm_private.delivery_provider_config(
              'amazon_ses',
-             '{"region":"eu-west-1","configuration_set_name":"pixel-edm"}'::jsonb
+             '{"region":"eu-west-1","configuration_set_name":"pixel-edm","sns_topic_arn":"arn:aws:sns:eu-west-1:123456789012:pixel-edm"}'::jsonb
            ) as result`,
         )
       ).rows[0].result;
       assert.deepEqual(ses, {
         region: "eu-west-1",
         configuration_set_name: "pixel-edm",
+        sns_topic_arn: "arn:aws:sns:eu-west-1:123456789012:pixel-edm",
       });
 
       for (const [provider, config, pattern] of [
@@ -155,6 +156,11 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
           "amazon_ses",
           '{"region":"us-east-1","configuration_set_name":"bad set"}',
           /配置集名称/,
+        ],
+        [
+          "amazon_ses",
+          '{"region":"us-east-1","sns_topic_arn":"arn:aws:sns:eu-west-1:123456789012:pixel-edm"}',
+          /Topic ARN/,
         ],
       ]) {
         await assert.rejects(

@@ -17,20 +17,24 @@ type CredentialContext = {
   workspaceId: string;
   channelId: string;
   credentialVersion: number;
+  provider?: "aliyun_directmail" | "amazon_ses";
 };
 
-type DirectMailCredentials = {
+type DeliveryCredentials = {
   accessKeyId: string;
   accessKeySecret: string;
+  sessionToken?: string;
 };
 
 const formatVersion = "v1";
 
 function additionalData(context: CredentialContext) {
+  const provider =
+    context.provider === "amazon_ses" ? "amazon-ses" : "aliyun-directmail";
   return Buffer.from(
     [
       "pixel-edm",
-      "aliyun-directmail",
+      provider,
       formatVersion,
       context.workspaceId,
       context.channelId,
@@ -74,7 +78,7 @@ export function parseCredentialKeyring(source: string): CredentialKeyring {
 export function sealCredentialPayload(
   keyring: CredentialKeyring,
   context: CredentialContext,
-  credentials: DirectMailCredentials,
+  credentials: DeliveryCredentials,
 ): CredentialEnvelope {
   const nonce = randomBytes(12);
   const cipher = createCipheriv(
@@ -101,7 +105,7 @@ export function openCredentialPayload(
   keyring: CredentialKeyring,
   context: CredentialContext,
   envelope: CredentialEnvelope,
-): DirectMailCredentials {
+): DeliveryCredentials {
   const key = keyring.keys[envelope.key_id];
   if (!key) throw new Error("凭据使用的加密密钥不可用");
   if (envelope.credential_version !== context.credentialVersion)
@@ -119,8 +123,13 @@ export function openCredentialPayload(
     decipher.update(encrypted),
     decipher.final(),
   ]);
-  const value = JSON.parse(plaintext.toString("utf8")) as DirectMailCredentials;
+  const value = JSON.parse(plaintext.toString("utf8")) as DeliveryCredentials;
   if (!value.accessKeyId || !value.accessKeySecret)
+    throw new Error("凭据内容无效");
+  if (
+    value.sessionToken !== undefined &&
+    (typeof value.sessionToken !== "string" || !value.sessionToken.trim())
+  )
     throw new Error("凭据内容无效");
   return value;
 }
