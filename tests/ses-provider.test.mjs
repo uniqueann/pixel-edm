@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildSesSendEmailInput } from "../supabase/functions/_shared/providers/amazon_ses/request.ts";
 import { parseSesEvent } from "../supabase/functions/_shared/providers/amazon_ses/event.ts";
+import { classifySesError } from "../supabase/functions/_shared/providers/amazon_ses/error.ts";
 import {
   assertSnsCertificateUrl,
   assertSnsSubscribeUrl,
@@ -9,6 +10,7 @@ import {
   assertSnsTopicArn,
   buildSnsStringToSign,
   parseSnsEnvelope,
+  verifySnsSignature,
 } from "../supabase/functions/_shared/providers/amazon_ses/sns-signature.ts";
 import { renderTrackedHtmlBody } from "../supabase/functions/_shared/unsubscribe-token.ts";
 import {
@@ -73,6 +75,35 @@ test("P8-2 SES v2 请求显式控制追踪且不启用厂商列表管理", () =>
   );
 });
 
+test("P8-2 SES 错误分类区分鉴权、配置、限流、临时与结果未知", () => {
+  assert.equal(
+    classifySesError({ name: "InvalidSignatureException" }).error_category,
+    "authentication",
+  );
+  assert.equal(
+    classifySesError({ name: "MailFromDomainNotVerifiedException" })
+      .error_category,
+    "configuration",
+  );
+  assert.equal(
+    classifySesError({ name: "TooManyRequestsException" }).error_category,
+    "rate_limit",
+  );
+  assert.equal(
+    classifySesError({ name: "ServiceUnavailableException" }).error_category,
+    "temporary",
+  );
+  assert.deepEqual(classifySesError({ name: "TimeoutError" }), {
+    status: "unknown",
+    error_category: "unknown",
+    error_code: "TimeoutError",
+  });
+  assert.equal(
+    classifySesError({ name: "MessageRejected" }).error_category,
+    "permanent",
+  );
+});
+
 test("P8-2 SES 退订链接使用 ses:no-track，DirectMail 标记保持不变", () => {
   const input = {
     body: "正文",
@@ -88,7 +119,7 @@ test("P8-2 SES 退订链接使用 ses:no-track，DirectMail 标记保持不变",
   assert.doesNotMatch(directMail, /ses:no-track/);
 });
 
-test("P8-2 SNS 只接受指定区域、Topic、时间窗与 SignatureVersion 2", () => {
+test("P8-2 SNS 只接受指定区域、Topic、时间窗与 SignatureVersion 2", async () => {
   const now = Date.parse("2026-09-19T03:00:00.000Z");
   const envelope = parseSnsEnvelope({
     Type: "Notification",
@@ -146,6 +177,25 @@ test("P8-2 SNS 只接受指定区域、Topic、时间窗与 SignatureVersion 2",
       "",
     ].join("\n"),
   );
+  const keys = await crypto.subtle.generateKey(
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
+    false,
+    ["sign", "verify"],
+  );
+  const signature = await crypto.subtle.sign(
+    { name: "RSASSA-PKCS1-v1_5" },
+    keys.privateKey,
+    new TextEncoder().encode(buildSnsStringToSign(envelope)),
+  );
+  envelope.Signature = Buffer.from(signature).toString("base64");
+  assert.equal(await verifySnsSignature(keys.publicKey, envelope), true);
+  envelope.Message = '{"eventType":"Bounce"}';
+  assert.equal(await verifySnsSignature(keys.publicKey, envelope), false);
 });
 
 test("P8-2 SNS 订阅确认 URL 必须指向同区域 AWS ConfirmSubscription", () => {

@@ -109,6 +109,26 @@ export function buildSnsStringToSign(envelope: SnsEnvelope) {
   return result;
 }
 
+function base64Bytes(value: string) {
+  try {
+    return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
+  } catch {
+    throw new Error("SNS_SIGNATURE_INVALID");
+  }
+}
+
+export async function verifySnsSignature(
+  publicKey: CryptoKey,
+  envelope: SnsEnvelope,
+) {
+  return crypto.subtle.verify(
+    { name: "RSASSA-PKCS1-v1_5" },
+    publicKey,
+    base64Bytes(envelope.Signature),
+    new TextEncoder().encode(buildSnsStringToSign(envelope)),
+  );
+}
+
 export function assertSnsSubscribeUrl(source: string, region: string) {
   let url: URL;
   try {

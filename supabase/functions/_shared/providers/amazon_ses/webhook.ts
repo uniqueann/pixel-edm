@@ -5,8 +5,8 @@ import {
   assertSnsSubscribeUrl,
   assertSnsTimestamp,
   assertSnsTopicArn,
-  buildSnsStringToSign,
   parseSnsEnvelope,
+  verifySnsSignature,
 } from "./sns-signature.ts";
 
 const maximumCertificateBytes = 32 * 1024;
@@ -71,14 +71,6 @@ async function certificateKey(url: URL, fetcher: typeof fetch) {
   }
 }
 
-function base64Bytes(value: string) {
-  try {
-    return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
-  } catch {
-    throw new Error("SNS_SIGNATURE_INVALID");
-  }
-}
-
 function assertSnsHeaders(
   headers: Headers,
   envelope: ReturnType<typeof parseSnsEnvelope>,
@@ -122,12 +114,7 @@ export async function verifySesWebhook(
     certificateUrl,
     input.fetcher ?? fetch,
   );
-  const valid = await crypto.subtle.verify(
-    { name: "RSASSA-PKCS1-v1_5" },
-    publicKey,
-    base64Bytes(envelope.Signature),
-    new TextEncoder().encode(buildSnsStringToSign(envelope)),
-  );
+  const valid = await verifySnsSignature(publicKey, envelope);
   if (!valid) throw new Error("SNS_SIGNATURE_INVALID");
 
   if (envelope.Type === "SubscriptionConfirmation") {

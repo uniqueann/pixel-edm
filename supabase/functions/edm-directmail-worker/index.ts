@@ -11,8 +11,11 @@ Deno.serve(async (request) => {
   // 兼容旧 cron 或人工调用；实际领取与分发统一由新 worker 完成。
   return fetch(`${supabaseUrl}/functions/v1/edm-delivery-worker`, {
     method: request.method,
-    headers: request.headers,
-    body: request.body,
+    headers: {
+      "content-type": "application/json",
+      "x-edm-worker-token": request.headers.get("x-edm-worker-token") ?? "",
+    },
+    body: request.method === "POST" ? await request.text() : undefined,
     redirect: "error",
   });
 });
