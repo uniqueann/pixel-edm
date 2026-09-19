@@ -39,6 +39,9 @@ export function buildSesSendEmailInput(input: SesRequestInput) {
     throw new Error("SES_CONFIGURATION_SET_REQUIRED");
 
   const headers = simpleHeaders(input.headers);
+  const trackingStatus: "ENABLED" | "DISABLED" = input.trackingEnabled
+    ? "ENABLED"
+    : "DISABLED";
   return {
     FromEmailAddress: `${encodeDisplayName(input.senderAlias)} <${input.senderAddress}>`,
     Destination: { ToAddresses: [input.recipientEmail] },
@@ -46,8 +49,8 @@ export function buildSesSendEmailInput(input: SesRequestInput) {
     ConfigurationSetName: input.configurationSetName,
     ConfigurationOverrides: {
       Tracking: {
-        OpenTrackingEnabled: input.trackingEnabled ? "ENABLED" : "DISABLED",
-        ClickTrackingEnabled: input.trackingEnabled ? "ENABLED" : "DISABLED",
+        OpenTrackingEnabled: trackingStatus,
+        ClickTrackingEnabled: trackingStatus,
       },
     },
     Content: {
