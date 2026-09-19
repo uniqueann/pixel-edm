@@ -419,6 +419,70 @@ test("P8-1 服务商注册表、provider_config 校验与归一化退信分级",
       ]);
     });
 
+    await t.test("P8-3 通道列表与主通道切换", async () => {
+      const listed = (
+        await asUser(
+          db,
+          admin,
+          rpc("list_delivery_channels", { workspace_id: workspace }),
+        )
+      ).rows[0].result;
+      assert.equal(listed.length, 1);
+      assert.equal(listed[0].provider, "aliyun_directmail");
+      assert.equal(listed[0].is_primary, true);
+
+      await db.query(
+        `insert into edm.delivery_channels(
+           id,workspace_id,provider,provider_config,sender_address,
+           sender_alias,status,credential_version,is_primary,created_by,updated_by
+         ) values($1,$2,'amazon_ses','{"region":"us-east-1"}'::jsonb,
+           'hello@example.test','SES Test','configured',1,false,$3,$3)`,
+        [secondChannelId, workspace, admin],
+      );
+
+      const afterSecond = (
+        await asUser(
+          db,
+          admin,
+          rpc("list_delivery_channels", { workspace_id: workspace }),
+        )
+      ).rows[0].result;
+      assert.equal(afterSecond.length, 2);
+      const ses = afterSecond.find((row) => row.provider === "amazon_ses");
+      assert.ok(ses);
+      assert.equal(ses.is_primary, false);
+
+      const switched = (
+        await asUser(
+          db,
+          admin,
+          rpc("set_primary_delivery_channel", {
+            workspace_id: workspace,
+            channel_id: ses.id,
+            expected_version: ses.version,
+          }),
+        )
+      ).rows[0].result;
+      const primary = switched.find((row) => row.is_primary);
+      assert.equal(primary.provider, "amazon_ses");
+
+      const directMail = switched.find(
+        (row) => row.provider === "aliyun_directmail",
+      );
+      await asUser(
+        db,
+        admin,
+        rpc("set_primary_delivery_channel", {
+          workspace_id: workspace,
+          channel_id: directMail.id,
+          expected_version: directMail.version,
+        }),
+      );
+      await db.query("delete from edm.delivery_channels where id=$1", [
+        secondChannelId,
+      ]);
+    });
+
     await t.test("查看者读不到凭据线索与限速覆盖以外的敏感项", async () => {
       const summary = (
         await asUser(

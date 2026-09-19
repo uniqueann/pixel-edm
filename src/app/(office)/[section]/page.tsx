@@ -13,6 +13,8 @@ import { getWorkspaceCampaignStatistics } from "@/features/campaigns/actions";
 import {
   getDeliveryChannel,
   getDeliveryTestSummary,
+  listDeliveryChannels,
+  listDeliveryProviders,
 } from "@/features/channels/actions";
 import { ChannelSettings } from "@/features/channels/channel-settings";
 import { credentialStorageReady } from "@/features/channels/credentials";
@@ -55,10 +57,23 @@ export default async function Page({
     notFound();
   const { workspace, role, user } = await getContext();
   if (section === "settings") {
-    const deliveryChannel = await getDeliveryChannel();
-    const deliveryTest = deliveryChannel
-      ? await getDeliveryTestSummary(deliveryChannel.id)
-      : null;
+    const [providers, channelSummaries] = await Promise.all([
+      listDeliveryProviders(),
+      listDeliveryChannels(workspace.id),
+    ]);
+    const channelDetails = await Promise.all(
+      channelSummaries.map((summary) => getDeliveryChannel(summary.id)),
+    );
+    const initialTests: Record<string, Awaited<
+      ReturnType<typeof getDeliveryTestSummary>
+    > | null> = {};
+    if (role === "admin") {
+      await Promise.all(
+        channelSummaries.map(async (summary) => {
+          initialTests[summary.id] = await getDeliveryTestSummary(summary.id);
+        }),
+      );
+    }
     return (
       <>
         <div className="section-heading">
@@ -81,16 +96,20 @@ export default async function Page({
           <div>
             <h2>发信通道</h2>
             <p className="hint mt-2 mb-0">
-              保存工作区自己的阿里云 DirectMail
-              配置，并向当前管理员的已验证邮箱发送测试邮件。
+              为工作区配置发信服务商与主通道，并向当前管理员的已验证邮箱发送测试邮件。
             </p>
           </div>
           <ChannelSettings
             key={workspace.id}
             workspaceId={workspace.id}
             workspaceName={workspace.name}
-            initialChannel={deliveryChannel}
-            initialTest={deliveryTest}
+            providers={providers}
+            initialChannels={channelSummaries}
+            initialChannelDetails={channelDetails.filter(
+              (channel): channel is NonNullable<typeof channel> =>
+                channel !== null,
+            )}
+            initialTests={initialTests}
             testRecipient={user.email ?? ""}
             canEdit={role === "admin"}
             canStoreCredentials={credentialStorageReady()}
