@@ -5,6 +5,20 @@ import { redirect } from "next/navigation";
 import { serverClient } from "@/lib/supabase/server";
 import { isConfigured } from "@/lib/supabase/config";
 export const workspaceCookie = "pixel-edm-workspace";
+
+/** 与 getContext 一致：cookie → 个人 bootstrap → 列表首项。 */
+export async function resolveWorkspaceId(
+  userId: string,
+  workspaces: { id: string; bootstrap_owner_id: string | null }[],
+) {
+  const selected = (await cookies()).get(workspaceCookie)?.value;
+  const workspace =
+    workspaces.find((w) => w.id === selected) ??
+    workspaces.find((w) => w.bootstrap_owner_id === userId) ??
+    workspaces[0];
+  return workspace?.id ?? null;
+}
+
 export const getContext = cache(async () => {
   if (!isConfigured()) redirect("/setup");
   const db = await serverClient();
@@ -33,11 +47,8 @@ export const getContext = cache(async () => {
       .eq("status", "active"),
   ]);
   if (wsError || msError) throw new Error("工作区加载失败，请重试。");
-  const selected = (await cookies()).get(workspaceCookie)?.value;
-  const workspace =
-    workspaces?.find((w) => w.id === selected) ??
-    workspaces?.find((w) => w.bootstrap_owner_id === user.id) ??
-    workspaces?.[0];
+  const workspaceId = await resolveWorkspaceId(user.id, workspaces ?? []);
+  const workspace = workspaces?.find((w) => w.id === workspaceId);
   if (!workspace) redirect("/onboarding");
   const role = memberships?.find((m) => m.workspace_id === workspace.id)?.role;
   if (!role) throw new Error("当前工作区成员资格已失效。");

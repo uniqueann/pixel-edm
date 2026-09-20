@@ -112,6 +112,7 @@ export default async function Page({
         {deliveryPlan && (
           <div className="mb-4">
             <BillingUpgrade
+              workspaceId={workspace.id}
               deliveryPlan={deliveryPlan}
               billing={billingStatus}
               canUpgrade={role === "admin"}

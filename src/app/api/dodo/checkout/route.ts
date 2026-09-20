@@ -11,7 +11,12 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const ctx = await requireEdmBillingCheckout();
+  const formData = await request.formData().catch(() => null);
+  const formWorkspaceId =
+    typeof formData?.get("workspace_id") === "string"
+      ? formData.get("workspace_id")!.toString()
+      : null;
+  const ctx = await requireEdmBillingCheckout(formWorkspaceId);
   if (!ctx.ok) {
     return NextResponse.json(
       { ok: false, error: ctx.error },
@@ -19,7 +24,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const formData = await request.formData().catch(() => null);
   const plan = normalizeCheckoutPlan(formData?.get("plan") ?? null);
   const interval = normalizeCheckoutInterval(formData?.get("interval") ?? null);
 
