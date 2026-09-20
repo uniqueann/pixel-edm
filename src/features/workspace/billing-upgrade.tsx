@@ -110,7 +110,11 @@ export function BillingUpgrade({
               </div>
               <div className="space-y-2">
                 <form action="/api/creem/checkout" method="post">
-                  <input type="hidden" name="workspace_id" value={workspaceId} />
+                  <input
+                    type="hidden"
+                    name="workspace_id"
+                    value={workspaceId}
+                  />
                   <input type="hidden" name="plan" value="pro" />
                   <input type="hidden" name="interval" value={interval} />
                   <Button type="submit" className="w-full justify-between">
@@ -126,7 +130,11 @@ export function BillingUpgrade({
                   </Button>
                 </form>
                 <form action="/api/dodo/checkout" method="post">
-                  <input type="hidden" name="workspace_id" value={workspaceId} />
+                  <input
+                    type="hidden"
+                    name="workspace_id"
+                    value={workspaceId}
+                  />
                   <input type="hidden" name="plan" value="pro" />
                   <input type="hidden" name="interval" value={interval} />
                   <Button

@@ -16,7 +16,9 @@ export function normalizeCheckoutInterval(
 }
 
 /** 当前登录管理员与工作区；Checkout 路由专用。 */
-export async function requireEdmBillingCheckout(formWorkspaceId?: string | null) {
+export async function requireEdmBillingCheckout(
+  formWorkspaceId?: string | null,
+) {
   const db = await serverClient();
   const {
     data: { user },
@@ -35,8 +37,7 @@ export async function requireEdmBillingCheckout(formWorkspaceId?: string | null)
 
   const resolved = await resolveWorkspaceId(user.id, workspaces);
   const workspaceId =
-    formWorkspaceId &&
-    workspaces.some((w) => w.id === formWorkspaceId)
+    formWorkspaceId && workspaces.some((w) => w.id === formWorkspaceId)
       ? formWorkspaceId
       : resolved;
   if (!workspaceId) {
