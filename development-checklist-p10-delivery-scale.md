@@ -1,6 +1,6 @@
 # P10 发信扛量（多租户公平调度）
 
-更新日期：2026-09-20。优先验收：**10 户 × 单活动 500 收件人同时入队**。
+更新日期：2026-09-20。状态：content-up 已应用迁移并部署 worker（PR #16）。优先验收：**10 户 × 单活动 500 收件人同时入队**。
 
 ## 目标
 
@@ -23,7 +23,7 @@
 - [x] 迁移 `20260920183100_p10_delivery_worker_schedule.sql`（cloud-only）：cron 5s。
 - [x] Edge `edm-delivery-worker`：`EDM_WORKER_CLAIM_LIMIT`（默认 50，最大 100）。
 - [x] 测试 `tests/delivery-scale-fair-claim.test.mjs`（含 10 工作区缩小场景）。
-- [ ] content-up 应用上述迁移；部署 worker；可选设置 `EDM_WORKER_CLAIM_LIMIT`。
+- [x] content-up 应用 `20260920183000_p10_delivery_worker_fair_claim`、`20260920183100_p10_delivery_worker_schedule`；已部署 `edm-delivery-worker`（默认 claim 50）。
 - [ ] 生产 soak：10 户 free 档各 500 收件活动，观察队列深度与每户 attempt 曲线。
 
 ## 吞吐粗算（free 全员）

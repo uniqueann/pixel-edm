@@ -209,7 +209,8 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 - 随后应用 `20260920072533_20260920120000_p10_tighten_free_plan_limits`（free 日配额 1000、2 封/s 兜底）。
 - 云端 seed 核对：`free` 500/1000/2，`pro` 2000/10000/10，`team` 5000/25000/20。Security Advisor 仍无新增 `edm` 条目。
 
-### P10 发信扛量（待应用）
+### P10 发信扛量（2026-09-20，PR #16）
 
-- 迁移 `20260920183000_p10_delivery_worker_fair_claim`、`20260920183100_p10_delivery_worker_schedule`（cron 5s，cloud-only）。
-- 部署 `edm-delivery-worker`；可选 `EDM_WORKER_CLAIM_LIMIT`（默认 50，最大 100）。清单见 `development-checklist-p10-delivery-scale.md`。
+- 已应用 `20260920105053_20260920183000_p10_delivery_worker_fair_claim`（公平 `ws_round` 排序、默认 batch 50/上限 100、候选扫描 500）与 `20260920105058_20260920183100_p10_delivery_worker_schedule`（`edm-delivery-worker` cron **5 seconds**）。
+- 已重新部署 Edge `edm-delivery-worker`（含 `EDM_WORKER_CLAIM_LIMIT` 默认 50）。未改 Supabase 项目 Secrets 时沿用既有 `EDM_*` 环境变量。
+- 生产 soak（10 户 free × 500）仍为人工验收项，见 `development-checklist-p10-delivery-scale.md`。
