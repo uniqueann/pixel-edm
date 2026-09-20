@@ -16,7 +16,9 @@ async function asServiceRole(db, sql) {
 
 /** 创建已入队正式发送的工作区（含 channel 与 pending 任务）。 */
 async function seedQueuedCampaign(db, adminId, channelId, contactCount, label) {
-  await db.exec(`insert into auth.users(id) values('${adminId}') on conflict do nothing`);
+  await db.exec(
+    `insert into auth.users(id) values('${adminId}') on conflict do nothing`,
+  );
   const workspace = (
     await asUser(db, adminId, "select edm.initialize_member() as id")
   ).rows[0].id;
@@ -162,10 +164,26 @@ test("P10 扛量：四户公平 claim", async (t) => {
   try {
     await t.test("各 8 封 pending，单批 16 封每户 4 封", async () => {
       const specs = [
-        ["3a200001-0000-0000-0000-000000000001", "3a210001-0000-0000-0000-000000000001", "w1"],
-        ["3a200002-0000-0000-0000-000000000002", "3a210002-0000-0000-0000-000000000002", "w2"],
-        ["3a200003-0000-0000-0000-000000000003", "3a210003-0000-0000-0000-000000000003", "w3"],
-        ["3a200004-0000-0000-0000-000000000004", "3a210004-0000-0000-0000-000000000004", "w4"],
+        [
+          "3a200001-0000-0000-0000-000000000001",
+          "3a210001-0000-0000-0000-000000000001",
+          "w1",
+        ],
+        [
+          "3a200002-0000-0000-0000-000000000002",
+          "3a210002-0000-0000-0000-000000000002",
+          "w2",
+        ],
+        [
+          "3a200003-0000-0000-0000-000000000003",
+          "3a210003-0000-0000-0000-000000000003",
+          "w3",
+        ],
+        [
+          "3a200004-0000-0000-0000-000000000004",
+          "3a210004-0000-0000-0000-000000000004",
+          "w4",
+        ],
       ];
       const workspaces = [];
       for (const [admin, channel, label] of specs) {
