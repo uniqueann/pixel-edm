@@ -11,11 +11,12 @@ async function asServiceRole(db, sql) {
 
 function syncPayload(overrides) {
   return {
-    stripe_event_id: "evt_test_001",
-    event_type: "customer.subscription.updated",
+    payment_provider: "creem",
+    provider_event_id: "evt_test_001",
+    event_type: "subscription.updated",
     workspace_id: overrides.workspace_id,
-    stripe_customer_id: "cus_test_001",
-    stripe_subscription_id: "sub_test_001",
+    provider_customer_id: "cus_test_001",
+    provider_subscription_id: "sub_test_001",
     subscription_status: "active",
     billed_plan: "pro",
     current_period_end: new Date(Date.now() + 86400000).toISOString(),
@@ -24,7 +25,7 @@ function syncPayload(overrides) {
   };
 }
 
-test("P11 账单：Stripe 同步 plan", async (t) => {
+test("P11 账单：Creem/Dodo 同步 plan", async (t) => {
   const db = await createDatabase();
   t.after(() => db.close());
 
@@ -36,21 +37,22 @@ test("P11 账单：Stripe 同步 plan", async (t) => {
     await asUser(db, adminId, "select edm.initialize_member() as id")
   ).rows[0].id;
 
-  await t.test("active 订阅升为 pro", async () => {
+  await t.test("Creem active 订阅升为 pro", async () => {
     const payload = syncPayload({
       workspace_id: workspace,
-      stripe_event_id: "evt_active_pro",
+      provider_event_id: "evt_active_pro",
     });
     const encoded = JSON.stringify(payload).replaceAll("'", "''");
     const result = (
       await asServiceRole(
         db,
-        `select edm.sync_workspace_plan_from_stripe('${encoded}'::jsonb) as result`,
+        `select edm.sync_workspace_plan_from_payment('${encoded}'::jsonb) as result`,
       )
     ).rows[0].result;
     assert.equal(result.ok, true);
     assert.equal(result.duplicate, false);
     assert.equal(result.plan, "pro");
+    assert.equal(result.payment_provider, "creem");
 
     const plan = (
       await db.query("select plan from edm.workspaces where id=$1", [workspace])
@@ -61,14 +63,14 @@ test("P11 账单：Stripe 同步 plan", async (t) => {
   await t.test("重复 event 幂等", async () => {
     const payload = syncPayload({
       workspace_id: workspace,
-      stripe_event_id: "evt_active_pro",
+      provider_event_id: "evt_active_pro",
       billed_plan: "team",
     });
     const encoded = JSON.stringify(payload).replaceAll("'", "''");
     const result = (
       await asServiceRole(
         db,
-        `select edm.sync_workspace_plan_from_stripe('${encoded}'::jsonb) as result`,
+        `select edm.sync_workspace_plan_from_payment('${encoded}'::jsonb) as result`,
       )
     ).rows[0].result;
     assert.equal(result.duplicate, true);
@@ -78,17 +80,20 @@ test("P11 账单：Stripe 同步 plan", async (t) => {
     assert.equal(plan, "pro");
   });
 
-  await t.test("取消订阅回到 free", async () => {
+  await t.test("Dodo 取消订阅回到 free", async () => {
     const payload = syncPayload({
+      payment_provider: "dodo",
       workspace_id: workspace,
-      stripe_event_id: "evt_canceled",
+      provider_event_id: "evt_dodo_canceled",
+      provider_customer_id: "cus_dodo_1",
+      provider_subscription_id: "sub_dodo_1",
       subscription_status: "canceled",
       billed_plan: "pro",
     });
     const encoded = JSON.stringify(payload).replaceAll("'", "''");
     await asServiceRole(
       db,
-      `select edm.sync_workspace_plan_from_stripe('${encoded}'::jsonb)`,
+      `select edm.sync_workspace_plan_from_payment('${encoded}'::jsonb)`,
     );
     const plan = (
       await db.query("select plan from edm.workspaces where id=$1", [workspace])
@@ -109,6 +114,7 @@ test("P11 账单：Stripe 同步 plan", async (t) => {
       )
     ).rows[0].result;
     assert.equal(status.plan, "free");
+    assert.equal(status.payment_provider, "dodo");
     assert.equal(status.subscription_status, "canceled");
   });
 });

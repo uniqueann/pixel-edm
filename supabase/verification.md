@@ -217,5 +217,5 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 
 ### P11 套餐与支付（2026-09-20，进行中）
 
-- 路线见 `development-checklist-p11-billing.md`：Stripe Checkout + Webhook 同步 `edm.workspaces.plan`。
-- P11-0 迁移 `20260920190000_p11_billing_foundation`（订阅表、Stripe 事件幂等、`sync_workspace_plan_from_stripe` / `get_workspace_billing_status`）待合并后应用 content-up。
+- 支付通道：**Creem + Dodo Payments**（与 content-up 主站一致；主站已接通 `profiles` + `/api/creem/*`、`/api/dodo/*`，见 `docs/p11-payment-contentup-bridge.md`）。EDM 按工作区 plan，**不与** `profiles.plan` 自动联动。
+- P11-0 迁移 `20260920190000_p11_billing_foundation`（`sync_workspace_plan_from_payment` / `get_workspace_billing_status`）待合并后应用 content-up。

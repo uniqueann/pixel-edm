@@ -1,63 +1,60 @@
-# P11 套餐与支付（Stripe）
+# P11 套餐与支付（Creem + Dodo Payments）
 
 更新日期：2026-09-20。状态：**P11-0 进行中**；生产 soak（10×500）暂缓，见 `supabase/verification.md`。
 
-前提：P10 套餐额度与 worker 公平调度已上线；`edm.workspaces.plan` 仍决定 `delivery_plan_limits`；客户端仅能更新 `name` / `mailing_address`（列级 GRANT，无法直改 plan）。
+前提：P10 套餐额度与 worker 公平调度已上线；**content-up 主站已接通 Creem / Dodo**（`public.profiles`），见 [docs/p11-payment-contentup-bridge.md](docs/p11-payment-contentup-bridge.md)。EDM 单独按 **工作区** `edm.workspaces.plan` 计费。
 
 ## 目标
 
-- 工作区管理员在设置页 **自助升级 / 管理订阅**（Pro、Team），支付成功后自动写入 `plan`。
-- Stripe Checkout + Customer Portal；Webhook 幂等；降级/取消在订阅结束后回到 `free`。
-- 不改动 `aigc`、共享 Auth；账单对象仅 `edm` / `edm_private`。
+- 工作区管理员在 **edm.contentup.cc** 设置页自助升级 / 管理订阅（Pro、Team）。
+- 支付通道与主站一致：**Creem**、**Dodo Payments**（不做 EDM 专用 Stripe）。
+- Webhook 幂等写 `edm_private` + 更新 `workspaces.plan`；不改动 `aigc`、共享 Auth、不强制改 `profiles` 结构。
 
-## 档位与 Stripe 映射（待定稿）
+## 档位与商品（待定稿）
 
-| plan | 产品 | 建议计费 | 备注 |
-|------|------|----------|------|
-| free | — | — | 默认，无 Stripe 订阅 |
-| pro | `STRIPE_PRICE_PRO` | 月付/年付二选一（首版可只做月付） | 对应 P10 seed 额度 |
-| team | `STRIPE_PRICE_TEAM` | 同上 | 对应 P10 seed 额度 |
+| plan | Creem  env 示例 | Dodo env 示例 |
+|------|-----------------|---------------|
+| pro | `CREEM_EDM_PRO_MONTHLY_PRODUCT_ID` | `DODO_EDM_PRO_MONTHLY_PRODUCT_ID` |
+| team | `CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID` | `DODO_EDM_TEAM_MONTHLY_PRODUCT_ID` |
 
-价格数字与 Stripe Dashboard 产品创建后写入环境变量，不进仓库。
+Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`（及 `userId` 便于审计）。
 
 ## 分步交付
 
 ### P11-0 账单数据与 plan 同步（本批）
 
-- [x] 迁移：`edm_private.workspace_billing_subscriptions`、`edm_private.billing_stripe_events`。
-- [x] `edm_private.sync_workspace_plan_from_stripe`（仅 `service_role`）：幂等事件、upsert 订阅、按状态更新 `workspaces.plan`。
-- [x] `edm.get_workspace_billing_status`：管理员可读订阅摘要（无密钥、无完整 Stripe id 以外敏感字段）。
+- [x] 迁移：`workspace_billing_subscriptions`（`payment_provider` creem \| dodo）、`billing_payment_events`。
+- [x] `edm.sync_workspace_plan_from_payment`（service_role）。
+- [x] `edm.get_workspace_billing_status`。
 - [x] 测试 `tests/billing-plan-sync.test.mjs`。
 - [ ] content-up 应用迁移（P11-0 合并后）。
 
-### P11-1 Stripe Checkout / Portal（Next.js）
+### P11-1 Checkout（pixel-edm Next.js）
 
-- [ ] 依赖 `stripe`；环境变量：`STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET`、`STRIPE_PRICE_PRO`、`STRIPE_PRICE_TEAM`、`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`。
-- [ ] Server Action：`createCheckoutSession`（绑定当前工作区、`metadata.workspace_id`、admin 校验）。
-- [ ] Customer Portal 会话（改卡、取消）。
-- [ ] `.env.example` 与 Vercel / Supabase 文档说明（不写真实密钥）。
+- [ ] 依赖对齐 content-up：`@creem_io/nextjs`、`dodopayments`（或 fetch Creem REST 与 content-up 相同）。
+- [ ] `POST /api/creem/checkout`、`POST /api/dodo/checkout`：admin + 当前工作区 cookie，metadata 带 `workspaceId`。
+- [ ] 环境变量与 content-up 文档对齐（可复用同一 Creem/Dodo 账号，**不同 product id**）。
 
 ### P11-2 Webhook
 
-- [ ] `POST /api/stripe/webhook`：验签、`checkout.session.completed`、`customer.subscription.updated/deleted`。
-- [ ] 调 `sync_workspace_plan_from_stripe`（service role client）。
-- [ ] 审计：`billing.subscription.*` metadata 脱敏。
+- [ ] `POST /api/creem/webhook`、`POST /api/dodo/webhook` on **edm.contentup.cc**（Dashboard 单独配置 URL）。
+- [ ] 验签逻辑复用/移植 content-up `app/api/*/webhook/route.ts`，落库调 `sync_workspace_plan_from_payment`。
+- [ ] 可选后续：content-up 主站 webhook 识别 `productScope=edm` 代调 RPC（少 URL，跨仓库）。
 
 ### P11-3 设置页 UI
 
-- [ ] 替换「联系管理员改 plan」为升级按钮与当前订阅状态。
-- [ ] 帮助页简短说明计费与退订。
-- [ ] 可选：升级前确认联系地址已填。
+- [ ] 支付方式选择（参考 content-up `PaymentMethodChoice`）。
+- [ ] 展示 `get_workspace_billing_status` + `DeliveryPlanSummary` 额度。
 
 ### P11-4 验收
 
-- [ ] Stripe Test mode：Pro 升级 → 额度变 2000/10000/10；取消 → 周期末或立即回 free（与 Webhook 策略一致）。
-- [ ] 直改 `workspaces.plan` 的运维 SQL 仍保留作人工补偿，与 Stripe 状态不一致时以订阅表为准排查。
-- [ ] `supabase/verification.md` 记录 content-up 应用与 Test mode 验收日期。
+- [ ] Creem test + Dodo test_mode：Pro 升级 → P10 额度；取消 → free。
+- [ ] 主站 Content.up Pro 订阅 **不会** 误改 EDM 工作区 plan（无 `workspaceId` metadata 时不调 EDM RPC）。
+- [ ] `supabase/verification.md` 记录迁移与验收。
 
-## 非范围（本阶段）
+## 非范围
 
-- SendGrid 生产开放（P9-4）、生产 10×500 soak、发票/税务/多币种、按量计费。
+- EDM Stripe、SendGrid 生产开放、10×500 soak、修改 content-up 定价页逻辑（除非选 P11-2 方案 B）。
 
 ## 验证
 

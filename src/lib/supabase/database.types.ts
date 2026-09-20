@@ -1315,7 +1315,7 @@ export type Database = {
       };
       get_workspace_delivery_plan: { Args: { payload: Json }; Returns: Json };
       get_workspace_billing_status: { Args: { payload: Json }; Returns: Json };
-      sync_workspace_plan_from_stripe: {
+      sync_workspace_plan_from_payment: {
         Args: { payload: Json };
         Returns: Json;
       };
