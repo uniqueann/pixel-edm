@@ -30,14 +30,26 @@
 - P11-0 在 `edm_private` 存 **工作区订阅事实**，RPC `edm.sync_workspace_plan_from_payment` 供 Webhook（service_role）幂等写 plan。
 - **不复用** `profiles.plan` 作为 EDM 额度来源（团队工作区、Team 档与主站 Pro 产品不同）。
 
-## 推荐对接方式（与主站并存）
+## 已定方案：子域独立 URL（与主站 Pro 互不干扰）
 
-1. **独立 EDM 商品**：在 Creem / Dodo 各建 EDM Pro（及可选 Team）product id，环境变量挂在 **pixel-edm Vercel**（命名可与 content-up 对齐，如 `CREEM_EDM_PRO_MONTHLY_PRODUCT_ID`）。
-2. **Checkout metadata 扩展**：除 `userId` 外增加 `workspaceId`、`billedPlan`（`pro` \| `team`）、`productScope=edm`。
-3. **Webhook 落库**（二选一，推荐 A）：
-   - **A.** `edm.contentup.cc` 下 `/api/creem/webhook`、`/api/dodo/webhook`，验签后调 `edm.sync_workspace_plan_from_payment`（与 content-up 路由分离，Dashboard 各配一条 URL）。
-   - **B.** 在 content-up 现有 webhook  handler 中识别 `productScope=edm`，用 service role 调同一 RPC（少配 URL，但改动 `content-up` 仓库，需兼容主站逻辑）。
-4. **UI**：设置页双通道选择（可复用 content-up `PaymentMethodChoice` 交互），表单 POST 到 EDM 的 checkout 路由。
+主站继续只处理 **Content.up Pro**（`profiles`）；EDM 在 **pixel-edm Vercel** 单独路由与 Webhook，不修改 content-up 的 `/api/creem/*`、`/api/dodo/*`。
+
+| 用途 | URL（生产） |
+|------|-------------|
+| Creem Webhook | `https://edm.contentup.cc/api/creem/webhook` |
+| Dodo Webhook | `https://edm.contentup.cc/api/dodo/webhook` |
+| Creem Checkout | `POST https://edm.contentup.cc/api/creem/checkout` |
+| Dodo Checkout | `POST https://edm.contentup.cc/api/dodo/checkout` |
+| 支付成功回跳 | `https://edm.contentup.cc/settings?checkout=success&provider=…` |
+
+主站 Dashboard 里已指向 `contentup.cc` 的 Webhook **保持不变**；Creem/Dodo 后台需 **另建 EDM 商品** 并把 Webhook 指向上表 EDM 地址。
+
+## 实现要点
+
+1. **独立 EDM 商品**：`CREEM_EDM_*` / `DODO_EDM_*` 环境变量（见 `.env.example`），与主站 `CREEM_PRO_*` 分离。
+2. **Checkout metadata**：`userId`、`workspaceId`、`billedPlan`（`pro` \| `team`）、`productScope=edm`。
+3. **Webhook**：验签后仅当 `productScope=edm` 时调 `edm.sync_workspace_plan_from_payment`（service_role）；无主站 metadata 的事件自然忽略。
+4. **UI（待接）**：设置页表单 POST 到上述 checkout 路由。
 
 ## 参考文件（content-up 仓库）
 

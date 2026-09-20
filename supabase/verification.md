@@ -219,3 +219,4 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 
 - 支付通道：**Creem + Dodo Payments**（与 content-up 主站一致；主站已接通 `profiles` + `/api/creem/*`、`/api/dodo/*`，见 `docs/p11-payment-contentup-bridge.md`）。EDM 按工作区 plan，**不与** `profiles.plan` 自动联动。
 - P11-0 迁移 `20260920190000_p11_billing_foundation`（`sync_workspace_plan_from_payment` / `get_workspace_billing_status`）待合并后应用 content-up。
+- **Webhook / Checkout 仅子域**：`https://edm.contentup.cc/api/creem/*`、`/api/dodo/*`；主站 `contentup.cc` 路由与 `profiles` 订阅不变（见 `docs/p11-payment-contentup-bridge.md`）。

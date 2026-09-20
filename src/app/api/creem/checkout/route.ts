@@ -1,0 +1,84 @@
+import { NextResponse } from "next/server";
+import { siteUrl } from "@/lib/supabase/config";
+import {
+  getCreemApiKey,
+  getCreemEdmProductId,
+  isCreemTestMode,
+} from "@/lib/billing/creem";
+import { buildCreemCheckoutMetadata } from "@/lib/billing/creem-webhook";
+import {
+  normalizeCheckoutInterval,
+  normalizeCheckoutPlan,
+  requireEdmBillingCheckout,
+} from "@/lib/billing/checkout-context";
+
+export const runtime = "nodejs";
+
+export async function POST(request: Request) {
+  const ctx = await requireEdmBillingCheckout();
+  if (!ctx.ok) {
+    return NextResponse.json(
+      { ok: false, error: ctx.error },
+      { status: ctx.status },
+    );
+  }
+
+  const formData = await request.formData().catch(() => null);
+  const plan = normalizeCheckoutPlan(formData?.get("plan") ?? null);
+  const interval = normalizeCheckoutInterval(formData?.get("interval") ?? null);
+
+  let productId: string;
+  try {
+    productId = getCreemEdmProductId(plan, interval);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Creem 商品未配置。";
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
+
+  const apiKey = getCreemApiKey();
+  const testMode = isCreemTestMode();
+  const baseUrl = testMode
+    ? "https://test-api.creem.io"
+    : "https://api.creem.io";
+  const origin = siteUrl();
+  const successUrl = `${origin}/settings?checkout=success&provider=creem`;
+
+  const response = await fetch(`${baseUrl}/v1/checkouts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      product_id: productId,
+      request_id: `edm-${ctx.workspaceId}-${plan}-${interval}-${Date.now()}`,
+      success_url: successUrl,
+      customer: { email: ctx.user.email ?? undefined },
+      metadata: buildCreemCheckoutMetadata({
+        userId: ctx.user.id,
+        workspaceId: ctx.workspaceId,
+        billedPlan: plan,
+        interval,
+      }),
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    return NextResponse.json(
+      { ok: false, error: `Creem Checkout 创建失败：${text}` },
+      { status: 502 },
+    );
+  }
+
+  const data = (await response.json()) as { checkout_url?: string };
+  if (!data.checkout_url) {
+    return NextResponse.json(
+      { ok: false, error: "Creem 未返回 checkout URL。" },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.redirect(data.checkout_url, 303);
+}

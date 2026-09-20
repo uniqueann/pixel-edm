@@ -31,15 +31,15 @@ Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`�
 
 ### P11-1 Checkout（pixel-edm Next.js）
 
-- [ ] 依赖对齐 content-up：`@creem_io/nextjs`、`dodopayments`（或 fetch Creem REST 与 content-up 相同）。
-- [ ] `POST /api/creem/checkout`、`POST /api/dodo/checkout`：admin + 当前工作区 cookie，metadata 带 `workspaceId`。
-- [ ] 环境变量与 content-up 文档对齐（可复用同一 Creem/Dodo 账号，**不同 product id**）。
+- [x] 依赖 `@creem_io/nextjs`、`dodopayments`。
+- [x] `POST /api/creem/checkout`、`POST /api/dodo/checkout`：admin + 工作区 cookie，`productScope=edm` metadata。
+- [ ] Vercel 配置 EDM 专用 product id 与 Creem/Dodo 密钥（可与主站同账号）。
 
-### P11-2 Webhook
+### P11-2 Webhook（**子域独立 URL，不改 content-up**）
 
-- [ ] `POST /api/creem/webhook`、`POST /api/dodo/webhook` on **edm.contentup.cc**（Dashboard 单独配置 URL）。
-- [ ] 验签逻辑复用/移植 content-up `app/api/*/webhook/route.ts`，落库调 `sync_workspace_plan_from_payment`。
-- [ ] 可选后续：content-up 主站 webhook 识别 `productScope=edm` 代调 RPC（少 URL，跨仓库）。
+- [x] `POST /api/creem/webhook`、`POST /api/dodo/webhook`（`edm.contentup.cc`）。
+- [x] 验签 + 仅 EDM metadata → `sync_workspace_plan_from_payment`。
+- [ ] Creem/Dodo Dashboard 注册上表 URL；`SUPABASE_SERVICE_ROLE_KEY` 写入 pixel-edm Vercel。
 
 ### P11-3 设置页 UI
 
