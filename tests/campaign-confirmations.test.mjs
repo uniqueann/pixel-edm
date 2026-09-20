@@ -405,8 +405,10 @@ test("P3-4 活动确认、不可变快照、导出与权限", async (t) => {
         0,
       );
       await assert.rejects(
-        db.query("select edm_private.assert_campaign_recipient_limit(10001)"),
-        /最多确认 10000/,
+        db.query(
+          `select edm_private.assert_campaign_recipient_limit('${workspace}'::uuid, 501)`,
+        ),
+        /当前套餐下单个活动最多 500 位收件人/,
       );
 
       const bigWorkspace = (
@@ -415,6 +417,9 @@ test("P3-4 活动确认、不可变快照、导出与权限", async (t) => {
           [outsider],
         )
       ).rows[0].id;
+      await db.query("update edm.workspaces set plan='team' where id=$1", [
+        bigWorkspace,
+      ]);
       const bigTemplate = (
         await db.query(
           `insert into edm.templates(workspace_id,name,category,subject,body,created_by,updated_by)
@@ -451,7 +456,7 @@ test("P3-4 活动确认、不可变快照、导出与权限", async (t) => {
           },
           outsider,
         ),
-        /最多确认 10000/,
+        /当前套餐下单个活动最多 5000 位收件人/,
       );
       assert.equal(
         (

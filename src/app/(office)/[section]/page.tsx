@@ -22,6 +22,8 @@ import { credentialStorageReady } from "@/features/channels/credentials";
 import { listTeam } from "@/features/team/actions";
 import { TeamManager } from "@/features/team/team-manager";
 import { HelpGuide } from "@/features/help/help-guide";
+import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
+import { DeliveryPlanSummary } from "@/features/workspace/delivery-plan-summary";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -72,9 +74,10 @@ export default async function Page({
     );
   }
   if (section === "settings") {
-    const [providers, channelSummaries] = await Promise.all([
+    const [providers, channelSummaries, deliveryPlan] = await Promise.all([
       listDeliveryProviders(),
       listDeliveryChannels(workspace.id),
+      getWorkspaceDeliveryPlan(workspace.id),
     ]);
     const channelDetails = await Promise.all(
       channelSummaries.map((summary) => getDeliveryChannel(summary.id)),
@@ -96,6 +99,11 @@ export default async function Page({
           <h1>邮局设置</h1>
           <Badge variant="secondary">工作区</Badge>
         </div>
+        {deliveryPlan && (
+          <div className="mb-4">
+            <DeliveryPlanSummary plan={deliveryPlan} />
+          </div>
+        )}
         <Card>
           <CardContent className="pt-6">
             <h2 className="mb-2">店铺信息</h2>
