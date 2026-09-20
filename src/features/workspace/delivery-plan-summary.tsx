@@ -11,7 +11,8 @@ export function DeliveryPlanSummary({ plan }: { plan: WorkspaceDeliveryPlan }) {
       </p>
       <p className="hint mt-1 mb-0">
         单活动最多 {plan.max_recipients_per_campaign} 位收件人；日界按{" "}
-        {plan.quota_timezone} 计算。升级套餐请联系管理员调整工作区 plan。
+        {plan.quota_timezone} 计算。在线升级（Creem / Dodo
+        Payments）接入中，当前仍由运维在库内调整 plan。
       </p>
     </div>
   );
