@@ -218,5 +218,6 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 ### P11 套餐与支付（2026-09-20，进行中）
 
 - 支付通道：**Creem + Dodo Payments**（与 content-up 主站一致；主站已接通 `profiles` + `/api/creem/*`、`/api/dodo/*`，见 `docs/p11-payment-contentup-bridge.md`）。EDM 按工作区 plan，**不与** `profiles.plan` 自动联动。
-- P11-0 迁移 `20260920190000_p11_billing_foundation`（`sync_workspace_plan_from_payment` / `get_workspace_billing_status`）待合并后应用 content-up。
-- **Webhook / Checkout 仅子域**：`https://edm.contentup.cc/api/creem/*`、`/api/dodo/*`；主站 `contentup.cc` 路由与 `profiles` 订阅不变（见 `docs/p11-payment-contentup-bridge.md`）。
+- P11-0 迁移已应用 content-up，云端记录 `20260920123037_20260920190000_p11_billing_foundation`；`edm_private.workspace_billing_subscriptions`、`billing_payment_events` 与 `edm.sync_workspace_plan_from_payment` 已就绪。
+- **Webhook / Checkout 仅子域**：`https://edm.contentup.cc/api/creem/*`、`/api/dodo/*`；主站不变。Dashboard 登记见 `docs/p11-webhook-dashboard-checklist.md`。
+- pixel-edm Vercel（2026-09-20）：已通过 `scripts/sync-vercel-billing-env.sh` 写入 `SUPABASE_SERVICE_ROLE_KEY`、Creem/Dodo 共享密钥；`CREEM_EDM_PRO_*` / `DODO_EDM_PRO_*` 暂复用主站 Pro 商品 ID，**上线前请换成 EDM 专用商品**。
