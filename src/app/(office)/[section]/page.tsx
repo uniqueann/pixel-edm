@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
@@ -22,8 +23,10 @@ import { credentialStorageReady } from "@/features/channels/credentials";
 import { listTeam } from "@/features/team/actions";
 import { TeamManager } from "@/features/team/team-manager";
 import { HelpGuide } from "@/features/help/help-guide";
+import { getWorkspaceBillingStatus } from "@/features/workspace/billing";
+import { BillingUpgrade } from "@/features/workspace/billing-upgrade";
+import { CheckoutSuccessToast } from "@/features/workspace/checkout-toast";
 import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
-import { DeliveryPlanSummary } from "@/features/workspace/delivery-plan-summary";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -74,11 +77,15 @@ export default async function Page({
     );
   }
   if (section === "settings") {
-    const [providers, channelSummaries, deliveryPlan] = await Promise.all([
-      listDeliveryProviders(),
-      listDeliveryChannels(workspace.id),
-      getWorkspaceDeliveryPlan(workspace.id),
-    ]);
+    const [providers, channelSummaries, deliveryPlan, billingStatus] =
+      await Promise.all([
+        listDeliveryProviders(),
+        listDeliveryChannels(workspace.id),
+        getWorkspaceDeliveryPlan(workspace.id),
+        role === "admin"
+          ? getWorkspaceBillingStatus(workspace.id)
+          : Promise.resolve(null),
+      ]);
     const channelDetails = await Promise.all(
       channelSummaries.map((summary) => getDeliveryChannel(summary.id)),
     );
@@ -99,9 +106,16 @@ export default async function Page({
           <h1>邮局设置</h1>
           <Badge variant="secondary">工作区</Badge>
         </div>
+        <Suspense fallback={null}>
+          <CheckoutSuccessToast />
+        </Suspense>
         {deliveryPlan && (
           <div className="mb-4">
-            <DeliveryPlanSummary plan={deliveryPlan} />
+            <BillingUpgrade
+              deliveryPlan={deliveryPlan}
+              billing={billingStatus}
+              canUpgrade={role === "admin"}
+            />
           </div>
         )}
         <Card>

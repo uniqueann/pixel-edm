@@ -1,6 +1,6 @@
 # P11 套餐与支付（Creem + Dodo Payments）
 
-更新日期：2026-09-20。状态：**P11-0 进行中**；生产 soak（10×500）暂缓，见 `supabase/verification.md`。
+更新日期：2026-09-20。状态：**P11-3 已完成**；P11-4 端到端验收待做；生产 soak 暂缓。
 
 前提：P10 套餐额度与 worker 公平调度已上线；**content-up 主站已接通 Creem / Dodo**（`public.profiles`），见 [docs/p11-payment-contentup-bridge.md](docs/p11-payment-contentup-bridge.md)。EDM 单独按 **工作区** `edm.workspaces.plan` 计费。
 
@@ -27,24 +27,24 @@ Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`�
 - [x] `edm.sync_workspace_plan_from_payment`（service_role）。
 - [x] `edm.get_workspace_billing_status`。
 - [x] 测试 `tests/billing-plan-sync.test.mjs`。
-- [ ] content-up 应用迁移（P11-0 合并后）。
+- [x] content-up 应用迁移。
 
 ### P11-1 Checkout（pixel-edm Next.js）
 
 - [x] 依赖 `@creem_io/nextjs`、`dodopayments`。
 - [x] `POST /api/creem/checkout`、`POST /api/dodo/checkout`：admin + 工作区 cookie，`productScope=edm` metadata。
-- [ ] Vercel 配置 EDM 专用 product id 与 Creem/Dodo 密钥（可与主站同账号）。
+- [x] Vercel 配置 EDM 专用 product id 与 Creem/Dodo 密钥（见 `scripts/sync-vercel-billing-env.sh` 与 webhook 清单）。
 
 ### P11-2 Webhook（**子域独立 URL，不改 content-up**）
 
 - [x] `POST /api/creem/webhook`、`POST /api/dodo/webhook`（`edm.contentup.cc`）。
 - [x] 验签 + 仅 EDM metadata → `sync_workspace_plan_from_payment`。
-- [ ] Creem/Dodo Dashboard 注册上表 URL；`SUPABASE_SERVICE_ROLE_KEY` 写入 pixel-edm Vercel。
+- [x] Creem/Dodo Dashboard 注册 EDM 子域 URL（见 `docs/p11-webhook-dashboard-checklist.md`）。
 
 ### P11-3 设置页 UI
 
-- [ ] 支付方式选择（参考 content-up `PaymentMethodChoice`）。
-- [ ] 展示 `get_workspace_billing_status` + `DeliveryPlanSummary` 额度。
+- [x] `BillingUpgrade`：Creem / Dodo 双通道、月付/年付、POST 至 checkout API。
+- [x] 管理员展示 `get_workspace_billing_status`；支付成功回跳 toast。
 
 ### P11-4 验收
 
