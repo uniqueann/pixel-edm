@@ -202,3 +202,12 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 - 注册表新增 `sendgrid`（未启用，10 次/秒、100000 次/日、`UTC`，`sender_alias_max_length=64`）；`aliyun_directmail` 仍为启用，`amazon_ses` 仍为未启用。未创建 SendGrid 通道、未写入凭据或发送任务。
 - 扩展 `edm_private.delivery_provider_config`（`api_host` 为 `global` | `eu`）、`delivery_tracking_configured`（SendGrid 恒为已配置追踪）与 `delivery_failure_class`（SendGrid blocked/invalid/hard 与 expired/soft 分级）；DirectMail 与 SES 分支行为与 P8-1 一致。
 - Security Advisor 无任何 `edm` 条目，现有提示仍只涉及共享 `aigc`、`public` 与 Auth 基线。SendGrid 实际发信与 Event Webhook 待 P9-2 适配器与 `edm-sendgrid-events` 接入后单独验收；开放用户创建通道待 P9-4 后将 `sendgrid.enabled` 置为 `true`。
+
+### P10 套餐发信额度（2026-09-20）
+
+- 云端已应用 `20260920072135_20260920103000_p10_delivery_plan_limits` 与 `20260920072533_20260920120000_p10_tighten_free_plan_limits`（补全步骤见历史 PR/Agent 记录）。
+
+### P10 发信扛量（待应用）
+
+- 迁移 `20260920183000_p10_delivery_worker_fair_claim`、`20260920183100_p10_delivery_worker_schedule`（cron 5s，cloud-only）。
+- 部署 `edm-delivery-worker`；可选 `EDM_WORKER_CLAIM_LIMIT`（默认 50，最大 100）。清单见 `development-checklist-p10-delivery-scale.md`。
