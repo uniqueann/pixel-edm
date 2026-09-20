@@ -213,4 +213,9 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 
 - 已应用 `20260920105053_20260920183000_p10_delivery_worker_fair_claim`（公平 `ws_round` 排序、默认 batch 50/上限 100、候选扫描 500）与 `20260920105058_20260920183100_p10_delivery_worker_schedule`（`edm-delivery-worker` cron **5 seconds**）。
 - 已重新部署 Edge `edm-delivery-worker`（含 `EDM_WORKER_CLAIM_LIMIT` 默认 50）。未改 Supabase 项目 Secrets 时沿用既有 `EDM_*` 环境变量。
-- 生产 soak（10 户 free × 500）仍为人工验收项，见 `development-checklist-p10-delivery-scale.md`。
+- 生产 soak（10 户 free × 500）**暂缓**（2026-09-20 决策）；依赖 DB 公平 claim 测试与小流量 DirectMail 回归，见 `development-checklist-p10-delivery-scale.md`。
+
+### P11 套餐与支付（2026-09-20，进行中）
+
+- 路线见 `development-checklist-p11-billing.md`：Stripe Checkout + Webhook 同步 `edm.workspaces.plan`。
+- P11-0 迁移 `20260920190000_p11_billing_foundation`（订阅表、Stripe 事件幂等、`sync_workspace_plan_from_stripe` / `get_workspace_billing_status`）待合并后应用 content-up。
