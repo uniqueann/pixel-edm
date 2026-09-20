@@ -77,8 +77,15 @@ export async function handleDeliveryWorker(request: Request) {
   if (authorizationError || authorized !== true)
     return json({ error: "工作进程鉴权失败" }, 401);
 
+  const configuredLimit = Number.parseInt(
+    Deno.env.get("EDM_WORKER_CLAIM_LIMIT") ?? "50",
+    10,
+  );
+  const claimLimit = Number.isFinite(configuredLimit)
+    ? Math.min(100, Math.max(1, configuredLimit))
+    : 50;
   const { data, error } = await admin.rpc("worker_claim_delivery_batch", {
-    payload: { limit: 10 },
+    payload: { limit: claimLimit },
   });
   if (error) {
     console.error("[edm-delivery-worker] 领取任务失败", {

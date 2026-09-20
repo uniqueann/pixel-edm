@@ -208,3 +208,8 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 - 云端已应用 `20260920072135_20260920103000_p10_delivery_plan_limits`（表 `edm.delivery_plan_limits`、helper、`assert_campaign_recipient_limit(uuid,int)`、套餐版 `confirm_campaign` / `start_campaign_delivery` / `worker_claim_delivery_batch`、`edm.get_workspace_delivery_plan`）。首次 MCP 应用仅写入前半段 DDL，后续在同一项目内用 `execute_sql` 补全函数体，并登记 `20260920072519_p10_delivery_plan_limits_start_delivery`（runs 收件人上限约束）、`20260920072528_p10_delivery_plan_limits_start_fn`（`start_campaign_delivery` 套餐校验）；仅修改 `edm` / `edm_private`。
 - 随后应用 `20260920072533_20260920120000_p10_tighten_free_plan_limits`（free 日配额 1000、2 封/s 兜底）。
 - 云端 seed 核对：`free` 500/1000/2，`pro` 2000/10000/10，`team` 5000/25000/20。Security Advisor 仍无新增 `edm` 条目。
+
+### P10 发信扛量（待应用）
+
+- 迁移 `20260920183000_p10_delivery_worker_fair_claim`、`20260920183100_p10_delivery_worker_schedule`（cron 5s，cloud-only）。
+- 部署 `edm-delivery-worker`；可选 `EDM_WORKER_CLAIM_LIMIT`（默认 50，最大 100）。清单见 `development-checklist-p10-delivery-scale.md`。
