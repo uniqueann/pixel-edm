@@ -42,7 +42,7 @@
 | Dodo Checkout | `POST https://edm.contentup.cc/api/dodo/checkout` |
 | 支付成功回跳 | `https://edm.contentup.cc/settings?checkout=success&provider=…` |
 
-主站 Dashboard 里已指向 `contentup.cc` 的 Webhook **保持不变**；Creem/Dodo 后台需 **另建 EDM 商品** 并把 Webhook 指向上表 EDM 地址。
+主站 Dashboard 里已指向 `contentup.cc` 的 Webhook **保持不变**。2026-09-20 已在 Creem 正式环境与 Dodo 测试环境分别创建 EDM Pro 月付（USD 9.90）和年付（USD 99.90）商品，并新增指向上表 EDM 地址的独立 Webhook；商品 ID 与 endpoint 独立密钥仅保存于 pixel-edm Vercel Production。
 
 ## 实现要点
 
