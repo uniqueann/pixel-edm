@@ -1,4 +1,5 @@
 -- P10 阶段一：套餐发信额度（无支付）。仅 edm / edm_private。
+-- free 档偏紧：前期默认全员 free，日配额/速率低于 DirectMail 注册表默认。
 
 create table edm.delivery_plan_limits (
   plan text primary key check (plan in ('free', 'pro', 'team')),
@@ -22,7 +23,7 @@ create trigger delivery_plan_limits_updated
 insert into edm.delivery_plan_limits(
   plan, display_name, max_recipients_per_campaign, daily_send_quota, max_rate_per_second, quota_timezone
 ) values
-  ('free', 'Free', 500, 2000, 5, 'Asia/Shanghai'),
+  ('free', 'Free', 500, 1000, 2, 'Asia/Shanghai'),
   ('pro', 'Pro', 2000, 10000, 10, 'Asia/Shanghai'),
   ('team', 'Team', 5000, 25000, 20, 'Asia/Shanghai')
 on conflict (plan) do update set

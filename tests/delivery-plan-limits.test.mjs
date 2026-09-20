@@ -38,9 +38,9 @@ test("P10 套餐发信额度（无支付）", async (t) => {
       ).rows[0].result;
       assert.equal(result.plan, "free");
       assert.equal(result.plan_display_name, "Free");
-      assert.equal(result.daily_send_quota, 2000);
+      assert.equal(result.daily_send_quota, 1000);
       assert.equal(result.usage_today, 0);
-      assert.equal(result.remaining_today, 2000);
+      assert.equal(result.remaining_today, 1000);
       assert.equal(result.max_recipients_per_campaign, 500);
       assert.doesNotMatch(JSON.stringify(result), /default_rate_per_second/);
     });
@@ -169,7 +169,7 @@ test("P10 套餐发信额度（无支付）", async (t) => {
         );
       } finally {
         await db.query(
-          "update edm.delivery_plan_limits set daily_send_quota=2000 where plan='free'",
+          "update edm.delivery_plan_limits set daily_send_quota=1000 where plan='free'",
         );
       }
     });
@@ -263,7 +263,7 @@ test("P10 套餐发信额度（无支付）", async (t) => {
         assert.equal(batch.length, 1);
       } finally {
         await db.query(
-          "update edm.delivery_plan_limits set max_rate_per_second=5 where plan='free'",
+          "update edm.delivery_plan_limits set max_rate_per_second=2 where plan='free'",
         );
       }
     });

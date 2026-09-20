@@ -12,7 +12,7 @@
 
 | plan | 显示名 | 单活动收件人 | 日配额 | 速率/s | 日界 |
 |------|--------|--------------|--------|--------|------|
-| free | Free | 500 | 2000 | 5 | Asia/Shanghai（与 P4 DirectMail 默认一致） |
+| free | Free | 500 | 1000 | 2 | Asia/Shanghai（前期默认档，低于 ESP 注册表默认） |
 | pro | Pro | 2000 | 10000 | 10 | Asia/Shanghai |
 | team | Team | 5000 | 25000 | 20 | Asia/Shanghai |
 
