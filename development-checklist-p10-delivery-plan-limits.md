@@ -1,6 +1,6 @@
 # P10 套餐发信额度（阶段一，无支付）
 
-更新日期：2026-09-20。状态：工程实现待云端应用迁移。
+更新日期：2026-09-20。状态：content-up 已应用迁移（见 `supabase/verification.md`）。
 
 ## 目标
 
@@ -21,7 +21,7 @@
 - [x] 迁移 `20260920103000_p10_delivery_plan_limits.sql`：配置表、RPC `get_workspace_delivery_plan`、confirm/start/claim  enforcement。
 - [x] 设置页 `DeliveryPlanSummary`。
 - [x] 测试 `tests/delivery-plan-limits.test.mjs`。
-- [ ] content-up 应用迁移；Security Advisor 无新增 `edm` 问题。
+- [x] content-up 应用迁移 `20260920103000_p10_delivery_plan_limits`、`20260920120000_p10_tighten_free_plan_limits`；Security Advisor 无新增 `edm` 问题。
 
 ## 运维：切换套餐
 

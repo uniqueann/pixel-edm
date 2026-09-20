@@ -202,3 +202,9 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 - 注册表新增 `sendgrid`（未启用，10 次/秒、100000 次/日、`UTC`，`sender_alias_max_length=64`）；`aliyun_directmail` 仍为启用，`amazon_ses` 仍为未启用。未创建 SendGrid 通道、未写入凭据或发送任务。
 - 扩展 `edm_private.delivery_provider_config`（`api_host` 为 `global` | `eu`）、`delivery_tracking_configured`（SendGrid 恒为已配置追踪）与 `delivery_failure_class`（SendGrid blocked/invalid/hard 与 expired/soft 分级）；DirectMail 与 SES 分支行为与 P8-1 一致。
 - Security Advisor 无任何 `edm` 条目，现有提示仍只涉及共享 `aigc`、`public` 与 Auth 基线。SendGrid 实际发信与 Event Webhook 待 P9-2 适配器与 `edm-sendgrid-events` 接入后单独验收；开放用户创建通道待 P9-4 后将 `sendgrid.enabled` 置为 `true`。
+
+### P10 套餐发信额度（2026-09-20）
+
+- 云端已应用 `20260920072135_20260920103000_p10_delivery_plan_limits`（表 `edm.delivery_plan_limits`、helper、`assert_campaign_recipient_limit(uuid,int)`、套餐版 `confirm_campaign` / `start_campaign_delivery` / `worker_claim_delivery_batch`、`edm.get_workspace_delivery_plan`）。首次 MCP 应用仅写入前半段 DDL，后续在同一项目内用 `execute_sql` 补全函数体，并登记 `20260920072519_p10_delivery_plan_limits_start_delivery`（runs 收件人上限约束）、`20260920072528_p10_delivery_plan_limits_start_fn`（`start_campaign_delivery` 套餐校验）；仅修改 `edm` / `edm_private`。
+- 随后应用 `20260920072533_20260920120000_p10_tighten_free_plan_limits`（free 日配额 1000、2 封/s 兜底）。
+- 云端 seed 核对：`free` 500/1000/2，`pro` 2000/10000/10，`team` 5000/25000/20。Security Advisor 仍无新增 `edm` 条目。
