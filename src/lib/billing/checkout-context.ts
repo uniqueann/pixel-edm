@@ -1,7 +1,6 @@
 import "server-only";
-import { cookies } from "next/headers";
 import { serverClient } from "@/lib/supabase/server";
-import { workspaceCookie } from "@/lib/workspace";
+import { resolveWorkspaceId } from "@/lib/workspace";
 import type { EdmBilledPlan } from "./metadata";
 
 export function normalizeCheckoutPlan(
@@ -16,8 +15,8 @@ export function normalizeCheckoutInterval(
   return value === "yearly" ? "yearly" : "monthly";
 }
 
-/** 当前登录管理员与 cookie 工作区；Checkout 路由专用。 */
-export async function requireEdmBillingCheckout() {
+/** 当前登录管理员与工作区；Checkout 路由专用。 */
+export async function requireEdmBillingCheckout(formWorkspaceId?: string | null) {
   const db = await serverClient();
   const {
     data: { user },
@@ -26,7 +25,20 @@ export async function requireEdmBillingCheckout() {
     return { ok: false as const, status: 401, error: "请先登录。" };
   }
 
-  const workspaceId = (await cookies()).get(workspaceCookie)?.value;
+  const { data: workspaces, error: wsError } = await db
+    .from("workspaces")
+    .select("id, bootstrap_owner_id")
+    .order("created_at");
+  if (wsError || !workspaces?.length) {
+    return { ok: false as const, status: 400, error: "没有可用的工作区。" };
+  }
+
+  const resolved = await resolveWorkspaceId(user.id, workspaces);
+  const workspaceId =
+    formWorkspaceId &&
+    workspaces.some((w) => w.id === formWorkspaceId)
+      ? formWorkspaceId
+      : resolved;
   if (!workspaceId) {
     return { ok: false as const, status: 400, error: "请先选择工作区。" };
   }
