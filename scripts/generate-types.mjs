@@ -66,6 +66,7 @@ try {
     "get_campaign_delivery_summaries: { Args: {payload:Json}; Returns:Json }",
     "get_campaign_delivery_statistics: { Args: {payload:Json}; Returns:Json }",
     "get_workspace_campaign_statistics: { Args: {payload:Json}; Returns:Json }",
+    "get_workspace_delivery_plan: { Args: {payload:Json}; Returns:Json }",
     "list_campaign_delivery_tasks: { Args: {payload:Json}; Returns:Json }",
     "resolve_delivery_unknown: { Args: {payload:Json}; Returns:Json }",
     "worker_recover_expired_delivery_leases: { Args: Record<string,never>; Returns:number }",

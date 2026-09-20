@@ -807,6 +807,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      delivery_plan_limits: {
+        Row: {
+          plan: string;
+          display_name: string;
+          max_recipients_per_campaign: number;
+          daily_send_quota: number;
+          max_rate_per_second: number;
+          quota_timezone: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          plan: string;
+          display_name: string;
+          max_recipients_per_campaign: number;
+          daily_send_quota: number;
+          max_rate_per_second: number;
+          quota_timezone?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          plan?: string;
+          display_name?: string;
+          max_recipients_per_campaign?: number;
+          daily_send_quota?: number;
+          max_rate_per_second?: number;
+          quota_timezone?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       delivery_providers: {
         Row: {
           provider: string;
@@ -1280,6 +1313,7 @@ export type Database = {
         Args: { payload: Json };
         Returns: Json;
       };
+      get_workspace_delivery_plan: { Args: { payload: Json }; Returns: Json };
       list_campaign_delivery_tasks: { Args: { payload: Json }; Returns: Json };
       resolve_delivery_unknown: { Args: { payload: Json }; Returns: Json };
       worker_recover_expired_delivery_leases: {
