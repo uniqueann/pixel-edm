@@ -1,5 +1,6 @@
 import "server-only";
 import { serverClient } from "@/lib/supabase/server";
+import { deliveryPlanLabel as planLabel } from "./plan-labels";
 
 export type WorkspaceDeliveryPlan = {
   plan: string;
@@ -47,10 +48,5 @@ export async function getWorkspaceDeliveryPlan(
 
 /** 中文展示名（配置表为英文产品名时兜底）。 */
 export function deliveryPlanLabel(plan: WorkspaceDeliveryPlan): string {
-  const localized: Record<string, string> = {
-    free: "免费版",
-    pro: "专业版",
-    team: "团队版",
-  };
-  return localized[plan.plan] ?? plan.plan_display_name;
+  return planLabel(plan.plan, plan.plan_display_name);
 }
