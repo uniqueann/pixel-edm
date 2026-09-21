@@ -14,7 +14,7 @@ Pixel EDM Pro: up to **5,000** active contacts (non-archived); unlimited custom 
 
 ## 团队版 · 月付 / 年付（共用描述）
 
-商品名建议：**Pixel EDM Team Monthly** / **Pixel EDM Team Yearly**（USD 49.90/月、499.90/年，见 `development-checklist-p11-billing.md`）。
+商品名建议：**Pixel EDM Team Monthly** / **Pixel EDM Team Yearly**（USD 29.90/月、299.90/年，见 `development-checklist-p11-billing.md`）。
 
 ### 中文
 
