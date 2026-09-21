@@ -17,7 +17,7 @@ await db.exec(
 const wa = (await asUser(db, a, "select edm.initialize_member() as id")).rows[0]
   .id;
 await db.query(
-  "update edm.workspaces set mailing_address='上海市测试路 1 号' where id=$1",
+  "update edm.workspaces set mailing_address='上海市测试路 1 号', plan='pro' where id=$1",
   [wa],
 );
 await db.query(
