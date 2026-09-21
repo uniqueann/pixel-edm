@@ -1,8 +1,8 @@
 # 卖家邮局 · 开发计划 v0.1
 
-创建日期：2026-09-09；更新日期：2026-09-16。依据：`architecture-draft-v1.3.md`；已补充核对用户提供的 `1-seller-post-office-premium.html` 交互原型。
+创建日期：2026-09-09；更新日期：2026-09-21。依据：`architecture-draft-v1.3.md`；已补充核对用户提供的 `1-seller-post-office-premium.html` 交互原型。
 
-本文记录实施方案，未确认的产品取舍仍保持待讨论状态。原架构草案保留不变。P1 工程与身份、P2 客户与模板、P3 活动管理 A 版和 P4 单通道发送工程交付均已完成；用户于 2026-09-10 确认 Google 登录、邮箱重置均已验证通过。P4 首家 ESP 为阿里云邮件推送 DirectMail；P4-0 至 P4-3 的适配边界、通道配置、内部测试发送、正式活动持久队列、限速、重试与人工核对均已实现并部署，逐项记录见 `development-checklist-p4-delivery.md`。管理员已收到测试信，通道已进入 `verified`；P4-3 正式活动发送真实验收已通过。
+本文记录实施方案，未确认的产品取舍仍保持待讨论状态。原架构草案保留不变。P1 工程与身份、P2 客户与模板、P3 活动管理 A 版和 P4 单通道发送工程交付均已完成；用户于 2026-09-10 确认 Google 登录、邮箱重置均已验证通过。P4 首家 ESP 为阿里云邮件推送 DirectMail；P4-0 至 P4-3 的适配边界、通道配置、内部测试发送、正式活动持久队列、限速、重试与人工核对均已实现并部署，逐项记录见 `development-checklist-p4-delivery.md`。管理员已收到测试信，通道已进入 `verified`；P4-3 正式活动发送真实验收已通过。P11-0 至 P11-3 已完成，Dodo 测试模式支付已由用户验证，正式商品、Webhook、Vercel Production 配置和重新部署已完成；P11-4 正式付款与回调闭环仍待重新验收。
 
 已确认部署约束：复用 Supabase **content-up**（项目引用 `gnrhyahjegvcicektebh`），EDM 业务数据使用 **`edm` schema**。第一批可勾选任务及共享项目边界见 [第一批开发清单](development-checklist-p1.md)。此约束优先于本文先前的独立项目与注册初始化假设。
 
@@ -241,5 +241,7 @@ P8 规划时 `aliyun_directmail` 字面量散布在 8 个迁移的 24 处，厂�
 P8-1 已由单文件迁移 `20260919021500_p8_delivery_provider_registry.sql` 完成：新增 `edm.delivery_providers` 注册表承载显示名、能力位与默认限速，两处 `provider` 单值约束换成注册表外键，厂商专属的区域与追踪标签迁入 `provider_config jsonb` 并由按 provider 分派的校验函数归一化，`sender_alias` 上限与发件域名是否必填改由注册表决定，退信分级归一化为事件表上的 `failure_class`，限速从注册表读取并支持通道级覆盖，发送运行同时冻结 provider 与 provider_config，主通道由 `workspace_id` 上的部分唯一索引保证唯一。既有 101 项自动化测试未修改即全部通过，另补 9 项针对注册表与去耦语义的测试。
 
 P8-2 将 `DeliveryAdapter` 扩展为发送、错误分类、回执解析、Webhook 验签和能力描述五件套。DirectMail 实现平移到 provider 目录并保留旧入口；SES 使用 v2 `SendEmail` 和 SDK SigV4，发送尝试与任务显式保存 `provider_message_id`，SNS 回执不借用 EnvId 而只按 MessageId 匹配。SNS 入口校验证书来源、Topic ARN、时间窗、RSA-SHA256 签名与通道令牌，支持订阅确认和多收件人拆分，`bounceType` 由适配器直接归一化。AES-GCM AAD 增加 provider 隔离，RFC 8058 自建退订继续作为唯一事实来源。通用 worker、测试函数和云端 cron 切换迁移已就位，120 项测试及 Edge/Next 类型、Lint、格式与构建通过；生产仍保持 `amazon_ses.enabled=false`。P8-3 已完成 provider 描述符、多通道列表、主通道切换与 SES 沙箱提示；剩余新增工作是 P8-4 两家厂商真实闭环验收，逐项状态见 [P8 多 ESP 支持交付清单](development-checklist-p8-multi-esp.md)。
+
+P11-0 至 P11-3 已完成：`20260920190000_p11_billing_foundation.sql` 已建立工作区订阅事实、支付事件幂等记录及账单状态 RPC；pixel-edm 已接入 Creem/Dodo Checkout、EDM 专用 metadata、独立子域 Webhook 和设置页升级入口。首版价格为 Pro USD 9.90/月、USD 99.90/年，Dodo 正式环境已创建对应商品和 Webhook，Vercel Production 已使用 `live_mode`。2026-09-21 曾发现正式 Checkout 因运行时密钥配置异常返回 ByteString 错误，已重新写入正式 API Key/Webhook Key 并重新部署；该次处理未修改 content-up、主站支付、`aigc` schema、共享 Auth 触发器或本地迁移历史。P11-4 当前只保留正式支付/回调、取消/过期回退、主站隔离和 `supabase/verification.md` 记录待验收项。
 
 这一调整减少了视觉探索和交互定义的不确定性；数据库、发送通道和服务端权限仍需完整实现，不能按原型页面已经可点击就视为完成。
