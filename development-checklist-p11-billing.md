@@ -64,6 +64,10 @@ Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`�
 
 - 正式月付商品：`Pixel EDM Pro Monthly`，USD 9.90/月，product id `pdt_0No2gHyLcSdQPKblHme1K`。
 - 正式年付商品：`Pixel EDM Pro Yearly`，USD 99.90/年，product id `pdt_0No2gLBidluyO2XawKIW9`。
+- 正式 Team 月付：`Pixel EDM Team Monthly`，USD 29.90/月，product id `pdt_0No4rasQ4M4doZkGAqjH9`。
+- 正式 Team 年付：`Pixel EDM Team Yearly`，USD 299.90/年，product id `pdt_0No4rlZISyRlfh2LLNTRS`。
+- Creem 正式 Team 月付 / 年付：`prod_3JM8xmGLMmHRezTpovuJUS`、`prod_hMKBsWNunsSvDmZSy9wbB`（与 Pro 同商户；**勿**把 Dodo/Creem 测试 id 写入 Production）。
+- Dodo **测试** Team（仅 Preview / 本地 `test_mode`）：`pdt_0No4ruXTtQuxzrojEcVrt`、`pdt_0No4s3gYm8Lr5qxrVqYN8`。
 - 正式 Webhook：`https://edm.contentup.cc/api/dodo/webhook`，endpoint id `ep_3Jc1cocJXagr4mJX8AKyAXozkVn`，启用订阅和支付相关事件。
 - `DODO_PAYMENTS_ENVIRONMENT=live_mode`、正式 API Key 和 EDM 专用 Webhook Key 已配置为 `pixel-edm` Vercel Production Secret；密钥明文不写入仓库或文档。
 - 2026-09-21 曾出现 Dodo Checkout 的 ByteString 错误。定位为 Production 运行时读取的 Dodo 密钥配置异常；已重新写入正式 API Key/Webhook Key，并完成 Production 重新部署。代码、主站支付配置、Supabase `aigc` 和共享 Auth 未修改。

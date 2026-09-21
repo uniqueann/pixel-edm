@@ -63,25 +63,27 @@ copy_env CREEM_EDM_TEAM_YEARLY_PRODUCT_ID CREEM_TEAM_YEARLY_PRODUCT_ID
 copy_env DODO_EDM_TEAM_MONTHLY_PRODUCT_ID DODO_TEAM_MONTHLY_PRODUCT_ID
 copy_env DODO_EDM_TEAM_YEARLY_PRODUCT_ID DODO_TEAM_YEARLY_PRODUCT_ID
 
-# pixel-edm 本地若已写 CREEM_EDM_TEAM_* / DODO_EDM_TEAM_*，优先推到 Vercel（避免只建了 key 无值）
-LOCAL_ENV="$ROOT/.env.local"
-if [[ -f "$LOCAL_ENV" ]]; then
-  push_local_edm_team() {
-    local name=$1
-    local val
-    val="$(grep -m1 "^${name}=" "$LOCAL_ENV" | cut -d= -f2- || true)"
-    if [[ -z "${val}" ]]; then
+# Team 商品：按 Dashboard 名称解析（避免把 Dodo 测试 id 误推到 Production）
+RESOLVE="$ROOT/scripts/resolve-edm-team-product-ids.mjs"
+if [[ -f "$RESOLVE" ]] && [[ -d "$ROOT/../content-up/node_modules/creem" ]]; then
+  push_team_file() {
+    local target=$1
+    local file
+    file="$(mktemp)"
+    if ! node "$RESOLVE" "$target" >"$file" 2>/dev/null; then
+      rm -f "$file"
+      echo "skip Team env ($target): resolve-edm-team-product-ids 失败"
       return
     fi
-    for env in production preview; do
-      printf '%s' "$val" | npx vercel env add "$name" "$env" --force --yes >/dev/null
-    done
-    echo "set ${name} (from pixel-edm .env.local)"
+    while IFS='=' read -r name val; do
+      [[ -z "$name" || -z "$val" ]] && continue
+      printf '%s' "$val" | npx vercel env add "$name" "$target" --force --yes >/dev/null
+      echo "set ${name} (${target}, resolved)"
+    done <"$file"
+    rm -f "$file"
   }
-  for key in CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID CREEM_EDM_TEAM_YEARLY_PRODUCT_ID \
-    DODO_EDM_TEAM_MONTHLY_PRODUCT_ID DODO_EDM_TEAM_YEARLY_PRODUCT_ID; do
-    push_local_edm_team "$key"
-  done
+  push_team_file production
+  push_team_file preview
 fi
 
 echo "完成。写入 Vercel 后需重新部署 Production/Preview 才会生效；见 docs/p11-team-billing-setup.md"
