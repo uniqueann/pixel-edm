@@ -43,6 +43,35 @@
 | pro | 5000 | 1 | ∞ | ∞ | 7 | 是 |
 | team | 25000 | 20 | ∞ | ∞ | ∞ | 是 |
 
+## Pro 多成员 · grandfather（上线策略）
+
+定稿：**不自动踢人、不批量改历史成员状态**。
+
+| 场景 | 行为 |
+|------|------|
+| `plan=pro`，配置表 `max_active_members=1` | 新 **邀请** 不可用（仅 Team 可 `create_workspace_invitation`）；**接受邀请** 仍走 `assert_workspace_member_headroom`，已有 1 名活跃成员时无法再接受 |
+| 历史/SQL 造成的 Pro 工作区 **活跃成员 > 1** | **只读与既有权限继续可用**；禁止新增成员与邀请；UI 仍提示「个人版单人，协作请升级团队版」 |
+| 运维 | 定期跑下方 SQL，对需协作的客户 **人工升 Team** 或沟通减员至 1 人 |
+
+```sql
+-- Pro 工作区活跃成员超过套餐配置（grandfather 名单）
+select w.id, w.name, w.plan,
+  count(*) filter (where wm.status = 'active') as active_members,
+  dpl.max_active_members
+from edm.workspaces w
+join edm.delivery_plan_limits dpl on dpl.plan = w.plan
+join edm.workspace_members wm on wm.workspace_id = w.id
+where w.plan = 'pro'
+group by w.id, w.name, w.plan, dpl.max_active_members
+having count(*) filter (where wm.status = 'active') > dpl.max_active_members;
+```
+
+**content-up 生产（2026-09-21）**：上述查询 **0 行**（尚无 Pro 多成员 grandfather 个案）。
+
+## 支付商品文案
+
+Creem/Dodo Dashboard 描述见 [`docs/p12-billing-product-copy.md`](p12-billing-product-copy.md)。
+
 ## 运维
 
 ```sql

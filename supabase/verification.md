@@ -229,3 +229,10 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
   - Creem：Pro 升级 → P10 额度；取消 → `free`。
   - 主站 Content.up Pro 订阅不误改 EDM 工作区 plan（无 EDM metadata 时忽略）。
 - 逐项清单与命令见 `development-checklist-p11-billing.md`。
+
+### P12 名单/成员与能力门控（2026-09-21，content-up）
+
+- 已在 **content-up**（`gnrhyahjegvcicektebh`）应用 P12 逻辑，与仓库迁移 `20260921103000_p12_plan_contact_member_limits.sql`、`20260921123000_p12_plan_feature_gates.sql` 一致；因 MCP 单次 payload 上限，云端登记为多条 `apply_migration` 记录（`p12_plan_contact_member_limits`、`p12_cml_rpc_part1`～`part4`、`p12_plan_feature_gates` 及 `part2`/`part3`），仅改 `edm` / `edm_private`。
+- **`edm.delivery_plan_limits` seed 核对**（SQL Editor）：`free` 500 客户 / 1 成员 / 3 模板 / 月确认 3 / 日志 0 / 无统计；`pro` 5000 / 1 / ∞ / ∞ / 7 日 / 有统计；`team` 25000 / 20 / ∞ / ∞ / 完整日志 / 有统计。
+- **Pro 多成员 grandfather**：配置 Pro 为 1 成员；不自动移除超额历史成员；仅 Team 可发邀请。生产扫描 Pro 且活跃成员 > 1：**0 行**（2026-09-21）。策略见 `docs/p12-plan-limits-by-contacts.md`。
+- Creem/Dodo 商品描述需在 Dashboard 手工粘贴，文案见 `docs/p12-billing-product-copy.md`。
