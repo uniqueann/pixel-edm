@@ -48,4 +48,5 @@ export type ActivityLogList = {
   page: number;
   page_size: number;
   actors: { id: string; name: string }[];
+  retention_days?: number | null;
 };

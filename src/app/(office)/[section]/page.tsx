@@ -173,7 +173,21 @@ export default async function Page({
       .eq("workspace_id", workspace.id)
       .eq("status", "active");
     if (error) throw new Error("成员信息加载失败，请重试。");
+    const deliveryPlan = await getWorkspaceDeliveryPlan(workspace.id);
     if (section === "team") {
+      if (!deliveryPlan?.allows_team_collaboration) {
+        return (
+          <>
+            <div className="section-heading">
+              <h1>团队成员</h1>
+            </div>
+            <EmptyState
+              title="团队协作属于团队版"
+              description="个人免费版与专业版为单人使用。需要多人协作、角色权限与完整操作日志时，请升级团队版。"
+            />
+          </>
+        );
+      }
       const team = await listTeam(workspace.id);
       return (
         <>
@@ -196,6 +210,10 @@ export default async function Page({
         </>
       );
     }
+    const canViewLogs =
+      role === "admin" &&
+      deliveryPlan !== null &&
+      deliveryPlan.activity_log_retention_days !== 0;
     const [
       contactSummary,
       templateSummary,
@@ -205,15 +223,15 @@ export default async function Page({
       listContacts({}),
       listTemplates({}),
       getWorkspaceCampaignStatistics(),
-      role === "admin"
-        ? listActivityLogs({ pageSize: 5 })
-        : Promise.resolve(null),
+      canViewLogs ? listActivityLogs({ pageSize: 5 }) : Promise.resolve(null),
     ]);
-    const weightedOpenRate = campaignStatistics.delivered
-      ? `${Math.round(
-          (campaignStatistics.opened / campaignStatistics.delivered) * 100,
-        )}%`
-      : "—";
+    const statsAvailable = deliveryPlan?.allows_campaign_statistics ?? false;
+    const weightedOpenRate =
+      statsAvailable && campaignStatistics.delivered
+        ? `${Math.round(
+            (campaignStatistics.opened / campaignStatistics.delivered) * 100,
+          )}%`
+        : "—";
     return (
       <>
         <div className="welcome">
@@ -237,10 +255,10 @@ export default async function Page({
           ))}
         </div>
         <p className="hint">
-          客户数与模板数仅包含未归档记录；打开率按近 30
-          天启用追踪活动的已送达收件人加权计算（
-          {campaignStatistics.opened} / {campaignStatistics.delivered}，共{" "}
-          {campaignStatistics.tracked_campaigns} 个活动）。
+          客户数与模板数仅包含未归档记录。
+          {statsAvailable
+            ? `打开率按近 30 天启用追踪活动的已送达收件人加权计算（${campaignStatistics.opened} / ${campaignStatistics.delivered}，共 ${campaignStatistics.tracked_campaigns} 个活动）。`
+            : "打开/点击统计需专业版或团队版。"}
         </p>
         <div className="section-heading">
           <h2>最近动态</h2>
