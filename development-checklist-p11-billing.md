@@ -16,7 +16,8 @@
 |------|------|------|----------------|---------------|
 | pro | 月付 | USD 9.90/月 | `CREEM_EDM_PRO_MONTHLY_PRODUCT_ID` | `DODO_EDM_PRO_MONTHLY_PRODUCT_ID` |
 | pro | 年付 | USD 99.90/年 | `CREEM_EDM_PRO_YEARLY_PRODUCT_ID` | `DODO_EDM_PRO_YEARLY_PRODUCT_ID` |
-| team | 后续开放 | — | `CREEM_EDM_TEAM_*`（预留） | `DODO_EDM_TEAM_*`（预留） |
+| team | 月付 | USD 49.90/月 | `CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID` | `DODO_EDM_TEAM_MONTHLY_PRODUCT_ID` |
+| team | 年付 | USD 499.90/年 | `CREEM_EDM_TEAM_YEARLY_PRODUCT_ID` | `DODO_EDM_TEAM_YEARLY_PRODUCT_ID` |
 
 Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`（及 `userId` 便于审计）。
 
@@ -49,6 +50,7 @@ Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`�
 
 - [x] `BillingUpgrade`：Creem / Dodo 双通道、月付/年付、POST 至 checkout API。
 - [x] 管理员展示 `get_workspace_billing_status`；支付成功回跳 toast。
+- [x] **Team 档**：免费版可购 Pro/Team；专业版可购 Team；Checkout 服务端校验 `assertCheckoutTargetAllowed`；Team 四商品 ID 需在 Creem/Dodo + Vercel 配置（见 `docs/p11-team-billing-setup.md`）。
 
 ### P11-4 验收
 

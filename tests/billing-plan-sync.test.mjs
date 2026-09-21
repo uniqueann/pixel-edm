@@ -25,7 +25,7 @@ function syncPayload(overrides) {
   };
 }
 
-test("P11 账单：Creem/Dodo 同步 plan", async (t) => {
+test("P11 账单：Creem/Dodo 同步 plan", { concurrency: 1 }, async (t) => {
   const db = await createDatabase();
   t.after(() => db.close());
 
@@ -78,6 +78,38 @@ test("P11 账单：Creem/Dodo 同步 plan", async (t) => {
       await db.query("select plan from edm.workspaces where id=$1", [workspace])
     ).rows[0].plan;
     assert.equal(plan, "pro");
+  });
+
+  await t.test("Creem active 订阅升为 team", async () => {
+    const teamAdminId = "4a100000-0000-0000-0000-000000000002";
+    await db.exec(
+      `insert into auth.users(id) values('${teamAdminId}') on conflict do nothing`,
+    );
+    const teamWorkspace = (
+      await asUser(db, teamAdminId, "select edm.initialize_member() as id")
+    ).rows[0].id;
+    const payload = syncPayload({
+      workspace_id: teamWorkspace,
+      provider_event_id: "evt_active_team",
+      provider_customer_id: "cus_team_001",
+      provider_subscription_id: "sub_team_001",
+      billed_plan: "team",
+    });
+    const encoded = JSON.stringify(payload).replaceAll("'", "''");
+    const result = (
+      await asServiceRole(
+        db,
+        `select edm.sync_workspace_plan_from_payment('${encoded}'::jsonb) as result`,
+      )
+    ).rows[0].result;
+    assert.equal(result.ok, true);
+    assert.equal(result.plan, "team");
+    const plan = (
+      await db.query("select plan from edm.workspaces where id=$1", [
+        teamWorkspace,
+      ])
+    ).rows[0].plan;
+    assert.equal(plan, "team");
   });
 
   await t.test("Dodo 取消订阅回到 free", async () => {

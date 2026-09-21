@@ -1,15 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import type { EdmBilledPlan } from "@/lib/billing/metadata";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import type { WorkspaceDeliveryPlan } from "./delivery-plan";
 import type { WorkspaceBillingStatus } from "./billing";
 import {
@@ -17,6 +10,7 @@ import {
   deliveryPlanLabel,
   subscriptionStatusLabel,
 } from "./plan-labels";
+import { BillingCheckoutDialog } from "./billing-checkout-dialog";
 
 type BillingUpgradeProps = {
   workspaceId: string;
@@ -42,15 +36,17 @@ export function BillingUpgrade({
   billing,
   canUpgrade,
 }: BillingUpgradeProps) {
-  const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
-  const [open, setOpen] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState<EdmBilledPlan | null>(null);
   const label = deliveryPlanLabel(
     deliveryPlan.plan,
     deliveryPlan.plan_display_name,
   );
   const providerLabel = billingProviderLabel(billing?.payment_provider ?? null);
   const periodEnd = formatPeriodEnd(billing?.current_period_end ?? null);
-  const showUpgrade = canUpgrade && deliveryPlan.plan === "free";
+
+  const canBuyPro = canUpgrade && deliveryPlan.plan === "free";
+  const canBuyTeam =
+    canUpgrade && (deliveryPlan.plan === "free" || deliveryPlan.plan === "pro");
 
   return (
     <div className="rounded-lg border border-border/80 bg-muted/30 px-4 py-3 text-sm">
@@ -84,100 +80,52 @@ export function BillingUpgrade({
       {deliveryPlan.plan === "free" && !canUpgrade && (
         <p className="hint mt-2 mb-0">仅管理员可为工作区升级套餐。</p>
       )}
-      {showUpgrade && (
-        <div className="mt-3">
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button type="button" size="sm">
-                升级专业版
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>选择支付方式</DialogTitle>
-                <DialogDescription>
-                  Pixel EDM 专业版（{interval === "yearly" ? "年付" : "月付"}
-                  ）· 最多 5,000
-                  位有效客户、不限自定义模板与活动确认、打开/点击统计与 7
-                  日操作日志；个人单人使用，团队邀请请选团队版。支付由第三方处理，不会在本站保存卡号。
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={interval === "monthly" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setInterval("monthly")}
-                >
-                  月付
-                </Button>
-                <Button
-                  type="button"
-                  variant={interval === "yearly" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setInterval("yearly")}
-                >
-                  年付
-                </Button>
-              </div>
-              <div className="space-y-2">
-                <form action="/api/creem/checkout" method="post">
-                  <input
-                    type="hidden"
-                    name="workspace_id"
-                    value={workspaceId}
-                  />
-                  <input type="hidden" name="plan" value="pro" />
-                  <input type="hidden" name="interval" value={interval} />
-                  <Button type="submit" className="w-full justify-between">
-                    <span>
-                      <span className="block text-left text-sm font-bold">
-                        Creem
-                      </span>
-                      <span className="block text-left text-xs font-normal opacity-80">
-                        产品订阅
-                      </span>
-                    </span>
-                    <span aria-hidden>→</span>
-                  </Button>
-                </form>
-                <form action="/api/dodo/checkout" method="post">
-                  <input
-                    type="hidden"
-                    name="workspace_id"
-                    value={workspaceId}
-                  />
-                  <input type="hidden" name="plan" value="pro" />
-                  <input type="hidden" name="interval" value={interval} />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    className="w-full justify-between"
-                  >
-                    <span>
-                      <span className="block text-left text-sm font-bold">
-                        Dodo Payments
-                      </span>
-                      <span className="block text-left text-xs font-normal opacity-80">
-                        国际支付
-                      </span>
-                    </span>
-                    <span aria-hidden>→</span>
-                  </Button>
-                </form>
-              </div>
-              <p className="hint mb-0 text-xs leading-relaxed">
-                订阅将按所选周期自动续费；取消续费后当前周期结束会回到免费版额度。Team
-                档与自助降档将在后续版本提供。
-              </p>
-            </DialogContent>
-          </Dialog>
+      {(canBuyPro || canBuyTeam) && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {canBuyPro && (
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              onClick={() => setCheckoutPlan("pro")}
+            >
+              升级专业版
+            </Button>
+          )}
+          {canBuyTeam && (
+            <Button
+              type="button"
+              size="sm"
+              variant={canBuyPro ? "outline" : "default"}
+              onClick={() => setCheckoutPlan("team")}
+            >
+              {deliveryPlan.plan === "pro" ? "升级团队版" : "购买团队版"}
+            </Button>
+          )}
         </div>
       )}
-      {deliveryPlan.plan !== "free" && !showUpgrade && (
+      {checkoutPlan && (
+        <BillingCheckoutDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setCheckoutPlan(null);
+          }}
+          workspaceId={workspaceId}
+          checkoutPlan={checkoutPlan}
+          showProCancelHint={
+            checkoutPlan === "team" && deliveryPlan.plan === "pro"
+          }
+        />
+      )}
+      {deliveryPlan.plan !== "free" && !canBuyPro && !canBuyTeam && (
         <p className="hint mt-2 mb-0">
           如需调整订阅或退款，请通过付款时使用的 Creem / Dodo
           账户管理；额度以当前工作区 plan 为准。
+        </p>
+      )}
+      {deliveryPlan.plan === "pro" && canBuyTeam && (
+        <p className="hint mt-2 mb-0">
+          已订阅专业版时，可在支付平台管理原订阅；购买团队版后请取消专业版以免重复扣费。
         </p>
       )}
     </div>

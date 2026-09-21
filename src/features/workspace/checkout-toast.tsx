@@ -10,6 +10,9 @@ export function CheckoutSuccessToast() {
   useEffect(() => {
     if (params.get("checkout") !== "success") return;
     const provider = params.get("provider");
+    const planParam = params.get("plan");
+    const planLabel =
+      planParam === "team" ? "团队版" : planParam === "pro" ? "专业版" : null;
     const name =
       provider === "dodo"
         ? "Dodo Payments"
@@ -17,8 +20,9 @@ export function CheckoutSuccessToast() {
           ? "Creem"
           : "支付";
     toast.success(`${name} 结账已完成`, {
-      description:
-        "订阅生效可能需要几秒。若额度未更新，请刷新页面或稍后在设置中查看。",
+      description: planLabel
+        ? `${planLabel}订阅生效可能需要几秒。若额度未更新，请刷新设置页。`
+        : "订阅生效可能需要几秒。若额度未更新，请刷新页面或稍后在设置中查看。",
     });
   }, [params]);
   return null;

@@ -2,6 +2,11 @@ import "server-only";
 import { serverClient } from "@/lib/supabase/server";
 import { resolveWorkspaceId } from "@/lib/workspace";
 import type { EdmBilledPlan } from "./metadata";
+import {
+  assertCheckoutTargetAllowed,
+  normalizeWorkspacePlan,
+  type WorkspacePlan,
+} from "./checkout-plan";
 
 export function normalizeCheckoutPlan(
   value: FormDataEntryValue | null,
@@ -59,9 +64,27 @@ export async function requireEdmBillingCheckout(
     return { ok: false as const, status: 403, error: "仅管理员可升级套餐。" };
   }
 
+  const { data: workspace, error: planError } = await db
+    .from("workspaces")
+    .select("plan")
+    .eq("id", workspaceId)
+    .maybeSingle();
+  if (planError || !workspace) {
+    return { ok: false as const, status: 400, error: "工作区不存在。" };
+  }
+  const workspacePlan = normalizeWorkspacePlan(workspace.plan);
+
   return {
     ok: true as const,
     user,
     workspaceId,
+    workspacePlan,
   };
+}
+
+export function validateCheckoutPlanForWorkspace(
+  workspacePlan: WorkspacePlan,
+  targetPlan: EdmBilledPlan,
+) {
+  return assertCheckoutTargetAllowed(workspacePlan, targetPlan);
 }

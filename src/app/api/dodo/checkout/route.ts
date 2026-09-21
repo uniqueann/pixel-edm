@@ -6,6 +6,7 @@ import {
   normalizeCheckoutInterval,
   normalizeCheckoutPlan,
   requireEdmBillingCheckout,
+  validateCheckoutPlanForWorkspace,
 } from "@/lib/billing/checkout-context";
 
 export const runtime = "nodejs";
@@ -27,6 +28,14 @@ export async function POST(request: Request) {
   const plan = normalizeCheckoutPlan(formData?.get("plan") ?? null);
   const interval = normalizeCheckoutInterval(formData?.get("interval") ?? null);
 
+  const planCheck = validateCheckoutPlanForWorkspace(ctx.workspacePlan, plan);
+  if (!planCheck.ok) {
+    return NextResponse.json(
+      { ok: false, error: planCheck.error },
+      { status: 400 },
+    );
+  }
+
   let productId: string;
   try {
     productId = getDodoEdmProductId(plan, interval);
@@ -37,7 +46,7 @@ export async function POST(request: Request) {
   }
 
   const client = getDodoClient();
-  const returnUrl = `${siteUrl()}/settings?checkout=success&provider=dodo`;
+  const returnUrl = `${siteUrl()}/settings?checkout=success&provider=dodo&plan=${plan}`;
 
   try {
     const session = await client.checkoutSessions.create({
