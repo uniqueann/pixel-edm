@@ -295,6 +295,8 @@ const server = createServer(async (req, res) => {
         "get_campaign_delivery_summaries",
         "get_campaign_delivery_statistics",
         "get_workspace_campaign_statistics",
+        "get_workspace_delivery_plan",
+        "get_workspace_billing_status",
         "list_campaign_delivery_tasks",
         "resolve_delivery_unknown",
         "list_workspace_team",
