@@ -97,8 +97,9 @@ export function BillingUpgrade({
                 <DialogTitle>选择支付方式</DialogTitle>
                 <DialogDescription>
                   Pixel EDM 专业版（{interval === "yearly" ? "年付" : "月付"}
-                  ）· 最多 5,000 位有效客户、不限自定义模板与活动确认、打开/点击统计与
-                  7 日操作日志；个人单人使用，团队邀请请选团队版。支付由第三方处理，不会在本站保存卡号。
+                  ）· 最多 5,000
+                  位有效客户、不限自定义模板与活动确认、打开/点击统计与 7
+                  日操作日志；个人单人使用，团队邀请请选团队版。支付由第三方处理，不会在本站保存卡号。
                 </DialogDescription>
               </DialogHeader>
               <div className="flex gap-2">
