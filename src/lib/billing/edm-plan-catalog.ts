@@ -22,14 +22,11 @@ export function edmPlanCheckoutDescription(
   plan: EdmBilledPlan,
   interval: "monthly" | "yearly",
 ) {
+  const cycle = interval === "yearly" ? "年付" : "月付";
   if (plan === "team") {
-    return interval === "yearly"
-      ? "Pixel EDM 团队版（年付）· 最多 25,000 位有效客户、20 个团队席位、完整操作日志与协作邀请；含专业版发信与统计能力。"
-      : "Pixel EDM 团队版（月付）· 最多 25,000 位有效客户、20 个团队席位、完整操作日志与协作邀请；含专业版发信与统计能力。";
+    return `团队版（${cycle}）：最多 25,000 位有效客户、20 个团队席位、完整操作日志与成员邀请；含专业版发信与打开/点击统计。`;
   }
-  return interval === "yearly"
-    ? "Pixel EDM 专业版（年付）· 最多 5,000 位有效客户、不限模板与活动确认、打开/点击统计与 7 日操作日志；单人使用。"
-    : "Pixel EDM 专业版（月付）· 最多 5,000 位有效客户、不限模板与活动确认、打开/点击统计与 7 日操作日志；单人使用。";
+  return `专业版（${cycle}）：最多 5,000 位有效客户、不限自定义模板与活动确认、打开/点击统计与 7 日操作日志；单人使用。`;
 }
 
 export function edmPlanShortLabel(plan: EdmBilledPlan) {
