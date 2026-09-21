@@ -2,7 +2,7 @@
 
 基于交互原型构建的邮件营销管理应用。第一批已实现工程基础、真实 Auth 接入、EDM 用户和工作区数据库、七页应用外壳及基础设置。
 
-进度更新：2026-09-18，P1 至 P5 已完成工程交付；P6-0 至 P6-3 已完成工程实现，P6-4 已完成审计与自动化验收，生产双账号邀请接受的人工验收待完成。P4-2 的 DirectMail 真实测试信及 P4-3 正式活动发送已通过验收；P5 已完成真实投递回执、公开退订、工作区抑制、行为追踪和活动统计闭环验收。用户已实际验证 Google 登录与邮箱重置。
+进度更新：2026-09-21，P1 至 P5 已完成工程交付；P6-0 至 P6-3 已完成工程实现，P6-4 已完成审计与自动化验收，生产双账号邀请接受的人工验收待完成。P4-2 的 DirectMail 真实测试信及 P4-3 正式活动发送已通过验收；P5 已完成真实投递回执、公开退订、工作区抑制、行为追踪和活动统计闭环验收。P11-0 至 P11-3 已完成，Dodo 测试模式支付已由用户验证，Dodo 正式商品、Webhook、Production 环境变量和最新部署已完成；正式支付与回调闭环仍待重新验收。用户已实际验证 Google 登录与邮箱重置。
 
 ## 正式部署
 
@@ -10,6 +10,7 @@
 - Vercel 项目：`pixel-edm`，已完成首次生产部署和正式域名绑定。
 - Cloudflare：`edm` 的 CNAME 指向 `0ad5ec7ada8335ab.vercel-dns-017.com`，采用仅 DNS 模式。
 - Production 和 Preview 的 `NEXT_PUBLIC_SITE_URL` 已配置为 `https://edm.contentup.cc`；本地继续使用本地 origin。
+- 最新 Production 部署已加载 Dodo `live_mode` 配置，正式域名仍为 `https://edm.contentup.cc`；Dodo Checkout 的正式支付回调验收待用户重新发起付款。
 - Supabase 连接使用 content-up 的项目地址和公开客户端密钥；不在文档记录密钥值。
 
 ## 本地启动
@@ -105,4 +106,6 @@ P6-0 至 P6-3 已完成并部署，P6-4 已完成审计与自动化验收，生�
 
 P8 多 ESP 支持已完成规划定稿和 P8-1 数据库去耦，P8-2 适配器层与 worker 分发已发布到 content-up，P8-3 配置界面按 provider 动态化已完成工程实现：第二家 ESP 选定 Amazon SES，首版只支持阿里云邮件推送和 SES 两家，同一工作区同时只有一个主发送通道，不做自动故障切换。P8-1 引入 `edm.delivery_providers` 注册表和逐厂商 `provider_config`，归一化凭据提示、退信分级、限速与发送运行冻结；云端已应用 `20260919024521_p8_delivery_provider_registry`，Advisor 无新增 P8 告警。P8-2 将适配器统一为发送、错误分类、回执解析、Webhook 验签和能力描述五件套，DirectMail 原行为平移保留兼容入口，新增 SES v2 / SigV4 发送、SNS SignatureVersion 2 与 Topic ARN 双重鉴权、订阅握手、多收件人事件拆分及硬退/软退归一化；SES 发送尝试和任务显式保存 `provider_message_id`，不借用 DirectMail EnvId。通用 worker 与测试函数按冻结 provider 分派，SES 不启用厂商列表管理并使用 `ses:no-track` 排除自建退订链接。121 项测试及 Edge/Next 类型、Lint、格式和生产构建均通过。P8-3 引入 provider 描述符驱动的通道表单、能力矩阵、多通道列表与主通道切换，DirectMail 既有路径无可见回归；`amazon_ses` 在 P8-4 真实验收前继续保持 `enabled=false`，详见 [P8 多 ESP 支持交付清单](development-checklist-p8-multi-esp.md)。
 
-设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 P1、P2、P3、P4、P5、P6 与 P8 交付清单；原始交互文件归档于 `references/seller-post-office-premium.html`。
+P11 套餐与支付已完成 P11-0 至 P11-3：EDM 使用 `edm.workspaces.plan`，不复用主站 `profiles.plan`；设置页支持管理员选择 Pro 月付/年付和 Creem/Dodo Checkout，Webhook 仅处理 `productScope=edm` 的事件。价格已定为 USD 9.90/月、USD 99.90/年。Dodo 测试模式支付已由用户验证；正式模式已创建 EDM 商品和独立 Webhook，`pixel-edm` Vercel Production 已切换 `live_mode` 并重新部署。此前一次正式 Checkout 因运行时密钥配置异常返回 ByteString 错误，已重新写入正式密钥并完成修复部署；正式付款、Webhook 同步 plan、取消/过期回退的真实验收仍待完成。详见 [P11 账单交付清单](development-checklist-p11-billing.md)、[P11 支付桥接说明](docs/p11-payment-contentup-bridge.md) 和 [Webhook 登记清单](docs/p11-webhook-dashboard-checklist.md)。
+
+设计依据见 `architecture-draft-v1.3.md`、`development-plan-v0.1.md`；逐项状态见 P1、P2、P3、P4、P5、P6、P8、P10 与 P11 交付清单；原始交互文件归档于 `references/seller-post-office-premium.html`。

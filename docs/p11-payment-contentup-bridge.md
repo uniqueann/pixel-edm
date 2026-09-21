@@ -1,6 +1,6 @@
 # P11 支付：content-up 现状与 EDM 对接
 
-更新日期：2026-09-20。
+更新日期：2026-09-21。
 
 ## content-up 已接通（主站 `https://contentup.cc`）
 
@@ -42,14 +42,21 @@
 | Dodo Checkout | `POST https://edm.contentup.cc/api/dodo/checkout` |
 | 支付成功回跳 | `https://edm.contentup.cc/settings?checkout=success&provider=…` |
 
-主站 Dashboard 里已指向 `contentup.cc` 的 Webhook **保持不变**。2026-09-20 已在 Creem 正式环境与 Dodo 测试环境分别创建 EDM Pro 月付（USD 9.90）和年付（USD 99.90）商品，并新增指向上表 EDM 地址的独立 Webhook；商品 ID 与 endpoint 独立密钥仅保存于 pixel-edm Vercel Production。
+主站 Dashboard 里已指向 `contentup.cc` 的 Webhook **保持不变**。2026-09-20 已在 Creem 正式环境与 Dodo 测试环境创建 EDM Pro 月付（USD 9.90）和年付（USD 99.90）商品，并新增指向上表 EDM 地址的独立 Webhook。2026-09-21 又完成 Dodo 正式环境商品、正式 Webhook、正式 API Key 和独立 Webhook Key 配置，当前 `pixel-edm` Vercel Production 使用 `live_mode`；商品 ID 与 endpoint 独立密钥只用于 EDM，不写入仓库或文档中的密钥字段。
 
 ## 实现要点
 
 1. **独立 EDM 商品**：`CREEM_EDM_*` / `DODO_EDM_*` 环境变量（见 `.env.example`），与主站 `CREEM_PRO_*` 分离。
 2. **Checkout metadata**：`userId`、`workspaceId`、`billedPlan`（`pro` \| `team`）、`productScope=edm`。
 3. **Webhook**：验签后仅当 `productScope=edm` 时调 `edm.sync_workspace_plan_from_payment`（service_role）；无主站 metadata 的事件自然忽略。
-4. **UI（待接）**：设置页表单 POST 到上述 checkout 路由。
+4. **UI（已接入）**：设置页由管理员选择月付/年付及 Creem/Dodo，表单 POST 到上述 checkout 路由；支付成功回跳 `/settings?checkout=success&provider=…`。
+
+## 当前运行状态
+
+- P11-0 至 P11-3 已完成：工作区账单事实、受控同步 RPC、Creem/Dodo Checkout、独立 Webhook 和设置页升级入口均已实现。
+- Dodo 测试模式 Checkout 已由用户验证通过；Dodo 正式商品和正式 Webhook 已创建，正式配置已写入 Vercel Production 并重新部署。
+- 2026-09-21 的一次正式 Checkout 请求曾因运行时密钥配置异常触发 ByteString 错误；已重新写入正式 API Key/Webhook Key 并部署修复配置。Dodo 正式支付及 Webhook 到工作区 plan 的真实闭环仍需用户重新发起一次付款验收。
+- 主站 `contentup.cc` 的 `profiles`、既有支付路由、`aigc` schema 和共享 Auth 触发器不在本次配置范围内。
 
 ## 参考文件（content-up 仓库）
 
