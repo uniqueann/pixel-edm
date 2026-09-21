@@ -32,6 +32,18 @@ npm run setup:hooks
 - **每次创建或更新 PR 前**：必须 `npm run ci:verify`（E2E 常因导航、套餐门控、`tests/auth-fixture.mjs` 未注册新 RPC 而失败）。
 - 改动涉及 **设置页 / 导航 / 套餐 / 新 `edm.*` RPC** 时，同步检查 E2E 种子与 `tests/e2e/*.spec.ts`。
 
+## Creem / Dodo Dashboard 改 Team 商品后
+
+在支付平台改过 Pixel EDM Team（或需重推）商品 id 后，**先解析再同步、再部署**：
+
+```sh
+node scripts/resolve-edm-team-product-ids.mjs production
+./scripts/sync-vercel-billing-env.sh
+npx vercel deploy --prod --yes
+```
+
+详见 `docs/p11-team-billing-setup.md`、`.cursor/rules/edm-billing-product-env.mdc`。
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
