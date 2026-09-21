@@ -45,6 +45,8 @@ npm run setup:hooks   # 推送前 ci:push
 
 `scripts/sync-vercel-billing-env.sh` 会映射 content-up 的 `CREEM_TEAM_*` → `CREEM_EDM_TEAM_*`；若 `pixel-edm/.env.local` 已填写 `CREEM_EDM_TEAM_*` / `DODO_EDM_TEAM_*`，脚本会覆盖写入 Vercel Production 与 Preview。
 
+**常见错误**：把 Dodo **测试** Team id（如 `pdt_0No4ruXT…`）或 Creem **非正式** id 写入 Production，而运行时 `DODO_PAYMENTS_ENVIRONMENT=live_mode`、Creem 走正式 API → Checkout 报 `Product not found` / `does not exist`。Production 应使用 `development-checklist-p11-billing.md` 中的正式 Team id；可用 `node scripts/resolve-edm-team-product-ids.mjs production` 从 Dashboard 按名称解析最新 id。
+
 ## 4. 验收
 
 1. **free → team**：设置页「购买团队版」→ Dodo test 或 Creem → Webhook → `edm.workspaces.plan = team`，设置页显示 25k/20 席与团队 Tab。
