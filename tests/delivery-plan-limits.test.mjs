@@ -44,6 +44,11 @@ test("P10 套餐发信额度（无支付）", async (t) => {
       assert.equal(result.max_active_members, 1);
       assert.equal(result.active_members, 1);
       assert.equal(result.remaining_member_slots, 0);
+      assert.equal(result.max_custom_templates, 3);
+      assert.equal(result.max_confirmed_campaigns_per_month, 3);
+      assert.equal(result.activity_log_retention_days, 0);
+      assert.equal(result.allows_campaign_statistics, false);
+      assert.equal(result.allows_team_collaboration, false);
       assert.equal(result.daily_send_quota, 1000);
       assert.equal(result.usage_today, 0);
       assert.equal(result.remaining_today, 1000);
@@ -64,7 +69,7 @@ test("P10 套餐发信额度（无支付）", async (t) => {
             token_hint: "a123",
           }),
         ),
-        /当前套餐最多 1 位工作区成员/,
+        /团队成员与邀请仅团队版可用/,
       );
     });
 

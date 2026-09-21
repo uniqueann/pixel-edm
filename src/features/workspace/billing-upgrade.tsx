@@ -56,14 +56,21 @@ export function BillingUpgrade({
     <div className="rounded-lg border border-border/80 bg-muted/30 px-4 py-3 text-sm">
       <p className="font-medium text-foreground">
         当前套餐：{label} · 有效客户 {deliveryPlan.billable_contacts} /{" "}
-        {deliveryPlan.max_billable_contacts} · 成员{" "}
-        {deliveryPlan.active_members} / {deliveryPlan.max_active_members}
+        {deliveryPlan.max_billable_contacts}
+        {deliveryPlan.max_custom_templates !== null
+          ? ` · 自定义模板 ${deliveryPlan.custom_templates} / ${deliveryPlan.max_custom_templates}`
+          : " · 自定义模板不限"}
+        {deliveryPlan.max_confirmed_campaigns_per_month !== null
+          ? ` · 本月已确认活动 ${deliveryPlan.confirmed_campaigns_this_month} / ${deliveryPlan.max_confirmed_campaigns_per_month}`
+          : null}
       </p>
       <p className="hint mt-1 mb-0">
-        单活动最多 {deliveryPlan.max_recipients_per_campaign}{" "}
-        位收件人。平台日发信护栏 {deliveryPlan.usage_today} /{" "}
-        {deliveryPlan.daily_send_quota} 封（{deliveryPlan.quota_timezone}
-        日界，发信费用仍由你的 ESP 账户承担）。
+        单活动最多 {deliveryPlan.max_recipients_per_campaign} 位收件人。
+        {deliveryPlan.allows_team_collaboration
+          ? ` 团队席位 ${deliveryPlan.active_members} / ${deliveryPlan.max_active_members}。`
+          : " 个人版为单人使用，协作请升级团队版。"}
+        平台日发信护栏 {deliveryPlan.usage_today} /{" "}
+        {deliveryPlan.daily_send_quota} 封（{deliveryPlan.quota_timezone} 日界）。
       </p>
       {billing?.has_payment_provider && (
         <p className="hint mt-2 mb-0">

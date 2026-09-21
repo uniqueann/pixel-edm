@@ -38,6 +38,8 @@ export function AppShell({
   workspaceId,
   workspaces,
   type,
+  showTeamNav = false,
+  showLogsNav = false,
 }: {
   children: React.ReactNode;
   name: string;
@@ -45,6 +47,8 @@ export function AppShell({
   workspaceId: string;
   workspaces: { id: string; name: string }[];
   type: string;
+  showTeamNav?: boolean;
+  showLogsNav?: boolean;
 }) {
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
@@ -110,7 +114,8 @@ export function AppShell({
       </section>
       <nav className="tabs" aria-label="邮局导航">
         {tabs
-          .filter(([slug]) => slug !== "logs" || role === "admin")
+          .filter(([slug]) => slug !== "team" || showTeamNav)
+          .filter(([slug]) => slug !== "logs" || (role === "admin" && showLogsNav))
           .map(([slug, label]) => (
             <Link
               key={slug}

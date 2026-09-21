@@ -11,6 +11,15 @@ export type WorkspaceDeliveryPlan = {
   max_active_members: number;
   active_members: number;
   remaining_member_slots: number;
+  max_custom_templates: number | null;
+  custom_templates: number;
+  remaining_custom_templates: number | null;
+  max_confirmed_campaigns_per_month: number | null;
+  confirmed_campaigns_this_month: number;
+  remaining_confirmed_campaigns_this_month: number | null;
+  activity_log_retention_days: number | null;
+  allows_campaign_statistics: boolean;
+  allows_team_collaboration: boolean;
   daily_send_quota: number;
   usage_today: number;
   remaining_today: number;
@@ -37,6 +46,20 @@ export async function getWorkspaceDeliveryPlan(
     typeof row.max_active_members !== "number" ||
     typeof row.active_members !== "number" ||
     typeof row.remaining_member_slots !== "number" ||
+    (row.max_custom_templates !== null &&
+      typeof row.max_custom_templates !== "number") ||
+    typeof row.custom_templates !== "number" ||
+    (row.remaining_custom_templates !== null &&
+      typeof row.remaining_custom_templates !== "number") ||
+    (row.max_confirmed_campaigns_per_month !== null &&
+      typeof row.max_confirmed_campaigns_per_month !== "number") ||
+    typeof row.confirmed_campaigns_this_month !== "number" ||
+    (row.remaining_confirmed_campaigns_this_month !== null &&
+      typeof row.remaining_confirmed_campaigns_this_month !== "number") ||
+    (row.activity_log_retention_days !== null &&
+      typeof row.activity_log_retention_days !== "number") ||
+    typeof row.allows_campaign_statistics !== "boolean" ||
+    typeof row.allows_team_collaboration !== "boolean" ||
     typeof row.daily_send_quota !== "number" ||
     typeof row.usage_today !== "number" ||
     typeof row.remaining_today !== "number" ||
@@ -53,6 +76,30 @@ export async function getWorkspaceDeliveryPlan(
     max_active_members: row.max_active_members,
     active_members: row.active_members,
     remaining_member_slots: row.remaining_member_slots,
+    max_custom_templates:
+      row.max_custom_templates === null
+        ? null
+        : (row.max_custom_templates as number),
+    custom_templates: row.custom_templates,
+    remaining_custom_templates:
+      row.remaining_custom_templates === null
+        ? null
+        : (row.remaining_custom_templates as number),
+    max_confirmed_campaigns_per_month:
+      row.max_confirmed_campaigns_per_month === null
+        ? null
+        : (row.max_confirmed_campaigns_per_month as number),
+    confirmed_campaigns_this_month: row.confirmed_campaigns_this_month,
+    remaining_confirmed_campaigns_this_month:
+      row.remaining_confirmed_campaigns_this_month === null
+        ? null
+        : (row.remaining_confirmed_campaigns_this_month as number),
+    activity_log_retention_days:
+      row.activity_log_retention_days === null
+        ? null
+        : (row.activity_log_retention_days as number),
+    allows_campaign_statistics: row.allows_campaign_statistics,
+    allows_team_collaboration: row.allows_team_collaboration,
     daily_send_quota: row.daily_send_quota,
     usage_today: row.usage_today,
     remaining_today: row.remaining_today,

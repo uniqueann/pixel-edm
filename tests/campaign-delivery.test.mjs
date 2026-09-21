@@ -30,6 +30,7 @@ test("P4-3 正式发送队列、重试、暂停与未知结果核对", async (t)
     "update edm.workspaces set mailing_address='上海市测试路 1 号' where id=$1",
     [workspace],
   );
+  await db.query("update edm.workspaces set plan='pro' where id=$1", [workspace]);
   await asUser(db, editor, "select edm.initialize_member()");
   await db.query(
     "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'editor')",
