@@ -36,11 +36,14 @@ Webhook 仍用现有 **Pixel EDM Production Webhook**（`https://edm.contentup.c
 ## 3. Vercel / 本地
 
 ```sh
-# 可选：若 content-up .env.local 已有 CREEM_TEAM_* / DODO_TEAM_*，可手动映射到 EDM 变量
+# 从 content-up 或 pixel-edm .env.local 同步密钥与商品 ID（Team 优先读 pixel-edm 的 CREEM_EDM_TEAM_*）
+./scripts/sync-vercel-billing-env.sh
+# 同步后必须重新部署，否则运行时仍读不到新变量
+npx vercel deploy --prod --yes
 npm run setup:hooks   # 推送前 ci:push
 ```
 
-`scripts/sync-vercel-billing-env.sh` 在源文件存在 `CREEM_TEAM_*` / `DODO_TEAM_*` 时会尝试复制到 `CREEM_EDM_TEAM_*` / `DODO_EDM_TEAM_*`（见脚本注释）。
+`scripts/sync-vercel-billing-env.sh` 会映射 content-up 的 `CREEM_TEAM_*` → `CREEM_EDM_TEAM_*`；若 `pixel-edm/.env.local` 已填写 `CREEM_EDM_TEAM_*` / `DODO_EDM_TEAM_*`，脚本会覆盖写入 Vercel Production 与 Preview。
 
 ## 4. 验收
 

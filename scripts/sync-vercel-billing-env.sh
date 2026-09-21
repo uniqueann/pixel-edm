@@ -63,4 +63,25 @@ copy_env CREEM_EDM_TEAM_YEARLY_PRODUCT_ID CREEM_TEAM_YEARLY_PRODUCT_ID
 copy_env DODO_EDM_TEAM_MONTHLY_PRODUCT_ID DODO_TEAM_MONTHLY_PRODUCT_ID
 copy_env DODO_EDM_TEAM_YEARLY_PRODUCT_ID DODO_TEAM_YEARLY_PRODUCT_ID
 
-echo "完成。若 content-up 尚无 Team 商品，请在 Creem/Dodo 创建 EDM Team SKU 后 vercel env add CREEM_EDM_TEAM_* / DODO_EDM_TEAM_*（见 docs/p11-team-billing-setup.md）"
+# pixel-edm 本地若已写 CREEM_EDM_TEAM_* / DODO_EDM_TEAM_*，优先推到 Vercel（避免只建了 key 无值）
+LOCAL_ENV="$ROOT/.env.local"
+if [[ -f "$LOCAL_ENV" ]]; then
+  push_local_edm_team() {
+    local name=$1
+    local val
+    val="$(grep -m1 "^${name}=" "$LOCAL_ENV" | cut -d= -f2- || true)"
+    if [[ -z "${val}" ]]; then
+      return
+    fi
+    for env in production preview; do
+      printf '%s' "$val" | npx vercel env add "$name" "$env" --force --yes >/dev/null
+    done
+    echo "set ${name} (from pixel-edm .env.local)"
+  }
+  for key in CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID CREEM_EDM_TEAM_YEARLY_PRODUCT_ID \
+    DODO_EDM_TEAM_MONTHLY_PRODUCT_ID DODO_EDM_TEAM_YEARLY_PRODUCT_ID; do
+    push_local_edm_team "$key"
+  done
+fi
+
+echo "完成。写入 Vercel 后需重新部署 Production/Preview 才会生效；见 docs/p11-team-billing-setup.md"

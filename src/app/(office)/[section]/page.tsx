@@ -27,6 +27,7 @@ import { getWorkspaceBillingStatus } from "@/features/workspace/billing";
 import { BillingUpgrade } from "@/features/workspace/billing-upgrade";
 import { CheckoutSuccessToast } from "@/features/workspace/checkout-toast";
 import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
+import { edmCheckoutAvailability } from "@/lib/billing/edm-product-config";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -116,6 +117,7 @@ export default async function Page({
               deliveryPlan={deliveryPlan}
               billing={billingStatus}
               canUpgrade={role === "admin"}
+              checkoutAvailability={edmCheckoutAvailability()}
             />
           </div>
         )}

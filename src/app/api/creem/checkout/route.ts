@@ -12,6 +12,7 @@ import {
   requireEdmBillingCheckout,
   validateCheckoutPlanForWorkspace,
 } from "@/lib/billing/checkout-context";
+import { redirectCheckoutError } from "@/lib/billing/checkout-redirect";
 
 export const runtime = "nodejs";
 
@@ -46,7 +47,12 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Creem 商品未配置。";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return redirectCheckoutError({
+      reason: "missing_product",
+      plan,
+      provider: "creem",
+      message,
+    });
   }
 
   const apiKey = getCreemApiKey();

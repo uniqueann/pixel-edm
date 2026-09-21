@@ -12,11 +12,17 @@ import {
 } from "./plan-labels";
 import { BillingCheckoutDialog } from "./billing-checkout-dialog";
 
+export type EdmCheckoutAvailability = {
+  pro: boolean;
+  team: boolean;
+};
+
 type BillingUpgradeProps = {
   workspaceId: string;
   deliveryPlan: WorkspaceDeliveryPlan;
   billing: WorkspaceBillingStatus | null;
   canUpgrade: boolean;
+  checkoutAvailability?: EdmCheckoutAvailability;
 };
 
 function formatPeriodEnd(iso: string | null) {
@@ -35,6 +41,7 @@ export function BillingUpgrade({
   deliveryPlan,
   billing,
   canUpgrade,
+  checkoutAvailability = { pro: true, team: true },
 }: BillingUpgradeProps) {
   const [checkoutPlan, setCheckoutPlan] = useState<EdmBilledPlan | null>(null);
   const label = deliveryPlanLabel(
@@ -45,8 +52,11 @@ export function BillingUpgrade({
   const periodEnd = formatPeriodEnd(billing?.current_period_end ?? null);
 
   const canBuyPro = canUpgrade && deliveryPlan.plan === "free";
+  const teamSkuReady = checkoutAvailability.team;
   const canBuyTeam =
-    canUpgrade && (deliveryPlan.plan === "free" || deliveryPlan.plan === "pro");
+    teamSkuReady &&
+    canUpgrade &&
+    (deliveryPlan.plan === "free" || deliveryPlan.plan === "pro");
 
   return (
     <div className="rounded-lg border border-border/80 bg-muted/30 px-4 py-3 text-sm">
@@ -102,6 +112,15 @@ export function BillingUpgrade({
               {deliveryPlan.plan === "pro" ? "升级团队版" : "购买团队版"}
             </Button>
           )}
+          {canUpgrade &&
+            (deliveryPlan.plan === "free" || deliveryPlan.plan === "pro") &&
+            !teamSkuReady && (
+              <p className="hint mb-0 w-full text-left text-xs">
+                团队版支付商品尚未在本环境配置（Vercel 需设置 CREEM_EDM_TEAM_* /
+                DODO_EDM_TEAM_* 并重新部署，见
+                docs/p11-team-billing-setup.md）。
+              </p>
+            )}
         </div>
       )}
       {checkoutPlan && (
