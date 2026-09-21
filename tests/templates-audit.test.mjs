@@ -21,7 +21,9 @@ test("模板初始化、变量校验、权限与 P2 业务审计", async (t) => 
     values('${workspace}','${editor}','editor'),('${workspace}','${viewer}','viewer')
   `);
   // 操作日志用例需专业版及以上（免费版不可查看日志）
-  await db.query("update edm.workspaces set plan='pro' where id=$1", [workspace]);
+  await db.query("update edm.workspaces set plan='pro' where id=$1", [
+    workspace,
+  ]);
   const rpc = async (name, payload, user = admin) =>
     (
       await asUser(

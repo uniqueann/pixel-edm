@@ -70,7 +70,8 @@ export function BillingUpgrade({
           ? ` 团队席位 ${deliveryPlan.active_members} / ${deliveryPlan.max_active_members}。`
           : " 个人版为单人使用，协作请升级团队版。"}
         平台日发信护栏 {deliveryPlan.usage_today} /{" "}
-        {deliveryPlan.daily_send_quota} 封（{deliveryPlan.quota_timezone} 日界）。
+        {deliveryPlan.daily_send_quota} 封（{deliveryPlan.quota_timezone}{" "}
+        日界）。
       </p>
       {billing?.has_payment_provider && (
         <p className="hint mt-2 mb-0">
@@ -96,7 +97,8 @@ export function BillingUpgrade({
                 <DialogTitle>选择支付方式</DialogTitle>
                 <DialogDescription>
                   Pixel EDM 专业版（{interval === "yearly" ? "年付" : "月付"}
-                  ）· 更大客户名单与团队协作席位。支付由第三方处理，不会经过本站点保存卡号。
+                  ）·
+                  更大客户名单与团队协作席位。支付由第三方处理，不会经过本站点保存卡号。
                 </DialogDescription>
               </DialogHeader>
               <div className="flex gap-2">

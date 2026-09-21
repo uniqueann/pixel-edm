@@ -115,7 +115,9 @@ export function AppShell({
       <nav className="tabs" aria-label="邮局导航">
         {tabs
           .filter(([slug]) => slug !== "team" || showTeamNav)
-          .filter(([slug]) => slug !== "logs" || (role === "admin" && showLogsNav))
+          .filter(
+            ([slug]) => slug !== "logs" || (role === "admin" && showLogsNav),
+          )
           .map(([slug, label]) => (
             <Link
               key={slug}

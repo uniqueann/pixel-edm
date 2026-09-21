@@ -9,8 +9,7 @@ export default async function Layout({
   const { member, workspace, workspaces, role } = await getContext();
   const deliveryPlan = await getWorkspaceDeliveryPlan(workspace.id);
   const showLogsNav =
-    deliveryPlan !== null &&
-    deliveryPlan.activity_log_retention_days !== 0;
+    deliveryPlan !== null && deliveryPlan.activity_log_retention_days !== 0;
   const showTeamNav = deliveryPlan?.allows_team_collaboration ?? false;
   return (
     <AppShell
