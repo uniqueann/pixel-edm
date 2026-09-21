@@ -16,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 /** 两个通道能力一致，副标题统一，避免「产品订阅 / 国际支付」造成误解。 */
 const CHECKOUT_PROVIDER_HINT = "订阅结账";
@@ -37,6 +39,7 @@ export function BillingCheckoutDialog({
   showProCancelHint = false,
 }: BillingCheckoutDialogProps) {
   const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
+  const [discountCode, setDiscountCode] = useState("");
   const pricing = EDM_PLAN_PRICING[checkoutPlan];
   const priceLabel =
     interval === "yearly"
@@ -92,6 +95,8 @@ export function BillingCheckoutDialog({
             providerName="Creem"
             providerHint={CHECKOUT_PROVIDER_HINT}
             variant="default"
+            discountCode={discountCode}
+            onDiscountCodeChange={setDiscountCode}
           />
           <BillingProviderForm
             action="/api/dodo/checkout"
@@ -124,6 +129,8 @@ function BillingProviderForm({
   providerName,
   providerHint,
   variant,
+  discountCode,
+  onDiscountCodeChange,
 }: {
   action: string;
   workspaceId: string;
@@ -132,12 +139,39 @@ function BillingProviderForm({
   providerName: string;
   providerHint: string;
   variant: "default" | "outline" | "secondary";
+  discountCode?: string;
+  onDiscountCodeChange?: (value: string) => void;
 }) {
   return (
     <form action={action} method="post">
       <input type="hidden" name="workspace_id" value={workspaceId} />
       <input type="hidden" name="plan" value={plan} />
       <input type="hidden" name="interval" value={interval} />
+      {onDiscountCodeChange ? (
+        <div className="mb-3 space-y-1.5">
+          <Label htmlFor="creem-discount-code">Creem 优惠码（可选）</Label>
+          <Input
+            id="creem-discount-code"
+            name="discount_code"
+            value={discountCode ?? ""}
+            onChange={(event) =>
+              onDiscountCodeChange(event.target.value.toUpperCase())
+            }
+            maxLength={14}
+            pattern="[A-Za-z0-9]{1,14}"
+            placeholder="输入优惠码"
+            autoComplete="off"
+            autoCapitalize="characters"
+            aria-describedby="creem-discount-code-hint"
+          />
+          <p
+            id="creem-discount-code-hint"
+            className="text-xs leading-relaxed text-muted-foreground"
+          >
+            仅支持大写字母和数字，优惠是否有效由 Creem 结账页校验。
+          </p>
+        </div>
+      ) : null}
       <Button
         type="submit"
         variant={variant}

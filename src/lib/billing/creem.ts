@@ -32,3 +32,15 @@ export function getCreemEdmProductId(
 export function isCreemTestMode() {
   return process.env.NODE_ENV !== "production";
 }
+
+/** 规范化并校验 Creem 优惠码，避免把无效格式提交到支付平台。 */
+export function normalizeCreemDiscountCode(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") return "";
+
+  const code = value.trim().toUpperCase();
+  if (!code) return "";
+  if (!/^[A-Z0-9]{1,14}$/.test(code)) {
+    throw new Error("Creem 优惠码格式无效：仅支持 1-14 位大写字母或数字。");
+  }
+  return code;
+}
