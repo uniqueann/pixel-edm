@@ -6,7 +6,7 @@
 
 | 档位 | 月付 | 年付 |
 |------|------|------|
-| Team | USD 49.90 | USD 499.90 |
+| Team | USD 29.90 | USD 299.90 |
 
 商品名称建议：**Pixel EDM Team Monthly** / **Pixel EDM Team Yearly**（与 Pro 命名并列）。
 
