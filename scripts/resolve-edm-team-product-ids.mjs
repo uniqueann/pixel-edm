@@ -95,6 +95,8 @@ if (mode === "preview") {
     else console.log(`${k}=${v}`);
   }
 } else {
-  console.error("用法: node scripts/resolve-edm-team-product-ids.mjs [production|preview]");
+  console.error(
+    "用法: node scripts/resolve-edm-team-product-ids.mjs [production|preview]",
+  );
   process.exit(1);
 }
