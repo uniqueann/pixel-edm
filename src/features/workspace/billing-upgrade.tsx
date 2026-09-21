@@ -55,12 +55,15 @@ export function BillingUpgrade({
   return (
     <div className="rounded-lg border border-border/80 bg-muted/30 px-4 py-3 text-sm">
       <p className="font-medium text-foreground">
-        当前套餐：{label} · 今日已用 {deliveryPlan.usage_today} /{" "}
-        {deliveryPlan.daily_send_quota} 封
+        当前套餐：{label} · 有效客户 {deliveryPlan.billable_contacts} /{" "}
+        {deliveryPlan.max_billable_contacts} · 成员{" "}
+        {deliveryPlan.active_members} / {deliveryPlan.max_active_members}
       </p>
       <p className="hint mt-1 mb-0">
-        单活动最多 {deliveryPlan.max_recipients_per_campaign} 位收件人；日界按{" "}
-        {deliveryPlan.quota_timezone} 计算。
+        单活动最多 {deliveryPlan.max_recipients_per_campaign}{" "}
+        位收件人。平台日发信护栏 {deliveryPlan.usage_today} /{" "}
+        {deliveryPlan.daily_send_quota} 封（{deliveryPlan.quota_timezone}
+        日界，发信费用仍由你的 ESP 账户承担）。
       </p>
       {billing?.has_payment_provider && (
         <p className="hint mt-2 mb-0">
@@ -86,8 +89,7 @@ export function BillingUpgrade({
                 <DialogTitle>选择支付方式</DialogTitle>
                 <DialogDescription>
                   Pixel EDM 专业版（{interval === "yearly" ? "年付" : "月付"}
-                  ）·
-                  更高发信额度与速率。支付由第三方处理，不会经过本站点保存卡号。
+                  ）· 更大客户名单与团队协作席位。支付由第三方处理，不会经过本站点保存卡号。
                 </DialogDescription>
               </DialogHeader>
               <div className="flex gap-2">

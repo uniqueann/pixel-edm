@@ -38,11 +38,69 @@ test("P10 套餐发信额度（无支付）", async (t) => {
       ).rows[0].result;
       assert.equal(result.plan, "free");
       assert.equal(result.plan_display_name, "Free");
+      assert.equal(result.max_billable_contacts, 500);
+      assert.equal(result.billable_contacts, 0);
+      assert.equal(result.remaining_billable_contacts, 500);
+      assert.equal(result.max_active_members, 1);
+      assert.equal(result.active_members, 1);
+      assert.equal(result.remaining_member_slots, 0);
       assert.equal(result.daily_send_quota, 1000);
       assert.equal(result.usage_today, 0);
       assert.equal(result.remaining_today, 1000);
       assert.equal(result.max_recipients_per_campaign, 500);
-      assert.doesNotMatch(JSON.stringify(result), /default_rate_per_second/);
+      assert.doesNotMatch(JSON.stringify(result), /max_rate_per_second/);
+    });
+
+    await t.test("free 档不可新增协作成员", async () => {
+      await assert.rejects(
+        asUser(
+          db,
+          admin,
+          rpc("create_workspace_invitation", {
+            workspace_id: workspace,
+            email: "collab@example.test",
+            role: "editor",
+            token_hash: "a".repeat(64),
+            token_hint: "a123",
+          }),
+        ),
+        /当前套餐最多 1 位工作区成员/,
+      );
+    });
+
+    await t.test("free 档限制有效客户数", async () => {
+      await db.query(
+        "update edm.delivery_plan_limits set max_billable_contacts=1 where plan='free'",
+      );
+      try {
+        await asUser(
+          db,
+          admin,
+          rpc("save_contact", {
+            workspace_id: workspace,
+            email: "limit-a@example.test",
+            name: "A",
+            tags: [],
+          }),
+        );
+        await assert.rejects(
+          asUser(
+            db,
+            admin,
+            rpc("save_contact", {
+              workspace_id: workspace,
+              email: "limit-b@example.test",
+              name: "B",
+              tags: [],
+            }),
+          ),
+          /当前套餐最多 1 位有效客户/,
+        );
+      } finally {
+        await db.query(
+          "update edm.delivery_plan_limits set max_billable_contacts=500 where plan='free'",
+        );
+      }
     });
 
     await t.test("pro 套餐提高确认上限与入队日额度校验", async () => {
@@ -56,14 +114,15 @@ test("P10 套餐发信额度（无支付）", async (t) => {
           rpc("get_workspace_delivery_plan", { workspace_id: workspace }),
         )
       ).rows[0].result;
+      assert.equal(plan.max_billable_contacts, 5000);
       assert.equal(plan.daily_send_quota, 10000);
-      assert.equal(plan.max_recipients_per_campaign, 2000);
+      assert.equal(plan.max_recipients_per_campaign, 5000);
 
       await assert.rejects(
         db.query(
-          `select edm_private.assert_campaign_recipient_limit('${workspace}'::uuid, 2001)`,
+          `select edm_private.assert_campaign_recipient_limit('${workspace}'::uuid, 5001)`,
         ),
-        /当前套餐下单个活动最多 2000 位收件人/,
+        /当前套餐下单个活动最多 5000 位收件人/,
       );
     });
 

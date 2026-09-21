@@ -811,6 +811,8 @@ export type Database = {
         Row: {
           plan: string;
           display_name: string;
+          max_billable_contacts: number;
+          max_active_members: number;
           max_recipients_per_campaign: number;
           daily_send_quota: number;
           max_rate_per_second: number;
@@ -821,6 +823,8 @@ export type Database = {
         Insert: {
           plan: string;
           display_name: string;
+          max_billable_contacts: number;
+          max_active_members: number;
           max_recipients_per_campaign: number;
           daily_send_quota: number;
           max_rate_per_second: number;
@@ -831,6 +835,8 @@ export type Database = {
         Update: {
           plan?: string;
           display_name?: string;
+          max_billable_contacts?: number;
+          max_active_members?: number;
           max_recipients_per_campaign?: number;
           daily_send_quota?: number;
           max_rate_per_second?: number;
