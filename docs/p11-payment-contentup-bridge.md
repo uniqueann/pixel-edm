@@ -58,6 +58,8 @@
 - 2026-09-21 的一次正式 Checkout 请求曾因运行时密钥配置异常触发 ByteString 错误；已重新写入正式 API Key/Webhook Key 并部署修复配置。Dodo 正式支付及 Webhook 到工作区 plan 的真实闭环仍需用户重新发起一次付款验收。
 - 主站 `contentup.cc` 的 `profiles`、既有支付路由、`aigc` schema 和共享 Auth 触发器不在本次配置范围内。
 
+**运行时环境（pixel-edm）**：Dodo 以 `DODO_PAYMENTS_ENVIRONMENT` 区分测试/正式（Production 当前为 `live_mode`）。Creem 无同名变量；`isCreemTestMode()` 在 `NODE_ENV !== "production"` 时为测试 API，Vercel Production 走 Creem 正式 API。
+
 ## 参考文件（content-up 仓库）
 
 - `supabase/creem_subscription_patch.sql`、`supabase/dodo_subscription_patch.sql`、`supabase/dodo_events.sql`

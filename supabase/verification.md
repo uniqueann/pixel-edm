@@ -215,10 +215,17 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 - 已重新部署 Edge `edm-delivery-worker`（含 `EDM_WORKER_CLAIM_LIMIT` 默认 50）。未改 Supabase 项目 Secrets 时沿用既有 `EDM_*` 环境变量。
 - 生产 soak（10 户 free × 500）**暂缓**（2026-09-20 决策）；依赖 DB 公平 claim 测试与小流量 DirectMail 回归，见 `development-checklist-p10-delivery-scale.md`。
 
-### P11 套餐与支付（2026-09-20，进行中）
+### P11 套餐与支付（2026-09-21，P11-4 验收进行中）
 
 - 支付通道：**Creem + Dodo Payments**（与 content-up 主站一致；主站已接通 `profiles` + `/api/creem/*`、`/api/dodo/*`，见 `docs/p11-payment-contentup-bridge.md`）。EDM 按工作区 plan，**不与** `profiles.plan` 自动联动。
 - P11-0 迁移已应用 content-up，云端记录 `20260920123037_20260920190000_p11_billing_foundation`；`edm_private.workspace_billing_subscriptions`、`billing_payment_events` 与 `edm.sync_workspace_plan_from_payment` 已就绪。
 - **Webhook / Checkout 仅子域**：`https://edm.contentup.cc/api/creem/*`、`/api/dodo/*`；主站不变。Dashboard 登记见 `docs/p11-webhook-dashboard-checklist.md`。
-- pixel-edm Vercel：EDM 专用 Pro 商品与独立 Webhook 密钥已配置（见 `docs/p11-webhook-dashboard-checklist.md`）。
-- P11-3 设置页：`BillingUpgrade` 提供 Creem/Dodo 升级专业版（月付/年付）；P11-4 Test 结账 → plan 变更仍待人工验收。
+- pixel-edm Vercel：Creem/Dodo EDM 专用 Pro 商品、独立 Webhook 密钥已配置；Dodo Production 为 `DODO_PAYMENTS_ENVIRONMENT=live_mode`（正式月付/年付 product id 见 `development-checklist-p11-billing.md`）。Creem 在 Vercel Production 上由 `NODE_ENV=production` 走正式 API（无单独 env 开关）。
+- P11-1～P11-3 工程已合并：设置页 `BillingUpgrade`、Checkout metadata（`workspaceId`、`productScope=edm`）。PR #21：无 `pixel-edm-workspace` cookie 时 Checkout 通过 `resolveWorkspaceId` 与表单 `workspace_id` 解析工作区，避免「请先选择工作区。」
+- **已验收**：Dodo `test_mode` Pro Checkout 流程（用户确认）。
+- **2026-09-21**：正式 Dodo Checkout 曾因 Production 运行时密钥配置异常出现 ByteString 错误；已重配正式 API Key/Webhook Key 并重新部署（未改 content-up、`aigc`、共享 Auth）。
+- **待验收（P11-4）**：
+  - Dodo `live_mode`：正式 Pro 付款 → Webhook → `edm.workspaces.plan` 更新闭环；取消/过期回退 `free`。
+  - Creem：Pro 升级 → P10 额度；取消 → `free`。
+  - 主站 Content.up Pro 订阅不误改 EDM 工作区 plan（无 EDM metadata 时忽略）。
+- 逐项清单与命令见 `development-checklist-p11-billing.md`。

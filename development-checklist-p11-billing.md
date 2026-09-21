@@ -33,7 +33,8 @@ Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`�
 ### P11-1 Checkout（pixel-edm Next.js）
 
 - [x] 依赖 `@creem_io/nextjs`、`dodopayments`。
-- [x] `POST /api/creem/checkout`、`POST /api/dodo/checkout`：admin + 工作区 cookie，`productScope=edm` metadata。
+- [x] `POST /api/creem/checkout`、`POST /api/dodo/checkout`：admin + 工作区解析（cookie 或 `resolveWorkspaceId` / 表单 `workspace_id`），`productScope=edm` metadata（PR #21）。
+- [x] 环境：Dodo 由 `DODO_PAYMENTS_ENVIRONMENT`（`test_mode` | `live_mode`）；Creem 正式/测试由 `NODE_ENV`（Production 为正式 API）。
 - [x] Vercel 配置 EDM 专用 product id 与 Creem/Dodo 密钥（见 `scripts/sync-vercel-billing-env.sh` 与 webhook 清单）。
 - [x] Dodo 正式环境已切换为 `live_mode`；正式月付/年付商品 ID 已写入 Vercel Production。
 
