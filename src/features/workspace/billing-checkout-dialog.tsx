@@ -17,6 +17,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+/** 两个通道能力一致，副标题统一，避免「产品订阅 / 国际支付」造成误解。 */
+const CHECKOUT_PROVIDER_HINT = "订阅结账";
+
 type BillingCheckoutDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,16 +46,23 @@ export function BillingCheckoutDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-left">
             购买{edmPlanShortLabel(checkoutPlan)} · {priceLabel}
           </DialogTitle>
-          <DialogDescription>
-            {edmPlanCheckoutDescription(checkoutPlan, interval)}
-            支付由第三方处理，不会在本站保存卡号。
+          <DialogDescription className="text-left leading-relaxed text-pretty">
+            <span className="block">
+              {edmPlanCheckoutDescription(checkoutPlan, interval)}
+            </span>
+            <span className="mt-2 block text-xs text-muted-foreground">
+              支付由第三方处理，不会在本站保存卡号。
+            </span>
           </DialogDescription>
         </DialogHeader>
-        <div className="flex gap-2">
+        <p className="text-left text-sm font-medium text-foreground">
+          计费周期
+        </p>
+        <div className="flex flex-wrap gap-2">
           <Button
             type="button"
             variant={interval === "monthly" ? "default" : "outline"}
@@ -70,6 +80,9 @@ export function BillingCheckoutDialog({
             年付 {formatUsd(pricing.yearlyUsd)}
           </Button>
         </div>
+        <p className="text-left text-sm font-medium text-foreground">
+          支付渠道
+        </p>
         <div className="space-y-2">
           <BillingProviderForm
             action="/api/creem/checkout"
@@ -77,7 +90,7 @@ export function BillingCheckoutDialog({
             plan={checkoutPlan}
             interval={interval}
             providerName="Creem"
-            providerHint="产品订阅"
+            providerHint={CHECKOUT_PROVIDER_HINT}
             variant="default"
           />
           <BillingProviderForm
@@ -86,16 +99,16 @@ export function BillingCheckoutDialog({
             plan={checkoutPlan}
             interval={interval}
             providerName="Dodo Payments"
-            providerHint="国际支付"
-            variant="secondary"
+            providerHint={CHECKOUT_PROVIDER_HINT}
+            variant="outline"
           />
         </div>
         {showProCancelHint && (
-          <p className="hint mb-0 text-xs leading-relaxed">
+          <p className="hint mb-0 text-left text-xs leading-relaxed">
             团队版生效后，请到 Creem / Dodo 账户取消原专业版订阅，避免重复扣费。
           </p>
         )}
-        <p className="hint mb-0 text-xs leading-relaxed">
+        <p className="hint mb-0 text-left text-xs leading-relaxed">
           订阅将按所选周期自动续费；取消续费后当前周期结束会回到免费版额度。席位加购与自助降档后续提供。
         </p>
       </DialogContent>
@@ -118,7 +131,7 @@ function BillingProviderForm({
   interval: "monthly" | "yearly";
   providerName: string;
   providerHint: string;
-  variant: "default" | "secondary";
+  variant: "default" | "outline" | "secondary";
 }) {
   return (
     <form action={action} method="post">
