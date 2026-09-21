@@ -431,7 +431,7 @@ test("P3-4 活动确认、不可变快照、导出与权限", async (t) => {
         `insert into edm.contacts(workspace_id,email,name,subscription_status,created_by,created_at)
          select $1,'bulk-'||value||'@example.test','客户 '||value,'subscribed',$2,
            '2026-04-01'::timestamptz+(value||' seconds')::interval
-         from generate_series(1,10001) value`,
+         from generate_series(1,25001) value`,
         [bigWorkspace, outsider],
       );
       const bigCampaign = await rpc(
@@ -456,7 +456,7 @@ test("P3-4 活动确认、不可变快照、导出与权限", async (t) => {
           },
           outsider,
         ),
-        /当前套餐下单个活动最多 5000 位收件人/,
+        /当前套餐下单个活动最多 25000 位收件人/,
       );
       assert.equal(
         (

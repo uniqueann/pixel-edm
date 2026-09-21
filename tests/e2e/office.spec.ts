@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-test("登录、初始化、七页导航、设置保存、工作区切换和退出", async ({ page }) => {
+test("登录、初始化、主导航、设置保存、工作区切换和退出", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/dashboard");
@@ -11,11 +11,13 @@ test("登录、初始化、七页导航、设置保存、工作区切换和退�
   await expect(
     page.getByRole("heading", { name: "我的邮局", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "团队", exact: true }),
+  ).toHaveCount(0);
   for (const [label, title] of [
     ["客户", "客户名单"],
     ["模板", "邮件模板库"],
     ["活动", "发信活动"],
-    ["团队", "团队成员"],
     ["日志", "操作记录"],
     ["设置", "邮局设置"],
     ["帮助", "使用帮助"],

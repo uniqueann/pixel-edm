@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# push 前本地检查，对齐 .github/workflows/ci.yml（不含 Playwright，约 1～2 分钟）。
+# 紧急跳过：SKIP_GIT_HOOKS=1 git push
+set -e
+cd "$(git rev-parse --show-toplevel)"
+if [ "$SKIP_GIT_HOOKS" = "1" ]; then
+  echo "pre-push: 已跳过（SKIP_GIT_HOOKS=1）"
+  exit 0
+fi
+echo "pre-push: 运行 npm run ci:push …"
+npm run ci:push
+echo "pre-push: 通过。若改导航/套餐/RPC/E2E 种子，提 PR 前请再跑 npm run ci:verify"

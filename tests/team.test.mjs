@@ -34,6 +34,11 @@ test("P6 团队邀请、成员生命周期、角色权限与 AIGC 隔离", async
   const otherWorkspace = (
     await asUser(db, outsider, "select edm.initialize_member() id")
   ).rows[0].id;
+  // P12：免费版仅 1 名成员；本套件覆盖多成员生命周期，使用 Team 档席位。
+  await db.query(
+    "update edm.workspaces set plan='team' where id = any($1::uuid[])",
+    [[workspace, otherWorkspace]],
+  );
 
   const hash = (character) => character.repeat(64);
   const rpc = async (name, payload, user = owner, role = "authenticated") =>

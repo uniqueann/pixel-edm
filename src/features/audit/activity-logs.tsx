@@ -47,6 +47,11 @@ export function ActivityLogs({
       </div>
       <p className="hint">
         记录客户、名单导入与模板操作；姓名和角色保留操作发生时的快照。
+        {typeof data.retention_days === "number" && data.retention_days > 0
+          ? ` 当前套餐仅展示近 ${data.retention_days} 天。`
+          : data.retention_days === null
+            ? " 团队版展示完整历史。"
+            : ""}
       </p>
       <div className="mb-4">
         <label className="mr-2 text-sm" htmlFor="audit-actor">

@@ -55,12 +55,23 @@ export function BillingUpgrade({
   return (
     <div className="rounded-lg border border-border/80 bg-muted/30 px-4 py-3 text-sm">
       <p className="font-medium text-foreground">
-        当前套餐：{label} · 今日已用 {deliveryPlan.usage_today} /{" "}
-        {deliveryPlan.daily_send_quota} 封
+        当前套餐：{label} · 有效客户 {deliveryPlan.billable_contacts} /{" "}
+        {deliveryPlan.max_billable_contacts}
+        {deliveryPlan.max_custom_templates !== null
+          ? ` · 自定义模板 ${deliveryPlan.custom_templates} / ${deliveryPlan.max_custom_templates}`
+          : " · 自定义模板不限"}
+        {deliveryPlan.max_confirmed_campaigns_per_month !== null
+          ? ` · 本月已确认活动 ${deliveryPlan.confirmed_campaigns_this_month} / ${deliveryPlan.max_confirmed_campaigns_per_month}`
+          : null}
       </p>
       <p className="hint mt-1 mb-0">
-        单活动最多 {deliveryPlan.max_recipients_per_campaign} 位收件人；日界按{" "}
-        {deliveryPlan.quota_timezone} 计算。
+        单活动最多 {deliveryPlan.max_recipients_per_campaign} 位收件人。
+        {deliveryPlan.allows_team_collaboration
+          ? ` 团队席位 ${deliveryPlan.active_members} / ${deliveryPlan.max_active_members}。`
+          : " 个人版为单人使用，协作请升级团队版。"}
+        平台日发信护栏 {deliveryPlan.usage_today} /{" "}
+        {deliveryPlan.daily_send_quota} 封（{deliveryPlan.quota_timezone}{" "}
+        日界）。
       </p>
       {billing?.has_payment_provider && (
         <p className="hint mt-2 mb-0">
@@ -86,8 +97,9 @@ export function BillingUpgrade({
                 <DialogTitle>选择支付方式</DialogTitle>
                 <DialogDescription>
                   Pixel EDM 专业版（{interval === "yearly" ? "年付" : "月付"}
-                  ）·
-                  更高发信额度与速率。支付由第三方处理，不会经过本站点保存卡号。
+                  ）· 最多 5,000
+                  位有效客户、不限自定义模板与活动确认、打开/点击统计与 7
+                  日操作日志；个人单人使用，团队邀请请选团队版。支付由第三方处理，不会在本站保存卡号。
                 </DialogDescription>
               </DialogHeader>
               <div className="flex gap-2">
