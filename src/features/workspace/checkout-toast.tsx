@@ -4,11 +4,33 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-/** 支付成功回跳 settings?checkout=success 时提示一次。 */
+/** 支付回跳 settings?checkout=success|error 时提示一次。 */
 export function CheckoutSuccessToast() {
   const params = useSearchParams();
   useEffect(() => {
-    if (params.get("checkout") !== "success") return;
+    const checkout = params.get("checkout");
+    if (checkout === "error") {
+      const reason = params.get("reason");
+      const planParam = params.get("plan");
+      const planLabel =
+        planParam === "team"
+          ? "团队版"
+          : planParam === "pro"
+            ? "专业版"
+            : "该档位";
+      if (reason === "missing_product") {
+        toast.error("暂时无法跳转支付", {
+          description: `${planLabel}在服务器上尚未配置 Creem/Dodo 商品 ID（CREEM_EDM_* / DODO_EDM_*）。请在 Vercel 填入 Team 四变量并重新部署；详见 docs/p11-team-billing-setup.md。`,
+        });
+      } else {
+        toast.error("结账未完成", {
+          description:
+            params.get("msg") ?? "请稍后重试，或联系管理员检查支付配置。",
+        });
+      }
+      return;
+    }
+    if (checkout !== "success") return;
     const provider = params.get("provider");
     const planParam = params.get("plan");
     const planLabel =
