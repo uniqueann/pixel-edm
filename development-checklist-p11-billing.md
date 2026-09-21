@@ -16,8 +16,8 @@
 |------|------|------|----------------|---------------|
 | pro | 月付 | USD 9.90/月 | `CREEM_EDM_PRO_MONTHLY_PRODUCT_ID` | `DODO_EDM_PRO_MONTHLY_PRODUCT_ID` |
 | pro | 年付 | USD 99.90/年 | `CREEM_EDM_PRO_YEARLY_PRODUCT_ID` | `DODO_EDM_PRO_YEARLY_PRODUCT_ID` |
-| team | 月付 | USD 49.90/月 | `CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID` | `DODO_EDM_TEAM_MONTHLY_PRODUCT_ID` |
-| team | 年付 | USD 499.90/年 | `CREEM_EDM_TEAM_YEARLY_PRODUCT_ID` | `DODO_EDM_TEAM_YEARLY_PRODUCT_ID` |
+| team | 月付 | USD 29.90/月 | `CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID` | `DODO_EDM_TEAM_MONTHLY_PRODUCT_ID` |
+| team | 年付 | USD 299.90/年 | `CREEM_EDM_TEAM_YEARLY_PRODUCT_ID` | `DODO_EDM_TEAM_YEARLY_PRODUCT_ID` |
 
 Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`（及 `userId` 便于审计）。
 

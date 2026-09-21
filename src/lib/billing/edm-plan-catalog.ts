@@ -6,7 +6,7 @@ export const EDM_PLAN_PRICING: Record<
   { monthlyUsd: number; yearlyUsd: number }
 > = {
   pro: { monthlyUsd: 9.9, yearlyUsd: 99.9 },
-  team: { monthlyUsd: 49.9, yearlyUsd: 499.9 },
+  team: { monthlyUsd: 29.9, yearlyUsd: 299.9 },
 };
 
 export function formatUsd(amount: number) {
