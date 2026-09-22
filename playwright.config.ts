@@ -26,6 +26,9 @@ export default defineConfig({
         NEXT_PUBLIC_SITE_URL: "http://localhost:3100",
         EDM_CREDENTIAL_KEYRING:
           '{"active":"test-v1","keys":{"test-v1":"MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="}}',
+        // 测试账号已是专业版。CI 没有本地 .env.local，不写 Team 商品 ID 时设置页不会出现升级按钮。
+        CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID: "prod_e2e_team_monthly",
+        DODO_EDM_TEAM_MONTHLY_PRODUCT_ID: "pdt_e2e_team_monthly",
       },
     },
   ],
