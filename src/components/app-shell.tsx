@@ -122,8 +122,16 @@ export function AppShell({
             <Link
               key={slug}
               href={`/${slug}`}
-              aria-current={pathname === `/${slug}` ? "page" : undefined}
-              className={pathname === `/${slug}` ? "tab active" : "tab"}
+              aria-current={
+                pathname === `/${slug}` || pathname.startsWith(`/${slug}/`)
+                  ? "page"
+                  : undefined
+              }
+              className={
+                pathname === `/${slug}` || pathname.startsWith(`/${slug}/`)
+                  ? "tab active"
+                  : "tab"
+              }
             >
               {label}
             </Link>

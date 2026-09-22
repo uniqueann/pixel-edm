@@ -5,6 +5,7 @@ import {
 } from "@/features/campaigns/actions";
 import { Campaigns } from "@/features/campaigns/campaigns";
 import type { CampaignEditorOptions } from "@/features/campaigns/model";
+import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
 
 const emptyOptions: CampaignEditorOptions = { templates: [], tags: [] };
 
@@ -22,9 +23,10 @@ export default async function Page({
   const context = await getContext();
   const canEdit = context.role !== "viewer";
   const canSend = context.role === "admin";
-  const [data, options] = await Promise.all([
+  const [data, options, deliveryPlan] = await Promise.all([
     listCampaigns(filters),
     canEdit ? getCampaignEditorOptions() : Promise.resolve(emptyOptions),
+    getWorkspaceDeliveryPlan(context.workspace.id),
   ]);
 
   return (
@@ -35,6 +37,9 @@ export default async function Page({
       memberName={context.member.display_name}
       canEdit={canEdit}
       canSend={canSend}
+      maxRecipientsPerCampaign={
+        deliveryPlan?.max_recipients_per_campaign ?? 500
+      }
       data={data}
       editorOptions={options}
       filters={filters}

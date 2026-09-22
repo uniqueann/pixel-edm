@@ -27,13 +27,20 @@ function refreshTemplateViews() {
   revalidatePath("/dashboard");
 }
 
-export async function listTemplates(input: { status?: string; page?: string }) {
+export async function listTemplates(input: {
+  status?: string;
+  q?: string;
+  category?: string;
+  page?: string;
+}) {
   const { workspace } = await getContext();
   const db = await authorizedWorkspace(workspace.id);
   const { data, error } = await db.rpc("list_templates", {
     payload: {
       workspace_id: workspace.id,
       archived: input.status === "archived",
+      q: (input.q ?? "").slice(0, 200),
+      category: (input.category ?? "").slice(0, 50),
       page: Math.min(
         1000000,
         Math.max(1, Number.parseInt(input.page ?? "1") || 1),

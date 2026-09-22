@@ -7,11 +7,14 @@ import { EmptyState } from "@/components/empty-state";
 import { SettingsForm } from "@/components/settings-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { listContacts } from "@/features/contacts/actions";
 import { listTemplates } from "@/features/templates/actions";
 import { listActivityLogs } from "@/features/audit/actions";
 import { activityLabels } from "@/features/audit/model";
 import { getWorkspaceCampaignStatistics } from "@/features/campaigns/actions";
+import { listCampaigns } from "@/features/campaigns/actions";
+import { campaignStatusLabels } from "@/features/campaigns/model";
 import {
   getDeliveryChannel,
   getDeliveryTestSummary,
@@ -230,11 +233,15 @@ export default async function Page({
       templateSummary,
       campaignStatistics,
       recentActivity,
+      recentCampaigns,
+      channelSummaries,
     ] = await Promise.all([
       listContacts({}),
       listTemplates({}),
       getWorkspaceCampaignStatistics(),
       canViewLogs ? listActivityLogs({ pageSize: 5 }) : Promise.resolve(null),
+      listCampaigns({ page: "1" }),
+      listDeliveryChannels(workspace.id),
     ]);
     const statsAvailable = deliveryPlan?.allows_campaign_statistics ?? false;
     const weightedOpenRate =
@@ -243,6 +250,24 @@ export default async function Page({
             (campaignStatistics.opened / campaignStatistics.delivered) * 100,
           )}%`
         : "—";
+    const canEdit = role !== "viewer";
+    const hasVerifiedPrimaryChannel = channelSummaries.some(
+      (channel) => channel.is_primary && channel.status === "verified",
+    );
+    const setupItems = [
+      !workspace.mailing_address
+        ? { label: "补充发件人联系地址", href: "/settings" }
+        : null,
+      !hasVerifiedPrimaryChannel
+        ? { label: "连接并验证发信通道", href: "/settings" }
+        : null,
+      contactSummary.active_count === 0
+        ? { label: "添加第一批客户", href: "/contacts" }
+        : null,
+      templateSummary.active_count === 0
+        ? { label: "创建第一套模板", href: "/templates" }
+        : null,
+    ].filter((item): item is { label: string; href: string } => item !== null);
     return (
       <>
         <div className="welcome">
@@ -252,17 +277,35 @@ export default async function Page({
         </div>
         <div className="stat-grid">
           {[
-            ["客户数", String(contactSummary.active_count)],
-            ["模板数", String(templateSummary.active_count)],
-            ["工作区成员", String(members.length)],
-            ["近 30 天打开率", weightedOpenRate],
-          ].map(([label, value]) => (
-            <Card key={label} className="stat-card">
-              <CardContent>
-                <span>{label}</span>
-                <strong>{value}</strong>
-              </CardContent>
-            </Card>
+            {
+              label: "客户数",
+              value: String(contactSummary.active_count),
+              href: "/contacts",
+            },
+            {
+              label: "模板数",
+              value: String(templateSummary.active_count),
+              href: "/templates",
+            },
+            {
+              label: "工作区成员",
+              value: String(members.length),
+              href: "/team",
+            },
+            {
+              label: "近 30 天打开率",
+              value: weightedOpenRate,
+              href: "/campaigns",
+            },
+          ].map(({ label, value, href }) => (
+            <Link key={label} href={href} className="stat-card-link">
+              <Card className="stat-card">
+                <CardContent>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
         <p className="hint">
@@ -271,8 +314,90 @@ export default async function Page({
             ? `打开率按近 30 天启用追踪活动的已送达收件人加权计算（${campaignStatistics.opened} / ${campaignStatistics.delivered}，共 ${campaignStatistics.tracked_campaigns} 个活动）。`
             : "打开/点击统计需专业版或团队版。"}
         </p>
+        <div className="dashboard-columns">
+          <Card>
+            <CardContent className="pt-5">
+              <div className="section-heading mb-3">
+                <div>
+                  <h2>下一步</h2>
+                  <p className="hint m-0">完成这些准备，就可以开始发信。</p>
+                </div>
+              </div>
+              {setupItems.length ? (
+                <ul className="dashboard-checklist">
+                  {setupItems.map((item) => (
+                    <li key={item.label}>
+                      <span className="checklist-dot" aria-hidden="true" />
+                      <Link href={item.href}>{item.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="dashboard-success">
+                  基础配置已完成，可以创建发信活动。
+                </p>
+              )}
+              {canEdit && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button asChild>
+                    <Link href="/campaigns">查看活动</Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href="/contacts">管理客户</Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-5">
+              <div className="section-heading mb-3">
+                <h2>最近活动</h2>
+                <Link
+                  href="/campaigns"
+                  className="text-xs underline underline-offset-2"
+                >
+                  查看全部
+                </Link>
+              </div>
+              {recentCampaigns.items.length ? (
+                <div className="dashboard-campaign-list">
+                  {recentCampaigns.items.slice(0, 3).map((campaign) => (
+                    <Link
+                      key={campaign.id}
+                      href="/campaigns"
+                      className="dashboard-campaign-row"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <strong className="block truncate">
+                          {campaign.name}
+                        </strong>
+                        <span className="hint m-0">
+                          {campaign.recipient_count ?? 0} 位收件人 ·{" "}
+                          {campaignStatusLabels[campaign.status]}
+                        </span>
+                      </span>
+                      <Badge variant="outline">
+                        {campaignStatusLabels[campaign.status]}
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="dashboard-success">
+                  还没有活动，创建第一份草稿吧。
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         <div className="section-heading">
           <h2>最近动态</h2>
+          {canViewLogs && (
+            <Link href="/logs" className="text-xs underline underline-offset-2">
+              查看全部
+            </Link>
+          )}
         </div>
         {recentActivity?.items.length ? (
           <Card>
@@ -298,12 +423,19 @@ export default async function Page({
               ))}
             </CardContent>
           </Card>
+        ) : canViewLogs ? (
+          <EmptyState
+            title="还没有操作记录"
+            description="完成客户、导入、模板或活动操作后，记录会出现在这里。"
+          />
         ) : (
           <EmptyState
-            title={role === "admin" ? "还没有操作记录" : "动态仅管理员可见"}
+            title={
+              role === "admin" ? "当前套餐不含操作日志" : "动态仅管理员可见"
+            }
             description={
               role === "admin"
-                ? "完成客户、导入或模板操作后，记录会出现在这里。"
+                ? "升级套餐后可在总览和日志页查看业务审计。"
                 : "管理员可以在总览和日志页查看业务审计。"
             }
           />

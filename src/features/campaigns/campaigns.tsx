@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ListPagination } from "@/components/list-pagination";
 import {
   Dialog,
   DialogContent,
@@ -143,6 +144,7 @@ export function Campaigns({
   memberName,
   canEdit,
   canSend,
+  maxRecipientsPerCampaign,
   data,
   editorOptions,
   filters,
@@ -152,6 +154,7 @@ export function Campaigns({
   memberName: string;
   canEdit: boolean;
   canSend: boolean;
+  maxRecipientsPerCampaign: number;
   data: CampaignList;
   editorOptions: CampaignEditorOptions;
   filters: Record<string, string>;
@@ -194,6 +197,9 @@ export function Campaigns({
   const returnFocus = useRef<HTMLElement | null>(null);
   const previewRequest = useRef(0);
   const archived = filters.status === "archived";
+  const [q, setQ] = useState(filters.q ?? "");
+  const [previousQuery, setPreviousQuery] = useState(filters.q ?? "");
+  const hasFilters = Boolean(filters.q || filters.campaign_status);
 
   const templateChoices: SelectableTemplate[] = editorOptions.templates.map(
     (template) => ({
@@ -243,9 +249,32 @@ export function Campaigns({
   }
 
   function navigate(changes: Record<string, string>) {
-    const params = new URLSearchParams({ ...filters, ...changes });
+    const next = { ...filters, ...changes };
+    Object.entries(next).forEach(([key, value]) => {
+      if (!value) delete next[key];
+    });
+    const params = new URLSearchParams(next);
     startTransition(() => router.replace(`/campaigns?${params}`));
   }
+
+  if (previousQuery !== (filters.q ?? "")) {
+    setPreviousQuery(filters.q ?? "");
+    setQ(filters.q ?? "");
+  }
+
+  useEffect(() => {
+    if (q === (filters.q ?? "")) return;
+    const timer = setTimeout(() => {
+      const next: Record<string, string> = { ...filters, q, page: "1" };
+      Object.entries(next).forEach(([key, value]) => {
+        if (!value) delete next[key];
+      });
+      startTransition(() =>
+        router.replace(`/campaigns?${new URLSearchParams(next)}`),
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filters, q, router]);
 
   useEffect(() => {
     if (filters.page && Number(filters.page) !== data.page) {
@@ -630,7 +659,15 @@ export function Campaigns({
       <p className="hint">
         草稿预览按最新订阅与抑制状态计算；确认后可导出冻结快照，管理员可创建正式发送任务。
       </p>
-      <div className="mb-4 flex flex-wrap gap-3">
+      <Input
+        className="list-search"
+        aria-label="搜索活动名称"
+        placeholder="搜索活动名称"
+        value={q}
+        maxLength={200}
+        onChange={(event) => setQ(event.target.value)}
+      />
+      <div className="list-toolbar">
         {canEdit && (
           <Button disabled={!editorOptions.templates.length} onClick={openNew}>
             新建活动
@@ -643,7 +680,7 @@ export function Campaigns({
         )}
         <select
           aria-label="活动归档状态"
-          className="rounded border bg-white p-2"
+          className="list-filter"
           value={archived ? "archived" : "active"}
           onChange={(event) =>
             navigate({ status: event.target.value, page: "1" })
@@ -652,10 +689,53 @@ export function Campaigns({
           <option value="active">未归档活动</option>
           <option value="archived">已归档活动</option>
         </select>
+        <select
+          aria-label="活动状态"
+          className="list-filter"
+          value={filters.campaign_status ?? ""}
+          onChange={(event) =>
+            navigate({ campaign_status: event.target.value, page: "1" })
+          }
+        >
+          <option value="">全部活动状态</option>
+          {Object.entries(campaignStatusLabels).map(([status, label]) => (
+            <option key={status} value={status}>
+              {label}
+            </option>
+          ))}
+        </select>
       </div>
+      {hasFilters && (
+        <div className="active-filters" aria-label="已应用筛选">
+          <span>已筛选</span>
+          {filters.q && <span className="filter-chip">搜索：{filters.q}</span>}
+          {filters.campaign_status && (
+            <span className="filter-chip">
+              状态：
+              {campaignStatusLabels[
+                filters.campaign_status as CampaignStatus
+              ] ?? filters.campaign_status}
+            </span>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ q: "", campaign_status: "", page: "1" })}
+          >
+            清空筛选
+          </Button>
+        </div>
+      )}
       {canEdit && !editorOptions.templates.length && (
         <p className="field-error" role="status">
           新建活动前，需要至少一套使用中的模板。
+        </p>
+      )}
+      {canSend && (
+        <p className="hint mt-2">
+          当前套餐单个活动最多发送{" "}
+          {maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人。
         </p>
       )}
       <div aria-live="polite" className="hint mt-2">
@@ -732,11 +812,14 @@ export function Campaigns({
                           campaign.status === "confirmed" && (
                             <Button
                               disabled={
-                                busy || (campaign.recipient_count ?? 0) > 500
+                                busy ||
+                                (campaign.recipient_count ?? 0) >
+                                  maxRecipientsPerCampaign
                               }
                               title={
-                                (campaign.recipient_count ?? 0) > 500
-                                  ? "正式发送每个活动最多 500 位收件人"
+                                (campaign.recipient_count ?? 0) >
+                                maxRecipientsPerCampaign
+                                  ? `当前套餐单个活动最多 ${maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人`
                                   : undefined
                               }
                               onClick={() =>
@@ -864,34 +947,24 @@ export function Campaigns({
         ))}
         {!data.items.length && (
           <p className="py-10 text-center">
-            {archived
-              ? "暂无已归档活动。"
-              : canEdit
-                ? "还没有活动，准备第一份草稿吧。"
-                : "当前工作区还没有活动。"}
+            {hasFilters
+              ? "没有匹配的活动，请调整搜索或筛选。"
+              : archived
+                ? "暂无已归档活动。"
+                : canEdit
+                  ? "还没有活动，准备第一份草稿吧。"
+                  : "当前工作区还没有活动。"}
           </p>
         )}
       </div>
 
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          disabled={pending || data.page <= 1}
-          onClick={() => navigate({ page: String(data.page - 1) })}
-        >
-          上一页
-        </Button>
-        <span>
-          {data.page} / {Math.max(1, Math.ceil(data.total / data.page_size))}
-        </span>
-        <Button
-          variant="outline"
-          disabled={pending || data.page * data.page_size >= data.total}
-          onClick={() => navigate({ page: String(data.page + 1) })}
-        >
-          下一页
-        </Button>
-      </div>
+      <ListPagination
+        page={data.page}
+        pageSize={data.page_size}
+        total={data.total}
+        pending={pending}
+        onPageChange={(page) => navigate({ page: String(page) })}
+      />
 
       <Dialog
         open={Boolean(previewing)}
@@ -975,9 +1048,12 @@ export function Campaigns({
                 )}
 
               {preview.validation.valid &&
-                preview.recipients.eligible_count > 10000 && (
+                preview.recipients.eligible_count >
+                  maxRecipientsPerCampaign && (
                   <p className="field-error" role="alert">
-                    单个活动最多确认 10000 位收件人，请拆分标签后重试。
+                    当前套餐单个活动最多确认{" "}
+                    {maxRecipientsPerCampaign.toLocaleString("zh-CN")}{" "}
+                    位收件人，请拆分标签后重试。
                   </p>
                 )}
 
@@ -1023,7 +1099,7 @@ export function Campaigns({
           <div className="flex flex-wrap gap-2">
             {preview?.validation.valid &&
               preview.recipients.eligible_count > 0 &&
-              preview.recipients.eligible_count <= 10000 && (
+              preview.recipients.eligible_count <= maxRecipientsPerCampaign && (
                 <Button
                   type="button"
                   disabled={busy || previewLoading}

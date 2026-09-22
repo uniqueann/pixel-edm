@@ -7,6 +7,7 @@ import type { ActivityLogList } from "./model";
 
 export async function listActivityLogs(input: {
   actor?: string;
+  action?: string;
   page?: string;
   pageSize?: number;
 }) {
@@ -24,6 +25,7 @@ export async function listActivityLogs(input: {
     payload: {
       workspace_id: workspace.id,
       actor: actor || null,
+      action: input.action || null,
       page: Math.min(
         1000000,
         Math.max(1, Number.parseInt(input.page ?? "1") || 1),

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ListPagination } from "@/components/list-pagination";
 import { saveContact, setContactArchived, unsubscribeContact } from "./actions";
 import type { Contact, ContactList } from "./model";
 import { subscriptionLabels } from "./import-model";
@@ -43,8 +44,13 @@ export function Contacts({
   const [unsubscribing, setUnsubscribing] = useState<Contact>();
   const [unsubscribeReason, setUnsubscribeReason] = useState("");
   const archived = filters.status === "archived";
+  const hasFilters = Boolean(filters.q || filters.tag || filters.subscription);
   function navigate(changes: Record<string, string>) {
-    const p = new URLSearchParams({ ...filters, ...changes });
+    const next = { ...filters, ...changes };
+    Object.entries(next).forEach(([key, value]) => {
+      if (!value) delete next[key];
+    });
+    const p = new URLSearchParams(next);
     start(() => router.replace(`/contacts?${p}`));
   }
   const [previousQuery, setPreviousQuery] = useState(filters.q ?? "");
@@ -117,7 +123,7 @@ export function Contacts({
         <h1>客户名单</h1>
         <span>{data.total} 位</span>
       </div>
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="list-toolbar">
         {canEdit && <Button onClick={() => open(null)}>添加客户</Button>}
         {canEdit && (
           <Button asChild variant="outline">
@@ -126,7 +132,7 @@ export function Contacts({
         )}
         <select
           aria-label="客户状态"
-          className="rounded border bg-white p-2"
+          className="list-filter"
           value={archived ? "archived" : "active"}
           onChange={(e) => navigate({ status: e.target.value, page: "1" })}
         >
@@ -135,7 +141,7 @@ export function Contacts({
         </select>
         <select
           aria-label="订阅状态"
-          className="rounded border bg-white p-2"
+          className="list-filter"
           value={filters.subscription ?? ""}
           onChange={(e) =>
             navigate({ subscription: e.target.value, page: "1" })
@@ -150,7 +156,7 @@ export function Contacts({
         </select>
         <select
           aria-label="标签筛选"
-          className="max-w-full rounded border bg-white p-2"
+          className="list-filter max-w-full"
           value={filters.tag ?? ""}
           onChange={(e) => navigate({ tag: e.target.value, page: "1" })}
         >
@@ -163,6 +169,7 @@ export function Contacts({
         </select>
       </div>
       <Input
+        className="list-search"
         aria-label="搜索邮箱或姓名"
         placeholder="搜索邮箱或姓名"
         value={q}
@@ -172,11 +179,41 @@ export function Contacts({
       <div aria-live="polite" className="hint mt-2">
         {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
       </div>
+      {hasFilters && (
+        <div className="active-filters" aria-label="已应用筛选">
+          <span>已筛选</span>
+          {filters.q && <span className="filter-chip">搜索：{filters.q}</span>}
+          {filters.subscription && (
+            <span className="filter-chip">
+              {subscriptionLabels[
+                filters.subscription as keyof typeof subscriptionLabels
+              ] ?? filters.subscription}
+            </span>
+          )}
+          {filters.tag && (
+            <span className="filter-chip">
+              标签：
+              {data.tags.find((item) => item.id === filters.tag)?.name ??
+                "已选标签"}
+            </span>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              navigate({ q: "", tag: "", subscription: "", page: "1" })
+            }
+          >
+            清空筛选
+          </Button>
+        </div>
+      )}
       <div className="my-4 space-y-3" aria-busy={pending}>
         {data.items.map((c) => (
           <Card key={c.id}>
             <CardContent className="flex flex-wrap items-center gap-3 pt-5">
-              <div className="min-w-0 flex-1">
+              <div className="w-full min-w-0 flex-1 sm:w-auto">
                 <p className="break-all">{c.email}</p>
                 <p className="hint">{c.name || "未填写姓名"}</p>
                 <Badge
@@ -200,7 +237,7 @@ export function Contacts({
                 </div>
               </div>
               {canEdit && (
-                <div className="flex gap-2">
+                <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto sm:shrink-0">
                   {!archived && (
                     <>
                       <Button
@@ -240,7 +277,7 @@ export function Contacts({
         ))}
         {!data.items.length && (
           <p className="py-10 text-center">
-            {filters.q || filters.tag
+            {hasFilters
               ? "没有匹配的客户，请调整搜索或筛选。"
               : archived
                 ? "暂无已归档客户。"
@@ -248,25 +285,13 @@ export function Contacts({
           </p>
         )}
       </div>
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          disabled={pending || data.page <= 1}
-          onClick={() => navigate({ page: String(data.page - 1) })}
-        >
-          上一页
-        </Button>
-        <span>
-          {data.page} / {Math.max(1, Math.ceil(data.total / 20))}
-        </span>
-        <Button
-          variant="outline"
-          disabled={pending || data.page * 20 >= data.total}
-          onClick={() => navigate({ page: String(data.page + 1) })}
-        >
-          下一页
-        </Button>
-      </div>
+      <ListPagination
+        page={data.page}
+        pageSize={20}
+        total={data.total}
+        pending={pending}
+        onPageChange={(page) => navigate({ page: String(page) })}
+      />
       <Dialog
         open={editing !== undefined}
         onOpenChange={(value) => {
