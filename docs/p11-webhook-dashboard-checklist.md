@@ -1,12 +1,12 @@
 # EDM 子域 Webhook 登记（已完成）
 
-完成日期：2026-09-21。主站 `contentup.cc` 的既有商品、Webhook 与密钥保持不变；EDM 已完成 Dodo 正式环境切换配置。
+完成日期：2026-09-22。主站 `contentup.cc` 的既有商品、Webhook 与密钥保持不变；EDM 已完成 Dodo 正式环境切换配置。
 
 ## 完成结果
 
-- Creem 正式环境已创建 `Pixel EDM Pro Monthly`（USD 9.90/月）和 `Pixel EDM Pro Yearly`（USD 99.90/年）。
+- Creem 正式环境的 EDM 商品价格已更新：Pro 月付/年付 USD 14.90/149.90，Team 月付/年付 USD 44.90/449.90。
 - Dodo Payments 测试环境已创建同名月付、年付商品，价格分别为 USD 9.90/月和 USD 99.90/年；用户已验证测试模式 Checkout。
-- Dodo Payments 正式环境已创建同名月付、年付商品，价格分别为 USD 9.90/月和 USD 99.90/年；正式商品 ID 已写入 `pixel-edm` Vercel Production。
+- Dodo Payments 正式环境的 EDM 商品价格已更新：Pro 月付/年付 USD 14.90/149.90，Team 月付/年付 USD 44.90/449.90；正式商品 ID 已写入 `pixel-edm` Vercel Production。
 - Creem 已新增 `Pixel EDM Production Webhook`，指向 `https://edm.contentup.cc/api/creem/webhook`，启用与主站一致的 13 个支付、订阅、退款及争议事件。
 - Dodo 已新增 `Pixel EDM Test Webhook`，指向 `https://edm.contentup.cc/api/dodo/webhook`，启用 10 个订阅及支付事件。
 - Dodo 正式环境已新增 EDM Webhook，指向 `https://edm.contentup.cc/api/dodo/webhook`，endpoint id 为 `ep_3Jc1cocJXagr4mJX8AKyAXozkVn`，正式独立 Webhook Key 已写入 `pixel-edm` Vercel Production。

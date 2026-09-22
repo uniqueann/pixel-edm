@@ -1,6 +1,6 @@
 # P12 支付商品文案（Creem / Dodo 粘贴用）
 
-更新日期：2026-09-21。商品名称保持 **`Pixel EDM Pro Monthly`** / **`Pixel EDM Pro Yearly`**（USD 9.90/月、99.90/年不变）。仓库内无 Creem/Dodo 改商品描述的 API，请在各 Dashboard **Products** 中手工更新下列字段。
+更新日期：2026-09-22。商品名称保持 **`Pixel EDM Pro Monthly`** / **`Pixel EDM Pro Yearly`**（正式价 USD 14.90/月、149.90/年）。仓库内无 Creem/Dodo 改商品描述的 API，请在各 Dashboard **Products** 中手工更新下列字段。
 
 ## 专业版 · 月付 / 年付（共用描述）
 
@@ -14,7 +14,7 @@ Pixel EDM Pro: up to **5,000** active contacts (non-archived); unlimited custom 
 
 ## 团队版 · 月付 / 年付（共用描述）
 
-商品名建议：**Pixel EDM Team Monthly** / **Pixel EDM Team Yearly**（USD 29.90/月、299.90/年，见 `development-checklist-p11-billing.md`）。
+商品名建议：**Pixel EDM Team Monthly** / **Pixel EDM Team Yearly**（正式价 USD 44.90/月、449.90/年，见 `development-checklist-p11-billing.md`）。
 
 ### 中文
 

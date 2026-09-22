@@ -1,12 +1,12 @@
 # Team 档订阅接入清单
 
-更新日期：2026-09-21。代码路径已支持 `plan=team` Checkout 与 Webhook 同步；**需在支付平台创建商品并写入环境变量** 后才能在生产收款。
+更新日期：2026-09-22。代码路径已支持 `plan=team` Checkout 与 Webhook 同步；**需在支付平台创建商品并写入环境变量** 后才能在生产收款。
 
 ## 定价（首版，与代码 `EDM_PLAN_PRICING` 一致）
 
 | 档位 | 月付 | 年付 |
 |------|------|------|
-| Team | USD 29.90 | USD 299.90 |
+| Team | USD 44.90 | USD 449.90 |
 
 商品名称建议：**Pixel EDM Team Monthly** / **Pixel EDM Team Yearly**（与 Pro 命名并列）。
 
