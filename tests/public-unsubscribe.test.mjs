@@ -85,6 +85,9 @@ test("P5-2 公开退订事务、幂等归因与发送前抑制闭环", async (t)
     "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'editor')",
     [workspace, editor],
   );
+  await db.query("update edm.workspaces set plan='team' where id=$1", [
+    workspace,
+  ]);
   await db.query(
     "update edm.workspaces set name='公开退订测试店铺',mailing_address='上海市测试路 1 号' where id=$1",
     [workspace],

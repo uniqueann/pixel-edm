@@ -56,6 +56,47 @@ test("P10 套餐发信额度（无支付）", async (t) => {
       assert.doesNotMatch(JSON.stringify(result), /max_rate_per_second/);
     });
 
+    await t.test("超额席位时编辑者不能保存客户，管理员可以", async () => {
+      const editor = "29000000-0000-0000-0000-000000000002";
+      await db.exec(`insert into auth.users(id) values('${editor}')`);
+      await asUser(db, editor, "select edm.initialize_member()");
+      await db.query(
+        "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'editor')",
+        [workspace, editor],
+      );
+      await assert.rejects(
+        asUser(
+          db,
+          editor,
+          rpc("save_contact", {
+            workspace_id: workspace,
+            email: "locked-editor@example.test",
+            name: "锁定",
+            tags: [],
+          }),
+        ),
+        /协作编辑已锁定/,
+      );
+      await asUser(
+        db,
+        admin,
+        rpc("save_contact", {
+          workspace_id: workspace,
+          email: "admin-still-ok@example.test",
+          name: "管理员",
+          tags: [],
+        }),
+      );
+      await db.query(
+        "delete from edm.contacts where workspace_id=$1 and email='admin-still-ok@example.test'",
+        [workspace],
+      );
+      await db.query(
+        "delete from edm.workspace_members where workspace_id=$1 and user_id=$2",
+        [workspace, editor],
+      );
+    });
+
     await t.test("free 档不可新增协作成员", async () => {
       await assert.rejects(
         asUser(

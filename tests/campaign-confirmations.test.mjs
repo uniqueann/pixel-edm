@@ -23,6 +23,9 @@ test("P3-4 活动确认、不可变快照、导出与权限", async (t) => {
     insert into edm.workspace_members(workspace_id,user_id,role)
     values('${workspace}','${editor}','editor'),('${workspace}','${viewer}','viewer')
   `);
+  await db.query(
+    "update edm.delivery_plan_limits set max_active_members=20 where plan='free'",
+  );
 
   const template = (
     await db.query(

@@ -11,6 +11,7 @@ import {
   subscriptionStatusLabel,
 } from "./plan-labels";
 import { BillingCheckoutDialog } from "./billing-checkout-dialog";
+import { remainingAtUsageNudge } from "@/lib/billing/usage-nudge";
 
 export type EdmCheckoutAvailability = {
   pro: boolean;
@@ -52,6 +53,24 @@ export function BillingUpgrade({
   const periodEnd = formatPeriodEnd(billing?.current_period_end ?? null);
 
   const canBuyPro = canUpgrade && deliveryPlan.plan === "free";
+  const contactNudge = remainingAtUsageNudge(
+    deliveryPlan.billable_contacts,
+    deliveryPlan.max_billable_contacts,
+  );
+  const seatNudge =
+    deliveryPlan.plan === "team"
+      ? remainingAtUsageNudge(
+          deliveryPlan.active_members,
+          deliveryPlan.max_active_members,
+        )
+      : null;
+  const memberCapLocked =
+    deliveryPlan.active_members > deliveryPlan.max_active_members;
+  const canCancelRenewal =
+    canUpgrade &&
+    (deliveryPlan.plan === "pro" || deliveryPlan.plan === "team") &&
+    Boolean(billing?.has_payment_provider) &&
+    !billing?.cancel_at_period_end;
   const teamSkuReady = checkoutAvailability.team;
   const canBuyTeam =
     teamSkuReady &&
@@ -85,6 +104,26 @@ export function BillingUpgrade({
           {subscriptionStatusLabel(billing.subscription_status)}
           {periodEnd ? ` · 当前周期至 ${periodEnd}` : ""}
           {billing.cancel_at_period_end ? " · 已设置周期末取消" : ""}
+        </p>
+      )}
+      {billing?.cancel_at_period_end && (
+        <p className="hint mt-2 mb-0">
+          当前周期结束前权益保持不变。到期后降为免费版，客户和成员不会被删除。
+        </p>
+      )}
+      {contactNudge !== null && (
+        <p className="hint mt-2 mb-0">
+          有效客户还剩 {contactNudge} 个名额。用满后不能再新增，已有客户会保留。
+        </p>
+      )}
+      {seatNudge !== null && (
+        <p className="hint mt-2 mb-0">
+          团队席位还剩 {seatNudge} 个。席位加购尚未开放。
+        </p>
+      )}
+      {memberCapLocked && (
+        <p className="hint mt-2 mb-0">
+          活跃成员已超过当前套餐席位。成员仍在名单中且角色不变，编辑者的客户、模板、导入和发信已锁定。管理员可以减员或重新订阅以恢复。
         </p>
       )}
       {deliveryPlan.plan === "free" && !canUpgrade && (
@@ -141,6 +180,27 @@ export function BillingUpgrade({
           如需调整订阅或退款，请通过付款时使用的 Creem / Dodo
           账户管理；额度以当前工作区 plan 为准。
         </p>
+      )}
+      {canCancelRenewal && (
+        <form
+          className="mt-3"
+          action="/api/billing/cancel"
+          method="post"
+          onSubmit={(event) => {
+            if (
+              !window.confirm(
+                "取消后续费？当前周期结束前权益保持不变，到期后降为免费版。客户和成员不会被删除。",
+              )
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
+          <input type="hidden" name="workspace_id" value={workspaceId} />
+          <Button type="submit" size="sm" variant="outline">
+            取消续费
+          </Button>
+        </form>
       )}
       {deliveryPlan.plan === "pro" && canBuyTeam && (
         <p className="hint mt-2 mb-0">

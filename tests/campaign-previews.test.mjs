@@ -23,6 +23,9 @@ test("P3-3 动态收件人、变量完整性与前三封预览", async (t) => {
     insert into edm.workspace_members(workspace_id,user_id,role)
     values('${workspace}','${editor}','editor'),('${workspace}','${viewer}','viewer')
   `);
+  await db.query("update edm.workspaces set plan='team' where id=$1", [
+    workspace,
+  ]);
 
   const template = (
     await db.query(

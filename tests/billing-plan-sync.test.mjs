@@ -112,7 +112,51 @@ test("P11 账单：Creem/Dodo 同步 plan", { concurrency: 1 }, async (t) => {
     assert.equal(plan, "team");
   });
 
-  await t.test("Dodo 取消订阅回到 free", async () => {
+  await t.test("预约取消在周期结束前保持 pro", async () => {
+    const payload = syncPayload({
+      workspace_id: workspace,
+      provider_event_id: "evt_schedule_cancel",
+      subscription_status: "canceled",
+      billed_plan: "free",
+      cancel_at_period_end: true,
+      current_period_end: new Date(Date.now() + 86400000).toISOString(),
+    });
+    const encoded = JSON.stringify(payload).replaceAll("'", "''");
+    const result = (
+      await asServiceRole(
+        db,
+        `select edm.sync_workspace_plan_from_payment('${encoded}'::jsonb) as result`,
+      )
+    ).rows[0].result;
+    assert.equal(result.plan, "pro");
+    assert.equal(result.subscription_status, "active");
+    const row = (
+      await db.query("select plan from edm.workspaces where id=$1", [workspace])
+    ).rows[0];
+    assert.equal(row.plan, "pro");
+  });
+
+  await t.test("周期已结束的取消降为 free", async () => {
+    const payload = syncPayload({
+      workspace_id: workspace,
+      provider_event_id: "evt_period_ended",
+      subscription_status: "expired",
+      billed_plan: "pro",
+      cancel_at_period_end: true,
+      current_period_end: new Date(Date.now() - 86400000).toISOString(),
+    });
+    const encoded = JSON.stringify(payload).replaceAll("'", "''");
+    await asServiceRole(
+      db,
+      `select edm.sync_workspace_plan_from_payment('${encoded}'::jsonb)`,
+    );
+    const plan = (
+      await db.query("select plan from edm.workspaces where id=$1", [workspace])
+    ).rows[0].plan;
+    assert.equal(plan, "free");
+  });
+
+  await t.test("Dodo 立即取消订阅回到 free", async () => {
     const payload = syncPayload({
       payment_provider: "dodo",
       workspace_id: workspace,

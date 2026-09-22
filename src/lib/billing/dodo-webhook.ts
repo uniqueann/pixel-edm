@@ -1,4 +1,5 @@
 import type { DodoPayments } from "dodopayments";
+import { billingPeriodStillOpen } from "./billing-period";
 import type { EdmBilledPlan } from "./metadata";
 import {
   EDM_BILLING_SCOPE,
@@ -49,12 +50,17 @@ function getDodoQuotaResetAt(subscription: DodoSubscription) {
   );
 }
 
+type DodoAccessMode = "grant" | "schedule" | "revoke";
+
 function subscriptionStatusFromDodo(
   subscription: DodoSubscription,
   eventType: string,
-  grant: boolean,
+  mode: DodoAccessMode,
 ): string {
-  if (!grant) return "canceled";
+  if (mode === "schedule") return "active";
+  if (mode === "revoke") {
+    return eventType === "subscription.expired" ? "expired" : "canceled";
+  }
   if (subscription.status === "active") return "active";
   if (
     subscription.status === "on_hold" ||
@@ -69,7 +75,7 @@ async function applyDodoSubscription(
   subscription: DodoSubscription,
   eventType: string,
   providerEventId: string,
-  grant: boolean,
+  mode: DodoAccessMode,
 ) {
   const metadata = getRecord(subscription.metadata) ?? undefined;
   if (!isEdmBillingMetadata(metadata)) {
@@ -97,11 +103,12 @@ async function applyDodoSubscription(
     subscription_status: subscriptionStatusFromDodo(
       subscription,
       eventType,
-      grant,
+      mode,
     ),
-    billed_plan: grant ? (billedPlan as EdmBilledPlan) : "free",
+    billed_plan: mode === "revoke" ? "free" : (billedPlan as EdmBilledPlan),
     current_period_end: getDodoQuotaResetAt(subscription),
-    cancel_at_period_end: !grant,
+    cancel_at_period_end:
+      mode === "schedule" || subscription.cancel_at_next_billing_date === true,
   });
 }
 
@@ -137,7 +144,7 @@ export async function handleDodoEdmEvent(
       customer: payment.customer,
       metadata: payment.metadata,
     } as DodoSubscription;
-    await applyDodoSubscription(stub, event.type, webhookId, true);
+    await applyDodoSubscription(stub, event.type, webhookId, "grant");
     return;
   }
 
@@ -147,11 +154,29 @@ export async function handleDodoEdmEvent(
 
   const subscription = event.data as DodoSubscription;
   if (grantEvents.has(event.type) && subscription.status === "active") {
-    await applyDodoSubscription(subscription, event.type, webhookId, true);
+    await applyDodoSubscription(
+      subscription,
+      event.type,
+      webhookId,
+      subscription.cancel_at_next_billing_date === true ? "schedule" : "grant",
+    );
+    return;
+  }
+  if (event.type === "subscription.cancelled") {
+    const periodEnd = getDodoQuotaResetAt(subscription);
+    const scheduled =
+      subscription.cancel_at_next_billing_date === true ||
+      billingPeriodStillOpen(periodEnd);
+    await applyDodoSubscription(
+      subscription,
+      event.type,
+      webhookId,
+      scheduled ? "schedule" : "revoke",
+    );
     return;
   }
   if (revokeEvents.has(event.type)) {
-    await applyDodoSubscription(subscription, event.type, webhookId, false);
+    await applyDodoSubscription(subscription, event.type, webhookId, "revoke");
   }
 }
 
