@@ -8,10 +8,10 @@ test("共享支付渠道优惠码规范化", () => {
   assert.equal(normalizeCheckoutDiscountCode(null), "");
   assert.throws(
     () => normalizeCheckoutDiscountCode("WELCOME-10"),
-    /仅支持 1-14 位大写字母或数字/,
+    /折扣代码格式无效/,
   );
   assert.throws(
     () => normalizeCheckoutDiscountCode("123456789012345"),
-    /仅支持 1-14 位大写字母或数字/,
+    /折扣代码格式无效/,
   );
 });

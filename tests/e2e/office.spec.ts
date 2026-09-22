@@ -41,6 +41,20 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
   );
   await expect(page.getByText("优惠码无效", { exact: true })).toBeVisible();
   await expect(page.getByText("也可以留空直接结账")).toBeVisible();
+  await page.getByRole("button", { name: "升级专业版" }).click();
+  const checkout = page.getByRole("dialog");
+  await expect(checkout.getByText("有折扣代码吗？")).toBeVisible();
+  await checkout.getByRole("button", { name: "应用折扣代码" }).click();
+  await checkout.getByRole("button", { name: "验证" }).click();
+  await expect(checkout.getByText("请输入折扣代码。")).toBeVisible();
+  await checkout.getByPlaceholder("折扣代码").fill("NOPE123");
+  await checkout.getByRole("button", { name: "验证" }).click();
+  await expect(
+    checkout.getByText(/折扣代码不存在|当前环境还不能验证这个折扣代码/),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/settings/);
+  await page.keyboard.press("Escape");
+  await expect(checkout).not.toBeVisible();
   await page.getByRole("button", { name: "为什么需要联系地址？" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
