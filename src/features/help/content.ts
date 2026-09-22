@@ -45,6 +45,10 @@ export const helpSections: HelpSection[] = [
     ],
   },
   {
+    id: "directmail-setup",
+    title: "图解开通 DirectMail",
+  },
+  {
     id: "directmail-channel",
     title: "DirectMail 通道注意事项",
     bullets: [

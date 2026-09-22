@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300" role="img" aria-labelledby="title desc">
+  <title id="title">发信域名 DNS 验证流程</title>
+  <desc id="desc">从邮件推送控制台获取解析记录，在域名服务商填写，返回控制台验证通过。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#f6f8f4"/>
+      <stop offset="1" stop-color="#edf2f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="9" flood-color="#122836" flood-opacity=".08"/>
+    </filter>
+  </defs>
+  <rect width="960" height="300" fill="url(#bg)"/>
+  <path d="M0 42h960M0 258h960" stroke="#dce6e0" stroke-width="1"/>
+  <text x="32" y="35" fill="#234238" font-size="13" font-weight="700" font-family="Arial, PingFang SC, sans-serif" letter-spacing="2">域名验证路径</text>
+
+  <g filter="url(#shadow)">
+    <rect x="32" y="66" width="254" height="174" rx="18" fill="#fff"/>
+    <rect x="352" y="66" width="254" height="174" rx="18" fill="#fff"/>
+    <rect x="672" y="66" width="254" height="174" rx="18" fill="#fff"/>
+  </g>
+
+  <rect x="52" y="86" width="28" height="28" rx="8" fill="#173c35"/>
+  <text x="66" y="105" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Arial, PingFang SC, sans-serif">1</text>
+  <text x="91" y="106" fill="#18362f" font-size="17" font-weight="700" font-family="Arial, PingFang SC, sans-serif">阿里云邮件推送</text>
+  <text x="52" y="142" fill="#51675c" font-size="13" font-family="Arial, PingFang SC, sans-serif">添加自己的发信子域名</text>
+  <rect x="52" y="159" width="214" height="42" rx="8" fill="#f2f6f3"/>
+  <text x="159" y="185" text-anchor="middle" fill="#254f42" font-size="15" font-weight="700" font-family="Arial, PingFang SC, sans-serif">send.example.com</text>
+  <text x="52" y="224" fill="#667b6e" font-size="12" font-family="Arial, PingFang SC, sans-serif">复制控制台给出的主机名与记录值</text>
+
+  <path d="M301 153h34" stroke="#6d8d7a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="m328 146 8 7-8 7" fill="none" stroke="#6d8d7a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="372" y="86" width="28" height="28" rx="8" fill="#173c35"/>
+  <text x="386" y="105" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Arial, PingFang SC, sans-serif">2</text>
+  <text x="411" y="106" fill="#18362f" font-size="17" font-weight="700" font-family="Arial, PingFang SC, sans-serif">域名服务商 DNS</text>
+  <text x="372" y="142" fill="#51675c" font-size="13" font-family="Arial, PingFang SC, sans-serif">按控制台要求逐项添加记录</text>
+  <g fill="#e8f0e9" font-family="Arial, PingFang SC, sans-serif" font-size="12" font-weight="700" text-anchor="middle">
+    <rect x="372" y="160" width="68" height="28" rx="7"/>
+    <rect x="448" y="160" width="52" height="28" rx="7"/>
+    <rect x="508" y="160" width="52" height="28" rx="7"/>
+    <rect x="372" y="195" width="68" height="28" rx="7"/>
+    <rect x="448" y="195" width="52" height="28" rx="7"/>
+  </g>
+  <g fill="#2e5c45" font-family="Arial, PingFang SC, sans-serif" font-size="12" font-weight="700" text-anchor="middle">
+    <text x="406" y="179">所有权</text>
+    <text x="474" y="179">SPF</text>
+    <text x="534" y="179">DKIM</text>
+    <text x="406" y="214">DMARC</text>
+    <text x="474" y="214">MX</text>
+  </g>
+
+  <path d="M621 153h34" stroke="#6d8d7a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="m648 146 8 7-8 7" fill="none" stroke="#6d8d7a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="692" y="86" width="28" height="28" rx="8" fill="#173c35"/>
+  <text x="706" y="105" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Arial, PingFang SC, sans-serif">3</text>
+  <text x="731" y="106" fill="#18362f" font-size="17" font-weight="700" font-family="Arial, PingFang SC, sans-serif">返回控制台验证</text>
+  <text x="692" y="142" fill="#51675c" font-size="13" font-family="Arial, PingFang SC, sans-serif">等待 DNS 生效后点击「验证」</text>
+  <rect x="692" y="160" width="214" height="64" rx="10" fill="#e3f3e8"/>
+  <circle cx="720" cy="192" r="12" fill="#237350"/>
+  <path d="m714 192 4 4 8-9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="744" y="198" fill="#1e6846" font-size="17" font-weight="700" font-family="Arial, PingFang SC, sans-serif">验证通过</text>
+
+  <text x="32" y="281" fill="#6d7f74" font-size="12" font-family="Arial, PingFang SC, sans-serif">示意图 · 仅展示记录种类，请以你自己的控制台显示为准</text>
+</svg>

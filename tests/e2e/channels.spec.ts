@@ -17,8 +17,13 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   ).toBeVisible();
   await page.getByRole("button", { name: "添加 阿里云邮件推送" }).click();
   let dialog = page.getByRole("dialog");
-  await expect(dialog.getByLabel("发件域名")).toHaveValue("send.contentup.cc");
-  await dialog.getByLabel("发件地址").fill("hello@send.contentup.cc");
+  await expect(dialog.getByLabel("发件域名")).toHaveValue("");
+  await expect(dialog.getByLabel("发件地址")).toHaveValue("");
+  await expect(
+    dialog.getByRole("link", { name: /DirectMail 图文开通教程/ }),
+  ).toHaveAttribute("href", "/help#help-directmail-setup");
+  await dialog.getByLabel("发件域名").fill("send.example.com");
+  await dialog.getByLabel("发件地址").fill("hello@send.example.com");
   await dialog.getByLabel("AccessKey ID").fill("LTAI5tTestAccess1234");
   await dialog
     .getByLabel("AccessKey Secret")

@@ -1,6 +1,7 @@
 "use client";
 
 import { Controller, useForm } from "react-hook-form";
+import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,14 +55,8 @@ function defaults(input: {
         : provider.provider === "sendgrid"
           ? "global"
           : "us-east-1"),
-    sender_domain:
-      channel?.sender_domain ??
-      (provider.requires_sender_domain ? "send.contentup.cc" : ""),
-    sender_address:
-      channel?.sender_address ??
-      (provider.requires_sender_domain
-        ? "edm@send.contentup.cc"
-        : "hello@example.com"),
+    sender_domain: channel?.sender_domain ?? "",
+    sender_address: channel?.sender_address ?? "",
     sender_alias:
       channel?.sender_alias ??
       input.workspaceName.slice(0, provider.sender_alias_max_length),
@@ -149,6 +144,16 @@ export function ChannelFormDialog({
             保存区域、发件身份和加密凭据；只有点击“发送测试邮件”才会调用
             {provider.display_name}。
           </DialogDescription>
+          {provider.provider === "aliyun_directmail" && (
+            <Link
+              href="/help#help-directmail-setup"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-fit text-sm underline underline-offset-2"
+            >
+              查看 DirectMail 图文开通教程（新标签页）
+            </Link>
+          )}
         </DialogHeader>
         <form
           className="space-y-4"
@@ -202,7 +207,7 @@ export function ChannelFormDialog({
               <Label htmlFor="sender-domain">发件域名</Label>
               <Input
                 id="sender-domain"
-                placeholder="send.contentup.cc"
+                placeholder="send.example.com"
                 {...form.register("sender_domain")}
               />
               <p className="field-error">
@@ -219,7 +224,7 @@ export function ChannelFormDialog({
                 type="email"
                 placeholder={
                   provider.requires_sender_domain
-                    ? "hello@send.contentup.cc"
+                    ? "hello@send.example.com"
                     : "hello@example.com"
                 }
                 {...form.register("sender_address")}
@@ -244,7 +249,7 @@ export function ChannelFormDialog({
               <Input
                 id="reply-to"
                 type="email"
-                placeholder="support@contentup.cc"
+                placeholder="support@example.com"
                 {...form.register("reply_to_address")}
               />
               <p className="field-error">
