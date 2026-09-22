@@ -27,10 +27,24 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
       page.getByRole("heading", { name: title, exact: true }),
     ).toBeVisible();
   }
+  await page.getByRole("link", { name: "图解开通 DirectMail" }).click();
+  await expect(page).toHaveURL(/\/help#help-directmail-setup$/);
+  await expect(
+    page.getByRole("heading", { name: "阿里云 DirectMail 发信配置" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: /发信子域名的 DNS 记录/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: /DirectMail 发送后由 EventBridge/ }),
+  ).toBeVisible();
   await page.getByRole("link", { name: "设置", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "邮局设置", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "DirectMail 图文教程" }),
+  ).toHaveAttribute("href", "/help#help-directmail-setup");
   await page.getByLabel("店铺 / 工作区名称").fill("测试店铺");
   await page.getByRole("button", { name: "保存设置" }).click();
   await expect(page.getByText("工作区已保存")).toBeVisible();

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { helpNav, helpSections } from "./content";
+import { DirectMailSetupGuide } from "./directmail-setup-guide";
 
 export function HelpGuide({ role }: { role: string }) {
   return (
@@ -44,45 +45,49 @@ export function HelpGuide({ role }: { role: string }) {
         ))}
       </nav>
 
-      {helpSections.map((section) => (
-        <Card
-          key={section.id}
-          id={`help-${section.id}`}
-          className="scroll-mt-24"
-        >
-          <CardContent className="space-y-3 pt-6">
-            <h2 className="m-0">{section.title}</h2>
-            {section.intro ? <p className="m-0">{section.intro}</p> : null}
-            {section.steps?.length ? (
-              <ol className="m-0 list-decimal space-y-2 pl-5">
-                {section.steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            ) : null}
-            {section.bullets?.length ? (
-              <ul className="m-0 list-disc space-y-2 pl-5">
-                {section.bullets.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            ) : null}
-            {section.note ? (
-              <p className="hint m-0 rounded-lg bg-muted px-3 py-2">
-                {section.note}
-              </p>
-            ) : null}
-            {section.warning ? (
-              <p
-                role="alert"
-                className="m-0 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"
-              >
-                {section.warning}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ))}
+      {helpSections.map((section) =>
+        section.id === "directmail-setup" ? (
+          <DirectMailSetupGuide key={section.id} />
+        ) : (
+          <Card
+            key={section.id}
+            id={`help-${section.id}`}
+            className="scroll-mt-24"
+          >
+            <CardContent className="space-y-3 pt-6">
+              <h2 className="m-0">{section.title}</h2>
+              {section.intro ? <p className="m-0">{section.intro}</p> : null}
+              {section.steps?.length ? (
+                <ol className="m-0 list-decimal space-y-2 pl-5">
+                  {section.steps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              ) : null}
+              {section.bullets?.length ? (
+                <ul className="m-0 list-disc space-y-2 pl-5">
+                  {section.bullets.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {section.note ? (
+                <p className="hint m-0 rounded-lg bg-muted px-3 py-2">
+                  {section.note}
+                </p>
+              ) : null}
+              {section.warning ? (
+                <p
+                  role="alert"
+                  className="m-0 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"
+                >
+                  {section.warning}
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        ),
+      )}
     </div>
   );
 }

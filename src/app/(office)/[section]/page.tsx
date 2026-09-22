@@ -138,14 +138,14 @@ export default async function Page({
             <h2>发信通道</h2>
             <p className="hint mt-2 mb-0">
               为工作区配置发信服务商与主通道，并向当前管理员的已验证邮箱发送测试邮件。
-              首次配置与上线核对见{" "}
+              首次开通可按{" "}
               <Link
-                href="/help#help-go-live"
+                href="/help#help-directmail-setup"
                 className="underline underline-offset-2"
               >
-                帮助 → DirectMail 上线核对
+                DirectMail 图文教程
               </Link>
-              。
+              操作；发送前再看上线核对。
             </p>
           </div>
           <ChannelSettings
