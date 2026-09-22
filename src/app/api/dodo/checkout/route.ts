@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { siteUrl } from "@/lib/supabase/config";
 import { getDodoClient, getDodoEdmProductId } from "@/lib/billing/dodo";
 import { buildDodoCheckoutMetadata } from "@/lib/billing/dodo-webhook";
+import { normalizeCheckoutDiscountCode } from "@/lib/billing/discount-code";
 import {
   normalizeCheckoutInterval,
   normalizeCheckoutPlan,
@@ -28,6 +29,20 @@ export async function POST(request: Request) {
 
   const plan = normalizeCheckoutPlan(formData?.get("plan") ?? null);
   const interval = normalizeCheckoutInterval(formData?.get("interval") ?? null);
+
+  let discountCode: string;
+  try {
+    discountCode = normalizeCheckoutDiscountCode(
+      formData?.get("discount_code") ?? null,
+    );
+  } catch (error) {
+    return redirectCheckoutError({
+      reason: "provider",
+      plan,
+      provider: "dodo",
+      message: error instanceof Error ? error.message : "优惠码无效。",
+    });
+  }
 
   const planCheck = validateCheckoutPlanForWorkspace(ctx.workspacePlan, plan);
   if (!planCheck.ok) {
@@ -57,6 +72,7 @@ export async function POST(request: Request) {
   try {
     const session = await client.checkoutSessions.create({
       product_cart: [{ product_id: productId, quantity: 1 }],
+      ...(discountCode ? { discount_codes: [discountCode] } : {}),
       customer: ctx.user.email ? { email: ctx.user.email } : undefined,
       return_url: returnUrl,
       metadata: buildDodoCheckoutMetadata({

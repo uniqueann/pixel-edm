@@ -1,17 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeCreemDiscountCode } from "../src/lib/billing/creem.ts";
+import { normalizeCheckoutDiscountCode } from "../src/lib/billing/discount-code.ts";
 
-test("Creem 优惠码规范化", () => {
-  assert.equal(normalizeCreemDiscountCode("  welcome10 "), "WELCOME10");
-  assert.equal(normalizeCreemDiscountCode(""), "");
-  assert.equal(normalizeCreemDiscountCode(null), "");
+test("共享支付渠道优惠码规范化", () => {
+  assert.equal(normalizeCheckoutDiscountCode("  welcome10 "), "WELCOME10");
+  assert.equal(normalizeCheckoutDiscountCode(""), "");
+  assert.equal(normalizeCheckoutDiscountCode(null), "");
   assert.throws(
-    () => normalizeCreemDiscountCode("WELCOME-10"),
+    () => normalizeCheckoutDiscountCode("WELCOME-10"),
     /仅支持 1-14 位大写字母或数字/,
   );
   assert.throws(
-    () => normalizeCreemDiscountCode("123456789012345"),
+    () => normalizeCheckoutDiscountCode("123456789012345"),
     /仅支持 1-14 位大写字母或数字/,
   );
 });

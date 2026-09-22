@@ -4,8 +4,8 @@ import {
   getCreemApiKey,
   getCreemEdmProductId,
   isCreemTestMode,
-  normalizeCreemDiscountCode,
 } from "@/lib/billing/creem";
+import { normalizeCheckoutDiscountCode } from "@/lib/billing/discount-code";
 import { buildCreemCheckoutMetadata } from "@/lib/billing/creem-webhook";
 import {
   normalizeCheckoutInterval,
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
   let discountCode: string;
   try {
-    discountCode = normalizeCreemDiscountCode(
+    discountCode = normalizeCheckoutDiscountCode(
       formData?.get("discount_code") ?? null,
     );
   } catch (error) {
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       reason: "provider",
       plan,
       provider: "creem",
-      message: error instanceof Error ? error.message : "Creem 优惠码无效。",
+      message: error instanceof Error ? error.message : "优惠码无效。",
     });
   }
 

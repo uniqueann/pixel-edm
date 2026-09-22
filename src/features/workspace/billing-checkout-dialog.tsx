@@ -106,6 +106,7 @@ export function BillingCheckoutDialog({
             providerName="Dodo Payments"
             providerHint={CHECKOUT_PROVIDER_HINT}
             variant="outline"
+            discountCode={discountCode}
           />
         </div>
         {showProCancelHint && (
@@ -149,9 +150,9 @@ function BillingProviderForm({
       <input type="hidden" name="interval" value={interval} />
       {onDiscountCodeChange ? (
         <div className="mb-3 space-y-1.5">
-          <Label htmlFor="creem-discount-code">Creem 优惠码（可选）</Label>
+          <Label htmlFor="checkout-discount-code">优惠码（可选）</Label>
           <Input
-            id="creem-discount-code"
+            id="checkout-discount-code"
             name="discount_code"
             value={discountCode ?? ""}
             onChange={(event) =>
@@ -162,15 +163,17 @@ function BillingProviderForm({
             placeholder="输入优惠码"
             autoComplete="off"
             autoCapitalize="characters"
-            aria-describedby="creem-discount-code-hint"
+            aria-describedby="checkout-discount-code-hint"
           />
           <p
-            id="creem-discount-code-hint"
+            id="checkout-discount-code-hint"
             className="text-xs leading-relaxed text-muted-foreground"
           >
-            仅支持大写字母和数字，优惠是否有效由 Creem 结账页校验。
+            仅支持大写字母和数字；输入一次后，选择任一支付渠道都会自动带入，优惠是否有效由对应支付平台校验。
           </p>
         </div>
+      ) : discountCode !== undefined ? (
+        <input type="hidden" name="discount_code" value={discountCode} />
       ) : null}
       <Button
         type="submit"
