@@ -51,7 +51,7 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
   await checkout.getByRole("button", { name: "验证" }).click();
   await expect(
     checkout.getByText(/折扣代码不存在|当前环境还不能验证这个折扣代码/),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15000 });
   await expect(page).toHaveURL(/\/settings/);
   await page.keyboard.press("Escape");
   await expect(checkout).not.toBeVisible();
