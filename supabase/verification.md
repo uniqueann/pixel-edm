@@ -236,3 +236,12 @@ DirectMail 全链路回归由既有 `campaign-delivery`、`directmail-events`、
 - **`edm.delivery_plan_limits` seed 核对**（SQL Editor）：`free` 500 客户 / 1 成员 / 3 模板 / 月确认 3 / 日志 0 / 无统计；`pro` 5000 / 1 / ∞ / ∞ / 7 日 / 有统计；`team` 25000 / 20 / ∞ / ∞ / 完整日志 / 有统计。
 - **Pro 多成员 grandfather**：配置 Pro 为 1 成员；不自动移除超额历史成员；仅 Team 可发邀请。生产扫描 Pro 且活跃成员 > 1：**0 行**（2026-09-21）。策略见 `docs/p12-plan-limits-by-contacts.md`。
 - Creem/Dodo 商品描述需在 Dashboard 手工粘贴，文案见 `docs/p12-billing-product-copy.md`。
+
+### P11-5 订阅生命周期（2026-09-22，content-up）
+
+- 已在 **content-up**（`gnrhyahjegvcicektebh`）一次应用 `supabase/migrations/20260922083000_p11_subscription_lifecycle.sql`。云端记录为 `20260922020435_20260922083000_p11_subscription_lifecycle`。只替换 `edm` / `edm_private` 函数，未重放历史迁移，未改 `aigc`、共享 Auth 或其他项目对象。
+- `edm_private.sync_workspace_plan_from_payment` 含 `access_ended` 与 `cancel_at_end`：预约取消且周期未结束时保持已付费档；`expired` 映射为 `canceled` 并降到 free。
+- `edm.get_workspace_billing_cancel_target` 仅 `service_role` 可执行；`anon` 与 `authenticated` 不可执行。内部实现不授予客户端。
+- `edm_private.assert_editor_write_within_member_cap` 仅 `authenticated` 可执行。九个写入口包装（客户、模板、活动、导入）会先调用它，且仍是 `SECURITY INVOKER`。
+- Security Advisor 没有新增 `edm` 条目。现有提示仍是 `aigc.invitations` 无策略、`public` 函数搜索路径、`public.handle_new_user` / `maybe_reset_profile_quota` 的执行权限，以及 Auth 密码保护，均未修改。
+- 未写入测试订阅或业务数据。应用内取消路由随本分支部署后才在站点可用；同步函数与编辑者席位锁在迁移应用后已对现有调用方生效。旧版 Webhook 若仍把取消写成立即撤销（`cancel_at_period_end = false`），生产上仍会立刻降到 free，直到新代码上线。
