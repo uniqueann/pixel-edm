@@ -68,6 +68,7 @@ try {
     "get_workspace_campaign_statistics: { Args: {payload:Json}; Returns:Json }",
     "get_workspace_delivery_plan: { Args: {payload:Json}; Returns:Json }",
     "get_workspace_billing_status: { Args: {payload:Json}; Returns:Json }",
+    "get_workspace_billing_cancel_target: { Args: {payload:Json}; Returns:Json }",
     "sync_workspace_plan_from_payment: { Args: {payload:Json}; Returns:Json }",
     "list_campaign_delivery_tasks: { Args: {payload:Json}; Returns:Json }",
     "resolve_delivery_unknown: { Args: {payload:Json}; Returns:Json }",

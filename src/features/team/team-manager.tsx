@@ -181,10 +181,12 @@ export function TeamManager({
   initialData,
   currentUserId,
   canManage,
+  memberCapNote,
 }: {
   initialData: TeamData;
   currentUserId: string;
   canManage: boolean;
+  memberCapNote?: string | null;
 }) {
   const data = initialData;
   const router = useRouter();
@@ -242,6 +244,7 @@ export function TeamManager({
   };
   return (
     <div className="space-y-6">
+      {memberCapNote ? <p className="hint m-0">{memberCapNote}</p> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="hint m-0">

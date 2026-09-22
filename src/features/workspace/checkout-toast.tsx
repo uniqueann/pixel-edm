@@ -30,6 +30,13 @@ export function CheckoutSuccessToast() {
       }
       return;
     }
+    if (checkout === "cancel_scheduled") {
+      toast.success("已取消续费", {
+        description:
+          "当前周期结束前权益保持不变，到期后降为免费版。客户和成员不会被删除。",
+      });
+      return;
+    }
     if (checkout !== "success") return;
     const provider = params.get("provider");
     const planParam = params.get("plan");

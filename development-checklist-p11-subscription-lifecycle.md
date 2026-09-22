@@ -1,6 +1,6 @@
 # P11-5 订阅生命周期（取消续费与升档生效）
 
-更新日期：2026-09-22。状态：**规划定稿，尚未开工**。总原则：**多给的马上生效，少给的等到当前计费周期结束再生效**。
+更新日期：2026-09-22。状态：**5a–5d 工程已实现，5e 补差价未做**。总原则：**多给的马上生效，少给的等到当前计费周期结束再生效**。
 
 前提：P11-0 至 P11-3 已完成（Checkout、Webhook、设置页升档）。P12 已按有效客户数与席位门控，超额客户只拦新增、不删数据。本批不重做这些能力。
 
@@ -38,39 +38,36 @@
 
 没有这一步，应用内「取消续费」会把当月权益立刻关掉。
 
-- [ ] 新前向迁移只改 `edm` / `edm_private`：`sync_workspace_plan_from_payment` 在 `subscription_status` 仍为 `active`/`trialing` 且 `cancel_at_period_end=true` 时，**保持** `billed_plan`，不写成 free。
-- [ ] 仅在周期已结束或供应商明确结束授权时降 free：Creem `subscription.expired`（现有 `onRevokeAccess`）、以及确认「canceled 表示周期已结束」的事件；Dodo `subscription.expired`。`past_due` 维持现有「仍给 billed_plan」策略，本批不改催收。
-- [ ] Creem：接入 `onSubscriptionScheduledCancel`，只写 `cancel_at_period_end=true`，不调用现有 `handleCreemRevokeAccess`。
-- [ ] 修正 `onSubscriptionCanceled`：若事件仍代表「已预约、周期未结束」，不得降 `plan`。以 Creem 文档与一条测试事件核对后再改调用。
-- [ ] Dodo：`cancel_at_next_billing_date=true` 且状态仍 active 时走预约取消；`subscription.expired` 才降 free。`subscription.cancelled` 若在周期结束前到达，按同一规则处理，不默认立刻降级。
-- [ ] 扩展 `tests/billing-plan-sync.test.mjs`：预约取消保持 pro/team；到期事件变为 free；重复事件仍幂等。
+- [x] 新前向迁移只改 `edm` / `edm_private`：`sync_workspace_plan_from_payment` 在预约取消且周期未结束时保持已付费档。
+- [x] 仅在 `expired` 或立即取消（未标记周期末）时降 free。`past_due` 仍保留 billed plan。
+- [x] Creem：接入 `onSubscriptionScheduledCancel`。`onSubscriptionCanceled` 在周期未结束时改为预约取消。
+- [x] Dodo：`subscription.cancelled` 在 `cancel_at_next_billing_date` 或周期未结束时保留档位；`subscription.expired` 降 free。
+- [x] 扩展 `tests/billing-plan-sync.test.mjs`。
 
 ### P11-5b 应用内取消续费
 
 依赖 5a。
 
-- [ ] `POST /api/billing/cancel`：仅工作区 admin。按 `workspace_billing_subscriptions.payment_provider` 调对应 API。
-  - Creem：`subscriptions.cancel`，`mode: "scheduled"`，`onExecute: "cancel"`（不要 `immediate`，不要 `pause`）。
-  - Dodo：`subscriptions.update`，`status: "cancelled"` 且 `cancel_at_next_billing_date: true`。
-- [ ] 成功后再以服务端写入 `cancel_at_period_end`（Webhook 到达前设置页也能显示「已设置周期末取消」）。Webhook 仍是最终事实来源。
-- [ ] 设置页：admin、且当前有有效付费订阅、且尚未预约取消时，显示「取消续费」。文案写明权益保留到 `current_period_end`，到期后降为免费版，数据不删除。
-- [ ] 编辑者、查看者无此入口；服务端同样拒绝。
-- [ ] 若供应商支持在周期结束前恢复续费，可加「恢复续费」；某一家不支持则该家只做取消，并在按钮旁说明需到对方账户操作。本步不阻塞取消。
+- [x] `POST /api/billing/cancel`：仅工作区 admin。Creem `mode: "scheduled"`；Dodo `status: "cancelled"` 且 `cancel_at_next_billing_date: true`。
+- [x] 成功后写入 `cancel_at_period_end`，设置页显示周期末取消。
+- [x] 设置页文案写明到期后降为免费版，数据不删除。
+- [x] 编辑者、查看者无入口；服务端沿用管理员校验。
+- [ ] 恢复续费：本批不做。
 
 ### P11-5c 降档后的锁定（只锁不删）
 
 可与 5b 并行，依赖的是 `plan` 已降或成员数已超过当前档上限。
 
-- [ ] **客户**：保持现有 headroom。禁止任何「降档时删除或自动归档超额联系人」的任务。
-- [ ] **成员**：不修改 `workspace_members.role`，不软删超额成员，不把 `workspaces.type` 改回 personal。
-- [ ] **写操作**：当活跃成员数 **大于** 当前档 `max_active_members` 时，editor 的发信、导入、保存客户、确认活动、改模板一律拒绝；admin 仍可管理账单、移除成员、转移 owner。恢复到席位内（减员或重新订阅）后写操作自动恢复，不需要迁回角色。
-- [ ] 团队功能开关继续只看 `plan=team`（邀请、协作入口）。降到 free/pro 后邀请保持关闭。
-- [ ] 设置页与团队页说明：超额成员仍在名单中，协作能力已锁定，重新订阅后恢复。不要写成「已降为只读角色」。
+- [x] **客户**：仍只拦新增，不删除。
+- [x] **成员**：不改角色、不踢人、不改 `type`。
+- [x] **写操作**：活跃成员数大于 `max_active_members` 时，editor 的保存客户、导入、模板、活动确认和发信被拒绝；admin 不受限。减员后自动恢复。
+- [x] 邀请仍只在 `plan=team` 时开放。
+- [x] 设置页与团队页说明锁定原因，不把成员写成只读角色。
 
 ### P11-5d 接近上限提示
 
-- [ ] 有效客户 ≥ 80% 且未达 100% 时，设置页（及客户列表空态/顶栏若已有套餐条）提示剩余名额，并链到升档。100% 仍用现有硬拒绝。
-- [ ] 团队席位 ≥ 80% 且 `plan=team` 时同样提示。席位加购 SKU 未做，文案只引导联系或等待加购，不打开不存在的结账。
+- [x] 有效客户 ≥ 80% 且未达 100% 时，设置页提示剩余名额。100% 仍硬拒绝。
+- [x] 团队席位 ≥ 80% 时提示，不打开加购结账。
 
 ### P11-5e 补差价（决策门，默认不开发）
 

@@ -811,46 +811,50 @@ export type Database = {
         Row: {
           plan: string;
           display_name: string;
-          max_billable_contacts: number;
-          max_active_members: number;
-          max_custom_templates: number | null;
-          max_confirmed_campaigns_per_month: number | null;
-          activity_log_retention_days: number | null;
-          allows_campaign_statistics: boolean;
           max_recipients_per_campaign: number;
           daily_send_quota: number;
           max_rate_per_second: number;
           quota_timezone: string;
           created_at: string;
           updated_at: string;
-        };
-        Insert: {
-          plan: string;
-          display_name: string;
           max_billable_contacts: number;
           max_active_members: number;
           max_custom_templates: number | null;
           max_confirmed_campaigns_per_month: number | null;
           activity_log_retention_days: number | null;
           allows_campaign_statistics: boolean;
+        };
+        Insert: {
+          plan: string;
+          display_name: string;
           max_recipients_per_campaign: number;
           daily_send_quota: number;
           max_rate_per_second: number;
           quota_timezone?: string;
           created_at?: string;
           updated_at?: string;
+          max_billable_contacts: number;
+          max_active_members: number;
+          max_custom_templates?: number | null;
+          max_confirmed_campaigns_per_month?: number | null;
+          activity_log_retention_days?: number | null;
+          allows_campaign_statistics: boolean;
         };
         Update: {
           plan?: string;
           display_name?: string;
-          max_billable_contacts?: number;
-          max_active_members?: number;
           max_recipients_per_campaign?: number;
           daily_send_quota?: number;
           max_rate_per_second?: number;
           quota_timezone?: string;
           created_at?: string;
           updated_at?: string;
+          max_billable_contacts?: number;
+          max_active_members?: number;
+          max_custom_templates?: number | null;
+          max_confirmed_campaigns_per_month?: number | null;
+          activity_log_retention_days?: number | null;
+          allows_campaign_statistics?: boolean;
         };
         Relationships: [];
       };
@@ -1329,6 +1333,10 @@ export type Database = {
       };
       get_workspace_delivery_plan: { Args: { payload: Json }; Returns: Json };
       get_workspace_billing_status: { Args: { payload: Json }; Returns: Json };
+      get_workspace_billing_cancel_target: {
+        Args: { payload: Json };
+        Returns: Json;
+      };
       sync_workspace_plan_from_payment: {
         Args: { payload: Json };
         Returns: Json;

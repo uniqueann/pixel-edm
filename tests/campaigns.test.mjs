@@ -25,6 +25,9 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
     insert into edm.workspace_members(workspace_id,user_id,role)
     values('${workspace}','${editor}','editor'),('${workspace}','${viewer}','viewer')
   `);
+  await db.query("update edm.workspaces set plan='team' where id=$1", [
+    workspace,
+  ]);
   const template = (
     await db.query(
       "select id from edm.templates where workspace_id=$1 and archived_at is null order by created_at limit 1",

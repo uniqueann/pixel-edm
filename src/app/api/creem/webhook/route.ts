@@ -4,6 +4,8 @@ import { getCreemWebhookSecret } from "@/lib/billing/creem";
 import {
   handleCreemGrantAccess,
   handleCreemRevokeAccess,
+  handleCreemScheduledCancel,
+  handleCreemSubscriptionCanceled,
 } from "@/lib/billing/creem-webhook";
 import { hasServiceRoleEnv } from "@/lib/supabase/service-role";
 
@@ -21,8 +23,11 @@ function createEdmCreemWebhookHandler() {
     onSubscriptionPastDue: async (context) => {
       await handleCreemGrantAccess(context);
     },
+    onSubscriptionScheduledCancel: async (context) => {
+      await handleCreemScheduledCancel(context);
+    },
     onSubscriptionCanceled: async (context) => {
-      await handleCreemRevokeAccess(context);
+      await handleCreemSubscriptionCanceled(context);
     },
     onSubscriptionUnpaid: async (context) => {
       await handleCreemRevokeAccess(context);

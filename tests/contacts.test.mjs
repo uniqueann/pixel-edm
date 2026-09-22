@@ -112,6 +112,7 @@ test("客户事务、标签、搜索分页及授权", async (t) => {
       ]),
       /foreign key/,
     );
+    await db.query("update edm.workspaces set plan='team' where id=$1", [wa]);
     await db.exec(
       `update edm.workspace_members set role='editor' where workspace_id='${wa}' and user_id='${b}'`,
     );

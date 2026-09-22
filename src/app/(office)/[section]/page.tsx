@@ -190,7 +190,15 @@ export default async function Page({
           </>
         );
       }
-      const team = await listTeam(workspace.id);
+      const [team, teamDeliveryPlan] = await Promise.all([
+        listTeam(workspace.id),
+        getWorkspaceDeliveryPlan(workspace.id),
+      ]);
+      const memberCapNote =
+        teamDeliveryPlan &&
+        teamDeliveryPlan.active_members > teamDeliveryPlan.max_active_members
+          ? "活跃成员已超过当前套餐席位。成员会保留且角色不变，编辑者暂时不能改客户、模板或发信。管理员可以减员，或重新订阅后自动恢复。"
+          : null;
       return (
         <>
           <div className="section-heading">
@@ -208,6 +216,7 @@ export default async function Page({
             initialData={team}
             currentUserId={user.id}
             canManage={role === "admin"}
+            memberCapNote={memberCapNote}
           />
         </>
       );
