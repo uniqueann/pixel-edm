@@ -352,9 +352,27 @@
   overflow: auto;
   padding: 28px 24px;
 }
+[data-slot="dialog-content"] {
+  max-height: min(90dvh, calc(var(--dialog-visual-height, 100dvh) - 16px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+[data-slot="dialog-content"][data-placement="center"] {
+  top: var(--dialog-visual-center, 50%);
+}
+@media (max-width: 639px) {
+  [data-slot="dialog-content"][data-placement="bottom"] {
+    bottom: var(--dialog-visual-bottom, 0px);
+  }
+}
 @media (min-width: 640px) {
   .bottom-sheet {
     border-radius: 20px;
+  }
+  [data-slot="dialog-content"][data-placement="bottom"] {
+    top: var(--dialog-visual-center, 50%);
   }
 }
 .skip-link {
