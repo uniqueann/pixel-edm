@@ -43,6 +43,7 @@
 - [x] Creem：接入 `onSubscriptionScheduledCancel`。`onSubscriptionCanceled` 在周期未结束时改为预约取消。
 - [x] Dodo：`subscription.cancelled` 在 `cancel_at_next_billing_date` 或周期未结束时保留档位；`subscription.expired` 降 free。
 - [x] 扩展 `tests/billing-plan-sync.test.mjs`。
+- [x] 2026-09-22 已应用到 content-up，云端记录 `20260922020435_20260922083000_p11_subscription_lifecycle`。见 `supabase/verification.md`。
 
 ### P11-5b 应用内取消续费
 
