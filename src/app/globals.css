@@ -258,13 +258,27 @@
   margin-bottom: 12px;
 }
 .list-filter {
+  box-sizing: border-box;
+  height: 36px;
   min-height: 36px;
   border: 1px solid var(--border);
   border-radius: 9px;
-  background: var(--card);
-  padding: 7px 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--card);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%235b6478' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 9px center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+  padding: 0 30px 0 10px;
   color: var(--foreground);
   font-size: 14px;
+  line-height: 20px;
+}
+.list-toolbar > [data-slot="button"] {
+  box-sizing: border-box;
+  height: 36px;
+  min-height: 36px;
 }
 .list-search {
   min-height: 38px;

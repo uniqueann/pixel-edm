@@ -191,14 +191,6 @@ export function Templates({
       <p className="hint">
         主题与正文均为纯文本；变量会在活动预览和发信时替换成对应信息。
       </p>
-      <Input
-        className="list-search"
-        aria-label="搜索模板名称或主题"
-        placeholder="搜索模板名称或主题"
-        value={q}
-        maxLength={200}
-        onChange={(event) => setQ(event.target.value)}
-      />
       <div className="list-toolbar">
         {canEdit && <Button onClick={() => openEditor(null)}>新建模板</Button>}
         <select
@@ -228,6 +220,14 @@ export function Templates({
           ))}
         </select>
       </div>
+      <Input
+        className="list-search"
+        aria-label="搜索模板名称或主题"
+        placeholder="搜索模板名称或主题"
+        value={q}
+        maxLength={200}
+        onChange={(event) => setQ(event.target.value)}
+      />
       {hasFilters && (
         <div className="active-filters" aria-label="已应用筛选">
           <span>已筛选</span>
