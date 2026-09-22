@@ -1,6 +1,6 @@
 # P11 支付：content-up 现状与 EDM 对接
 
-更新日期：2026-09-21。
+更新日期：2026-09-22。
 
 ## content-up 已接通（主站 `https://contentup.cc`）
 
@@ -42,7 +42,7 @@
 | Dodo Checkout | `POST https://edm.contentup.cc/api/dodo/checkout` |
 | 支付成功回跳 | `https://edm.contentup.cc/settings?checkout=success&provider=…` |
 
-主站 Dashboard 里已指向 `contentup.cc` 的 Webhook **保持不变**。2026-09-20 已在 Creem 正式环境与 Dodo 测试环境创建 EDM Pro 月付（USD 9.90）和年付（USD 99.90）商品，并新增指向上表 EDM 地址的独立 Webhook。2026-09-21 又完成 Dodo 正式环境商品、正式 Webhook、正式 API Key 和独立 Webhook Key 配置，当前 `pixel-edm` Vercel Production 使用 `live_mode`；商品 ID 与 endpoint 独立密钥只用于 EDM，不写入仓库或文档中的密钥字段。
+主站 Dashboard 里已指向 `contentup.cc` 的 Webhook **保持不变**。2026-09-20 已在 Creem 正式环境与 Dodo 测试环境创建 EDM Pro 月付（测试价 USD 9.90）和年付（测试价 USD 99.90）商品，并新增指向上表 EDM 地址的独立 Webhook。2026-09-21 又完成 Dodo 正式环境商品、正式 Webhook、正式 API Key 和独立 Webhook Key 配置；2026-09-22 已将 Creem/Dodo 正式环境 EDM 商品价格统一调整为 Pro 月付/年付 USD 14.90/149.90、Team 月付/年付 USD 44.90/449.90。当前 `pixel-edm` Vercel Production 使用 `live_mode`；商品 ID 与 endpoint 独立密钥只用于 EDM，不写入仓库或文档中的密钥字段。
 
 ## 实现要点
 

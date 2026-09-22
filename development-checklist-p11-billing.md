@@ -1,6 +1,6 @@
 # P11 套餐与支付（Creem + Dodo Payments）
 
-更新日期：2026-09-21。状态：**P11-0 至 P11-3 已完成**；Dodo 测试模式支付已由用户验证通过，Dodo 正式资源、Vercel Production 配置和重新部署已完成；P11-4 的正式支付闭环及 Creem 端到端验收仍待做，生产 soak 暂缓。
+更新日期：2026-09-22。状态：**P11-0 至 P11-3 已完成**；Dodo 测试模式支付已由用户验证通过，Dodo 正式资源、Vercel Production 配置和重新部署已完成；P11-4 的正式支付闭环及 Creem 端到端验收仍待做，生产 soak 暂缓。
 
 前提：P10 套餐额度与 worker 公平调度已上线；**content-up 主站已接通 Creem / Dodo**（`public.profiles`），见 [docs/p11-payment-contentup-bridge.md](docs/p11-payment-contentup-bridge.md)。EDM 单独按 **工作区** `edm.workspaces.plan` 计费。
 
@@ -14,10 +14,10 @@
 
 | plan | 周期 | 价格 | Creem env 示例 | Dodo env 示例 |
 |------|------|------|----------------|---------------|
-| pro | 月付 | USD 9.90/月 | `CREEM_EDM_PRO_MONTHLY_PRODUCT_ID` | `DODO_EDM_PRO_MONTHLY_PRODUCT_ID` |
-| pro | 年付 | USD 99.90/年 | `CREEM_EDM_PRO_YEARLY_PRODUCT_ID` | `DODO_EDM_PRO_YEARLY_PRODUCT_ID` |
-| team | 月付 | USD 29.90/月 | `CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID` | `DODO_EDM_TEAM_MONTHLY_PRODUCT_ID` |
-| team | 年付 | USD 299.90/年 | `CREEM_EDM_TEAM_YEARLY_PRODUCT_ID` | `DODO_EDM_TEAM_YEARLY_PRODUCT_ID` |
+| pro | 月付 | USD 14.90/月 | `CREEM_EDM_PRO_MONTHLY_PRODUCT_ID` | `DODO_EDM_PRO_MONTHLY_PRODUCT_ID` |
+| pro | 年付 | USD 149.90/年 | `CREEM_EDM_PRO_YEARLY_PRODUCT_ID` | `DODO_EDM_PRO_YEARLY_PRODUCT_ID` |
+| team | 月付 | USD 44.90/月 | `CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID` | `DODO_EDM_TEAM_MONTHLY_PRODUCT_ID` |
+| team | 年付 | USD 449.90/年 | `CREEM_EDM_TEAM_YEARLY_PRODUCT_ID` | `DODO_EDM_TEAM_YEARLY_PRODUCT_ID` |
 
 Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`（及 `userId` 便于审计）。
 
@@ -62,10 +62,10 @@ Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`�
 
 ## Dodo 正式环境切换记录
 
-- 正式月付商品：`Pixel EDM Pro Monthly`，USD 9.90/月，product id `pdt_0No2gHyLcSdQPKblHme1K`。
-- 正式年付商品：`Pixel EDM Pro Yearly`，USD 99.90/年，product id `pdt_0No2gLBidluyO2XawKIW9`。
-- 正式 Team 月付：`Pixel EDM Team Monthly`，USD 29.90/月，product id `pdt_0No4rasQ4M4doZkGAqjH9`。
-- 正式 Team 年付：`Pixel EDM Team Yearly`，USD 299.90/年，product id `pdt_0No4rlZISyRlfh2LLNTRS`。
+- 正式月付商品：`Pixel EDM Pro Monthly`，USD 14.90/月，product id `pdt_0No2gHyLcSdQPKblHme1K`。
+- 正式年付商品：`Pixel EDM Pro Yearly`，USD 149.90/年，product id `pdt_0No2gLBidluyO2XawKIW9`。
+- 正式 Team 月付：`Pixel EDM Team Monthly`，USD 44.90/月，product id `pdt_0No4rasQ4M4doZkGAqjH9`。
+- 正式 Team 年付：`Pixel EDM Team Yearly`，USD 449.90/年，product id `pdt_0No4rlZISyRlfh2LLNTRS`。
 - Creem 正式 Team 月付 / 年付：`prod_3JM8xmGLMmHRezTpovuJUS`、`prod_hMKBsWNunsSvDmZSy9wbB`（与 Pro 同商户；**勿**把 Dodo/Creem 测试 id 写入 Production）。
 - Dodo **测试** Team（仅 Preview / 本地 `test_mode`）：`pdt_0No4ruXTtQuxzrojEcVrt`、`pdt_0No4s3gYm8Lr5qxrVqYN8`。
 - 正式 Webhook：`https://edm.contentup.cc/api/dodo/webhook`，endpoint id `ep_3Jc1cocJXagr4mJX8AKyAXozkVn`，启用订阅和支付相关事件。
