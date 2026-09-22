@@ -43,7 +43,7 @@ npx vercel deploy --prod --yes
 npm run setup:hooks   # 推送前 ci:push
 ```
 
-`scripts/sync-vercel-billing-env.sh` 会按商品名称解析 Creem 正式环境的四个 Pixel EDM Pro/Team 商品 ID，并只写入 Vercel Production；Dodo Pro 使用对应环境的商品 ID，Dodo Team 按名称分别解析正式与测试商品。各支付渠道的 API Key 和独立 Webhook 密钥需要在 Vercel 单独维护，脚本不会覆盖它们。Creem Preview 使用测试 API，需单独配置测试密钥和测试商品 ID。
+`scripts/sync-vercel-billing-env.sh` 会按商品名称解析 Creem 正式环境以及 Dodo 正式/测试环境的四个 Pixel EDM Pro/Team 商品 ID，并写入对应的 Vercel Production/Preview 环境。Dodo 不复用 content-up 主站的 `DODO_PRO_*`，避免把 ContentUp Pro 商品误写入 EDM 配置。各支付渠道的 API Key 和独立 Webhook 密钥需要在 Vercel 单独维护，脚本不会覆盖它们。Creem Preview 使用测试 API，需单独配置测试密钥和测试商品 ID。
 
 **常见错误**：把 Dodo **测试** Team id（如 `pdt_0No4ruXT…`）或 Creem **非正式** id 写入 Production，而运行时 `DODO_PAYMENTS_ENVIRONMENT=live_mode`、Creem 走正式 API → Checkout 报 `Product not found` / `does not exist`。Production 应使用 `development-checklist-p11-billing.md` 中的正式 Team id；可用 `node scripts/resolve-edm-team-product-ids.mjs production` 从 Dashboard 按名称解析最新 id。
 
