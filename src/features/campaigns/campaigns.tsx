@@ -659,14 +659,6 @@ export function Campaigns({
       <p className="hint">
         草稿预览按最新订阅与抑制状态计算；确认后可导出冻结快照，管理员可创建正式发送任务。
       </p>
-      <Input
-        className="list-search"
-        aria-label="搜索活动名称"
-        placeholder="搜索活动名称"
-        value={q}
-        maxLength={200}
-        onChange={(event) => setQ(event.target.value)}
-      />
       <div className="list-toolbar">
         {canEdit && (
           <Button disabled={!editorOptions.templates.length} onClick={openNew}>
@@ -705,6 +697,14 @@ export function Campaigns({
           ))}
         </select>
       </div>
+      <Input
+        className="list-search"
+        aria-label="搜索活动名称"
+        placeholder="搜索活动名称"
+        value={q}
+        maxLength={200}
+        onChange={(event) => setQ(event.target.value)}
+      />
       {hasFilters && (
         <div className="active-filters" aria-label="已应用筛选">
           <span>已筛选</span>
