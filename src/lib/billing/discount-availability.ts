@@ -73,24 +73,6 @@ export function assessDodoDiscount(
   return { available: true, message: "太棒了！这个折扣代码可用。" };
 }
 
-/** Creem 结账响应里的 discount。percentage 的 amount 是百分数，10 表示 10%。 */
-export function assessCreemCheckoutDiscount(
-  discount: {
-    type?: string | null;
-    amount?: number | null;
-  } | null,
-): DiscountChannelCheck {
-  if (!discount) return missingDiscountCheck();
-  if (discount.type === "percentage" && typeof discount.amount === "number") {
-    return {
-      available: true,
-      message: discountSavingsMessage(discount.amount),
-      percentOff: discount.amount,
-    };
-  }
-  return { available: true, message: "太棒了！这个折扣代码可用。" };
-}
-
 export function summarizeDiscountChannels(input: {
   creem: DiscountChannelCheck;
   dodo: DiscountChannelCheck;
@@ -107,7 +89,7 @@ export function summarizeDiscountChannels(input: {
       dodo,
       message: samePercent
         ? discountSavingsMessage(input.creem.percentOff!)
-        : "太棒了！这个折扣代码可用。",
+        : "这个折扣代码可用于两个支付渠道，最终优惠以结账页为准。",
     };
   }
   if (creem || dodo) {
