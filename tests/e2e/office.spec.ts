@@ -36,6 +36,11 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
   await expect(page.getByText("工作区已保存")).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("店铺 / 工作区名称")).toHaveValue("测试店铺");
+  await page.goto(
+    `/settings?checkout=error&reason=discount&msg=${encodeURIComponent("优惠码无效或不能用于当前套餐。请检查后再试，也可以留空直接结账。")}`,
+  );
+  await expect(page.getByText("优惠码无效", { exact: true })).toBeVisible();
+  await expect(page.getByText("也可以留空直接结账")).toBeVisible();
   await page.getByRole("button", { name: "为什么需要联系地址？" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");

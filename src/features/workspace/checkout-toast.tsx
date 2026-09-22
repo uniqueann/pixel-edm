@@ -22,6 +22,12 @@ export function CheckoutSuccessToast() {
         toast.error("暂时无法跳转支付", {
           description: `${planLabel}在服务器上尚未配置 Creem/Dodo 商品 ID（CREEM_EDM_* / DODO_EDM_*）。请在 Vercel 填入 Team 四变量并重新部署；详见 docs/p11-team-billing-setup.md。`,
         });
+      } else if (reason === "discount") {
+        toast.error("优惠码无效", {
+          description:
+            params.get("msg") ??
+            "优惠码无效或不能用于当前套餐。请检查后再试，也可以留空直接结账。",
+        });
       } else {
         toast.error("结账未完成", {
           description:

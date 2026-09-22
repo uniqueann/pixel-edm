@@ -9,6 +9,7 @@ import {
   requireEdmBillingCheckout,
   validateCheckoutPlanForWorkspace,
 } from "@/lib/billing/checkout-context";
+import { describeCheckoutProviderFailure } from "@/lib/billing/checkout-provider-error";
 import { redirectCheckoutError } from "@/lib/billing/checkout-redirect";
 
 export const runtime = "nodejs";
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     return redirectCheckoutError({
-      reason: "provider",
+      reason: "discount",
       plan,
       provider: "dodo",
       message: error instanceof Error ? error.message : "优惠码无效。",
@@ -83,15 +84,27 @@ export async function POST(request: Request) {
       }),
     });
     if (!session.checkout_url) {
-      return NextResponse.json(
-        { ok: false, error: "Dodo 未返回 checkout URL。" },
-        { status: 502 },
-      );
+      return redirectCheckoutError({
+        reason: "provider",
+        plan,
+        provider: "dodo",
+        message: "Dodo Payments 未返回结账链接，请稍后重试。",
+      });
     }
     return NextResponse.redirect(session.checkout_url, 303);
   } catch (error) {
-    const message =
+    const detail =
       error instanceof Error ? error.message : "Dodo Checkout 创建失败。";
-    return NextResponse.json({ ok: false, error: message }, { status: 502 });
+    const failure = describeCheckoutProviderFailure({
+      provider: "dodo",
+      detail,
+      hadDiscountCode: Boolean(discountCode),
+    });
+    return redirectCheckoutError({
+      reason: failure.reason,
+      plan,
+      provider: "dodo",
+      message: failure.message,
+    });
   }
 }
