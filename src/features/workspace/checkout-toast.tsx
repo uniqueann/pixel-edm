@@ -20,10 +20,19 @@ export function CheckoutSuccessToast() {
             : "该档位";
       if (reason === "missing_product") {
         toast.error("暂时无法跳转支付", {
+          id: "checkout-error",
           description: `${planLabel}在服务器上尚未配置 Creem/Dodo 商品 ID（CREEM_EDM_* / DODO_EDM_*）。请在 Vercel 填入 Team 四变量并重新部署；详见 docs/p11-team-billing-setup.md。`,
+        });
+      } else if (reason === "discount") {
+        toast.error("优惠码无效", {
+          id: "checkout-error",
+          description:
+            params.get("msg") ??
+            "优惠码无效或不能用于当前套餐。请检查后再试，也可以留空直接结账。",
         });
       } else {
         toast.error("结账未完成", {
+          id: "checkout-error",
           description:
             params.get("msg") ?? "请稍后重试，或联系管理员检查支付配置。",
         });
@@ -32,6 +41,7 @@ export function CheckoutSuccessToast() {
     }
     if (checkout === "cancel_scheduled") {
       toast.success("已取消续费", {
+        id: "checkout-cancel",
         description:
           "当前周期结束前权益保持不变，到期后降为免费版。客户和成员不会被删除。",
       });
@@ -49,6 +59,7 @@ export function CheckoutSuccessToast() {
           ? "Creem"
           : "支付";
     toast.success(`${name} 结账已完成`, {
+      id: "checkout-success",
       description: planLabel
         ? `${planLabel}订阅生效可能需要几秒。若额度未更新，请刷新设置页。`
         : "订阅生效可能需要几秒。若额度未更新，请刷新页面或稍后在设置中查看。",

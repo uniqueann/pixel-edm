@@ -13,6 +13,7 @@ import {
   requireEdmBillingCheckout,
   validateCheckoutPlanForWorkspace,
 } from "@/lib/billing/checkout-context";
+import { describeCheckoutProviderFailure } from "@/lib/billing/checkout-provider-error";
 import { redirectCheckoutError } from "@/lib/billing/checkout-redirect";
 
 export const runtime = "nodejs";
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     return redirectCheckoutError({
-      reason: "provider",
+      reason: "discount",
       plan,
       provider: "creem",
       message: error instanceof Error ? error.message : "优惠码无效。",
@@ -101,18 +102,27 @@ export async function POST(request: Request) {
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    return NextResponse.json(
-      { ok: false, error: `Creem Checkout 创建失败：${text}` },
-      { status: 502 },
-    );
+    const failure = describeCheckoutProviderFailure({
+      provider: "creem",
+      detail: text,
+      hadDiscountCode: Boolean(discountCode),
+    });
+    return redirectCheckoutError({
+      reason: failure.reason,
+      plan,
+      provider: "creem",
+      message: failure.message,
+    });
   }
 
   const data = (await response.json()) as { checkout_url?: string };
   if (!data.checkout_url) {
-    return NextResponse.json(
-      { ok: false, error: "Creem 未返回 checkout URL。" },
-      { status: 502 },
-    );
+    return redirectCheckoutError({
+      reason: "provider",
+      plan,
+      provider: "creem",
+      message: "Creem 未返回结账链接，请稍后重试。",
+    });
   }
 
   return NextResponse.redirect(data.checkout_url, 303);
