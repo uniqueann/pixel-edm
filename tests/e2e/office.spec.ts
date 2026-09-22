@@ -41,7 +41,7 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
   );
   await expect(page.getByText("优惠码无效", { exact: true })).toBeVisible();
   await expect(page.getByText("也可以留空直接结账")).toBeVisible();
-  await page.getByRole("button", { name: "升级专业版" }).click();
+  await page.getByRole("button", { name: "升级团队版" }).click();
   const checkout = page.getByRole("dialog");
   await expect(checkout.getByText("有折扣代码吗？")).toBeVisible();
   await checkout.getByRole("button", { name: "应用折扣代码" }).click();
