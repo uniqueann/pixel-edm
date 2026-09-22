@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ListPagination } from "@/components/list-pagination";
 import {
   duplicateTemplate,
   saveTemplate,
@@ -54,17 +55,43 @@ export function Templates({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [error, setError] = useState("");
+  const [q, setQ] = useState(filters.q ?? "");
+  const [previousQuery, setPreviousQuery] = useState(filters.q ?? "");
   const [activeField, setActiveField] = useState<"subject" | "body">("body");
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const archived = filters.status === "archived";
   const validationErrors = validateTemplateText(subject, body);
+  const hasFilters = Boolean(filters.q || filters.category);
 
   function navigate(changes: Record<string, string>) {
-    const params = new URLSearchParams({ ...filters, ...changes });
+    const next = { ...filters, ...changes };
+    Object.entries(next).forEach(([key, value]) => {
+      if (!value) delete next[key];
+    });
+    const params = new URLSearchParams(next);
     startTransition(() => router.replace(`/templates?${params}`));
   }
+
+  if (previousQuery !== (filters.q ?? "")) {
+    setPreviousQuery(filters.q ?? "");
+    setQ(filters.q ?? "");
+  }
+
+  useEffect(() => {
+    if (q === (filters.q ?? "")) return;
+    const timer = setTimeout(() => {
+      const next: Record<string, string> = { ...filters, q, page: "1" };
+      Object.entries(next).forEach(([key, value]) => {
+        if (!value) delete next[key];
+      });
+      startTransition(() =>
+        router.replace(`/templates?${new URLSearchParams(next)}`),
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filters, q, router]);
 
   useEffect(() => {
     if (filters.page && Number(filters.page) !== data.page) {
@@ -164,11 +191,19 @@ export function Templates({
       <p className="hint">
         主题与正文均为纯文本；变量会在活动预览和发信时替换成对应信息。
       </p>
-      <div className="mb-4 flex flex-wrap gap-3">
+      <Input
+        className="list-search"
+        aria-label="搜索模板名称或主题"
+        placeholder="搜索模板名称或主题"
+        value={q}
+        maxLength={200}
+        onChange={(event) => setQ(event.target.value)}
+      />
+      <div className="list-toolbar">
         {canEdit && <Button onClick={() => openEditor(null)}>新建模板</Button>}
         <select
           aria-label="模板状态"
-          className="rounded border bg-white p-2"
+          className="list-filter"
           value={archived ? "archived" : "active"}
           onChange={(event) =>
             navigate({ status: event.target.value, page: "1" })
@@ -177,7 +212,39 @@ export function Templates({
           <option value="active">使用中的模板</option>
           <option value="archived">已归档模板</option>
         </select>
+        <select
+          aria-label="模板分类"
+          className="list-filter"
+          value={filters.category ?? ""}
+          onChange={(event) =>
+            navigate({ category: event.target.value, page: "1" })
+          }
+        >
+          <option value="">全部分类</option>
+          {(data.categories ?? []).map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
       </div>
+      {hasFilters && (
+        <div className="active-filters" aria-label="已应用筛选">
+          <span>已筛选</span>
+          {filters.q && <span className="filter-chip">搜索：{filters.q}</span>}
+          {filters.category && (
+            <span className="filter-chip">分类：{filters.category}</span>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ q: "", category: "", page: "1" })}
+          >
+            清空筛选
+          </Button>
+        </div>
+      )}
       <div aria-live="polite" className="hint mt-2">
         {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
       </div>
@@ -195,7 +262,7 @@ export function Templates({
                 <h2 className="break-words">{template.name}</h2>
                 <p className="hint m-0 break-words">{template.subject}</p>
               </div>
-              <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
+              <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto sm:shrink-0">
                 <Button
                   variant="outline"
                   onClick={() => setPreviewing(template)}
@@ -235,29 +302,21 @@ export function Templates({
         ))}
         {!data.items.length && (
           <p className="py-10 text-center">
-            {archived ? "暂无已归档模板。" : "还没有模板，新建一套开始吧。"}
+            {hasFilters
+              ? "没有匹配的模板，请调整搜索或筛选。"
+              : archived
+                ? "暂无已归档模板。"
+                : "还没有模板，新建一套开始吧。"}
           </p>
         )}
       </div>
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          disabled={pending || data.page <= 1}
-          onClick={() => navigate({ page: String(data.page - 1) })}
-        >
-          上一页
-        </Button>
-        <span>
-          {data.page} / {Math.max(1, Math.ceil(data.total / 20))}
-        </span>
-        <Button
-          variant="outline"
-          disabled={pending || data.page * 20 >= data.total}
-          onClick={() => navigate({ page: String(data.page + 1) })}
-        >
-          下一页
-        </Button>
-      </div>
+      <ListPagination
+        page={data.page}
+        pageSize={20}
+        total={data.total}
+        pending={pending}
+        onPageChange={(page) => navigate({ page: String(page) })}
+      />
 
       <Dialog
         open={editing !== undefined}

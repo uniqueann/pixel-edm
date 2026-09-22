@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ListPagination } from "@/components/list-pagination";
 import { activityLabels, type ActivityLogList } from "./model";
 
 const roleLabels: Record<string, string> = {
@@ -23,9 +24,14 @@ export function ActivityLogs({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const hasFilters = Boolean(filters.actor || filters.action);
 
   function navigate(changes: Record<string, string>) {
-    const params = new URLSearchParams({ ...filters, ...changes });
+    const next = { ...filters, ...changes };
+    Object.entries(next).forEach(([key, value]) => {
+      if (!value) delete next[key];
+    });
+    const params = new URLSearchParams(next);
     startTransition(() => router.replace(`/logs?${params}`));
   }
 
@@ -46,20 +52,20 @@ export function ActivityLogs({
         <span>{data.total} 条</span>
       </div>
       <p className="hint">
-        记录客户、名单导入与模板操作；姓名和角色保留操作发生时的快照。
+        记录客户、名单导入、模板、活动和发信通道操作；姓名和角色保留操作发生时的快照。
         {typeof data.retention_days === "number" && data.retention_days > 0
           ? ` 当前套餐仅展示近 ${data.retention_days} 天。`
           : data.retention_days === null
             ? " 团队版展示完整历史。"
             : ""}
       </p>
-      <div className="mb-4">
+      <div className="list-toolbar">
         <label className="mr-2 text-sm" htmlFor="audit-actor">
           操作者
         </label>
         <select
           id="audit-actor"
-          className="max-w-full rounded border bg-white p-2"
+          className="list-filter max-w-full"
           value={filters.actor ?? ""}
           onChange={(event) =>
             navigate({ actor: event.target.value, page: "1" })
@@ -73,7 +79,53 @@ export function ActivityLogs({
             </option>
           ))}
         </select>
+        <label className="mr-2 text-sm" htmlFor="audit-action">
+          操作类型
+        </label>
+        <select
+          id="audit-action"
+          className="list-filter max-w-full"
+          value={filters.action ?? ""}
+          onChange={(event) =>
+            navigate({ action: event.target.value, page: "1" })
+          }
+        >
+          <option value="">全部操作</option>
+          {Object.entries(activityLabels).map(([action, label]) => (
+            <option key={action} value={action}>
+              操作：
+              {action.startsWith("template.")
+                ? `模板：${label.replace("模板", "")}`
+                : label}
+            </option>
+          ))}
+        </select>
       </div>
+      {hasFilters && (
+        <div className="active-filters" aria-label="已应用筛选">
+          <span>已筛选</span>
+          {filters.actor && (
+            <span className="filter-chip">
+              操作者：
+              {data.actors.find((actor) => actor.id === filters.actor)?.name ??
+                filters.actor}
+            </span>
+          )}
+          {filters.action && (
+            <span className="filter-chip">
+              操作：{activityLabels[filters.action] ?? filters.action}
+            </span>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ actor: "", action: "", page: "1" })}
+          >
+            清空筛选
+          </Button>
+        </div>
+      )}
       <div aria-live="polite" className="hint">
         {pending ? "正在加载…" : ""}
       </div>
@@ -107,25 +159,13 @@ export function ActivityLogs({
           <p className="py-10 text-center">暂无匹配的操作记录。</p>
         )}
       </div>
-      <div className="mt-4 flex items-center justify-between">
-        <Button
-          variant="outline"
-          disabled={pending || data.page <= 1}
-          onClick={() => navigate({ page: String(data.page - 1) })}
-        >
-          上一页
-        </Button>
-        <span>
-          {data.page} / {Math.max(1, Math.ceil(data.total / data.page_size))}
-        </span>
-        <Button
-          variant="outline"
-          disabled={pending || data.page * data.page_size >= data.total}
-          onClick={() => navigate({ page: String(data.page + 1) })}
-        >
-          下一页
-        </Button>
-      </div>
+      <ListPagination
+        page={data.page}
+        pageSize={data.page_size}
+        total={data.total}
+        pending={pending}
+        onPageChange={(page) => navigate({ page: String(page) })}
+      />
     </>
   );
 }

@@ -47,13 +47,20 @@ function refreshCampaignViews() {
   revalidatePath("/logs");
 }
 
-export async function listCampaigns(input: { status?: string; page?: string }) {
+export async function listCampaigns(input: {
+  status?: string;
+  q?: string;
+  campaign_status?: string;
+  page?: string;
+}) {
   const { workspace } = await getContext();
   const db = await authorizedWorkspace(workspace.id);
   const { data, error } = await db.rpc("list_campaigns", {
     payload: {
       workspace_id: workspace.id,
       archived: input.status === "archived",
+      q: (input.q ?? "").slice(0, 200),
+      campaign_status: input.campaign_status ?? "",
       page: Math.min(
         1000000,
         Math.max(1, Number.parseInt(input.page ?? "1") || 1),
