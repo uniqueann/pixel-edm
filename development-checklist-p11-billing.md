@@ -56,7 +56,7 @@ Checkout metadata 必须含：`workspaceId`、`billedPlan`、`productScope=edm`�
 
 - [x] Dodo test_mode：用户已验证 Pro Checkout 流程可用。
 - [ ] Dodo live_mode：正式 Pro 支付、Webhook 回调和 `edm.workspaces.plan` 更新闭环。
-- [ ] Creem：Pro 升级 → P10 额度；取消 → free。
+- [ ] Creem：Pro 升级 → P10 额度。取消续费的生效时点改按 [P11-5](development-checklist-p11-subscription-lifecycle.md)：当期保留，到期再降 free（5a 落地前，现有 Webhook 仍会在 canceled 时立刻降 free）。
 - [ ] 主站 Content.up Pro 订阅 **不会** 误改 EDM 工作区 plan（无 `workspaceId` metadata 时不调 EDM RPC）。
 - [ ] `supabase/verification.md` 记录迁移与验收。
 
