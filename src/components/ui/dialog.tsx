@@ -52,16 +52,89 @@ function DialogContent({
   children,
   showCloseButton = true,
   placement = "center",
+  ref,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
   placement?: "center" | "bottom";
 }) {
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const resizeObserverRef = React.useRef<ResizeObserver | null>(null);
+
+  const scrollFocusedIntoView = React.useCallback((content: HTMLDivElement) => {
+    const focused = document.activeElement;
+    if (!(focused instanceof HTMLElement) || !content.contains(focused)) return;
+    const contentBox = content.getBoundingClientRect();
+    const focusedBox = focused.getBoundingClientRect();
+    const gap = 12;
+    if (focusedBox.bottom > contentBox.bottom - gap) {
+      content.scrollTop += focusedBox.bottom - contentBox.bottom + gap;
+    } else if (focusedBox.top < contentBox.top + gap) {
+      content.scrollTop -= contentBox.top + gap - focusedBox.top;
+    }
+  }, []);
+
+  const updateViewport = React.useCallback(() => {
+    const content = contentRef.current;
+    if (!content) return;
+    const viewport = window.visualViewport;
+    const height = viewport?.height ?? window.innerHeight;
+    const top = viewport?.offsetTop ?? 0;
+    content.style.setProperty("--dialog-visual-height", `${height}px`);
+    content.style.setProperty(
+      "--dialog-visual-center",
+      `${top + height / 2}px`,
+    );
+    content.style.setProperty(
+      "--dialog-visual-bottom",
+      `${Math.max(0, window.innerHeight - top - height)}px`,
+    );
+
+    window.requestAnimationFrame(() => {
+      if (contentRef.current === content) scrollFocusedIntoView(content);
+    });
+  }, [scrollFocusedIntoView]);
+
+  const setContentRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
+      contentRef.current = node;
+      if (node) {
+        updateViewport();
+        if (typeof ResizeObserver !== "undefined") {
+          resizeObserverRef.current = new ResizeObserver(() => {
+            if (contentRef.current === node) scrollFocusedIntoView(node);
+          });
+          resizeObserverRef.current.observe(node);
+        }
+      }
+      if (typeof ref === "function") ref(node);
+      else if (ref) ref.current = node;
+    },
+    [ref, scrollFocusedIntoView, updateViewport],
+  );
+
+  React.useEffect(() => {
+    const visualViewport = window.visualViewport;
+    updateViewport();
+    visualViewport?.addEventListener("resize", updateViewport);
+    visualViewport?.addEventListener("scroll", updateViewport);
+    window.addEventListener("resize", updateViewport);
+    return () => {
+      visualViewport?.removeEventListener("resize", updateViewport);
+      visualViewport?.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("resize", updateViewport);
+    };
+  }, [updateViewport]);
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        data-placement={placement}
+        ref={setContentRef}
         className={cn(
           "fixed z-50 grid gap-4 border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           placement === "center"
