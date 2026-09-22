@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 按商品名解析 Pixel EDM Team 在 Creem 正式 / Dodo live|test 的 product id。
+ * 按商品名解析 Pixel EDM Pro/Team 在 Creem 正式及 Dodo live|test 的 product id。
  * 不打印 API Key；仅 stdout 输出 env 名= id，供写入 Vercel 或 .env.local。
  *
  * 依赖：content-up 仓库已安装 `creem`、`dodopayments`，且存在：
@@ -36,23 +36,43 @@ function loadEnv(path) {
 
 loadEnv(join(contentUp, ".env.local"));
 
-const CREEM_TEAM = {
-  monthly: "Pixel EDM Team Monthly",
-  yearly: "Pixel EDM Team Yearly",
+const CREEM_PRODUCTS = {
+  CREEM_EDM_PRO_MONTHLY_PRODUCT_ID: "Pixel EDM Pro Monthly",
+  CREEM_EDM_PRO_YEARLY_PRODUCT_ID: "Pixel EDM Pro Yearly",
+  CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID: "Pixel EDM Team Monthly",
+  CREEM_EDM_TEAM_YEARLY_PRODUCT_ID: "Pixel EDM Team Yearly",
 };
 
-async function creemLiveTeamIds() {
+async function creemLiveProductIds() {
   const { Creem } = require(join(contentUp, "node_modules/creem"));
   const apiKey = process.env.CREEM_API_KEY?.trim();
   if (!apiKey) throw new Error("缺少 content-up .env.local 中的 CREEM_API_KEY");
   const creem = new Creem({ apiKey, server: "prod" });
-  const page = await creem.products.search(1, 50);
-  const items = page.items ?? [];
-  const byName = new Map(items.map((p) => [p.name, p.id]));
-  return {
-    CREEM_EDM_TEAM_MONTHLY_PRODUCT_ID: byName.get(CREEM_TEAM.monthly),
-    CREEM_EDM_TEAM_YEARLY_PRODUCT_ID: byName.get(CREEM_TEAM.yearly),
-  };
+  const expectedNames = new Set(Object.values(CREEM_PRODUCTS));
+  const byName = new Map();
+  let pageNumber = 1;
+  while (pageNumber) {
+    const page = await creem.products.search(pageNumber, 100);
+    for (const product of page.items ?? []) {
+      if (!expectedNames.has(product.name) || product.status !== "active")
+        continue;
+      if (byName.has(product.name)) {
+        throw new Error(`Creem 正式环境中存在重名商品：${product.name}`);
+      }
+      byName.set(product.name, product.id);
+    }
+    pageNumber = page.pagination?.nextPage ?? 0;
+  }
+  const missing = [...expectedNames].filter((name) => !byName.has(name));
+  if (missing.length) {
+    throw new Error(`Creem 正式环境缺少可用商品：${missing.join("、")}`);
+  }
+  return Object.fromEntries(
+    Object.entries(CREEM_PRODUCTS).map(([envKey, name]) => [
+      envKey,
+      byName.get(name),
+    ]),
+  );
 }
 
 async function dodoTeamIds(environment) {
@@ -73,26 +93,31 @@ async function dodoTeamIds(environment) {
       byName.set(p.name, p.product_id);
     }
   }
-  return {
-    DODO_EDM_TEAM_MONTHLY_PRODUCT_ID: byName.get(CREEM_TEAM.monthly),
-    DODO_EDM_TEAM_YEARLY_PRODUCT_ID: byName.get(CREEM_TEAM.yearly),
+  const ids = {
+    DODO_EDM_TEAM_MONTHLY_PRODUCT_ID: byName.get("Pixel EDM Team Monthly"),
+    DODO_EDM_TEAM_YEARLY_PRODUCT_ID: byName.get("Pixel EDM Team Yearly"),
   };
+  const missing = Object.entries(ids)
+    .filter(([, id]) => !id)
+    .map(([name]) => name);
+  if (missing.length) {
+    throw new Error(`Dodo ${environment} 缺少商品：${missing.join("、")}`);
+  }
+  return ids;
 }
 
 const mode = process.argv[2] ?? "production";
-const creem = await creemLiveTeamIds();
 
 if (mode === "preview") {
   const dodo = await dodoTeamIds("test_mode");
-  for (const [k, v] of Object.entries({ ...creem, ...dodo })) {
-    if (!v) console.error(`# 未找到 ${k}`);
-    else console.log(`${k}=${v}`);
+  for (const [k, v] of Object.entries(dodo)) {
+    console.log(`${k}=${v}`);
   }
 } else if (mode === "production") {
+  const creem = await creemLiveProductIds();
   const dodo = await dodoTeamIds("live_mode");
   for (const [k, v] of Object.entries({ ...creem, ...dodo })) {
-    if (!v) console.error(`# 未找到 ${k}`);
-    else console.log(`${k}=${v}`);
+    console.log(`${k}=${v}`);
   }
 } else {
   console.error(

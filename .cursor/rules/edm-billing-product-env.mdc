@@ -1,10 +1,10 @@
 ---
-description: Creem/Dodo Dashboard 改 Team 商品后同步 Vercel 的三步命令
+description: Creem/Dodo Dashboard 改 Pro/Team 商品后同步 Vercel 的三步命令
 globs: scripts/sync-vercel-billing-env.sh,scripts/resolve-edm-team-product-ids.mjs,docs/p11*.md,development-checklist-p11-billing.md,src/lib/billing/**
 alwaysApply: false
 ---
 
-# EDM Team 商品 ID 与 Vercel
+# EDM Pro/Team 商品 ID 与 Vercel
 
 在 Creem / Dodo Dashboard **新建或更换** Pixel EDM Team（或需重推 Pro/Team）商品后，按顺序执行（Production 与 Preview 的 Dodo id 不同，由 resolve 脚本区分）：
 
@@ -14,6 +14,7 @@ node scripts/resolve-edm-team-product-ids.mjs production
 npx vercel deploy --prod --yes
 ```
 
-- 依赖：同级目录 `content-up` 的 `.env.local`（Creem）与 `.env.dodo-live.local`（Dodo 正式）；见 `docs/p11-team-billing-setup.md`。
+- 依赖：同级目录 `content-up` 的 `.env.local`（Creem 正式、Dodo 测试）与 `.env.dodo-live.local`（Dodo 正式）；见 `docs/p11-team-billing-setup.md`。
+- 同步脚本只写入商品 ID，不覆盖 Pixel EDM 的 API Key 与独立 Webhook 密钥；Creem 正式商品 ID 只写入 Production。
 - **勿**把 Dodo 测试 Team id 写入 Production（`DODO_PAYMENTS_ENVIRONMENT=live_mode` 会报 Product does not exist）。
 - 写入 Vercel 后必须重新部署，运行时才会读到新变量。

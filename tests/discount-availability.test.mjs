@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  assessCreemCheckoutDiscount,
   assessDodoDiscount,
   summarizeDiscountChannels,
 } from "../src/lib/billing/discount-availability.ts";
@@ -116,11 +115,17 @@ test("两边都不存在时给出同一句拒绝", () => {
   assert.equal(summary.message, "折扣代码不存在");
 });
 
-test("Creem 结账响应里的百分比折扣", () => {
-  const result = assessCreemCheckoutDiscount({
-    type: "percentage",
-    amount: 10,
+test("Creem 接受优惠码但未返回折扣金额时，不误报百分比", () => {
+  const summary = summarizeDiscountChannels({
+    creem: { available: true, message: "Creem 已接受优惠码" },
+    dodo: {
+      available: true,
+      message: "太棒了！你节省了 10%！",
+      percentOff: 10,
+    },
   });
-  assert.equal(result.percentOff, 10);
-  assert.equal(assessCreemCheckoutDiscount(null).message, "折扣代码不存在");
+  assert.equal(summary.creem, true);
+  assert.equal(summary.dodo, true);
+  assert.match(summary.message, /两个支付渠道/);
+  assert.doesNotMatch(summary.message, /节省了 10%/);
 });
