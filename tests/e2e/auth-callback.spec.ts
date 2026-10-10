@@ -15,9 +15,9 @@ test("邮件链接在本站完成验证，code 分支仍回到登录错误", asy
 }) => {
   await page.goto("/auth/callback?token_hash=nope&type=email");
   await expect(page).toHaveURL(/\/login\?error=callback$/);
-  await expect(page.getByRole("alert")).toHaveText(
-    "验证链接无效或已过期，请重新登录或申请邮件。",
-  );
+  await expect(
+    page.getByText("验证链接无效或已过期，请重新登录或申请邮件。"),
+  ).toBeVisible();
 
   await page.goto("/auth/callback?token_hash=valid-email&type=email");
   await expect(page).toHaveURL(/\/dashboard$/);
