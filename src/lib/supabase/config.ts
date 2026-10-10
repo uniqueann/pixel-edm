@@ -17,6 +17,10 @@ export function siteUrl() {
   return new URL(value).origin;
 }
 
+/**
+ * 注册、OAuth 的回调。普通注册只用精确 /auth/callback（引导页由回调默认），
+ * 只有重置密码和邀请才附带 next，避免未入白名单的地址回退到共享 Site URL。
+ */
 export function authCallbackUrl(next?: string) {
   const callback = `${siteUrl()}/auth/callback`;
   const supportedNext =
@@ -27,4 +31,9 @@ export function authCallbackUrl(next?: string) {
   return supportedNext
     ? `${callback}?next=${encodeURIComponent(supportedNext)}`
     : callback;
+}
+
+/** 重置密码邮件的 redirectTo。斜杠不编码，与已验收的白名单写法一致。 */
+export function passwordRecoveryRedirectUrl() {
+  return `${siteUrl()}/auth/callback?next=/reset-password`;
 }

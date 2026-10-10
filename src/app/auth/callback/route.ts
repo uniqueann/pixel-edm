@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { serverClient } from "@/lib/supabase/server";
+import {
+  completeAuthCallback,
+  planAuthCallback,
+} from "@/lib/supabase/auth-callback";
 import { siteUrl } from "@/lib/supabase/config";
+import { serverClient } from "@/lib/supabase/server";
+
 export async function GET(request: NextRequest) {
-  const code = request.nextUrl.searchParams.get("code");
-  const requestedNext = request.nextUrl.searchParams.get("next");
-  const next =
-    requestedNext &&
-    (requestedNext === "/reset-password" ||
-      requestedNext.startsWith("/invite/"))
-      ? requestedNext
-      : "/onboarding";
-  if (code) {
-    const { error } = await (
-      await serverClient()
-    ).auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(next, siteUrl()));
-  }
-  return NextResponse.redirect(new URL("/login?error=callback", siteUrl()));
+  const plan = planAuthCallback({
+    code: request.nextUrl.searchParams.get("code"),
+    tokenHash: request.nextUrl.searchParams.get("token_hash"),
+    type: request.nextUrl.searchParams.get("type"),
+    next: request.nextUrl.searchParams.get("next"),
+  });
+  const path = await completeAuthCallback(plan, {
+    async verifyOtp(params) {
+      return (await serverClient()).auth.verifyOtp(params);
+    },
+    async exchangeCodeForSession(code) {
+      return (await serverClient()).auth.exchangeCodeForSession(code);
+    },
+  });
+  return NextResponse.redirect(new URL(path, siteUrl()));
 }

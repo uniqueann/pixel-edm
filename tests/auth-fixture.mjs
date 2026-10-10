@@ -186,6 +186,22 @@ const server = createServer(async (req, res) => {
         user: user(a),
       });
     }
+    // 邮件链接的 token_hash 校验。只接受注册确认和重置密码，其余类型保持失败。
+    if (url.pathname === "/auth/v1/verify" && req.method === "POST") {
+      const accepted =
+        (input.token_hash === "valid-email" &&
+          (input.type === "email" || input.type === "signup")) ||
+        (input.token_hash === "valid-recovery" && input.type === "recovery");
+      if (!accepted) return send({ message: "验证失败" }, 403);
+      return send({
+        access_token: token(a),
+        refresh_token: "test-refresh",
+        token_type: "bearer",
+        expires_in: 3600,
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        user: user(a),
+      });
+    }
     const bearer = req.headers.authorization?.replace("Bearer ", "");
     const id = bearer === token(a) ? a : bearer === token(b) ? b : null;
     // 令牌时间随秒变化，因此测试验证解析后的固定用户与测试签名。
