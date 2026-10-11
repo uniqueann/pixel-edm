@@ -5,7 +5,7 @@ async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("邮箱", { exact: true }).fill("owner@example.test");
   await page.getByLabel("密码").fill("edm-test-password");
-  await page.getByRole("button", { name: "登录邮局" }).click();
+  await page.getByRole("button", { name: "登录", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
@@ -65,7 +65,7 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
     "3",
   );
   await expect(previewDialog.getByText(/排除明细/)).toContainText(
-    "归档 1 位 · 未订阅 1 位 · 受抑制 1 位",
+    "已归档 1 位 · 未订阅 1 位 · 已退订/黑名单 1 位",
   );
   await expect(previewDialog.getByText(/请补充活动变量/)).toContainText(
     "{{order_number}}",
@@ -152,16 +152,16 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await card.getByRole("button", { name: "预览" }).click();
   previewDialog = page.getByRole("dialog");
   await expect(
-    previewDialog.getByRole("button", { name: "确认并冻结活动" }),
+    previewDialog.getByRole("button", { name: "确认活动名单" }),
   ).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
-  await previewDialog.getByRole("button", { name: "确认并冻结活动" }).click();
-  await expect(page.getByText(/活动已确认，冻结 7 位收件人/)).toBeVisible();
+  await previewDialog.getByRole("button", { name: "确认活动名单" }).click();
+  await expect(page.getByText(/活动已确认，已锁定 7 位收件人/)).toBeVisible();
   card = page
     .getByRole("heading", { name: "归档模板活动", exact: true })
     .locator("xpath=ancestor::div[@data-slot='card']");
   await expect(card.getByText("已确认", { exact: true })).toBeVisible();
-  await expect(card.getByText("冻结 7 位收件人")).toBeVisible();
+  await expect(card.getByText("已锁定 7 位收件人")).toBeVisible();
   await expect(card.getByText(/模板版本 3/)).toBeVisible();
   const exportHref = await card
     .getByRole("link", { name: "下载 CSV" })

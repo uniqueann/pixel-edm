@@ -141,8 +141,7 @@ export function ChannelFormDialog({
             {connected ? `更新${titleProvider}` : `连接${titleProvider}`}
           </DialogTitle>
           <DialogDescription>
-            保存区域、发件身份和加密凭据；只有点击“发送测试邮件”才会调用
-            {provider.display_name}。
+            保存发信身份与密钥后，请点击“发送测试邮件”验证连通性。
           </DialogDescription>
           {provider.provider === "aliyun_directmail" && (
             <Link
@@ -271,8 +270,7 @@ export function ChannelFormDialog({
                 {...form.register("event_webhook_public_key")}
               />
               <p className="hint m-0">
-                保存后用于 edm-sendgrid-events 校验回执签名；可在配置 Webhook
-                前留空，但收到事件前必须填写。
+                用于校验 SendGrid 回执事件签名；开启 Webhook 回执前必须填写。
               </p>
               <p className="field-error">
                 {form.formState.errors.event_webhook_public_key?.message}
@@ -307,7 +305,7 @@ export function ChannelFormDialog({
             </h3>
             {connected && (
               <p className="hint mt-1 mb-3">
-                留空会保留现有凭据；同时填写两项会创建新凭据版本。
+                留空则保留当前凭据；填写新密钥将更新保存。
               </p>
             )}
             <div
@@ -359,7 +357,7 @@ export function ChannelFormDialog({
           )}
           <DialogFooter showCloseButton>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "安全保存中…" : "安全保存配置"}
+              {form.formState.isSubmitting ? "正在保存…" : "保存配置"}
             </Button>
           </DialogFooter>
         </form>

@@ -140,9 +140,7 @@ export function AppShell({
       <main id="main-content" className="view" key={workspaceId}>
         {children}
       </main>
-      <footer className="app-footer">
-        卖家邮局 · 好的联络，从用心准备开始
-      </footer>
+      <footer className="app-footer">卖家邮局 · 独立站与外贸邮件营销</footer>
     </div>
   );
 }

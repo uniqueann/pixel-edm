@@ -52,7 +52,7 @@ export function ActivityLogs({
         <span>{data.total} 条</span>
       </div>
       <p className="hint">
-        记录客户、名单导入、模板、活动和发信通道操作；姓名和角色保留操作发生时的快照。
+        记录工作区内的关键操作动态，展示操作人、操作内容及发生时间。
         {typeof data.retention_days === "number" && data.retention_days > 0
           ? ` 当前套餐仅展示近 ${data.retention_days} 天。`
           : data.retention_days === null

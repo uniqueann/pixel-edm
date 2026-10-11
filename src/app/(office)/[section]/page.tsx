@@ -37,23 +37,23 @@ const pages: Record<
 > = {
   contacts: {
     title: "客户名单",
-    description: "客户管理将在下一批接入，支持名单导入、标签和订阅状态。",
-    empty: "为第一位客户留个位置",
+    description: "支持名单导入、标签筛选和订阅状态管理。",
+    empty: "暂无客户，添加或导入第一批联系人",
   },
   templates: {
     title: "邮件模板库",
-    description: "下一批将接入纯文本模板、变量插入和六套起步模板。",
-    empty: "好的邮件，从一份模板开始",
+    description: "支持纯文本模板与动态变量插入，快速复用。",
+    empty: "暂无模板，创建你的第一套邮件模板",
   },
   campaigns: {
     title: "发信活动",
-    description: "活动管理将在下一批接入，届时可准备草稿、预览和导出邮件。",
-    empty: "为下一次联络做好准备",
+    description: "支持准备草稿、受众预览、锁定名单与正式发送。",
+    empty: "暂无发信活动，创建一份新活动草稿",
   },
   logs: {
     title: "操作记录",
-    description: "业务操作接入后，这里将展示真实的操作记录。",
-    empty: "这里会记住每一次用心",
+    description: "记录工作区内的关键操作动态与审计日志。",
+    empty: "暂无操作记录，产生业务变动后将在此记录",
   },
 };
 export default async function Page({
@@ -127,7 +127,7 @@ export default async function Page({
         <Card>
           <CardContent className="pt-6">
             <h2 className="mb-2">店铺信息</h2>
-            <p className="hint">让每一封邮件，都带着你的名字。</p>
+            <p className="hint">用于邮件页脚落款与发件人默认信息。</p>
             <SettingsForm
               key={workspace.id}
               name={workspace.name}
@@ -140,15 +140,14 @@ export default async function Page({
           <div>
             <h2>发信通道</h2>
             <p className="hint mt-2 mb-0">
-              为工作区配置发信服务商与主通道，并向当前管理员的已验证邮箱发送测试邮件。
-              首次开通可按{" "}
+              为工作区配置发信服务商与主通道，保存后可发送测试邮件验证连通性。首次开通请参考{" "}
               <Link
                 href="/help#help-directmail-setup"
                 className="underline underline-offset-2"
               >
                 DirectMail 图文教程
               </Link>
-              操作；发送前再看上线核对。
+              。
             </p>
           </div>
           <ChannelSettings
@@ -187,8 +186,8 @@ export default async function Page({
               <h1>团队成员</h1>
             </div>
             <EmptyState
-              title="团队协作属于团队版"
-              description="个人免费版与专业版为单人使用。需要多人协作、角色权限与完整操作日志时，请升级团队版。"
+              title="多人协作仅在团队版可用"
+              description="升级团队版后可邀请成员协同管理、分配角色权限并查看完整操作记录。"
             />
           </>
         );
@@ -200,7 +199,7 @@ export default async function Page({
       const memberCapNote =
         teamDeliveryPlan &&
         teamDeliveryPlan.active_members > teamDeliveryPlan.max_active_members
-          ? "活跃成员已超过当前套餐席位。成员会保留且角色不变，编辑者暂时不能改客户、模板或发信。管理员可以减员，或重新订阅后自动恢复。"
+          ? "当前活跃成员数已超出套餐席位。成员仍会保留，但运营人员的操作权限已暂停。管理员可移除多余成员或升级套餐以恢复。"
           : null;
       return (
         <>
@@ -273,7 +272,7 @@ export default async function Page({
         <div className="welcome">
           <span className="eyebrow">你的客户联络小站</span>
           <h1>{workspace.name}</h1>
-          <p>从一份名单、一封邮件，开始长久的联络。</p>
+          <p>管理客户、设计模板并高效发送营销邮件。</p>
         </div>
         <div className="stat-grid">
           {[

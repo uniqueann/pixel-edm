@@ -136,7 +136,7 @@ export function Contacts({
           value={archived ? "archived" : "active"}
           onChange={(e) => navigate({ status: e.target.value, page: "1" })}
         >
-          <option value="active">正常客户</option>
+          <option value="active">有效客户</option>
           <option value="archived">已归档</option>
         </select>
         <select
@@ -430,7 +430,7 @@ export function Contacts({
           <DialogHeader>
             <DialogTitle>确认手动退订</DialogTitle>
             <DialogDescription>
-              退订会写入独立抑制记录。再次导入相同邮箱也不会恢复订阅。
+              手动退订后，系统将把该邮箱加入防打扰名单，后续重新导入名单也不会向其发信。
             </DialogDescription>
           </DialogHeader>
           <form
@@ -448,7 +448,7 @@ export function Contacts({
               setBusy(false);
               if (result.error) return toast.error(result.error);
               setUnsubscribing(undefined);
-              toast.success("客户已退订，抑制记录已保存");
+              toast.success("客户已成功退订");
               router.refresh();
             }}
           >

@@ -47,7 +47,7 @@ test("移动端输入法出现后底部和居中弹窗仍可见且可滚动", as
   await page.goto("/login");
   await page.getByLabel("邮箱", { exact: true }).fill("owner@example.test");
   await page.getByLabel("密码", { exact: true }).fill("edm-test-password");
-  await page.getByRole("button", { name: "登录邮局" }).click();
+  await page.getByRole("button", { name: "登录", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto("/settings");
 

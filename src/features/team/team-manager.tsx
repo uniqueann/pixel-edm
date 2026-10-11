@@ -258,7 +258,7 @@ export function TeamManager({
         )}
       </div>
       <section>
-        <h2>活动成员（{data.members.length}）</h2>
+        <h2>团队成员（{data.members.length}）</h2>
         <div className="mt-2 rounded-xl border bg-card px-5">
           {data.members.map((member) => (
             <MemberRow
@@ -278,7 +278,7 @@ export function TeamManager({
           <div className="flex items-baseline justify-between gap-3">
             <h2>待处理邀请（{data.invitations.length}）</h2>
             <span className="hint m-0">
-              仅展示邮箱掩码，不保存可再次复制的明文链接。
+              为保障安全，仅显示部分邮箱字符；邀请链接关闭后不可再次查看，失效请重新生成。
             </span>
           </div>
           <div className="mt-2 rounded-xl border bg-card px-5">

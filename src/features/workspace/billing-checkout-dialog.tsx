@@ -137,7 +137,7 @@ export function BillingCheckoutDialog({
       });
       setNotice({
         tone: "success",
-        text: data.message ?? "太棒了！这个折扣代码可用。",
+        text: data.message ?? "折扣代码已生效。",
       });
     } catch {
       setApplied(null);

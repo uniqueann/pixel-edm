@@ -127,10 +127,10 @@ export function AuthForm({
   }
   return (
     <section className="auth-card">
-      <span className="eyebrow">每一封邮件，都有温度</span>
+      <span className="eyebrow">卖家邮局</span>
       <h1>{titles[mode]}</h1>
-      <p className="hint">管理客户、准备内容，让每一次联络更从容。</p>
-      {!isConfigured() && <p role="alert">请先配置 Supabase 连接信息。</p>}
+      <p className="hint">登录你的账号，管理客户并发送邮件。</p>
+      {!isConfigured() && <p role="alert">系统服务配置异常，请联系管理员。</p>}
       <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
         {mode !== "reset" && (
           <div className="space-y-2">
@@ -169,7 +169,7 @@ export function AuthForm({
           {busy
             ? "请稍候…"
             : mode === "login"
-              ? "登录邮局"
+              ? "登录"
               : mode === "register"
                 ? "注册账号"
                 : mode === "forgot"
