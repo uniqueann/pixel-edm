@@ -8,12 +8,26 @@ export type HelpSection = {
   bullets?: string[];
   note?: string;
   warning?: string;
+  targetRoleLabel?: string;
+  icon?:
+    | "sparkles"
+    | "shield"
+    | "rocket"
+    | "mail"
+    | "users"
+    | "send"
+    | "check-circle"
+    | "clock";
+  keywords?: string[];
 };
 
 export const helpSections: HelpSection[] = [
   {
     id: "overview",
     title: "产品能做什么",
+    icon: "sparkles",
+    targetRoleLabel: "全员通用",
+    keywords: ["工作区", "订阅", "配额", "限制", "主通道", "套餐"],
     intro:
       "卖家邮局（EDM）以工作区为单位管理订阅客户、邮件模板和发信活动。正式邮件通过你自有的发信服务商账号发出；当前默认使用阿里云邮件推送（DirectMail）。更多发信通道（如 Amazon SES、SendGrid）正在适配中。",
     bullets: [
@@ -25,6 +39,9 @@ export const helpSections: HelpSection[] = [
   {
     id: "roles",
     title: "角色与权限",
+    icon: "shield",
+    targetRoleLabel: "全员通用",
+    keywords: ["管理员", "运营", "查看者", "席位", "权限", "邀请"],
     bullets: [
       "管理员：工作区设置、发信通道、团队成员、正式发送、行为追踪与 Webhook、操作记录。",
       "运营：客户管理、邮件模板、活动草稿、预览、确认、导出 CSV；不能修改通道或开始正式发送。",
@@ -34,6 +51,9 @@ export const helpSections: HelpSection[] = [
   {
     id: "onboarding",
     title: "首次使用（建议顺序）",
+    icon: "rocket",
+    targetRoleLabel: "管理员与运营",
+    keywords: ["快速开始", "步骤", "流程", "初始化", "发信", "向导"],
     steps: [
       "登录后完成工作区初始化（个人工作区可邀请同事转为团队工作区）。",
       "设置 → 填写店铺/工作区名称与发件人联系地址 → 保存设置。",
@@ -47,10 +67,36 @@ export const helpSections: HelpSection[] = [
   {
     id: "directmail-setup",
     title: "图解开通 DirectMail",
+    icon: "mail",
+    targetRoleLabel: "仅管理员",
+    keywords: [
+      "阿里云",
+      "DNS",
+      "域名",
+      "SPF",
+      "DKIM",
+      "DMARC",
+      "RAM",
+      "AccessKey",
+      "测试邮件",
+      "Webhook",
+      "EventBridge",
+      "追踪",
+    ],
   },
   {
     id: "directmail-channel",
     title: "DirectMail 通道注意事项",
+    icon: "mail",
+    targetRoleLabel: "仅管理员",
+    keywords: [
+      "发件人名称",
+      "14个字符",
+      "标签",
+      "令牌",
+      "密钥安全",
+      "暂停发送",
+    ],
     bullets: [
       "发件地址须属于已验证的发件域名；发件人名称长度上限 14 个字符（DirectMail 平台限制）。",
       "测试邮件只发往当前管理员的已验证登录邮箱，用于确认密钥与区域配置无误。",
@@ -64,6 +110,9 @@ export const helpSections: HelpSection[] = [
   {
     id: "contacts",
     title: "客户、订阅与退订",
+    icon: "users",
+    targetRoleLabel: "管理员与运营",
+    keywords: ["名单导入", "订阅状态", "防打扰", "退订链接", "投诉", "归档"],
     bullets: [
       "仅「已订阅」且未退订的客户会进入活动受众；已归档的客户不会收到新活动邮件。",
       "导入名单时勾选同意会留下授权凭据；已退订或投诉的地址不会因再次导入而自动恢复订阅。",
@@ -73,6 +122,9 @@ export const helpSections: HelpSection[] = [
   {
     id: "campaigns",
     title: "活动与正式发送",
+    icon: "send",
+    targetRoleLabel: "管理员与运营",
+    keywords: ["锁定名单", "正式发送", "暂停", "核对结果", "黑名单", "快照"],
     bullets: [
       "确认活动会锁定当时的模板与受众名单快照；之后模板或名单变动不会影响已确认的活动。",
       "开始正式发送须输入完整活动名称确认，使用当前主通道进行发送。",
@@ -83,6 +135,9 @@ export const helpSections: HelpSection[] = [
   {
     id: "go-live",
     title: "上线前核对清单（约 30 分钟）",
+    icon: "check-circle",
+    targetRoleLabel: "仅管理员",
+    keywords: ["上线检查", "验收", "测试活动", "小名单", "权限确认"],
     intro: "在对外大规模使用前，建议由管理员在工作区内逐项核对完成上线准备。",
     steps: [
       "设置 → 确认联系地址已填写；主通道状态显示为「已验证」。",
@@ -96,6 +151,9 @@ export const helpSections: HelpSection[] = [
   {
     id: "sendgrid-future",
     title: "关于 SendGrid（即将支持）",
+    icon: "clock",
+    targetRoleLabel: "全员通用",
+    keywords: ["SendGrid", "通道适配", "后续规划"],
     bullets: [
       "SendGrid 发信通道适配正在进行中，将在后续版本面向所有工作区开放。",
       "开放后支持使用自有的 SendGrid 账号与域名认证发件，并支持送达、打开与点击回执追踪。",
@@ -104,6 +162,9 @@ export const helpSections: HelpSection[] = [
   {
     id: "ses-future",
     title: "关于 Amazon SES（即将支持）",
+    icon: "clock",
+    targetRoleLabel: "全员通用",
+    keywords: ["Amazon SES", "AWS", "SNS", "后续规划"],
     bullets: [
       "Amazon SES 发信通道适配正在进行中，将在后续版本开放创建通道。",
       "开放后支持通过自有 AWS 账号与 SES 发信身份发信，并支持 SNS 投递回执与行为追踪。",

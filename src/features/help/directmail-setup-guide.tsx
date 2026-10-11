@@ -1,6 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, ExternalLink } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  CheckCircle2,
+  ExternalLink,
+  MoveHorizontal,
+} from "lucide-react";
 
 type GuideStep = {
   number: string;
@@ -168,11 +174,11 @@ const advancedSteps: GuideStep[] = [
 
 function StepCard({ step }: { step: GuideStep }) {
   return (
-    <li className="list-none rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
+    <li className="list-none rounded-2xl border bg-card p-4.5 shadow-xs sm:p-6 transition-all">
       <article aria-labelledby={`directmail-step-${step.number}`}>
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3.5 sm:gap-4">
           <span
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary font-mono text-sm font-semibold text-primary-foreground"
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-mono text-xs font-semibold text-primary-foreground sm:size-10 sm:rounded-xl sm:text-sm"
             aria-hidden="true"
           >
             {step.number}
@@ -183,15 +189,17 @@ function StepCard({ step }: { step: GuideStep }) {
             </p>
             <h3
               id={`directmail-step-${step.number}`}
-              className="mt-1 mb-2 text-lg"
+              className="mt-1 mb-1.5 text-base font-semibold tracking-tight sm:text-lg"
             >
               {step.title}
             </h3>
-            <p className="m-0 text-sm leading-7">{step.description}</p>
+            <p className="m-0 text-sm leading-relaxed text-foreground/90 sm:leading-7">
+              {step.description}
+            </p>
           </div>
         </div>
 
-        <ol className="mt-4 mb-0 list-decimal space-y-2 pl-6 text-sm leading-7">
+        <ol className="mt-3.5 mb-0 list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-foreground/85 sm:mt-4 sm:space-y-2 sm:pl-6 sm:leading-7">
           {step.actions.map((action) => (
             <li key={action}>{action}</li>
           ))}
@@ -199,13 +207,28 @@ function StepCard({ step }: { step: GuideStep }) {
 
         {step.illustration && (
           <figure className="mt-5 mb-0">
-            <div className="overflow-x-auto rounded-xl border bg-[#f8f8f4]">
+            <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground sm:hidden">
+              <span className="inline-flex items-center gap-1 font-medium">
+                <MoveHorizontal className="size-3.5" aria-hidden="true" />
+                左右滑动查看完整图示
+              </span>
+              <a
+                href={step.illustration.src}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-medium underline underline-offset-2 hover:text-foreground"
+              >
+                看原图
+                <ExternalLink className="size-3" aria-hidden="true" />
+              </a>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-border bg-muted/40 p-1 dark:bg-muted/15">
               <Image
                 src={step.illustration.src}
                 width={step.illustration.width}
                 height={step.illustration.height}
                 alt={step.illustration.alt}
-                className="h-auto min-w-[680px]"
+                className="h-auto min-w-[640px] rounded-lg"
               />
             </div>
             <figcaption className="mt-2 text-xs text-muted-foreground">
@@ -214,10 +237,10 @@ function StepCard({ step }: { step: GuideStep }) {
           </figure>
         )}
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-          <p className="m-0 flex items-start gap-2 text-sm text-[#2f6e52]">
+        <div className="mt-5 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="m-0 flex items-start gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
             <CheckCircle2
-              className="mt-0.5 size-4 shrink-0"
+              className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
               aria-hidden="true"
             />
             <span>完成标志：{step.done}</span>
@@ -227,10 +250,13 @@ function StepCard({ step }: { step: GuideStep }) {
               href={step.reference.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
+              className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border/80 bg-background/80 px-2.5 py-1.5 text-xs text-foreground/90 transition-colors hover:bg-muted sm:self-auto sm:text-sm"
             >
-              {step.reference.label}
-              <ExternalLink className="size-3.5" aria-hidden="true" />
+              <span>{step.reference.label}</span>
+              <ExternalLink
+                className="size-3.5 shrink-0 opacity-70"
+                aria-hidden="true"
+              />
             </a>
           )}
         </div>
@@ -242,17 +268,17 @@ function StepCard({ step }: { step: GuideStep }) {
 export function DirectMailSetupGuide() {
   return (
     <section id="help-directmail-setup" className="scroll-mt-24 space-y-6">
-      <div className="overflow-hidden rounded-2xl bg-primary px-5 py-7 text-primary-foreground sm:px-8">
+      <div className="overflow-hidden rounded-2xl bg-primary px-5 py-6 text-primary-foreground sm:px-8 sm:py-7">
         <p className="m-0 text-xs font-semibold tracking-[0.18em] text-white/70">
           从零开通 · 图文教程
         </p>
-        <h2 className="mt-2 mb-2 text-2xl text-white">
+        <h2 className="mt-2 mb-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
           阿里云 DirectMail 发信配置
         </h2>
-        <p className="m-0 max-w-2xl text-sm leading-7 text-white/85">
+        <p className="m-0 max-w-2xl text-sm leading-relaxed text-white/85 sm:leading-7">
           按顺序完成阿里云账号、域名、密钥和站内测试；需要活动送达与行为统计时，再接入追踪与回执。
         </p>
-        <div className="mt-5 flex flex-wrap gap-2 text-xs">
+        <div className="mt-4 -mx-1 flex overflow-x-auto px-1 pb-1 text-xs sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0 gap-2">
           {[
             "开通服务",
             "验证域名",
@@ -264,7 +290,7 @@ export function DirectMailSetupGuide() {
           ].map((label, index) => (
             <span
               key={label}
-              className="rounded-full border border-white/25 px-3 py-1.5 text-white/90"
+              className="shrink-0 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-medium text-white/95"
             >
               {index + 1}. {label}
             </span>
@@ -272,20 +298,28 @@ export function DirectMailSetupGuide() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
-        请使用你自己的阿里云账号和发件域名。图中的域名是示例，DNS
-        解析值须从你的阿里云控制台复制；AccessKey 和 Webhook
-        令牌只填入对应的安全配置框。
+      <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+        <AlertTriangle
+          className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+          aria-hidden="true"
+        />
+        <span>
+          请使用你自己的阿里云账号和发件域名。图中的域名是示例，DNS
+          解析值须从你的阿里云控制台复制；AccessKey 和 Webhook
+          令牌只填入对应的安全配置框。
+        </span>
       </div>
 
       <div>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="m-0 text-lg">第一段：开通并发出测试信</h3>
-          <span className="rounded-full bg-[#eaf3ed] px-3 py-1 text-xs text-[#2f6e52]">
+        <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
+          <h3 className="m-0 text-base font-semibold tracking-tight sm:text-lg">
+            第一段：开通并发出测试信
+          </h3>
+          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
             必做 · 步骤 01—06
           </span>
         </div>
-        <ol className="m-0 grid gap-4 p-0">
+        <ol className="m-0 grid gap-3.5 p-0 sm:gap-4">
           {requiredSteps.map((step) => (
             <StepCard key={step.number} step={step} />
           ))}
@@ -293,22 +327,26 @@ export function DirectMailSetupGuide() {
       </div>
 
       <div>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="m-0 text-lg">第二段：让活动统计有真实回执</h3>
-          <span className="rounded-full bg-muted px-3 py-1 text-xs">
+        <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
+          <h3 className="m-0 text-base font-semibold tracking-tight sm:text-lg">
+            第二段：让活动统计有真实回执
+          </h3>
+          <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
             按需配置 · 步骤 07—08
           </span>
         </div>
-        <ol className="m-0 grid gap-4 p-0">
+        <ol className="m-0 grid gap-3.5 p-0 sm:gap-4">
           {advancedSteps.map((step) => (
             <StepCard key={step.number} step={step} />
           ))}
         </ol>
       </div>
 
-      <div className="rounded-2xl border bg-card p-5 sm:p-6">
-        <h3 className="mt-0 mb-3 text-lg">最后：用小名单验收</h3>
-        <ol className="m-0 list-decimal space-y-2 pl-5 text-sm leading-7">
+      <div className="rounded-2xl border bg-card p-5 shadow-xs sm:p-6">
+        <h3 className="mt-0 mb-2.5 text-base font-semibold tracking-tight sm:text-lg">
+          最后：用小名单验收
+        </h3>
+        <ol className="m-0 list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-foreground/85 sm:space-y-2 sm:leading-7">
           <li>只添加已同意收信的 1—3 个自有测试地址，创建、预览并确认活动。</li>
           <li>
             管理员开始正式发送；先看到「已受理」，有回执后再核对「已送达」。
@@ -320,21 +358,21 @@ export function DirectMailSetupGuide() {
             用邮件页脚的退订链接完成一次确认，再检查该地址被排除于新活动受众。
           </li>
         </ol>
-        <div className="mt-5 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:items-center">
           <Link
             href="/settings"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-xs transition-opacity hover:opacity-90"
           >
-            前往发信通道设置{" "}
+            前往发信通道设置
             <ArrowUpRight className="size-4" aria-hidden="true" />
           </Link>
           <a
             href="https://help.aliyun.com/zh/eventbridge/user-guide/events-of-the-direct-mail-type"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-1 py-2 text-sm underline underline-offset-2"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background/60 px-3.5 py-2 text-sm text-foreground/90 transition-colors hover:bg-muted"
           >
-            查看阿里云事件类型{" "}
+            查看阿里云事件类型
             <ExternalLink className="size-3.5" aria-hidden="true" />
           </a>
         </div>
