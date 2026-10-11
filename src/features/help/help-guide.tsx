@@ -87,9 +87,9 @@ export function HelpGuide({ role }: { role: string }) {
   }, [searchQuery, filteredSections]);
 
   return (
-    <div className="help-guide space-y-6">
+    <div className="help-guide space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
       {/* 顶部角色与权限说明卡片 */}
-      <Card className="border-dashed bg-card/60 backdrop-blur-xs">
+      <Card className="border-dashed bg-card/60 backdrop-blur-xs w-full min-w-0 max-w-full overflow-hidden">
         <CardContent className="space-y-2.5 pt-5 pb-5 sm:pt-6 sm:pb-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="m-0 text-sm font-medium">
@@ -126,8 +126,8 @@ export function HelpGuide({ role }: { role: string }) {
       </Card>
 
       {/* 搜索与快捷检索栏 */}
-      <div className="space-y-3">
-        <div className="relative">
+      <div className="space-y-3 w-full min-w-0 max-w-full">
+        <div className="relative w-full min-w-0 max-w-full">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
@@ -138,7 +138,7 @@ export function HelpGuide({ role }: { role: string }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜索帮助内容，如：DNS、发信地址、退订保护、正式发送…"
-            className="h-10 pl-9 pr-9 text-sm"
+            className="h-10 pl-9 pr-9 text-sm w-full min-w-0 max-w-full"
             aria-label="搜索使用帮助"
           />
           {searchQuery && (
@@ -157,7 +157,7 @@ export function HelpGuide({ role }: { role: string }) {
         <nav
           id="help-directory-nav"
           aria-label="帮助目录"
-          className="-mx-4 flex overflow-x-auto px-4 pb-1 text-xs scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0 sm:text-sm gap-1.5 sm:gap-2"
+          className="flex w-full min-w-0 max-w-full overflow-x-auto pb-1 text-xs scrollbar-none sm:flex-wrap sm:pb-0 sm:text-sm gap-1.5 sm:gap-2"
         >
           {activeNav.map((item) => (
             <a
@@ -191,7 +191,7 @@ export function HelpGuide({ role }: { role: string }) {
 
       {/* 搜索无结果空状态 */}
       {filteredSections.length === 0 ? (
-        <Card className="py-12 text-center">
+        <Card className="py-12 text-center w-full min-w-0 max-w-full overflow-hidden">
           <CardContent className="space-y-3">
             <p className="text-base font-medium">
               未找到与关键词相关的帮助章节
@@ -223,7 +223,7 @@ export function HelpGuide({ role }: { role: string }) {
             <Card
               key={section.id}
               id={`help-${section.id}`}
-              className="scroll-mt-24 shadow-xs transition-shadow"
+              className="scroll-mt-24 shadow-xs transition-shadow w-full min-w-0 max-w-full overflow-hidden"
             >
               <CardContent className="space-y-4 pt-5 pb-5 sm:pt-6 sm:pb-6">
                 {/* 章节头部 */}

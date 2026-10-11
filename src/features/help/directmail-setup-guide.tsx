@@ -174,8 +174,11 @@ const advancedSteps: GuideStep[] = [
 
 function StepCard({ step }: { step: GuideStep }) {
   return (
-    <li className="list-none rounded-2xl border bg-card p-4.5 shadow-xs sm:p-6 transition-all">
-      <article aria-labelledby={`directmail-step-${step.number}`}>
+    <li className="list-none w-full min-w-0 max-w-full overflow-hidden rounded-2xl border bg-card p-4.5 shadow-xs transition-all sm:p-6">
+      <article
+        className="w-full min-w-0 max-w-full"
+        aria-labelledby={`directmail-step-${step.number}`}
+      >
         <div className="flex items-start gap-3.5 sm:gap-4">
           <span
             className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-mono text-xs font-semibold text-primary-foreground sm:size-10 sm:rounded-xl sm:text-sm"
@@ -206,7 +209,7 @@ function StepCard({ step }: { step: GuideStep }) {
         </ol>
 
         {step.illustration && (
-          <figure className="mt-5 mb-0">
+          <figure className="mt-5 mb-0 w-full min-w-0 max-w-full overflow-hidden">
             <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground sm:hidden">
               <span className="inline-flex items-center gap-1 font-medium">
                 <MoveHorizontal className="size-3.5" aria-hidden="true" />
@@ -222,13 +225,13 @@ function StepCard({ step }: { step: GuideStep }) {
                 <ExternalLink className="size-3" aria-hidden="true" />
               </a>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-border bg-muted/40 p-1 dark:bg-muted/15">
+            <div className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-xl border border-border bg-muted/40 p-1 dark:bg-muted/15">
               <Image
                 src={step.illustration.src}
                 width={step.illustration.width}
                 height={step.illustration.height}
                 alt={step.illustration.alt}
-                className="h-auto min-w-[640px] rounded-lg"
+                className="h-auto min-w-[560px] sm:min-w-0 sm:w-full rounded-lg"
               />
             </div>
             <figcaption className="mt-2 text-xs text-muted-foreground">
@@ -267,8 +270,11 @@ function StepCard({ step }: { step: GuideStep }) {
 
 export function DirectMailSetupGuide() {
   return (
-    <section id="help-directmail-setup" className="scroll-mt-24 space-y-6">
-      <div className="overflow-hidden rounded-2xl bg-primary px-5 py-6 text-primary-foreground sm:px-8 sm:py-7">
+    <section
+      id="help-directmail-setup"
+      className="scroll-mt-24 space-y-6 w-full min-w-0 max-w-full overflow-hidden sm:overflow-visible"
+    >
+      <div className="overflow-hidden rounded-2xl bg-primary px-5 py-6 text-primary-foreground sm:px-8 sm:py-7 w-full min-w-0 max-w-full">
         <p className="m-0 text-xs font-semibold tracking-[0.18em] text-white/70">
           从零开通 · 图文教程
         </p>
@@ -278,7 +284,7 @@ export function DirectMailSetupGuide() {
         <p className="m-0 max-w-2xl text-sm leading-relaxed text-white/85 sm:leading-7">
           按顺序完成阿里云账号、域名、密钥和站内测试；需要活动送达与行为统计时，再接入追踪与回执。
         </p>
-        <div className="mt-4 -mx-1 flex overflow-x-auto px-1 pb-1 text-xs sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0 gap-2">
+        <div className="mt-4 flex w-full min-w-0 max-w-full overflow-x-auto px-0.5 pb-1 text-xs scrollbar-none sm:flex-wrap gap-2">
           {[
             "开通服务",
             "验证域名",
@@ -298,7 +304,7 @@ export function DirectMailSetupGuide() {
         </div>
       </div>
 
-      <div className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+      <div className="flex w-full min-w-0 max-w-full items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
         <AlertTriangle
           className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
           aria-hidden="true"
@@ -310,7 +316,7 @@ export function DirectMailSetupGuide() {
         </span>
       </div>
 
-      <div>
+      <div className="w-full min-w-0 max-w-full">
         <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
           <h3 className="m-0 text-base font-semibold tracking-tight sm:text-lg">
             第一段：开通并发出测试信
@@ -319,14 +325,14 @@ export function DirectMailSetupGuide() {
             必做 · 步骤 01—06
           </span>
         </div>
-        <ol className="m-0 grid gap-3.5 p-0 sm:gap-4">
+        <ol className="m-0 flex w-full min-w-0 max-w-full flex-col gap-3.5 p-0 sm:gap-4">
           {requiredSteps.map((step) => (
             <StepCard key={step.number} step={step} />
           ))}
         </ol>
       </div>
 
-      <div>
+      <div className="w-full min-w-0 max-w-full">
         <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
           <h3 className="m-0 text-base font-semibold tracking-tight sm:text-lg">
             第二段：让活动统计有真实回执
@@ -335,14 +341,14 @@ export function DirectMailSetupGuide() {
             按需配置 · 步骤 07—08
           </span>
         </div>
-        <ol className="m-0 grid gap-3.5 p-0 sm:gap-4">
+        <ol className="m-0 flex w-full min-w-0 max-w-full flex-col gap-3.5 p-0 sm:gap-4">
           {advancedSteps.map((step) => (
             <StepCard key={step.number} step={step} />
           ))}
         </ol>
       </div>
 
-      <div className="rounded-2xl border bg-card p-5 shadow-xs sm:p-6">
+      <div className="w-full min-w-0 max-w-full rounded-2xl border bg-card p-5 shadow-xs sm:p-6">
         <h3 className="mt-0 mb-2.5 text-base font-semibold tracking-tight sm:text-lg">
           最后：用小名单验收
         </h3>

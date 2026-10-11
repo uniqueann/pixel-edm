@@ -38,6 +38,16 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
   await expect(
     page.getByRole("img", { name: /DirectMail 发送后由 EventBridge/ }),
   ).toBeVisible();
+  // 验证移动端视口（375px）下帮助中心与 DirectMail 配置绝不超宽横向溢出
+  await page.setViewportSize({ width: 375, height: 667 });
+  const isHelpMobileOverflowing = await page.evaluate(() => {
+    return (
+      document.documentElement.scrollWidth >
+      document.documentElement.clientWidth + 1
+    );
+  });
+  expect(isHelpMobileOverflowing).toBe(false);
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.getByRole("link", { name: "设置", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "邮局设置", exact: true }),
