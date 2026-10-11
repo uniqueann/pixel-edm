@@ -7,7 +7,7 @@ function Submit() {
   const { pending } = useFormStatus();
   return (
     <Button disabled={pending}>
-      {pending ? "正在准备工作区…" : "进入邮局"}
+      {pending ? "正在准备工作区…" : "进入工作区"}
     </Button>
   );
 }

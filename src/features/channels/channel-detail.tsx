@@ -534,7 +534,7 @@ export function ChannelDetail({
                 </summary>
                 <p className="hint mt-2 mb-2">
                   事件源请选择 acs.dm，消息体选择“完整事件”，不要选择
-                  acs.directmail。生产环境请启用指数退避并配置 MNS 死信队列。
+                  acs.directmail。阿里云控制台中建议开启重试机制。
                 </p>
                 <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
                   {directMailEventPattern}
@@ -552,9 +552,8 @@ export function ChannelDetail({
 
             {provider.provider === "sendgrid" && (
               <p className="hint m-0">
-                入口函数为 edm-sendgrid-events；POST JSON
-                数组。请在通道配置中保存 SendGrid 控制台提供的 Signed Webhook
-                公钥，否则回执会被拒绝。
+                请在通道配置中保存 SendGrid 控制台提供的 Signed Webhook
+                公钥，否则回执事件会被拒绝。
               </p>
             )}
 
@@ -606,10 +605,10 @@ export function ChannelDetail({
                   <h3 className="text-sm font-semibold">打开与点击追踪</h3>
                   <p className="hint mt-1 mb-0">
                     {provider.provider === "aliyun_directmail"
-                      ? "显式开启后，正式邮件会使用阿里云行为追踪；历史活动口径不受影响。"
+                      ? "开启后，新邮件将统计打开与点击行为；历史活动数据不受影响。"
                       : provider.provider === "sendgrid"
-                        ? "显式开启后，正式邮件会在 Mail Send 请求中启用 SendGrid 打开/点击追踪。"
-                        : "显式开启后，正式邮件会使用 SES Configuration Set 追踪；历史活动口径不受影响。"}
+                        ? "开启后，新邮件将通过 SendGrid 统计打开与点击行为；历史活动数据不受影响。"
+                        : "开启后，新邮件将使用 SES Configuration Set 统计打开与点击行为；历史活动数据不受影响。"}
                   </p>
                 </div>
               </div>
@@ -631,7 +630,8 @@ export function ChannelDetail({
                   为未来正式活动开启追踪
                 </span>
                 <span className="hint m-0 block">
-                  会采集供应商打开与点击信号；邮件客户端的隐私代理可能影响准确性。
+                  统计邮件打开与链接点击数据。部分客户端（如 Apple
+                  邮件隐私保护）可能影响统计准确度。
                 </span>
               </span>
             </label>
@@ -708,8 +708,7 @@ export function ChannelDetail({
         <div className="flex items-start gap-2 rounded-xl bg-muted p-3">
           <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <p className="hint m-0">
-            访问密钥使用 AES-256-GCM 加密后存入私密 schema，页面不会回显
-            Secret。测试邮件只发送到当前管理员的已验证登录邮箱。
+            访问密钥已安全加密存储，页面不会明文显示。测试邮件仅发送至当前管理员邮箱。
           </p>
         </div>
 

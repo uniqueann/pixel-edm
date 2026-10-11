@@ -84,9 +84,10 @@ export function SettingsForm({
         </DialogTrigger>
         <DialogContent placement="bottom" className="bottom-sheet">
           <DialogHeader>
-            <DialogTitle>让收件人找到你</DialogTitle>
+            <DialogTitle>为什么需要发件人联系地址？</DialogTitle>
             <DialogDescription>
-              联系地址会用于后续邮件页脚。请填写店铺真实可联系的地址，发信前还需要配置并验证发件身份。
+              根据国际反垃圾邮件法规（如
+              CAN-SPAM），所有营销邮件页脚必须包含合法的物理联系地址。建议填写真实的办公地址或店铺所在地。
             </DialogDescription>
           </DialogHeader>
         </DialogContent>

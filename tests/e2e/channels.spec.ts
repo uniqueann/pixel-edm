@@ -8,7 +8,7 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   await page.goto("/login");
   await page.getByLabel("邮箱", { exact: true }).fill("owner@example.test");
   await page.getByLabel("密码", { exact: true }).fill("edm-test-password");
-  await page.getByRole("button", { name: "登录邮局" }).click();
+  await page.getByRole("button", { name: "登录", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto("/settings");
 
@@ -28,7 +28,7 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   await dialog
     .getByLabel("AccessKey Secret")
     .fill("test-secret-that-is-never-rendered");
-  await dialog.getByRole("button", { name: "安全保存配置" }).click();
+  await dialog.getByRole("button", { name: "保存配置", exact: true }).click();
   await expect(page.getByText("发信通道已连接")).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "阿里云邮件推送 DirectMail" }),
@@ -92,7 +92,7 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   expect(Math.abs(dialogBox!.y + dialogBox!.height - 844)).toBeLessThan(1);
   await dialog.getByLabel("AccessKey ID").fill("LTAI5tRotatedAccess5678");
   await dialog.getByLabel("AccessKey Secret").fill("rotated-test-secret-value");
-  await dialog.getByRole("button", { name: "安全保存配置" }).click();
+  await dialog.getByRole("button", { name: "保存配置", exact: true }).click();
   await expect(page.getByText("发信通道已更新")).toBeVisible();
   await expect(page.getByText("••••5678", { exact: true })).toBeVisible();
   expect(

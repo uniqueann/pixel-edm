@@ -21,7 +21,7 @@ export function CheckoutSuccessToast() {
       if (reason === "missing_product") {
         toast.error("暂时无法跳转支付", {
           id: "checkout-error",
-          description: `${planLabel}在服务器上尚未配置 Creem/Dodo 商品 ID（CREEM_EDM_* / DODO_EDM_*）。请在 Vercel 填入 Team 四变量并重新部署；详见 docs/p11-team-billing-setup.md。`,
+          description: "支付服务暂未就绪，请稍后重试或联系客服。",
         });
       } else if (reason === "discount") {
         toast.error("优惠码无效", {
@@ -43,7 +43,7 @@ export function CheckoutSuccessToast() {
       toast.success("已取消续费", {
         id: "checkout-cancel",
         description:
-          "当前周期结束前权益保持不变，到期后降为免费版。客户和成员不会被删除。",
+          "当前周期到期前仍可正常使用，到期后自动降为免费版，数据不会丢失。",
       });
       return;
     }

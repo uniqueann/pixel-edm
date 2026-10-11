@@ -580,7 +580,7 @@ export function Campaigns({
     if (!previewing || !preview || !preview.validation.valid) return;
     if (
       !window.confirm(
-        `确认“${preview.campaign.name}”并冻结 ${preview.recipients.eligible_count} 位收件人？确认后不可撤回或编辑。`,
+        `确认“${preview.campaign.name}”并锁定 ${preview.recipients.eligible_count} 位收件人名单？确认后不可撤回或编辑。`,
       )
     )
       return;
@@ -599,7 +599,9 @@ export function Campaigns({
       previewRequest.current += 1;
       setPreviewing(undefined);
       setPreview(undefined);
-      toast.success(`活动已确认，冻结 ${result.data.recipient_count} 位收件人`);
+      toast.success(
+        `活动已确认，已锁定 ${result.data.recipient_count} 位收件人`,
+      );
       router.refresh();
     } catch {
       setPreviewError("活动确认失败，请重新预览后重试。");
@@ -657,7 +659,7 @@ export function Campaigns({
         <span>{data.total} 条</span>
       </div>
       <p className="hint">
-        草稿预览按最新订阅与抑制状态计算；确认后可导出冻结快照，管理员可创建正式发送任务。
+        草稿预览按当前最新的客户订阅和退订状态实时计算；确认后将锁定收件名单，管理员可创建正式发送任务。
       </p>
       <div className="list-toolbar">
         {canEdit && (
@@ -892,7 +894,7 @@ export function Campaigns({
                   <p className="m-0 font-medium">
                     {campaign.delivery
                       ? `已受理 ${campaign.delivery.counts.accepted} / ${campaign.delivery.recipient_count}`
-                      : `冻结 ${campaign.recipient_count ?? 0} 位收件人`}
+                      : `已锁定 ${campaign.recipient_count ?? 0} 位收件人`}
                   </p>
                   {campaign.delivery && (
                     <div className="mt-3 space-y-2">
@@ -1026,9 +1028,9 @@ export function Campaigns({
                 </div>
               </div>
               <p className="hint m-0">
-                排除明细：归档 {preview.recipients.excluded.archived} 位 ·
-                未订阅 {preview.recipients.excluded.not_subscribed} 位 · 受抑制{" "}
-                {preview.recipients.excluded.suppressed} 位
+                排除明细：已归档 {preview.recipients.excluded.archived} 位 ·
+                未订阅 {preview.recipients.excluded.not_subscribed} 位 ·
+                已退订/黑名单 {preview.recipients.excluded.suppressed} 位
               </p>
 
               {preview.validation.blockers.map((blocker) => (
@@ -1105,7 +1107,7 @@ export function Campaigns({
                   disabled={busy || previewLoading}
                   onClick={() => void confirmPreview()}
                 >
-                  {busy ? "确认中…" : "确认并冻结活动"}
+                  {busy ? "确认中…" : "确认活动名单"}
                 </Button>
               )}
             <Button
@@ -1234,7 +1236,7 @@ export function Campaigns({
             </DialogTitle>
             <DialogDescription>
               {deliveryConfirmation?.mode === "start"
-                ? `将向冻结快照中的 ${deliveryConfirmation.campaign.recipient_count ?? 0} 位收件人创建发送任务。供应商受理不等于最终投递。`
+                ? `将向名单中的 ${deliveryConfirmation.campaign.recipient_count ?? 0} 位客户发送邮件。邮件发送后需等待各收件服务商投递结果。`
                 : "只会跳过尚未开始的收件人；已受理、处理中及待人工核对的记录会保留。"}
             </DialogDescription>
           </DialogHeader>
@@ -1500,7 +1502,7 @@ export function Campaigns({
                             void resolveUnknown(task.id, "accepted")
                           }
                         >
-                          标记已受理
+                          标记为已送达
                         </Button>
                         <Button
                           size="sm"
@@ -1511,7 +1513,7 @@ export function Campaigns({
                           }
                           onClick={() => void resolveUnknown(task.id, "failed")}
                         >
-                          标记失败
+                          标记为发送失败
                         </Button>
                       </div>
                     </div>

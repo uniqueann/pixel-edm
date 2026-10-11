@@ -94,21 +94,20 @@ export function BillingUpgrade({
         {deliveryPlan.allows_team_collaboration
           ? ` 团队席位 ${deliveryPlan.active_members} / ${deliveryPlan.max_active_members}。`
           : " 个人版为单人使用，协作请升级团队版。"}
-        平台日发信护栏 {deliveryPlan.usage_today} /{" "}
-        {deliveryPlan.daily_send_quota} 封（{deliveryPlan.quota_timezone}{" "}
-        日界）。
+        每日发信上限 {deliveryPlan.usage_today} /{" "}
+        {deliveryPlan.daily_send_quota} 封（北京时间每日 00:00 重置）。
       </p>
       {billing?.has_payment_provider && (
         <p className="hint mt-2 mb-0">
           订阅：{providerLabel ?? "—"} ·{" "}
           {subscriptionStatusLabel(billing.subscription_status)}
           {periodEnd ? ` · 当前周期至 ${periodEnd}` : ""}
-          {billing.cancel_at_period_end ? " · 已设置周期末取消" : ""}
+          {billing.cancel_at_period_end ? " · 已设置到期不续费" : ""}
         </p>
       )}
       {billing?.cancel_at_period_end && (
         <p className="hint mt-2 mb-0">
-          当前周期结束前权益保持不变。到期后降为免费版，客户和成员不会被删除。
+          当前周期到期前仍可正常使用。到期后将转为免费版，已有客户和成员均会保留。
         </p>
       )}
       {contactNudge !== null && (
@@ -123,7 +122,7 @@ export function BillingUpgrade({
       )}
       {memberCapLocked && (
         <p className="hint mt-2 mb-0">
-          活跃成员已超过当前套餐席位。成员仍在名单中且角色不变，编辑者的客户、模板、导入和发信已锁定。管理员可以减员或重新订阅以恢复。
+          当前成员数已超出套餐席位。成员仍会保留，但运营人员的操作权限已暂停。管理员可移除多余成员或升级套餐以恢复。
         </p>
       )}
       {deliveryPlan.plan === "free" && !canUpgrade && (
@@ -155,9 +154,7 @@ export function BillingUpgrade({
             (deliveryPlan.plan === "free" || deliveryPlan.plan === "pro") &&
             !teamSkuReady && (
               <p className="hint mb-0 w-full text-left text-xs">
-                团队版支付商品尚未在本环境配置（Vercel 需设置 CREEM_EDM_TEAM_* /
-                DODO_EDM_TEAM_* 并重新部署，见
-                docs/p11-team-billing-setup.md）。
+                团队版在线支付暂未开放，如需开通请联系客服或管理员。
               </p>
             )}
         </div>
@@ -178,7 +175,7 @@ export function BillingUpgrade({
       {deliveryPlan.plan !== "free" && !canBuyPro && !canBuyTeam && (
         <p className="hint mt-2 mb-0">
           如需调整订阅或退款，请通过付款时使用的 Creem / Dodo
-          账户管理；额度以当前工作区 plan 为准。
+          账户管理；额度以当前工作区套餐为准。
         </p>
       )}
       {canCancelRenewal && (
@@ -189,7 +186,7 @@ export function BillingUpgrade({
           onSubmit={(event) => {
             if (
               !window.confirm(
-                "取消后续费？当前周期结束前权益保持不变，到期后降为免费版。客户和成员不会被删除。",
+                "确认取消自动续费？当前周期到期前仍可正常使用，到期后自动降为免费版，数据不会丢失。",
               )
             ) {
               event.preventDefault();

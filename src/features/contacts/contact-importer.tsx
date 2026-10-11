@@ -24,8 +24,8 @@ const resultLabels: Record<string, string> = {
   update: "将更新",
   unchanged: "无变化",
   archived_skipped: "归档跳过",
-  suppressed_protected: "抑制保护",
-  suppressed: "写入抑制",
+  suppressed_protected: "已退订（跳过）",
+  suppressed: "加入退订名单",
   error: "错误",
   pending: "待处理",
   created: "已新增",
@@ -295,10 +295,10 @@ export function ContactImporter({
                   checked={consentDeclared}
                   onChange={(event) => setConsentDeclared(event.target.checked)}
                 />
-                我确认名单中的未指定状态客户已提供可核验的订阅同意
+                我确认名单中的客户已明确同意接收商业邮件
               </label>
               <p className="hint mt-2">
-                不勾选时，新客户默认为“未确认”，不能用于后续发送。已退订、硬退信和投诉始终优先。
+                不勾选时，新客户默认为“未确认”，不能用于后续发送。已退订或投诉的地址不会向其发信。
               </p>
               {consentDeclared && (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -322,7 +322,7 @@ export function ContactImporter({
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <Label htmlFor="consent-note">证据说明</Label>
+                    <Label htmlFor="consent-note">授权说明</Label>
                     <Input
                       id="consent-note"
                       required

@@ -167,7 +167,11 @@ export function capabilityRows(
 }
 
 export function providerQuotaHint(provider: DeliveryProviderRecord) {
-  return `默认限速 ${provider.default_rate_per_second} 封/秒、${provider.default_daily_quota} 封/日（${provider.quota_timezone} 日界）`;
+  const tzLabel =
+    provider.quota_timezone === "Asia/Shanghai"
+      ? "北京时间每日 00:00 重置"
+      : `${provider.quota_timezone} 每日 00:00 重置`;
+  return `默认限速 ${provider.default_rate_per_second} 封/秒、${provider.default_daily_quota} 封/日（${tzLabel}）`;
 }
 
 export function trackingFieldLabel(provider: DeliveryProviderName) {

@@ -22,7 +22,7 @@ export default async function Page({
       <p className="hint">
         {error
           ? "初始化未完成。账号可能已停用，或服务暂时不可用；请重试，重复操作不会创建重复工作区。"
-          : "正在为你连接个人邮局…"}
+          : "正在为你准备工作区…"}
       </p>
       <InitializeForm retry={Boolean(error)} />
       <form className="mt-4" action={signOut}>
