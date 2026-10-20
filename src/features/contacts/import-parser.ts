@@ -7,7 +7,7 @@ const aliases = {
   tags: ["tags", "标签"],
   subscription_status: ["subscription_status", "订阅状态"],
   consent_source: ["consent_source", "同意来源"],
-  consent_note: ["consent_note", "同意证据说明"],
+  consent_note: ["consent_note", "授权说明", "同意证据说明"],
   consent_at: ["consent_at", "同意时间"],
 } as const;
 

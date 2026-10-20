@@ -15,6 +15,22 @@ const roleLabels: Record<string, string> = {
   viewer: "查看者",
 };
 
+function formatActionFilterLabel(action: string, label: string) {
+  if (action.startsWith("template.")) {
+    return `模板 · ${label.replace("模板", "")}`;
+  }
+  if (action.startsWith("contact.")) {
+    return `客户 · ${label.replace("客户", "")}`;
+  }
+  if (action.startsWith("campaign.")) {
+    return `活动 · ${label.replace("活动", "")}`;
+  }
+  if (action.startsWith("delivery_channel.")) {
+    return `通道 · ${label.replace("发信通道", "").replace("发信", "")}`;
+  }
+  return label;
+}
+
 export function ActivityLogs({
   data,
   filters,
@@ -75,7 +91,6 @@ export function ActivityLogs({
           {data.actors.map((actor) => (
             <option key={actor.id} value={actor.id}>
               {actor.name}
-              {actor.id === "system" ? "" : "（历史身份）"}
             </option>
           ))}
         </select>
@@ -93,10 +108,7 @@ export function ActivityLogs({
           <option value="">全部操作</option>
           {Object.entries(activityLabels).map(([action, label]) => (
             <option key={action} value={action}>
-              操作：
-              {action.startsWith("template.")
-                ? `模板：${label.replace("模板", "")}`
-                : label}
+              {formatActionFilterLabel(action, label)}
             </option>
           ))}
         </select>

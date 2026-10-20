@@ -452,7 +452,7 @@ export function ChannelDetail({
                   <h3 className="text-sm font-semibold">投递回执 Webhook</h3>
                   <p className="hint mt-1 mb-0">
                     {provider.provider === "amazon_ses"
-                      ? "通过 SNS 接收 SES 事件；首次通知会触发订阅握手。"
+                      ? "通过 SNS 接收 SES 事件；首次通知系统将自动完成订阅确认。"
                       : provider.provider === "sendgrid"
                         ? "在 SendGrid Event Webhook 中启用 Signed Event，将 HTTPS 目标指向上方地址并填入验签公钥。"
                         : "接收投递、投诉、退订及行为事件；断开发信通道不会自动停用回执。"}
@@ -675,40 +675,50 @@ export function ChannelDetail({
                 {trackingError}
               </p>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              disabled={
-                Boolean(trackingDisabled) ||
-                updatingTracking ||
-                (trackingEnabled &&
-                  provider.provider === "aliyun_directmail" &&
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={
+                  Boolean(trackingDisabled) ||
+                  updatingTracking ||
+                  (trackingEnabled &&
+                    provider.provider === "aliyun_directmail" &&
+                    !trackingTagName.trim()) ||
+                  (trackingEnabled &&
+                    provider.provider === "amazon_ses" &&
+                    !configurationSetName.trim()) ||
+                  (trackingEnabled === channel.tracking_enabled &&
+                    provider.provider === "aliyun_directmail" &&
+                    trackingTagName.trim() ===
+                      (channel.tracking_tag_name ?? "")) ||
+                  (trackingEnabled === channel.tracking_enabled &&
+                    provider.provider === "amazon_ses" &&
+                    configurationSetName.trim() ===
+                      (channel.configuration_set_name ?? "")) ||
+                  (trackingEnabled === channel.tracking_enabled &&
+                    provider.provider === "sendgrid")
+                }
+                onClick={saveTracking}
+              >
+                {updatingTracking ? "保存中…" : "保存追踪设置"}
+              </Button>
+              {trackingEnabled &&
+                ((provider.provider === "aliyun_directmail" &&
                   !trackingTagName.trim()) ||
-                (trackingEnabled &&
-                  provider.provider === "amazon_ses" &&
-                  !configurationSetName.trim()) ||
-                (trackingEnabled === channel.tracking_enabled &&
-                  provider.provider === "aliyun_directmail" &&
-                  trackingTagName.trim() ===
-                    (channel.tracking_tag_name ?? "")) ||
-                (trackingEnabled === channel.tracking_enabled &&
-                  provider.provider === "amazon_ses" &&
-                  configurationSetName.trim() ===
-                    (channel.configuration_set_name ?? "")) ||
-                (trackingEnabled === channel.tracking_enabled &&
-                  provider.provider === "sendgrid")
-              }
-              onClick={saveTracking}
-            >
-              {updatingTracking ? "保存中…" : "保存追踪设置"}
-            </Button>
+                  (provider.provider === "amazon_ses" &&
+                    !configurationSetName.trim())) && (
+                  <span className="hint">请先填写追踪标签名称</span>
+                )}
+            </div>
           </div>
         )}
 
         <div className="flex items-start gap-2 rounded-xl bg-muted p-3">
           <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <p className="hint m-0">
-            访问密钥已安全加密存储，页面不会明文显示。测试邮件仅发送至当前管理员邮箱。
+            访问密钥已安全加密存储，页面不会明文显示。测试邮件将发送至当前管理员邮箱
+            {testRecipient ? `（${testRecipient}）` : ""}。
           </p>
         </div>
 
@@ -737,6 +747,11 @@ export function ChannelDetail({
                 : "尚未完成"}
               {lastTest.error_code && ` · ${lastTest.error_code}`}
             </p>
+            {lastTest.status === "failed" && (
+              <p className="mt-2 mb-0 text-xs text-destructive">
+                提示：请核对访问密钥（AccessKey/Secret）是否准确无误，或发件地址/域名是否已在服务商控制台通过验证。
+              </p>
+            )}
           </div>
         )}
 

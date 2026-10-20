@@ -1,10 +1,13 @@
 import { MailOpen } from "lucide-react";
+import type { ReactNode } from "react";
 export function EmptyState({
   title,
   description,
+  children,
 }: {
   title: string;
   description: string;
+  children?: ReactNode;
 }) {
   return (
     <section className="empty">
@@ -13,6 +16,7 @@ export function EmptyState({
       </span>
       <h2>{title}</h2>
       <p>{description}</p>
+      {children && <div className="mt-4">{children}</div>}
     </section>
   );
 }

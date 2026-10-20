@@ -153,7 +153,10 @@ export function BillingCheckoutDialog({
   function guardUnverified(event: FormEvent) {
     if (!draftNeedsVerify) return;
     event.preventDefault();
-    setNotice({ tone: "error", text: "请先点击验证。" });
+    setNotice({
+      tone: "error",
+      text: "已输入折扣代码，请先点击「验证」确认优惠。",
+    });
   }
 
   return (
@@ -237,7 +240,7 @@ export function BillingCheckoutDialog({
         </div>
         {showProCancelHint && (
           <p className="hint mb-0 text-left text-xs leading-relaxed">
-            团队版生效后，请到 Creem / Dodo 账户取消原专业版订阅，避免重复扣费。
+            团队版生效后，请在购买专业版时收到的邮件收据中取消原自动续费，避免后续周期重复扣费。
           </p>
         )}
         <p className="hint mb-0 text-left text-xs leading-relaxed">
@@ -290,7 +293,7 @@ function CheckoutDiscountCode({
         <Input
           id="checkout-discount-code"
           value={draft}
-          placeholder="折扣代码"
+          placeholder="输入折扣代码（如：SAVE20）"
           autoFocus
           autoComplete="off"
           autoCapitalize="characters"
