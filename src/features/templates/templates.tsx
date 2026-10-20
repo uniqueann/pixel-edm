@@ -189,7 +189,7 @@ export function Templates({
         <span>{data.total} 套</span>
       </div>
       <p className="hint">
-        主题与正文均为纯文本；变量会在活动预览和发信时替换成对应信息。
+        支持使用起步模板参考样例，或创建自定义模板；主题与正文中的动态变量将在发信时自动替换为对应信息。
       </p>
       <div className="list-toolbar">
         {canEdit && <Button onClick={() => openEditor(null)}>新建模板</Button>}
@@ -428,10 +428,13 @@ export function Templates({
                     type="button"
                     size="sm"
                     variant="outline"
+                    className="flex items-center gap-1.5"
+                    title={`插入 ${variable.label}（{{${variable.key}}}）`}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => insertVariable(variable.key)}
                   >
-                    {`{{${variable.key}}}`}
+                    <span>{variable.label}</span>
+                    <code className="text-xs text-muted-foreground">{`{{${variable.key}}}`}</code>
                   </Button>
                 ))}
               </div>

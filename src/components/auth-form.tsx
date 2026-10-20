@@ -22,6 +22,12 @@ const titles: Record<Mode, string> = {
   forgot: "找回密码",
   reset: "设置新密码",
 };
+const descriptions: Record<Mode, string> = {
+  login: "登录你的账号，管理客户并发送邮件。",
+  register: "创建你的工作区账号，开启客户邮件营销。",
+  forgot: "输入注册邮箱，我们将向你发送密码重置链接。",
+  reset: "请设置你的新密码并妥善保管。",
+};
 export function AuthForm({
   mode,
   nextPath,
@@ -31,6 +37,9 @@ export function AuthForm({
 }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"hint" | "error" | "success">(
+    "hint",
+  );
   const [oauthPending, setOauthPending] = useState(false);
   const schema = z.object({
     email: mode === "reset" ? z.string() : credentials.shape.email,
@@ -56,6 +65,7 @@ export function AuthForm({
       : "";
   async function submit(values: { email?: string; password?: string }) {
     setMessage("");
+    setMessageType("hint");
     try {
       const db = browserClient();
       if (mode === "forgot") {
@@ -66,12 +76,14 @@ export function AuthForm({
         setMessage(
           "如果该邮箱已注册，你将收到密码重置邮件，请在当前浏览器打开。",
         );
+        setMessageType("success");
       } else if (mode === "reset") {
         const {
           data: { user },
         } = await db.auth.getUser();
         if (!user) {
           setMessage("重置链接已失效，请重新申请。");
+          setMessageType("error");
           return;
         }
         const { error } = await db.auth.updateUser({
@@ -92,10 +104,12 @@ export function AuthForm({
         if (data.session) {
           router.replace(destination);
           router.refresh();
-        } else
+        } else {
           setMessage(
             "请检查邮箱中的验证邮件，并在当前浏览器完成验证。已有账号可直接登录。",
           );
+          setMessageType("success");
+        }
       } else {
         const { error } = await db.auth.signInWithPassword({
           email: values.email!,
@@ -107,11 +121,13 @@ export function AuthForm({
       }
     } catch {
       setMessage("操作未完成，请检查输入、邮箱验证状态或稍后重试。");
+      setMessageType("error");
     }
   }
   async function google() {
     setOauthPending(true);
     setMessage("");
+    setMessageType("hint");
     try {
       const { error } = await browserClient().auth.signInWithOAuth({
         provider: "google",
@@ -122,6 +138,7 @@ export function AuthForm({
       if (error) throw error;
     } catch {
       setMessage("Google 登录暂时不可用，请使用邮箱登录。");
+      setMessageType("error");
       setOauthPending(false);
     }
   }
@@ -129,7 +146,7 @@ export function AuthForm({
     <section className="auth-card">
       <span className="eyebrow">卖家邮局</span>
       <h1>{titles[mode]}</h1>
-      <p className="hint">登录你的账号，管理客户并发送邮件。</p>
+      <p className="hint">{descriptions[mode]}</p>
       {!isConfigured() && <p role="alert">系统服务配置异常，请联系管理员。</p>}
       <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
         {mode !== "reset" && (
@@ -162,9 +179,14 @@ export function AuthForm({
             </p>
           </div>
         )}
-        <p role="status" className="hint">
-          {message}
-        </p>
+        {message && (
+          <p
+            role={messageType === "error" ? "alert" : "status"}
+            className={messageType === "error" ? "field-error" : "hint"}
+          >
+            {message}
+          </p>
+        )}
         <Button className="w-full" disabled={busy || !isConfigured()}>
           {busy
             ? "请稍候…"
@@ -191,7 +213,7 @@ export function AuthForm({
         <Link href={`${mode === "login" ? "/register" : "/login"}${nextQuery}`}>
           {mode === "login" ? "创建账号" : "返回登录"}
         </Link>
-        <Link href="/forgot-password">忘记密码？</Link>
+        {mode === "login" && <Link href="/forgot-password">忘记密码？</Link>}
       </div>
     </section>
   );

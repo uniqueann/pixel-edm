@@ -991,7 +991,7 @@ export function Campaigns({
           <DialogHeader>
             <DialogTitle>{preview?.campaign.name ?? "活动预览"}</DialogTitle>
             <DialogDescription>
-              每次都按最新客户、标签、订阅和抑制状态计算；这里只展示前三封，不保存收件人数。
+              每次都按最新客户、标签、订阅状态与退订拦截计算；这里只展示前三封，不保存收件人数。
             </DialogDescription>
           </DialogHeader>
 
@@ -1044,7 +1044,7 @@ export function Campaigns({
                   <div className="rounded-lg border border-dashed p-6 text-center">
                     <p className="font-medium">当前没有可发送客户</p>
                     <p className="hint m-0">
-                      请检查活动标签、客户订阅状态和抑制记录。
+                      请检查活动标签、客户订阅状态以及退订/黑名单记录。
                     </p>
                   </div>
                 )}
@@ -1242,12 +1242,29 @@ export function Campaigns({
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="delivery-confirmation-name">
-                输入完整活动名称“{deliveryConfirmation?.campaign.name}”确认
-              </Label>
+              <div className="flex items-center justify-between mb-1.5">
+                <Label htmlFor="delivery-confirmation-name">
+                  输入完整活动名称“{deliveryConfirmation?.campaign.name}”确认
+                </Label>
+                {deliveryConfirmation?.mode === "abort" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs text-muted-foreground"
+                    onClick={() =>
+                      deliveryConfirmation &&
+                      setConfirmationName(deliveryConfirmation.campaign.name)
+                    }
+                  >
+                    一键填入
+                  </Button>
+                )}
+              </div>
               <Input
                 id="delivery-confirmation-name"
                 autoComplete="off"
+                placeholder={deliveryConfirmation?.campaign.name}
                 value={confirmationName}
                 onChange={(event) => setConfirmationName(event.target.value)}
               />
@@ -1483,6 +1500,7 @@ export function Campaigns({
                         id={`resolution-note-${task.id}`}
                         className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
                         maxLength={500}
+                        placeholder="例如：在发信服务商控制台查询回执已成功投递，手工核准入库"
                         value={resolutionNotes[task.id] ?? ""}
                         onChange={(event) =>
                           setResolutionNotes({
@@ -1580,7 +1598,7 @@ export function Campaigns({
           <DialogHeader>
             <DialogTitle>{editing ? "编辑活动草稿" : "新建活动"}</DialogTitle>
             <DialogDescription>
-              草稿允许变量暂时留空；收件人数和订阅抑制将在预览阶段计算。
+              草稿允许变量暂时留空；收件人数、订阅与退订状态将在预览阶段计算。
             </DialogDescription>
           </DialogHeader>
           <form

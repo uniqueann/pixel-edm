@@ -309,7 +309,7 @@ export function Contacts({
           <DialogHeader>
             <DialogTitle>{editing ? "编辑客户" : "添加客户"}</DialogTitle>
             <DialogDescription>
-              维护客户资料和标签。添加客户不代表客户已同意订阅。
+              维护客户资料与标签。请确保客户已明确授权接收营销邮件（添加后将默认处于已订阅状态）。
             </DialogDescription>
           </DialogHeader>
           <form
@@ -457,9 +457,27 @@ export function Contacts({
               id="unsubscribe-reason"
               required
               maxLength={500}
+              placeholder="如：客户要求退订、邮箱失效等"
               value={unsubscribeReason}
               onChange={(event) => setUnsubscribeReason(event.target.value)}
             />
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="hint self-center">快捷填入：</span>
+              {["客户主动要求退订", "邮箱地址失效", "业务合作终止"].map(
+                (quickReason) => (
+                  <Button
+                    key={quickReason}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setUnsubscribeReason(quickReason)}
+                  >
+                    {quickReason}
+                  </Button>
+                ),
+              )}
+            </div>
             <Button disabled={busy || !unsubscribeReason.trim()}>
               {busy ? "处理中…" : "确认退订"}
             </Button>

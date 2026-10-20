@@ -192,7 +192,7 @@ export function ContactImporter({
                 "标签",
                 "订阅状态",
                 "同意来源",
-                "同意证据说明",
+                "授权说明",
                 "同意时间",
               ],
               [
@@ -308,6 +308,7 @@ export function ContactImporter({
                       id="consent-source"
                       required
                       maxLength={100}
+                      placeholder="例如：独立站结账勾选、展会名片、历史下单客户"
                       value={consentSource}
                       onChange={(event) => setConsentSource(event.target.value)}
                     />
@@ -327,6 +328,7 @@ export function ContactImporter({
                       id="consent-note"
                       required
                       maxLength={500}
+                      placeholder="例如：客户在独立站结账页面主动勾选接收促销邮件"
                       value={consentNote}
                       onChange={(event) => setConsentNote(event.target.value)}
                     />
@@ -366,7 +368,7 @@ export function ContactImporter({
                 </strong>
               </div>
               <div className="rounded-lg bg-muted p-3">
-                <span className="hint">去重后</span>
+                <span className="hint">去重后有效邮箱数</span>
                 <strong className="block text-xl">
                   {job.job.total_groups}
                 </strong>

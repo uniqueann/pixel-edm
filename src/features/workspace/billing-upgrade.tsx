@@ -174,8 +174,7 @@ export function BillingUpgrade({
       )}
       {deliveryPlan.plan !== "free" && !canBuyPro && !canBuyTeam && (
         <p className="hint mt-2 mb-0">
-          如需调整订阅或退款，请通过付款时使用的 Creem / Dodo
-          账户管理；额度以当前工作区套餐为准。
+          如需调整续费、更改支付方式或申请退款，请直接点击付款收据邮件中的「管理订阅」链接；额度以当前工作区套餐为准。
         </p>
       )}
       {canCancelRenewal && (

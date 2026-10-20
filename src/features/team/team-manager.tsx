@@ -341,7 +341,19 @@ export function TeamManager({
               <div className="rounded-md border bg-muted p-3 text-xs break-all">
                 {inviteUrl}
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex flex-wrap gap-2 sm:justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setInviteUrl("");
+                    setEmail("");
+                    setInviteRole("editor");
+                    refresh();
+                  }}
+                >
+                  继续邀请下一位
+                </Button>
                 <Button onClick={() => copyText(inviteUrl)}>复制链接</Button>
               </DialogFooter>
             </>
@@ -359,6 +371,7 @@ export function TeamManager({
                   <Input
                     id="team-invite-email"
                     type="email"
+                    placeholder="colleague@company.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     required
@@ -381,6 +394,13 @@ export function TeamManager({
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="hint m-0 text-xs">
+                    {inviteRole === "admin"
+                      ? "管理员：拥有全部权限，可配置发信通道、团队席位与套餐。"
+                      : inviteRole === "editor"
+                        ? "协作者：可管理客户名单、编辑模板和创建发信活动草稿。"
+                        : "只读成员：仅可查看业务数据、投递统计与操作记录。"}
+                  </p>
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={busy || !email.trim()}>

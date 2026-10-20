@@ -188,7 +188,13 @@ export default async function Page({
             <EmptyState
               title="多人协作仅在团队版可用"
               description="升级团队版后可邀请成员协同管理、分配角色权限并查看完整操作记录。"
-            />
+            >
+              {role === "admin" && (
+                <Button asChild>
+                  <Link href="/settings">前往升级团队版</Link>
+                </Button>
+              )}
+            </EmptyState>
           </>
         );
       }
@@ -270,7 +276,7 @@ export default async function Page({
     return (
       <>
         <div className="welcome">
-          <span className="eyebrow">你的客户联络小站</span>
+          <span className="eyebrow">卖家邮局</span>
           <h1>{workspace.name}</h1>
           <p>管理客户、设计模板并高效发送营销邮件。</p>
         </div>
@@ -437,7 +443,13 @@ export default async function Page({
                 ? "升级套餐后可在总览和日志页查看业务审计。"
                 : "管理员可以在总览和日志页查看业务审计。"
             }
-          />
+          >
+            {role === "admin" && (
+              <Button asChild variant="outline">
+                <Link href="/settings">查看套餐详情</Link>
+              </Button>
+            )}
+          </EmptyState>
         )}
       </>
     );
