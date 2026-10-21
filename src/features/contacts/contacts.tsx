@@ -252,24 +252,26 @@ export function Contacts({
               <div className="w-full min-w-0 flex-1 sm:w-auto">
                 <p className="break-all">{c.email}</p>
                 <p className="hint">{c.name || "未填写姓名"}</p>
-                <Badge
-                  variant={
-                    c.subscription_status === "subscribed"
-                      ? "default"
-                      : "secondary"
-                  }
-                >
-                  {subscriptionLabels[c.subscription_status]}
-                </Badge>
-                <div className="flex flex-wrap gap-1">
-                  {c.tags.map((t) => (
-                    <span
-                      className="rounded-full bg-amber-50 px-2 py-1 text-xs"
-                      key={t.id}
-                    >
-                      {t.name}
-                    </span>
-                  ))}
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <Badge
+                    variant={
+                      c.subscription_status === "subscribed"
+                        ? "default"
+                        : "secondary"
+                    }
+                  >
+                    {subscriptionLabels[c.subscription_status]}
+                  </Badge>
+                  {c.tags
+                    .filter((t) => Boolean(t.name?.trim()))
+                    .map((t) => (
+                      <span
+                        className="rounded-full border border-amber-200/70 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300"
+                        key={t.id}
+                      >
+                        {t.name.trim()}
+                      </span>
+                    ))}
                 </div>
               </div>
               {canEdit && (
