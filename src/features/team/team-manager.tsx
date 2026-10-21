@@ -379,27 +379,26 @@ export function TeamManager({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="team-invite-role">加入角色</Label>
-                  <Select
+                  <select
+                    id="team-invite-role"
+                    className="w-full rounded-md border bg-white px-3 py-2 text-sm"
                     value={inviteRole}
-                    onValueChange={(value) => setInviteRole(value as TeamRole)}
+                    onChange={(event) =>
+                      setInviteRole(event.target.value as TeamRole)
+                    }
                   >
-                    <SelectTrigger id="team-invite-role" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teamRoles.map((item) => (
-                        <SelectItem key={item} value={item}>
-                          {roleNames[item]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {teamRoles.map((item) => (
+                      <option key={item} value={item}>
+                        {roleNames[item]}
+                      </option>
+                    ))}
+                  </select>
                   <p className="hint m-0 text-xs">
                     {inviteRole === "admin"
                       ? "管理员：拥有全部权限，可配置发信通道、团队席位与套餐。"
                       : inviteRole === "editor"
-                        ? "协作者：可管理客户名单、编辑模板和创建发信活动草稿。"
-                        : "只读成员：仅可查看业务数据、投递统计与操作记录。"}
+                        ? "运营：可管理客户名单、编辑模板和创建发信活动草稿。"
+                        : "查看者：仅可查看业务数据、投递统计与操作记录。"}
                   </p>
                 </div>
                 <DialogFooter>

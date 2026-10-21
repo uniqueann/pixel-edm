@@ -179,7 +179,7 @@ async function checkCreemDiscount(
     // 创建结账的响应没有 discount 字段；成功即表示 Creem 接受了该代码。
     return {
       available: true,
-      message: "这个折扣代码可用于 Creem，最终优惠以结账页为准。",
+      message: "这个折扣代码可用，最终优惠以结账页为准。",
     };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "";

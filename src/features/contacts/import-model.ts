@@ -139,6 +139,33 @@ function validConsentTime(value: string) {
   return Number.isFinite(time) && time <= Date.now();
 }
 
+/** 预检说明用中文分号拼接。客户端校验和数据库会各自追加同一句，展示前去重。 */
+export function dedupeImportMessages(message: string) {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const part of message.split("；")) {
+    const text = part.trim();
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    parts.push(text);
+  }
+  return parts.join("；");
+}
+
+export function isInvalidEmailImportMessage(message: string) {
+  return dedupeImportMessages(message).split("；").includes("邮箱格式无效");
+}
+
+/** 去重后、邮箱格式有效的组数。格式无效的地址不计入。 */
+export function countDedupedValidEmails(
+  rows: { message?: string; validation_error?: string }[],
+) {
+  return rows.filter(
+    (row) =>
+      !isInvalidEmailImportMessage(row.message ?? row.validation_error ?? ""),
+  ).length;
+}
+
 function splitTags(value = "") {
   const result: string[] = [];
   for (const item of value.split(/[|;；，、]/)) {
@@ -179,8 +206,11 @@ export function normalizeImportRows(
     const consentNote = (source.consent_note ?? batch.consent_note).trim();
     const consentAt = (source.consent_at ?? batch.consent_at).trim();
     const tags = splitTags(source.tags);
-    const errors = source.parse_error ? [source.parse_error] : [];
-    if (!emailResult.success) errors.push("邮箱格式无效");
+    const errors = source.parse_error
+      ? dedupeImportMessages(source.parse_error).split("；")
+      : [];
+    if (!emailResult.success && !errors.includes("邮箱格式无效"))
+      errors.push("邮箱格式无效");
     if ((source.name?.trim().length ?? 0) > 100) errors.push("姓名最多 100 字");
     if (!parsedStatus && explicitStatus) errors.push("订阅状态无法识别");
     if (tags.some((tag) => tag.length > 30)) errors.push("标签最多 30 字");
@@ -203,7 +233,7 @@ export function normalizeImportRows(
       consent_source: consentSource,
       consent_note: consentNote,
       consent_at: consentAt,
-      validation_error: errors.join("；"),
+      validation_error: dedupeImportMessages(errors.join("；")),
     };
     if (!emailResult.success || errors.length) {
       invalid.push(row);

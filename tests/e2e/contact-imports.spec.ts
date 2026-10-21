@@ -24,7 +24,7 @@ test("粘贴去重、错误报告、退订保护和 CSV 引号解析", async ({ 
     );
   await page.getByRole("button", { name: "预检名单" }).click();
   await expect(page.getByText("源数据行").locator("..")).toContainText("3");
-  await expect(page.getByText("去重后").locator("..")).toContainText("2");
+  await expect(page.getByText("去重后").locator("..")).toContainText("1");
   await expect(page.getByText("邮箱格式无效")).toBeVisible();
   await page.getByRole("button", { name: "确认并开始导入" }).click();
   await expect(page.getByText("已新增", { exact: true })).toBeVisible();

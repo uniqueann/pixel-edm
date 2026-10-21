@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { listContacts } from "@/features/contacts/actions";
 import { listTemplates } from "@/features/templates/actions";
 import { listActivityLogs } from "@/features/audit/actions";
-import { activityLabels } from "@/features/audit/model";
+import { activityLabel } from "@/features/audit/model";
 import { getWorkspaceCampaignStatistics } from "@/features/campaigns/actions";
 import { listCampaigns } from "@/features/campaigns/actions";
 import { campaignStatusLabels } from "@/features/campaigns/model";
@@ -412,7 +412,7 @@ export default async function Page({
                   <span className="avatar">{item.actor_name.slice(0, 2)}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate">
-                      {activityLabels[item.action] ?? item.action}
+                      {activityLabel(item.action)}
                       {item.target_label ? ` · ${item.target_label}` : ""}
                     </p>
                     <p className="hint m-0">

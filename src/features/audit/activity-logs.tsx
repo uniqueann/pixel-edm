@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ListPagination } from "@/components/list-pagination";
-import { activityLabels, type ActivityLogList } from "./model";
+import { activityLabel, activityLabels, type ActivityLogList } from "./model";
 
 const roleLabels: Record<string, string> = {
   system: "系统",
@@ -125,7 +125,7 @@ export function ActivityLogs({
           )}
           {filters.action && (
             <span className="filter-chip">
-              操作：{activityLabels[filters.action] ?? filters.action}
+              操作：{activityLabel(filters.action)}
             </span>
           )}
           <Button
@@ -147,7 +147,7 @@ export function ActivityLogs({
             <CardContent className="flex flex-wrap items-start gap-3 pt-5">
               <div className="min-w-0 flex-1">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <strong>{activityLabels[item.action] ?? item.action}</strong>
+                  <strong>{activityLabel(item.action)}</strong>
                   <Badge variant="secondary">
                     {roleLabels[item.actor_role] ?? item.actor_role}
                   </Badge>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Download, FileUp, Play, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,12 @@ import {
   processContactImportBatch,
 } from "./import-actions";
 import { parseImportText } from "./import-parser";
-import type { ContactImportDetail, ContactImportHistory } from "./import-model";
+import {
+  countDedupedValidEmails,
+  dedupeImportMessages,
+  type ContactImportDetail,
+  type ContactImportHistory,
+} from "./import-model";
 
 const resultLabels: Record<string, string> = {
   new: "将新增",
@@ -64,6 +69,10 @@ export function ContactImporter({
   const [warnings, setWarnings] = useState<string[]>([]);
   const [job, setJob] = useState(initialJob);
   const [busy, setBusy] = useState(false);
+  // 预检行超过一页时，当前页算不出全部有效邮箱，按任务记住导出结果。
+  const [validEmailCounts, setValidEmailCounts] = useState<
+    Record<string, number>
+  >({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function prepare() {
@@ -165,10 +174,36 @@ export function ContactImporter({
         row.source_rows.join("|"),
         row.email,
         resultLabels[row.result] ?? row.result,
-        row.message,
+        dedupeImportMessages(row.message),
       ]),
     ]);
   }
+
+  const pageHasEveryRow = Boolean(job && job.rows.length >= job.row_total);
+  const validEmails = !job
+    ? null
+    : pageHasEveryRow
+      ? countDedupedValidEmails(job.rows)
+      : (validEmailCounts[job.job.id] ?? null);
+
+  useEffect(() => {
+    if (!job || job.rows.length >= job.row_total) return;
+    if (validEmailCounts[job.job.id] != null) return;
+    let cancelled = false;
+    void exportContactImport({
+      workspace_id: workspace,
+      id: job.job.id,
+    }).then((result) => {
+      if (cancelled || !("data" in result) || !result.data) return;
+      setValidEmailCounts((current) => ({
+        ...current,
+        [job.job.id]: countDedupedValidEmails(result.data),
+      }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [job, validEmailCounts, workspace]);
 
   return (
     <div className="space-y-5">
@@ -369,9 +404,7 @@ export function ContactImporter({
               </div>
               <div className="rounded-lg bg-muted p-3">
                 <span className="hint">去重后有效邮箱数</span>
-                <strong className="block text-xl">
-                  {job.job.total_groups}
-                </strong>
+                <strong className="block text-xl">{validEmails ?? "…"}</strong>
               </div>
               <div className="rounded-lg bg-muted p-3">
                 <span className="hint">已处理</span>
@@ -410,7 +443,9 @@ export function ContactImporter({
                         ] ?? row.result}
                       </td>
                       <td className="p-2">{row.tags.join("、")}</td>
-                      <td className="p-2 text-destructive">{row.message}</td>
+                      <td className="p-2 text-destructive">
+                        {dedupeImportMessages(row.message)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

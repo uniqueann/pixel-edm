@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-/** 两个通道能力一致，副标题统一，避免「产品订阅 / 国际支付」造成误解。 */
-const CHECKOUT_PROVIDER_HINT = "订阅结账";
+/** 结账按钮不展示支付服务商名称。 */
 
 type AppliedDiscount = {
   code: string;
@@ -210,7 +209,7 @@ export function BillingCheckoutDialog({
           onVerify={() => void verifyDiscount()}
         />
         <p className="text-left text-sm font-medium text-foreground">
-          支付渠道
+          支付方式
         </p>
         <div className="space-y-2">
           <BillingProviderForm
@@ -218,8 +217,8 @@ export function BillingCheckoutDialog({
             workspaceId={workspaceId}
             plan={checkoutPlan}
             interval={interval}
-            providerName="Creem"
-            providerHint={CHECKOUT_PROVIDER_HINT}
+            title="订阅结账"
+            hint="推荐支付方式"
             variant="default"
             discountCode={applied?.creem ? applied.code : ""}
             disabled={checking}
@@ -230,8 +229,8 @@ export function BillingCheckoutDialog({
             workspaceId={workspaceId}
             plan={checkoutPlan}
             interval={interval}
-            providerName="Dodo Payments"
-            providerHint={CHECKOUT_PROVIDER_HINT}
+            title="其他支付方式"
+            hint="同样支持订阅与自动续费"
             variant="outline"
             discountCode={applied?.dodo ? applied.code : ""}
             disabled={checking}
@@ -244,7 +243,7 @@ export function BillingCheckoutDialog({
           </p>
         )}
         <p className="hint mb-0 text-left text-xs leading-relaxed">
-          订阅将按所选周期自动续费；取消续费后当前周期结束会回到免费版额度。席位加购与自助降档后续提供。
+          订阅将按所选周期自动续费；取消续费后当前周期结束会回到免费版额度。席位加购与自助降档后续提供。如需调整续费、更改支付方式或申请退款，请直接点击付款收据邮件中的「管理订阅」链接。
         </p>
       </DialogContent>
     </Dialog>
@@ -342,8 +341,8 @@ function BillingProviderForm({
   workspaceId,
   plan,
   interval,
-  providerName,
-  providerHint,
+  title,
+  hint,
   variant,
   discountCode,
   disabled,
@@ -353,8 +352,8 @@ function BillingProviderForm({
   workspaceId: string;
   plan: EdmBilledPlan;
   interval: "monthly" | "yearly";
-  providerName: string;
-  providerHint: string;
+  title: string;
+  hint: string;
   variant: "default" | "outline" | "secondary";
   discountCode: string;
   disabled: boolean;
@@ -375,11 +374,9 @@ function BillingProviderForm({
         disabled={disabled}
       >
         <span>
-          <span className="block text-left text-sm font-bold">
-            {providerName}
-          </span>
+          <span className="block text-left text-sm font-bold">{title}</span>
           <span className="block text-left text-xs font-normal opacity-80">
-            {providerHint}
+            {hint}
           </span>
         </span>
         <span aria-hidden>→</span>

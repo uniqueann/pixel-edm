@@ -103,7 +103,8 @@ test("只有一个渠道可用时说明适用渠道", () => {
   assert.equal(summary.creem, false);
   assert.equal(summary.dodo, true);
   assert.match(summary.message, /节省了 10%/);
-  assert.match(summary.message, /Dodo Payments/);
+  assert.match(summary.message, /其中一种支付方式/);
+  assert.doesNotMatch(summary.message, /Dodo Payments|Creem/);
 });
 
 test("两边都不存在时给出同一句拒绝", () => {
@@ -126,6 +127,6 @@ test("Creem 接受优惠码但未返回折扣金额时，不误报百分比", ()
   });
   assert.equal(summary.creem, true);
   assert.equal(summary.dodo, true);
-  assert.match(summary.message, /两个支付渠道/);
+  assert.match(summary.message, /两种支付方式/);
   assert.doesNotMatch(summary.message, /节省了 10%/);
 });
