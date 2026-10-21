@@ -116,16 +116,38 @@ export function Contacts({
     setTag("");
     setError("");
   }
-  function addTag() {
-    const value = tag.trim();
-    if (!value) return;
-    if (value.length > 30 || tags.length >= 20) {
-      setError("标签最多 30 字，每位客户最多 20 个标签。");
-      return;
+  function parseTagsInput(text: string): string[] {
+    return text
+      .split(/[,，;；\n\t]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  function addTag(inputTag?: string) {
+    const source = inputTag ?? tag;
+    const incoming = parseTagsInput(source);
+    if (!incoming.length) return;
+    const nextTags = [...tags];
+    let hasError = false;
+    for (const item of incoming) {
+      if (item.length > 30) {
+        setError("单个标签最多 30 字。");
+        hasError = true;
+        break;
+      }
+      if (nextTags.length >= 20) {
+        setError("每位客户最多 20 个标签。");
+        hasError = true;
+        break;
+      }
+      if (!nextTags.some((t) => t.toLowerCase() === item.toLowerCase())) {
+        nextTags.push(item);
+      }
     }
-    if (!tags.some((t) => t.toLowerCase() === value.toLowerCase()))
-      setTags([...tags, value]);
-    setTag("");
+    setTags(nextTags);
+    if (!hasError) {
+      setError("");
+      setTag("");
+    }
   }
   async function archive(c: Contact) {
     if (
@@ -347,9 +369,15 @@ export function Contacts({
           <DialogHeader>
             <DialogTitle>{editing ? "编辑客户" : "添加客户"}</DialogTitle>
             <DialogDescription>
-              维护客户资料与标签。请确保客户已明确授权接收营销邮件。新添加的客户默认为「未确认」，确认订阅后才能用于发送。
+              维护客户邮箱、姓名与分类标签。
             </DialogDescription>
           </DialogHeader>
+          <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-xs leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">
+              💡 订阅合规提示：
+            </span>
+            新添加客户初始状态为「未确认」，需经确认订阅后方可发信，以保障发信信誉。
+          </div>
           <form
             className="space-y-4"
             onSubmit={async (e) => {
@@ -358,17 +386,24 @@ export function Contacts({
               setError("");
               try {
                 const all = [...tags];
-                if (
-                  tag.trim() &&
-                  !all.some((t) => t.toLowerCase() === tag.trim().toLowerCase())
-                )
-                  all.push(tag.trim());
+                if (tag.trim()) {
+                  const incoming = parseTagsInput(tag);
+                  for (const item of incoming) {
+                    if (
+                      item.length <= 30 &&
+                      all.length < 20 &&
+                      !all.some((t) => t.toLowerCase() === item.toLowerCase())
+                    ) {
+                      all.push(item);
+                    }
+                  }
+                }
                 const result = await saveContact({
                   workspace_id: workspace,
                   id: editing?.id,
                   expected_version: editing?.version,
-                  email,
-                  name,
+                  email: email.trim(),
+                  name: name.trim(),
                   tags: all,
                 });
                 if (result.error) setError(result.error);
@@ -389,34 +424,54 @@ export function Contacts({
             <Input
               id="contact-email"
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="email"
               required
               maxLength={254}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setEmail((prev) => prev.trim())}
             />
             <Label htmlFor="contact-name">姓名（选填）</Label>
             <Input
               id="contact-name"
               maxLength={100}
+              autoComplete="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={() => setName((prev) => prev.trim())}
             />
-            <Label htmlFor="contact-tag">标签</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="contact-tag">标签</Label>
+              <span className="text-xs text-muted-foreground">
+                已添加 {tags.length}/20
+              </span>
+            </div>
             <div className="flex gap-2">
               <Input
                 id="contact-tag"
                 list="contact-tag-options"
                 value={tag}
-                onChange={(e) => setTag(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/[,，;；\n]/.test(val)) {
+                    addTag(val);
+                  } else {
+                    setTag(val);
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     addTag();
                   }
                 }}
-                placeholder="选择已有标签或输入新标签"
+                placeholder="输入标签（支持逗号或回车快速添加）"
               />
-              <Button type="button" variant="outline" onClick={addTag}>
+              <Button type="button" variant="outline" onClick={() => addTag()}>
                 添加标签
               </Button>
             </div>
@@ -425,25 +480,78 @@ export function Contacts({
                 <option key={t.id} value={t.name} />
               ))}
             </datalist>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((t) => (
-                <Button
-                  key={t}
-                  type="button"
-                  variant="outline"
-                  aria-label={`移除标签 ${t}`}
-                  onClick={() => setTags(tags.filter((v) => v !== t))}
-                >
-                  {t} ×
-                </Button>
-              ))}
-            </div>
+            {shown.tags.filter(
+              (st) =>
+                !tags.some((t) => t.toLowerCase() === st.name.toLowerCase()),
+            ).length > 0 &&
+              tags.length < 20 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs">
+                  <span className="text-muted-foreground">
+                    快捷添加已有标签：
+                  </span>
+                  {shown.tags
+                    .filter(
+                      (st) =>
+                        !tags.some(
+                          (t) => t.toLowerCase() === st.name.toLowerCase(),
+                        ),
+                    )
+                    .slice(0, 6)
+                    .map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        className="rounded-full border border-border/80 bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground transition hover:border-primary/40 hover:bg-muted hover:text-foreground active:scale-95"
+                        onClick={() => addTag(st.name)}
+                      >
+                        + {st.name}
+                      </button>
+                    ))}
+                </div>
+              )}
+            {tags.length > 0 && (
+              <div
+                className="flex flex-wrap gap-1.5 pt-0.5"
+                aria-label="已选标签列表"
+              >
+                {tags.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900 transition hover:bg-amber-100 hover:text-amber-950 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50 active:scale-95"
+                    aria-label={`移除标签 ${t}`}
+                    onClick={() => setTags(tags.filter((v) => v !== t))}
+                  >
+                    <span>{t}</span>
+                    <span
+                      aria-hidden="true"
+                      className="font-bold text-amber-700/80 dark:text-amber-400"
+                    >
+                      ×
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             {error && (
               <p role="alert" className="field-error">
                 {error}
               </p>
             )}
-            <Button disabled={busy}>{busy ? "保存中…" : "保存客户"}</Button>
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setEditing(undefined)}
+                className="w-full sm:w-auto"
+              >
+                取消
+              </Button>
+              <Button disabled={busy} className="w-full sm:w-auto">
+                {busy ? "保存中…" : "保存客户"}
+              </Button>
+            </div>
             {error.includes("重新加载") && (
               <Button
                 type="button"
