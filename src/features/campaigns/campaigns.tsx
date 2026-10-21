@@ -1049,19 +1049,19 @@ export function Campaigns({
           {preview && !previewLoading && (
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border bg-white p-3">
+                <div className="rounded-lg border bg-card p-3">
                   <p className="hint m-0">目标客户</p>
                   <p className="text-xl font-semibold">
                     {preview.recipients.audience_count}
                   </p>
                 </div>
-                <div className="rounded-lg border bg-white p-3">
+                <div className="rounded-lg border bg-card p-3">
                   <p className="hint m-0">可发送</p>
                   <p className="text-xl font-semibold">
                     {preview.recipients.eligible_count}
                   </p>
                 </div>
-                <div className="col-span-2 rounded-lg border bg-white p-3 sm:col-span-1">
+                <div className="col-span-2 rounded-lg border bg-card p-3 sm:col-span-1">
                   <p className="hint m-0">已排除</p>
                   <p className="text-xl font-semibold">
                     {preview.recipients.excluded_count}
@@ -1113,7 +1113,7 @@ export function Campaigns({
                     </div>
                     {preview.recipients.sample.map((item, index) => (
                       <div
-                        className="min-w-0 rounded-lg border bg-white p-4"
+                        className="min-w-0 rounded-lg border bg-card p-4"
                         key={item.contact_id}
                       >
                         <p className="mb-1 break-words font-medium">
@@ -1214,7 +1214,7 @@ export function Campaigns({
                 <Label htmlFor="duplicate-campaign-template">邮件模板</Label>
                 <select
                   id="duplicate-campaign-template"
-                  className="w-full rounded-md border bg-white px-3 py-2"
+                  className="w-full rounded-md border bg-card px-3 py-2"
                   value={duplicateTemplateId}
                   onChange={(event) =>
                     setDuplicateTemplateId(event.target.value)
@@ -1407,7 +1407,7 @@ export function Campaigns({
                     value: activeStatistics.counts.send_failed,
                   },
                 ].map(({ label, value, rate }) => (
-                  <div className="rounded-lg border bg-white p-3" key={label}>
+                  <div className="rounded-lg border bg-card p-3" key={label}>
                     <p className="hint m-0">{label}</p>
                     <p className="text-xl font-semibold">
                       {value}
@@ -1469,7 +1469,7 @@ export function Campaigns({
               <Label htmlFor="delivery-task-status">结果筛选</Label>
               <select
                 id="delivery-task-status"
-                className="rounded-md border bg-white px-3 py-2"
+                className="rounded-md border bg-card px-3 py-2"
                 value={taskStatus}
                 onChange={(event) => {
                   const value = event.target.value as typeof taskStatus;
@@ -1539,7 +1539,7 @@ export function Campaigns({
                       </Label>
                       <textarea
                         id={`resolution-note-${task.id}`}
-                        className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
+                        className="min-h-20 w-full rounded-md border bg-card px-3 py-2"
                         maxLength={500}
                         placeholder="例如：在发信服务商控制台查询回执已成功投递，手工核准入库"
                         value={resolutionNotes[task.id] ?? ""}
@@ -1697,7 +1697,7 @@ export function Campaigns({
               <select
                 id="campaign-template"
                 required
-                className="w-full rounded-md border bg-white px-3 py-2"
+                className="w-full rounded-md border bg-card px-3 py-2"
                 value={templateId}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -1728,7 +1728,7 @@ export function Campaigns({
               <Label htmlFor="campaign-audience">发送对象</Label>
               <select
                 id="campaign-audience"
-                className="w-full rounded-md border bg-white px-3 py-2"
+                className="w-full rounded-md border bg-card px-3 py-2"
                 value={audienceType}
                 onChange={(event) => {
                   const value = event.target.value as "all" | "tag";
@@ -1751,7 +1751,7 @@ export function Campaigns({
                 <select
                   id="campaign-tag"
                   required
-                  className="w-full rounded-md border bg-white px-3 py-2"
+                  className="w-full rounded-md border bg-card px-3 py-2"
                   value={tagId}
                   onChange={(event) => setTagId(event.target.value)}
                 >

@@ -8,6 +8,7 @@ import { LogOut } from "lucide-react";
 import { Brand } from "./brand";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { ThemeToggle } from "./theme-toggle";
 import {
   Select,
   SelectContent,
@@ -61,9 +62,12 @@ export function AppShell({
       </a>
       <header className="topbar">
         <Brand />
-        <Badge variant="secondary">
-          {type === "team" ? "团队工作区" : "个人工作区"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">
+            {type === "team" ? "团队工作区" : "个人工作区"}
+          </Badge>
+          <ThemeToggle />
+        </div>
       </header>
       <section className="identity-bar" aria-label="账号与工作区">
         <div className="identity-who">

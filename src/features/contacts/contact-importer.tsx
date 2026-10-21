@@ -280,7 +280,7 @@ export function ContactImporter({
                 <Label htmlFor="import-text">名单内容</Label>
                 <textarea
                   id="import-text"
-                  className="mt-2 min-h-48 w-full rounded-md border bg-white p-3 font-mono text-sm"
+                  className="mt-2 min-h-48 w-full rounded-md border bg-card p-3 font-mono text-sm"
                   placeholder={
                     "邮箱,姓名,标签\ncustomer@example.com,张三,VIP|老客"
                   }
@@ -310,7 +310,7 @@ export function ContactImporter({
                 <label className="flex items-center gap-2 text-sm">
                   分隔符
                   <select
-                    className="rounded border bg-white p-2"
+                    className="rounded border bg-card p-2"
                     value={delimiter}
                     onChange={(event) =>
                       setDelimiter(event.target.value as "" | "," | "\t")

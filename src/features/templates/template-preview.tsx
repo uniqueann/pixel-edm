@@ -73,7 +73,7 @@ export function TemplatePreview({
           ))}
         </div>
       </div>
-      <div className="rounded-lg border bg-white p-4">
+      <div className="rounded-lg border bg-card p-4">
         <p className="mb-2 text-xs text-muted-foreground">邮件主题</p>
         <p className="break-words font-medium">{rendered.subject}</p>
         <div className="my-4 border-t" />

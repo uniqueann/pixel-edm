@@ -31,6 +31,7 @@ import { BillingUpgrade } from "@/features/workspace/billing-upgrade";
 import { CheckoutSuccessToast } from "@/features/workspace/checkout-toast";
 import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
 import { edmCheckoutAvailability } from "@/lib/billing/edm-product-config";
+import { ThemeSegmented } from "@/components/theme-toggle";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -134,6 +135,15 @@ export default async function Page({
               address={workspace.mailing_address}
               canEdit={role === "admin"}
             />
+          </CardContent>
+        </Card>
+        <Card className="mt-4">
+          <CardContent className="pt-6">
+            <h2 className="mb-2">界面外观</h2>
+            <p className="hint mb-4">
+              选择适合你的视觉风格，支持浅色、深色或随系统自动切换。
+            </p>
+            <ThemeSegmented />
           </CardContent>
         </Card>
         <div className="mt-7 space-y-3">

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f6f6f3;
   --foreground: #1c2b45;
@@ -23,6 +25,30 @@
   --gold: #a67b25;
   --gold-tint: #f6edd9;
   --green: #2f6e52;
+}
+
+.dark {
+  --background: #0d121c;
+  --foreground: #e6edf7;
+  --card: #151c2a;
+  --card-foreground: #e6edf7;
+  --popover: #182132;
+  --popover-foreground: #e6edf7;
+  --primary: #f1f5f9;
+  --primary-foreground: #0d121c;
+  --secondary: #1e283b;
+  --secondary-foreground: #e6edf7;
+  --muted: #182234;
+  --muted-foreground: #8c9cb6;
+  --accent: #1e283b;
+  --accent-foreground: #e6edf7;
+  --destructive: #ef4444;
+  --border: #232f44;
+  --input: #232f44;
+  --ring: #38bdf8;
+  --gold: #eab308;
+  --gold-tint: #2a2008;
+  --green: #34d399;
 }
 @theme inline {
   --color-background: var(--background);
@@ -560,4 +586,28 @@
   .unsubscribe-card {
     padding: 24px;
   }
+}
+
+.dark .identity-bar,
+.dark .auth-card,
+.dark .unsubscribe-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+.dark .stat-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.dark .stat-card-link:hover .stat-card {
+  border-color: #3b4d6b;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.dark .role-pill.admin {
+  color: #fca5a5;
+  background: #450a0a;
+}
+.dark .role-pill.editor {
+  color: #fde047;
+  background: #362908;
+}
+.dark .list-filter {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%238c9cb6' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
