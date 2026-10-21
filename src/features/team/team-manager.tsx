@@ -381,7 +381,7 @@ export function TeamManager({
                   <Label htmlFor="team-invite-role">加入角色</Label>
                   <select
                     id="team-invite-role"
-                    className="w-full rounded-md border bg-white px-3 py-2 text-sm"
+                    className="w-full rounded-md border bg-card px-3 py-2 text-sm"
                     value={inviteRole}
                     onChange={(event) =>
                       setInviteRole(event.target.value as TeamRole)

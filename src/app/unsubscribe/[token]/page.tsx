@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { inspectUnsubscribe } from "@/features/unsubscribe/service";
 import { UnsubscribeForm } from "@/features/unsubscribe/unsubscribe-form";
 
@@ -34,7 +35,10 @@ export default async function Page({
   const { token } = await params;
   const result = await inspectUnsubscribe(token);
   return (
-    <main className="unsubscribe-wrap">
+    <main className="unsubscribe-wrap relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Brand />
       <section className="unsubscribe-card">
         {!result.ok ? (
