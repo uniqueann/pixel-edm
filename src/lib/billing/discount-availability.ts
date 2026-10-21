@@ -89,12 +89,11 @@ export function summarizeDiscountChannels(input: {
       dodo,
       message: samePercent
         ? discountSavingsMessage(input.creem.percentOff!)
-        : "这个折扣代码可用于两个支付渠道，最终优惠以结账页为准。",
+        : "这个折扣代码可用于两种支付方式，最终优惠以结账页为准。",
     };
   }
   if (creem || dodo) {
     const hit = creem ? input.creem : input.dodo;
-    const name = creem ? "Creem" : "Dodo Payments";
     const base =
       hit.percentOff != null
         ? discountSavingsMessage(hit.percentOff)
@@ -103,7 +102,7 @@ export function summarizeDiscountChannels(input: {
       available: true,
       creem,
       dodo,
-      message: `${base}仅适用于 ${name}。`,
+      message: `${base}仅适用于其中一种支付方式。`,
     };
   }
   return {

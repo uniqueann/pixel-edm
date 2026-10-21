@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { flushSync } from "react-dom";
+import { unstable_rethrow, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,9 +17,15 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ListPagination } from "@/components/list-pagination";
-import { saveContact, setContactArchived, unsubscribeContact } from "./actions";
+import {
+  listContacts,
+  saveContact,
+  setContactArchived,
+  unsubscribeContact,
+} from "./actions";
 import type { Contact, ContactList } from "./model";
 import { subscriptionLabels } from "./import-model";
+
 export function Contacts({
   workspace,
   canEdit,
@@ -32,6 +39,19 @@ export function Contacts({
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [listOverride, setListOverride] = useState<ContactList | null>(null);
+  const filterKey = JSON.stringify(filters);
+  const [seenFilters, setSeenFilters] = useState(filterKey);
+  if (seenFilters !== filterKey) {
+    setSeenFilters(filterKey);
+    setListOverride(null);
+  } else if (
+    listOverride &&
+    JSON.stringify(listOverride) === JSON.stringify(data)
+  ) {
+    setListOverride(null);
+  }
+  const shown = listOverride ?? data;
   const [q, setQ] = useState(filters.q ?? "");
   const returnFocus = useRef<HTMLElement | null>(null);
   const [editing, setEditing] = useState<Contact | null | undefined>(undefined);
@@ -67,11 +87,26 @@ export function Contacts({
     return () => clearTimeout(timer);
   }, [q, filters, router]);
   useEffect(() => {
-    if (filters.page && Number(filters.page) !== data.page) {
-      const p = new URLSearchParams({ ...filters, page: String(data.page) });
+    if (filters.page && Number(filters.page) !== shown.page) {
+      const p = new URLSearchParams({ ...filters, page: String(shown.page) });
       router.replace(`/contacts?${p}`);
     }
-  }, [filters, data.page, router]);
+  }, [filters, shown.page, router]);
+  async function refreshContacts() {
+    try {
+      const fresh = await listContacts({
+        q: filters.q,
+        tag: filters.tag,
+        status: filters.status,
+        subscription: filters.subscription,
+        page: filters.page,
+      });
+      setListOverride(fresh);
+    } catch (error) {
+      unstable_rethrow(error);
+    }
+    start(() => router.refresh());
+  }
   function open(c: Contact | null) {
     returnFocus.current = document.activeElement as HTMLElement | null;
     setEditing(c);
@@ -109,9 +144,10 @@ export function Contacts({
       if (result.error) toast.error(result.error);
       else {
         toast.success(archived ? "客户已恢复" : "客户已归档");
-        router.refresh();
+        await refreshContacts();
       }
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       toast.error("操作失败，请重试。");
     } finally {
       setBusy(false);
@@ -121,7 +157,7 @@ export function Contacts({
     <>
       <div className="section-heading">
         <h1>客户名单</h1>
-        <span>{data.total} 位</span>
+        <span>{shown.total} 位</span>
       </div>
       <div className="list-toolbar">
         {canEdit && <Button onClick={() => open(null)}>添加客户</Button>}
@@ -161,7 +197,7 @@ export function Contacts({
           onChange={(e) => navigate({ tag: e.target.value, page: "1" })}
         >
           <option value="">全部标签</option>
-          {data.tags.map((t) => (
+          {shown.tags.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
             </option>
@@ -193,7 +229,7 @@ export function Contacts({
           {filters.tag && (
             <span className="filter-chip">
               标签：
-              {data.tags.find((item) => item.id === filters.tag)?.name ??
+              {shown.tags.find((item) => item.id === filters.tag)?.name ??
                 "已选标签"}
             </span>
           )}
@@ -210,7 +246,7 @@ export function Contacts({
         </div>
       )}
       <div className="my-4 space-y-3" aria-busy={pending}>
-        {data.items.map((c) => (
+        {shown.items.map((c) => (
           <Card key={c.id}>
             <CardContent className="flex flex-wrap items-center gap-3 pt-5">
               <div className="w-full min-w-0 flex-1 sm:w-auto">
@@ -275,7 +311,7 @@ export function Contacts({
             </CardContent>
           </Card>
         ))}
-        {!data.items.length && (
+        {!shown.items.length && (
           <p className="py-10 text-center">
             {hasFilters
               ? "没有匹配的客户，请调整搜索或筛选。"
@@ -286,9 +322,9 @@ export function Contacts({
         )}
       </div>
       <ListPagination
-        page={data.page}
+        page={shown.page}
         pageSize={20}
-        total={data.total}
+        total={shown.total}
         pending={pending}
         onPageChange={(page) => navigate({ page: String(page) })}
       />
@@ -309,7 +345,7 @@ export function Contacts({
           <DialogHeader>
             <DialogTitle>{editing ? "编辑客户" : "添加客户"}</DialogTitle>
             <DialogDescription>
-              维护客户资料与标签。请确保客户已明确授权接收营销邮件（添加后将默认处于已订阅状态）。
+              维护客户资料与标签。请确保客户已明确授权接收营销邮件。新添加的客户默认为「未确认」，确认订阅后才能用于发送。
             </DialogDescription>
           </DialogHeader>
           <form
@@ -335,11 +371,12 @@ export function Contacts({
                 });
                 if (result.error) setError(result.error);
                 else {
-                  setEditing(undefined);
                   toast.success("客户已保存");
-                  router.refresh();
+                  flushSync(() => setEditing(undefined));
+                  await refreshContacts();
                 }
-              } catch {
+              } catch (error) {
+                unstable_rethrow(error);
                 setError("保存失败，输入已保留，请重试。");
               } finally {
                 setBusy(false);
@@ -382,7 +419,7 @@ export function Contacts({
               </Button>
             </div>
             <datalist id="contact-tag-options">
-              {data.tags.map((t) => (
+              {shown.tags.map((t) => (
                 <option key={t.id} value={t.name} />
               ))}
             </datalist>
@@ -447,9 +484,9 @@ export function Contacts({
               });
               setBusy(false);
               if (result.error) return toast.error(result.error);
-              setUnsubscribing(undefined);
               toast.success("客户已成功退订");
-              router.refresh();
+              await refreshContacts();
+              flushSync(() => setUnsubscribing(undefined));
             }}
           >
             <Label htmlFor="unsubscribe-reason">退订原因</Label>

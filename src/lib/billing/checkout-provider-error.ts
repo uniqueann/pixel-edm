@@ -11,10 +11,9 @@ export function describeCheckoutProviderFailure(input: {
   if (input.hadDiscountCode && isDiscountRejection(detail)) {
     return { reason: "discount", message: DISCOUNT_MESSAGE };
   }
-  const name = input.provider === "creem" ? "Creem" : "Dodo Payments";
   return {
     reason: "provider",
-    message: `${name} 暂时无法创建结账，请稍后重试。`,
+    message: "暂时无法创建结账，请稍后重试。",
   };
 }
 

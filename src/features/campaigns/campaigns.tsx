@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { flushSync } from "react-dom";
+import { unstable_rethrow, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
   getCampaignDeliveryStatistics,
   getCampaignPreview,
   listCampaignDeliveryTasks,
+  listCampaigns,
   resolveDeliveryUnknown,
   saveCampaign,
   setCampaignDeliveryPaused,
@@ -161,6 +163,19 @@ export function Campaigns({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [listOverride, setListOverride] = useState<CampaignList | null>(null);
+  const filterKey = JSON.stringify(filters);
+  const [seenFilters, setSeenFilters] = useState(filterKey);
+  if (seenFilters !== filterKey) {
+    setSeenFilters(filterKey);
+    setListOverride(null);
+  } else if (
+    listOverride &&
+    JSON.stringify(listOverride) === JSON.stringify(data)
+  ) {
+    setListOverride(null);
+  }
+  const campaigns = listOverride ?? data;
   const [busy, setBusy] = useState(false);
   const [loadingCampaignId, setLoadingCampaignId] = useState<string>();
   const [previewing, setPreviewing] = useState<CampaignSummary>();
@@ -277,25 +292,50 @@ export function Campaigns({
   }, [filters, q, router]);
 
   useEffect(() => {
-    if (filters.page && Number(filters.page) !== data.page) {
+    if (filters.page && Number(filters.page) !== campaigns.page) {
       const params = new URLSearchParams({
         ...filters,
-        page: String(data.page),
+        page: String(campaigns.page),
       });
       router.replace(`/campaigns?${params}`);
     }
-  }, [data.page, filters, router]);
+  }, [campaigns.page, filters, router]);
+
+  async function refreshCampaigns() {
+    try {
+      const fresh = await listCampaigns({
+        status: filters.status,
+        q: filters.q,
+        campaign_status: filters.campaign_status,
+        page: filters.page,
+      });
+      setListOverride(fresh);
+    } catch (error) {
+      unstable_rethrow(error);
+    }
+    startTransition(() => router.refresh());
+  }
 
   useEffect(() => {
     if (
-      !data.items.some((item) =>
+      !campaigns.items.some((item) =>
         ["queued", "sending", "paused"].includes(item.status),
       )
     )
       return;
-    const timer = window.setInterval(() => router.refresh(), 5000);
+    const timer = window.setInterval(() => {
+      if (listOverride) {
+        void listCampaigns({
+          status: filters.status,
+          q: filters.q,
+          campaign_status: filters.campaign_status,
+          page: filters.page,
+        }).then((fresh) => setListOverride(fresh));
+      }
+      router.refresh();
+    }, 5000);
     return () => window.clearInterval(timer);
-  }, [data.items, router]);
+  }, [campaigns.items, filters, listOverride, router]);
 
   async function loadDeliveryTasks(
     campaign: CampaignSummary,
@@ -567,9 +607,10 @@ export function Campaigns({
       if ("error" in result) toast.error(result.error);
       else {
         toast.success(archived ? "活动已恢复" : "活动已归档");
-        router.refresh();
+        await refreshCampaigns();
       }
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       toast.error("操作失败，请重试。");
     } finally {
       setBusy(false);
@@ -656,7 +697,7 @@ export function Campaigns({
     <>
       <div className="section-heading">
         <h1>发信活动</h1>
-        <span>{data.total} 条</span>
+        <span>{campaigns.total} 条</span>
       </div>
       <p className="hint">
         草稿预览按当前最新的客户订阅和退订状态实时计算；确认后将锁定收件名单，管理员可创建正式发送任务。
@@ -745,7 +786,7 @@ export function Campaigns({
       </div>
 
       <div className="my-4 space-y-3" aria-busy={pending}>
-        {data.items.map((campaign) => (
+        {campaigns.items.map((campaign) => (
           <Card key={campaign.id} data-campaign-id={campaign.id}>
             <CardContent className="flex flex-col items-stretch gap-4 pt-5 sm:flex-row sm:items-start">
               <div className="w-full min-w-0 flex-1">
@@ -947,7 +988,7 @@ export function Campaigns({
             </CardContent>
           </Card>
         ))}
-        {!data.items.length && (
+        {!campaigns.items.length && (
           <p className="py-10 text-center">
             {hasFilters
               ? "没有匹配的活动，请调整搜索或筛选。"
@@ -961,9 +1002,9 @@ export function Campaigns({
       </div>
 
       <ListPagination
-        page={data.page}
-        pageSize={data.page_size}
-        total={data.total}
+        page={campaigns.page}
+        pageSize={campaigns.page_size}
+        total={campaigns.total}
         pending={pending}
         onPageChange={(page) => navigate({ page: String(page) })}
       />
@@ -1618,14 +1659,22 @@ export function Campaigns({
                   tag_id: audienceType === "tag" ? tagId : null,
                   variables,
                 });
-                if ("error" in result) {
-                  setError(result.error ?? "保存失败，请重试。");
+                const message =
+                  result &&
+                  typeof result === "object" &&
+                  "error" in result &&
+                  typeof result.error === "string"
+                    ? result.error
+                    : "";
+                if (message) {
+                  setError(message);
                 } else {
-                  setEditing(undefined);
                   toast.success("活动草稿已保存");
-                  router.refresh();
+                  flushSync(() => setEditing(undefined));
+                  await refreshCampaigns();
                 }
-              } catch {
+              } catch (error) {
+                unstable_rethrow(error);
                 setError("保存失败，输入已保留，请重试。");
               } finally {
                 setBusy(false);

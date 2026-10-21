@@ -48,17 +48,10 @@ export function CheckoutSuccessToast() {
       return;
     }
     if (checkout !== "success") return;
-    const provider = params.get("provider");
     const planParam = params.get("plan");
     const planLabel =
       planParam === "team" ? "团队版" : planParam === "pro" ? "专业版" : null;
-    const name =
-      provider === "dodo"
-        ? "Dodo Payments"
-        : provider === "creem"
-          ? "Creem"
-          : "支付";
-    toast.success(`${name} 结账已完成`, {
+    toast.success("结账已完成", {
       id: "checkout-success",
       description: planLabel
         ? `${planLabel}订阅生效可能需要几秒。若额度未更新，请刷新设置页。`
