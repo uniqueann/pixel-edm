@@ -335,9 +335,14 @@ export function Templates({
           <DialogHeader>
             <DialogTitle>{editing ? "编辑模板" : "新建模板"}</DialogTitle>
             <DialogDescription>
-              使用纯文本主题与正文，点击变量会插入到当前光标位置。
+              维护模板名称、分类、主题与纯文本正文。
             </DialogDescription>
           </DialogHeader>
+          <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-xs leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">💡 变量说明：</span>
+            在主题或正文中使用 <code>{"{{变量名}}"}</code>
+            ，发信时将自动替换为客户真实资料；未知变量将在发信前拦截。
+          </div>
           <form
             className="space-y-4"
             onSubmit={async (event) => {
@@ -353,9 +358,9 @@ export function Templates({
                   workspace_id: workspace,
                   id: editing?.id,
                   expected_version: editing?.version,
-                  name,
-                  category,
-                  subject,
+                  name: name.trim(),
+                  category: category.trim(),
+                  subject: subject.trim(),
                   body,
                 });
                 if ("error" in result)
@@ -380,6 +385,7 @@ export function Templates({
                 maxLength={80}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                onBlur={() => setName((prev) => prev.trim())}
               />
             </div>
             <div>
@@ -390,7 +396,23 @@ export function Templates({
                 maxLength={50}
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
+                onBlur={() => setCategory((prev) => prev.trim())}
               />
+              {(data.categories ?? []).length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1.5 text-xs">
+                  <span className="text-muted-foreground">常用已有分类：</span>
+                  {(data.categories ?? []).slice(0, 5).map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className="rounded-full border border-border/80 bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground transition hover:border-primary/40 hover:bg-muted hover:text-foreground active:scale-95"
+                      onClick={() => setCategory(cat)}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <Label htmlFor="template-subject">邮件主题</Label>
@@ -402,10 +424,16 @@ export function Templates({
                 value={subject}
                 onFocus={() => setActiveField("subject")}
                 onChange={(event) => setSubject(event.target.value)}
+                onBlur={() => setSubject((prev) => prev.trim())}
               />
             </div>
             <div>
-              <Label htmlFor="template-body">纯文本正文</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="template-body">纯文本正文</Label>
+                <span className="text-xs text-muted-foreground">
+                  {body.length} / 20000 字
+                </span>
+              </div>
               <textarea
                 ref={bodyRef}
                 id="template-body"
@@ -423,19 +451,17 @@ export function Templates({
               </p>
               <div className="flex flex-wrap gap-2">
                 {templateVariables.map((variable) => (
-                  <Button
+                  <button
                     key={variable.key}
                     type="button"
-                    size="sm"
-                    variant="outline"
-                    className="flex items-center gap-1.5"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border/80 bg-card px-2.5 py-1.5 text-xs font-medium text-foreground shadow-2xs transition hover:border-primary/50 hover:bg-muted active:scale-95"
                     title={`插入 ${variable.label}（{{${variable.key}}}）`}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => insertVariable(variable.key)}
                   >
                     <span>{variable.label}</span>
-                    <code className="text-xs text-muted-foreground">{`{{${variable.key}}}`}</code>
-                  </Button>
+                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-muted-foreground">{`{{${variable.key}}}`}</code>
+                  </button>
                 ))}
               </div>
             </div>
@@ -468,12 +494,24 @@ export function Templates({
                 </div>
               </details>
             )}
-            <Button
-              type="submit"
-              disabled={busy || validationErrors.length > 0}
-            >
-              {busy ? "保存中…" : "保存模板"}
-            </Button>
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setEditing(undefined)}
+                className="w-full sm:w-auto"
+              >
+                取消
+              </Button>
+              <Button
+                type="submit"
+                disabled={busy || validationErrors.length > 0}
+                className="w-full sm:w-auto"
+              >
+                {busy ? "保存中…" : "保存模板"}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
