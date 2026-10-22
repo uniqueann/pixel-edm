@@ -199,10 +199,12 @@ export function TeamManager({
   const refresh = () => router.refresh();
   const submitInvite = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return;
     startTransition(async () => {
       const result = await createWorkspaceInvitation({
         workspace_id: data.workspace.id,
-        email,
+        email: cleanEmail,
         role: inviteRole,
       });
       if ("error" in result) {
@@ -325,11 +327,15 @@ export function TeamManager({
           setInviteOpen(open);
           if (!open) {
             setInviteUrl("");
+            setEmail("");
             refresh();
           }
         }}
       >
-        <DialogContent>
+        <DialogContent
+          placement="bottom"
+          className="bottom-sheet max-h-[85vh] overflow-y-auto"
+        >
           {inviteUrl ? (
             <>
               <DialogHeader>
@@ -341,7 +347,7 @@ export function TeamManager({
               <div className="rounded-md border bg-muted p-3 text-xs break-all">
                 {inviteUrl}
               </div>
-              <DialogFooter className="flex flex-wrap gap-2 sm:justify-between">
+              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-between">
                 <Button
                   type="button"
                   variant="outline"
@@ -351,29 +357,48 @@ export function TeamManager({
                     setInviteRole("editor");
                     refresh();
                   }}
+                  className="w-full sm:w-auto"
                 >
                   继续邀请下一位
                 </Button>
-                <Button onClick={() => copyText(inviteUrl)}>复制链接</Button>
-              </DialogFooter>
+                <Button
+                  onClick={() => copyText(inviteUrl)}
+                  className="w-full sm:w-auto"
+                >
+                  复制链接
+                </Button>
+              </div>
             </>
           ) : (
             <>
               <DialogHeader>
                 <DialogTitle>邀请团队成员</DialogTitle>
                 <DialogDescription>
-                  链接只显示一次，请复制后通过安全渠道分享给对方。
+                  生成受邀链接并分配成员角色与管理权限。
                 </DialogDescription>
               </DialogHeader>
+              <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-xs leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  💡 链接时效：
+                </span>
+                邀请链接有效 7
+                天且生成后仅展示一次，可通过即时通讯或企业邮件安全分享。
+              </div>
               <form onSubmit={submitInvite} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="team-invite-email">受邀邮箱</Label>
                   <Input
                     id="team-invite-email"
                     type="email"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="email"
                     placeholder="colleague@company.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
+                    onBlur={() => setEmail((prev) => prev.trim().toLowerCase())}
                     required
                   />
                 </div>
@@ -381,7 +406,7 @@ export function TeamManager({
                   <Label htmlFor="team-invite-role">加入角色</Label>
                   <select
                     id="team-invite-role"
-                    className="w-full rounded-md border bg-card px-3 py-2 text-sm"
+                    className="w-full rounded-md border bg-card px-3 py-2 pr-8 text-sm"
                     value={inviteRole}
                     onChange={(event) =>
                       setInviteRole(event.target.value as TeamRole)
@@ -401,11 +426,27 @@ export function TeamManager({
                         : "查看者：仅可查看业务数据、投递统计与操作记录。"}
                   </p>
                 </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={busy || !email.trim()}>
-                    生成邀请链接
+                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => {
+                      setInviteOpen(false);
+                      setEmail("");
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    取消
                   </Button>
-                </DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={busy || !email.trim()}
+                    className="w-full sm:w-auto"
+                  >
+                    {busy ? "生成中…" : "生成邀请链接"}
+                  </Button>
+                </div>
               </form>
             </>
           )}
@@ -420,7 +461,10 @@ export function TeamManager({
           }
         }}
       >
-        <DialogContent>
+        <DialogContent
+          placement="bottom"
+          className="bottom-sheet max-h-[85vh] overflow-y-auto"
+        >
           <DialogHeader>
             <DialogTitle>复制邀请链接</DialogTitle>
             <DialogDescription>
@@ -431,7 +475,12 @@ export function TeamManager({
             {inviteUrl}
           </div>
           <DialogFooter>
-            <Button onClick={() => copyText(inviteUrl)}>复制链接</Button>
+            <Button
+              onClick={() => copyText(inviteUrl)}
+              className="w-full sm:w-auto"
+            >
+              复制链接
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

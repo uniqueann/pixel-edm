@@ -1639,9 +1639,13 @@ export function Campaigns({
           <DialogHeader>
             <DialogTitle>{editing ? "编辑活动草稿" : "新建活动"}</DialogTitle>
             <DialogDescription>
-              草稿允许变量暂时留空；收件人数、订阅与退订状态将在预览阶段计算。
+              配置活动名称、关联模板与目标受众。
             </DialogDescription>
           </DialogHeader>
+          <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-xs leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">💡 草稿规则：</span>
+            活动变量允许暂留空，受众去重与黑名单将在预览发送阶段实时计算。
+          </div>
           <form
             className="space-y-4"
             onSubmit={async (event) => {
@@ -1653,7 +1657,7 @@ export function Campaigns({
                   workspace_id: workspace,
                   id: editing?.id,
                   expected_version: editing?.version,
-                  name,
+                  name: name.trim(),
                   template_id: templateId,
                   audience_type: audienceType,
                   tag_id: audienceType === "tag" ? tagId : null,
@@ -1690,6 +1694,7 @@ export function Campaigns({
                 placeholder="如：九月客户问候"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                onBlur={() => setName((prev) => prev.trim())}
               />
             </div>
             <div>
@@ -1697,7 +1702,7 @@ export function Campaigns({
               <select
                 id="campaign-template"
                 required
-                className="w-full rounded-md border bg-card px-3 py-2"
+                className="w-full rounded-md border bg-card px-3 py-2 pr-8 text-sm"
                 value={templateId}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -1728,7 +1733,7 @@ export function Campaigns({
               <Label htmlFor="campaign-audience">发送对象</Label>
               <select
                 id="campaign-audience"
-                className="w-full rounded-md border bg-card px-3 py-2"
+                className="w-full rounded-md border bg-card px-3 py-2 pr-8 text-sm"
                 value={audienceType}
                 onChange={(event) => {
                   const value = event.target.value as "all" | "tag";
@@ -1751,7 +1756,7 @@ export function Campaigns({
                 <select
                   id="campaign-tag"
                   required
-                  className="w-full rounded-md border bg-card px-3 py-2"
+                  className="w-full rounded-md border bg-card px-3 py-2 pr-8 text-sm"
                   value={tagId}
                   onChange={(event) => setTagId(event.target.value)}
                 >
@@ -1787,6 +1792,15 @@ export function Campaigns({
                             [field.key]: event.target.value,
                           })
                         }
+                        onBlur={() => {
+                          const val = variables[field.key];
+                          if (typeof val === "string" && val !== val.trim()) {
+                            setVariables({
+                              ...variables,
+                              [field.key]: val.trim(),
+                            });
+                          }
+                        }}
                       />
                     </div>
                   ))}
@@ -1797,27 +1811,25 @@ export function Campaigns({
                 {error}
               </p>
             )}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setEditing(undefined)}
+                className="w-full sm:w-auto"
+              >
+                取消
+              </Button>
               <Button
                 type="submit"
                 disabled={
                   busy || !templateId || (audienceType === "tag" && !tagId)
                 }
+                className="w-full sm:w-auto"
               >
                 {busy ? "保存中…" : "保存活动草稿"}
               </Button>
-              {error.includes("重新加载") && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setEditing(undefined);
-                    router.refresh();
-                  }}
-                >
-                  重新加载
-                </Button>
-              )}
             </div>
           </form>
         </DialogContent>
