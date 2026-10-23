@@ -32,6 +32,7 @@ import { CheckoutSuccessToast } from "@/features/workspace/checkout-toast";
 import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
 import { edmCheckoutAvailability } from "@/lib/billing/edm-product-config";
 import { ThemeSegmented } from "@/components/theme-toggle";
+import { mailingAddressProblem } from "@/lib/mailing-address";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -270,9 +271,14 @@ export default async function Page({
       (channel) => channel.is_primary && channel.status === "verified",
     );
     const setupItems = [
-      !workspace.mailing_address
-        ? { label: "补充发件人联系地址", href: "/settings" }
-        : null,
+      !workspace.mailing_address.trim()
+        ? { label: "补充邮件页脚实体地址", href: "/settings" }
+        : mailingAddressProblem(workspace.mailing_address)
+          ? {
+              label: "修正邮件页脚实体地址（当前像占位文本）",
+              href: "/settings",
+            }
+          : null,
       !hasVerifiedPrimaryChannel
         ? { label: "连接并验证发信通道", href: "/settings" }
         : null,

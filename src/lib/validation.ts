@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mailingAddressProblem } from "./mailing-address";
 export const workspaceSettings = z.object({
   name: z
     .string()
@@ -8,8 +9,12 @@ export const workspaceSettings = z.object({
   mailing_address: z
     .string()
     .trim()
-    .min(1, "请填写真实的发件人联系地址")
-    .max(500, "地址不能超过 500 字"),
+    .max(500, "地址不能超过 500 字")
+    .superRefine((value, ctx) => {
+      const problem = mailingAddressProblem(value);
+      if (problem)
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem });
+    }),
 });
 export const credentials = z.object({
   email: z.string().email("请输入有效邮箱"),
