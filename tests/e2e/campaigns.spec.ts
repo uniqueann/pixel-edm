@@ -25,7 +25,10 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
     .getByLabel("邮件模板")
     .selectOption({ label: "欢迎系列 · 欢迎新客户" });
   await expect(editor.getByLabel(/店铺名称/)).toHaveValue("我的邮局");
-  await expect(editor.getByLabel(/发件人/)).toHaveValue("店主");
+  await expect(editor.getByLabel(/发件人/)).toHaveValue("");
+  await expect(editor.getByText(/你还没有设置对外署名/)).toBeVisible();
+  await editor.getByLabel(/发件人/).fill("店主");
+  await expect(editor.getByText(/系统默认称呼/)).toBeVisible();
   await editor.getByLabel(/优惠信息/).fill("WELCOME-20");
   await editor.getByRole("button", { name: "保存活动草稿" }).click();
   await expect(page.getByText("活动草稿已保存").last()).toBeVisible();
@@ -82,6 +85,15 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
     .locator("xpath=ancestor::div[@data-slot='card']");
   await card.getByRole("button", { name: "预览" }).click();
   previewDialog = page.getByRole("dialog");
+  await expect(previewDialog.getByText(/落款署名仍是系统默认/)).toBeVisible();
+  await previewDialog.getByRole("button", { name: "编辑活动" }).click();
+  editor = page.getByRole("dialog");
+  await editor.getByLabel(/发件人/).fill("Anna Chen");
+  await editor.getByRole("button", { name: "保存活动草稿" }).click();
+  await expect(page.getByText("活动草稿已保存").last()).toBeVisible();
+  await card.getByRole("button", { name: "预览" }).click();
+  previewDialog = page.getByRole("dialog");
+  await expect(previewDialog.getByText(/落款署名仍是系统默认/)).toHaveCount(0);
   await expect(
     previewDialog.getByText("前 3 封邮件", { exact: true }),
   ).toBeVisible();

@@ -74,6 +74,18 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
   await expect(page.getByText("工作区已保存")).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("店铺 / 工作区名称")).toHaveValue("测试店铺");
+  const senderName = page.getByLabel(/我的对外署名/);
+  await expect(page.getByText(/你还在使用系统默认称呼/)).toBeVisible();
+  await expect(senderName).toHaveValue("");
+  await senderName.fill("店主");
+  await senderName.blur();
+  await expect(page.getByText(/不能使用默认的“店主”/)).toBeVisible();
+  await senderName.fill("Anna Chen");
+  await page.getByRole("button", { name: "保存署名" }).click();
+  await expect(page.getByText("对外署名已保存")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel(/我的对外署名/)).toHaveValue("Anna Chen");
+  await expect(page.getByText(/你还在使用系统默认称呼/)).not.toBeVisible();
   await page.goto(
     `/settings?checkout=error&reason=discount&msg=${encodeURIComponent("优惠码无效或不能用于当前套餐。请检查后再试，也可以留空直接结账。")}`,
   );

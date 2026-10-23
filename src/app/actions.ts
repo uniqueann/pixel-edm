@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { serverClient } from "@/lib/supabase/server";
 import { getContext, workspaceCookie } from "@/lib/workspace";
 import { workspaceSettings } from "@/lib/validation";
+import { memberProfile } from "@/lib/sender-name";
 export async function initialize() {
   const db = await serverClient();
   const {
@@ -49,6 +50,22 @@ export async function saveWorkspace(input: unknown) {
     .select("id")
     .maybeSingle();
   if (error || !data) return { error: "保存失败，请确认权限后重试。" };
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+
+export async function saveMemberProfile(input: unknown) {
+  const { user } = await getContext();
+  const result = memberProfile.safeParse(input);
+  if (!result.success) return { error: result.error.issues[0].message };
+  const db = await serverClient();
+  const { data, error } = await db
+    .from("members")
+    .update({ display_name: result.data.display_name })
+    .eq("user_id", user.id)
+    .select("user_id")
+    .maybeSingle();
+  if (error || !data) return { error: "保存失败，请重试。" };
   revalidatePath("/", "layout");
   return { success: true };
 }
