@@ -114,6 +114,15 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(
     previewDialog.getByText("主题：Your order ORDER-1001 has shipped").first(),
   ).toBeVisible();
+  await expect(
+    previewDialog.getByText("发件人（收件人邮箱客户端显示的 From）"),
+  ).toBeVisible();
+  await expect(
+    previewDialog.getByTestId("email-outbound-footer-preview").first(),
+  ).toContainText("上海市测试路 1 号");
+  await expect(
+    previewDialog.getByText("Unsubscribe / 退订").first(),
+  ).toBeVisible();
   await previewDialog.getByRole("button", { name: "重新计算" }).click();
   await expect(previewDialog.getByText(/计算时间/)).toBeVisible();
   await previewDialog.getByRole("button", { name: "关闭" }).click();

@@ -39,6 +39,9 @@ export function Templates({
   workspace,
   workspaceName,
   memberName,
+  mailingAddress,
+  senderAlias,
+  senderAddress,
   canEdit,
   customTemplateQuota,
   data,
@@ -47,6 +50,9 @@ export function Templates({
   workspace: string;
   workspaceName: string;
   memberName: string;
+  mailingAddress: string;
+  senderAlias: string;
+  senderAddress: string;
   canEdit: boolean;
   customTemplateQuota: PlanQuota | null;
   data: TemplateList;
@@ -519,6 +525,9 @@ export function Templates({
                     body={body}
                     workspaceName={workspaceName}
                     memberName={memberName}
+                    mailingAddress={mailingAddress}
+                    senderAlias={senderAlias}
+                    senderAddress={senderAddress}
                   />
                 </div>
               </details>
@@ -565,6 +574,9 @@ export function Templates({
               body={previewing.body}
               workspaceName={workspaceName}
               memberName={memberName}
+              mailingAddress={mailingAddress}
+              senderAlias={senderAlias}
+              senderAddress={senderAddress}
             />
           )}
         </DialogContent>
