@@ -221,6 +221,7 @@ export function BillingCheckoutDialog({
             hint="推荐支付方式"
             variant="default"
             discountCode={applied?.creem ? applied.code : ""}
+            discountHint={providerDiscountHint(applied, "creem")}
             disabled={checking}
             onSubmit={guardUnverified}
           />
@@ -233,6 +234,7 @@ export function BillingCheckoutDialog({
             hint="同样支持订阅与自动续费"
             variant="outline"
             discountCode={applied?.dodo ? applied.code : ""}
+            discountHint={providerDiscountHint(applied, "dodo")}
             disabled={checking}
             onSubmit={guardUnverified}
           />
@@ -336,6 +338,21 @@ function CheckoutDiscountCode({
   );
 }
 
+type ProviderChannel = "creem" | "dodo";
+
+/** 折扣只命中一个支付渠道时，在按钮副文案上标明。 */
+function providerDiscountHint(
+  applied: AppliedDiscount | null,
+  channel: ProviderChannel,
+): "applied" | "excluded" | null {
+  if (!applied) return null;
+  const eligible = channel === "creem" ? applied.creem : applied.dodo;
+  const otherEligible = channel === "creem" ? applied.dodo : applied.creem;
+  if (eligible && !otherEligible) return "applied";
+  if (!eligible && otherEligible) return "excluded";
+  return null;
+}
+
 function BillingProviderForm({
   action,
   workspaceId,
@@ -345,6 +362,7 @@ function BillingProviderForm({
   hint,
   variant,
   discountCode,
+  discountHint,
   disabled,
   onSubmit,
 }: {
@@ -356,9 +374,18 @@ function BillingProviderForm({
   hint: string;
   variant: "default" | "outline" | "secondary";
   discountCode: string;
+  discountHint: "applied" | "excluded" | null;
   disabled: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const subline =
+    discountHint === "applied"
+      ? "已应用折扣"
+      : discountHint === "excluded"
+        ? "此方式不含折扣"
+        : hint;
+  const buttonVariant = discountHint === "excluded" ? "secondary" : variant;
+
   return (
     <form action={action} method="post" onSubmit={onSubmit}>
       <input type="hidden" name="workspace_id" value={workspaceId} />
@@ -369,14 +396,20 @@ function BillingProviderForm({
       ) : null}
       <Button
         type="submit"
-        variant={variant}
+        variant={buttonVariant}
         className="w-full justify-between"
         disabled={disabled}
       >
         <span>
           <span className="block text-left text-sm font-bold">{title}</span>
-          <span className="block text-left text-xs font-normal opacity-80">
-            {hint}
+          <span
+            className={
+              discountHint === "excluded"
+                ? "block text-left text-xs font-normal text-muted-foreground"
+                : "block text-left text-xs font-normal opacity-80"
+            }
+          >
+            {subline}
           </span>
         </span>
         <span aria-hidden>→</span>
