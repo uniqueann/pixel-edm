@@ -172,18 +172,22 @@ const server = createServer(async (req, res) => {
       return send({ error: "请求方式无效" }, 405);
     }
     if (url.pathname === "/auth/v1/token") {
-      if (
-        input.email !== "owner@example.test" ||
-        input.password !== "edm-test-password"
-      )
+      // viewer@example.test 是免费版「协作邮局」的管理员，用于套餐用量上限场景。
+      const loginId =
+        input.email === "owner@example.test"
+          ? a
+          : input.email === "viewer@example.test"
+            ? b
+            : null;
+      if (!loginId || input.password !== "edm-test-password")
         return send({ message: "登录失败" }, 400);
       return send({
-        access_token: token(a),
+        access_token: token(loginId),
         refresh_token: "test-refresh",
         token_type: "bearer",
         expires_in: 3600,
         expires_at: Math.floor(Date.now() / 1000) + 3600,
-        user: user(a),
+        user: user(loginId),
       });
     }
     // 邮件链接的 token_hash 校验。只接受注册确认和重置密码，其余类型保持失败。

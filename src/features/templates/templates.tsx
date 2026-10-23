@@ -29,12 +29,18 @@ import {
   type TemplateVariable,
 } from "./model";
 import { TemplatePreview } from "./template-preview";
+import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
+import {
+  isQuotaExhausted,
+  type PlanQuota,
+} from "@/features/workspace/plan-usage";
 
 export function Templates({
   workspace,
   workspaceName,
   memberName,
   canEdit,
+  customTemplateQuota,
   data,
   filters,
 }: {
@@ -42,12 +48,14 @@ export function Templates({
   workspaceName: string;
   memberName: string;
   canEdit: boolean;
+  customTemplateQuota: PlanQuota | null;
   data: TemplateList;
   filters: Record<string, string>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
+  const templateQuotaExhausted = isQuotaExhausted(customTemplateQuota);
   const [editing, setEditing] = useState<Template | null | undefined>();
   const [previewing, setPreviewing] = useState<Template>();
   const [name, setName] = useState("");
@@ -192,7 +200,14 @@ export function Templates({
         支持使用起步模板参考样例，或创建自定义模板；主题与正文中的动态变量将在发信时自动替换为对应信息。
       </p>
       <div className="list-toolbar">
-        {canEdit && <Button onClick={() => openEditor(null)}>新建模板</Button>}
+        {canEdit && (
+          <Button
+            disabled={templateQuotaExhausted}
+            onClick={() => openEditor(null)}
+          >
+            新建模板
+          </Button>
+        )}
         <select
           aria-label="模板状态"
           className="list-filter"
@@ -220,6 +235,15 @@ export function Templates({
           ))}
         </select>
       </div>
+      {canEdit && (
+        <PlanUsageNote
+          label="自定义模板（起步模板不占用）"
+          quota={customTemplateQuota}
+          exhaustedText="无法再新建或复制模板，可归档不用的模板或升级套餐"
+          testId="template-quota"
+          className="mb-3"
+        />
+      )}
       <Input
         className="list-search"
         aria-label="搜索模板名称或主题"
@@ -282,7 +306,12 @@ export function Templates({
                     )}
                     <Button
                       variant="outline"
-                      disabled={busy}
+                      disabled={busy || templateQuotaExhausted}
+                      title={
+                        templateQuotaExhausted
+                          ? "已达套餐自定义模板上限"
+                          : undefined
+                      }
                       onClick={() => duplicate(template)}
                     >
                       复制模板
