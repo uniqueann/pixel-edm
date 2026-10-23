@@ -2,7 +2,10 @@ import { Creem } from "creem";
 import { NextResponse } from "next/server";
 import { getCreemApiKey, isCreemTestMode } from "@/lib/billing/creem";
 import { requireEdmBillingCheckout } from "@/lib/billing/checkout-context";
-import { redirectCheckoutError } from "@/lib/billing/checkout-redirect";
+import {
+  redirectBillingAccessError,
+  redirectCheckoutError,
+} from "@/lib/billing/checkout-redirect";
 import { getDodoClient } from "@/lib/billing/dodo";
 import type { EdmBilledPlan } from "@/lib/billing/metadata";
 import { syncWorkspacePlanFromPayment } from "@/lib/billing/sync-plan";
@@ -40,10 +43,7 @@ export async function POST(request: Request) {
       : null;
   const ctx = await requireEdmBillingCheckout(formWorkspaceId);
   if (!ctx.ok) {
-    return NextResponse.json(
-      { ok: false, error: ctx.error },
-      { status: ctx.status },
-    );
+    return redirectBillingAccessError({ status: ctx.status });
   }
 
   const db = serviceRoleClient();
@@ -51,10 +51,7 @@ export async function POST(request: Request) {
     payload: { workspace_id: ctx.workspaceId },
   });
   if (error || !data || typeof data !== "object") {
-    return redirectCheckoutError({
-      reason: "config",
-      message: "读取订阅信息失败。",
-    });
+    return redirectCheckoutError({ reason: "config" });
   }
   const target = data as CancelTarget;
   const plan = paidPlan(target.billed_plan) ?? paidPlan(target.plan);
@@ -65,10 +62,7 @@ export async function POST(request: Request) {
     !plan ||
     (target.payment_provider !== "creem" && target.payment_provider !== "dodo")
   ) {
-    return redirectCheckoutError({
-      reason: "config",
-      message: "当前没有可取消续费的付费订阅。",
-    });
+    return redirectCheckoutError({ reason: "config" });
   }
   if (target.cancel_at_period_end) {
     return redirectScheduled();
@@ -91,15 +85,10 @@ export async function POST(request: Request) {
         cancel_at_next_billing_date: true,
       });
     }
-  } catch (cancelError) {
-    const message =
-      cancelError instanceof Error
-        ? cancelError.message
-        : "支付平台取消续费失败。";
+  } catch {
     return redirectCheckoutError({
       reason: "provider",
       provider: target.payment_provider,
-      message,
     });
   }
 

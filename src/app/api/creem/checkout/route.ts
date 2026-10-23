@@ -14,7 +14,10 @@ import {
   validateCheckoutPlanForWorkspace,
 } from "@/lib/billing/checkout-context";
 import { describeCheckoutProviderFailure } from "@/lib/billing/checkout-provider-error";
-import { redirectCheckoutError } from "@/lib/billing/checkout-redirect";
+import {
+  redirectBillingAccessError,
+  redirectCheckoutError,
+} from "@/lib/billing/checkout-redirect";
 
 export const runtime = "nodejs";
 
@@ -24,50 +27,48 @@ export async function POST(request: Request) {
     typeof formData?.get("workspace_id") === "string"
       ? formData.get("workspace_id")!.toString()
       : null;
-  const ctx = await requireEdmBillingCheckout(formWorkspaceId);
-  if (!ctx.ok) {
-    return NextResponse.json(
-      { ok: false, error: ctx.error },
-      { status: ctx.status },
-    );
-  }
-
   const plan = normalizeCheckoutPlan(formData?.get("plan") ?? null);
   const interval = normalizeCheckoutInterval(formData?.get("interval") ?? null);
+
+  const ctx = await requireEdmBillingCheckout(formWorkspaceId);
+  if (!ctx.ok) {
+    return redirectBillingAccessError({
+      status: ctx.status,
+      plan,
+      provider: "creem",
+    });
+  }
 
   let discountCode: string;
   try {
     discountCode = normalizeCheckoutDiscountCode(
       formData?.get("discount_code") ?? null,
     );
-  } catch (error) {
+  } catch {
     return redirectCheckoutError({
       reason: "discount",
       plan,
       provider: "creem",
-      message: error instanceof Error ? error.message : "优惠码无效。",
     });
   }
 
   const planCheck = validateCheckoutPlanForWorkspace(ctx.workspacePlan, plan);
   if (!planCheck.ok) {
-    return NextResponse.json(
-      { ok: false, error: planCheck.error },
-      { status: 400 },
-    );
+    return redirectCheckoutError({
+      reason: "plan",
+      plan,
+      provider: "creem",
+    });
   }
 
   let productId: string;
   try {
     productId = getCreemEdmProductId(plan, interval);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Creem 商品未配置。";
+  } catch {
     return redirectCheckoutError({
       reason: "missing_product",
       plan,
       provider: "creem",
-      message,
     });
   }
 
@@ -111,7 +112,6 @@ export async function POST(request: Request) {
       reason: failure.reason,
       plan,
       provider: "creem",
-      message: failure.message,
     });
   }
 
@@ -121,7 +121,6 @@ export async function POST(request: Request) {
       reason: "provider",
       plan,
       provider: "creem",
-      message: "Creem 未返回结账链接，请稍后重试。",
     });
   }
 
