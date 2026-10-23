@@ -56,6 +56,20 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
     page.getByRole("link", { name: "DirectMail 图文教程" }),
   ).toHaveAttribute("href", "/help#help-directmail-setup");
   await page.getByLabel("店铺 / 工作区名称").fill("测试店铺");
+  const address = page.getByLabel("邮件页脚实体地址");
+  const footerPreview = page.getByTestId("footer-preview");
+  await expect(footerPreview).toContainText("测试店铺");
+  await expect(footerPreview).toContainText(
+    "Contact address / 联系地址: 上海市测试路 1 号",
+  );
+  await address.fill("Sender's contact information");
+  await address.blur();
+  await expect(page.getByText(/这看起来是占位文本/)).toBeVisible();
+  await expect(footerPreview).toContainText("Sender's contact information");
+  await page.getByRole("button", { name: "保存设置" }).click();
+  await expect(page.getByText("工作区已保存")).not.toBeVisible();
+  await address.fill("上海市测试路 1 号");
+  await expect(page.getByText(/这看起来是占位文本/)).not.toBeVisible();
   await page.getByRole("button", { name: "保存设置" }).click();
   await expect(page.getByText("工作区已保存")).toBeVisible();
   await page.reload();
@@ -79,12 +93,12 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
   await expect(page).toHaveURL(/\/settings/);
   await page.keyboard.press("Escape");
   await expect(checkout).not.toBeVisible();
-  await page.getByRole("button", { name: "为什么需要联系地址？" }).click();
+  await page.getByRole("button", { name: "为什么需要实体地址？" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await expect(
-    page.getByRole("button", { name: "为什么需要联系地址？" }),
+    page.getByRole("button", { name: "为什么需要实体地址？" }),
   ).toBeFocused();
   await page.getByRole("combobox", { name: "当前工作区" }).click();
   await page.getByRole("option", { name: "协作邮局", exact: true }).click();
