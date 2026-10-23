@@ -1,6 +1,8 @@
 import { getContext } from "@/lib/workspace";
 import { listTemplates } from "@/features/templates/actions";
 import { Templates } from "@/features/templates/templates";
+import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
+import { planUsageFromDeliveryPlan } from "@/features/workspace/plan-usage";
 
 export default async function Page({
   searchParams,
@@ -14,7 +16,10 @@ export default async function Page({
     ),
   );
   const context = await getContext();
-  const data = await listTemplates(filters);
+  const [data, deliveryPlan] = await Promise.all([
+    listTemplates(filters),
+    getWorkspaceDeliveryPlan(context.workspace.id),
+  ]);
   return (
     <Templates
       key={context.workspace.id}
@@ -22,6 +27,9 @@ export default async function Page({
       workspaceName={context.workspace.name}
       memberName={context.member.display_name}
       canEdit={context.role !== "viewer"}
+      customTemplateQuota={
+        planUsageFromDeliveryPlan(deliveryPlan)?.customTemplates ?? null
+      }
       data={data}
       filters={filters}
     />

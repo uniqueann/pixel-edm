@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { flushSync } from "react-dom";
 import { unstable_rethrow, useRouter } from "next/navigation";
+import { Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isDefaultSenderName, senderNameDefault } from "@/lib/sender-name";
+import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
+import {
+  isQuotaExhausted,
+  type PlanUsage,
+} from "@/features/workspace/plan-usage";
+import {
+  evaluateSendReadiness,
+  type SendReadinessContext,
+} from "./send-readiness";
 import {
   abortCampaignDelivery,
   confirmCampaign,
@@ -148,6 +158,8 @@ export function Campaigns({
   canEdit,
   canSend,
   maxRecipientsPerCampaign,
+  sendReadiness,
+  planUsage,
   data,
   editorOptions,
   filters,
@@ -158,6 +170,8 @@ export function Campaigns({
   canEdit: boolean;
   canSend: boolean;
   maxRecipientsPerCampaign: number;
+  sendReadiness: SendReadinessContext | null;
+  planUsage: PlanUsage | null;
   data: CampaignList;
   editorOptions: CampaignEditorOptions;
   filters: Record<string, string>;
@@ -413,6 +427,7 @@ export function Campaigns({
       mode,
       idempotencyKey: crypto.randomUUID(),
     });
+    if (mode === "start") router.refresh();
   }
 
   async function submitDeliveryConfirmation() {
@@ -702,6 +717,16 @@ export function Campaigns({
 
   const activeStatistics =
     deliveryStatistics ?? deliveryDetails?.delivery?.statistics;
+  const confirmQuotaExhausted = isQuotaExhausted(
+    planUsage?.confirmedCampaignsThisMonth,
+  );
+  const startReadiness =
+    deliveryConfirmation?.mode === "start" && sendReadiness
+      ? evaluateSendReadiness(
+          sendReadiness,
+          deliveryConfirmation.campaign.recipient_count ?? 0,
+        )
+      : null;
 
   return (
     <>
@@ -786,10 +811,23 @@ export function Campaigns({
         </p>
       )}
       {canSend && (
-        <p className="hint mt-2">
+        <p className="hint mt-2" data-testid="campaign-send-limits">
           当前套餐单个活动最多发送{" "}
-          {maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人。
+          {maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人
+          {sendReadiness?.quota
+            ? `；今日已用 ${sendReadiness.quota.usage_today.toLocaleString("zh-CN")} / ${sendReadiness.quota.daily_send_quota.toLocaleString("zh-CN")} 封`
+            : ""}
+          。
         </p>
+      )}
+      {canEdit && (
+        <PlanUsageNote
+          label="本月已确认活动名单"
+          quota={planUsage?.confirmedCampaignsThisMonth}
+          exhaustedText="本月无法再确认新的活动名单"
+          testId="campaign-confirm-quota"
+          className="mt-2"
+        />
       )}
       <div aria-live="polite" className="hint mt-2">
         {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
@@ -1156,13 +1194,24 @@ export function Campaigns({
             </div>
           )}
 
+          {preview?.validation.valid &&
+            preview.recipients.eligible_count > 0 && (
+              <PlanUsageNote
+                label="本月已确认活动名单"
+                quota={planUsage?.confirmedCampaignsThisMonth}
+                exhaustedText="确认名单会占用每月额度，本月已无法确认"
+                testId="preview-confirm-quota"
+                className="mb-3"
+              />
+            )}
+
           <div className="flex flex-wrap gap-2">
             {preview?.validation.valid &&
               preview.recipients.eligible_count > 0 &&
               preview.recipients.eligible_count <= maxRecipientsPerCampaign && (
                 <Button
                   type="button"
-                  disabled={busy || previewLoading}
+                  disabled={busy || previewLoading || confirmQuotaExhausted}
                   onClick={() => void confirmPreview()}
                 >
                   {busy ? "确认中…" : "确认活动名单"}
@@ -1300,6 +1349,73 @@ export function Campaigns({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {startReadiness && (
+              <section aria-labelledby="send-readiness-title">
+                <h3
+                  id="send-readiness-title"
+                  className="mb-2 text-sm font-medium"
+                >
+                  发送前检查
+                </h3>
+                <ul
+                  className="m-0 list-none space-y-2 rounded-lg border bg-muted/30 p-3 text-sm"
+                  data-testid="send-readiness"
+                >
+                  {startReadiness.items.map((item) => (
+                    <li
+                      key={item.key}
+                      data-testid={`send-readiness-${item.key}`}
+                      data-ok={item.ok}
+                      className="flex items-start gap-2"
+                    >
+                      {item.ok ? (
+                        <Check
+                          aria-hidden="true"
+                          className="mt-0.5 size-4 shrink-0 text-emerald-600"
+                        />
+                      ) : (
+                        <X
+                          aria-hidden="true"
+                          className="mt-0.5 size-4 shrink-0 text-destructive"
+                        />
+                      )}
+                      <span className="min-w-0 break-words">
+                        <span className="font-medium">{item.label}</span>
+                        <span className="sr-only">
+                          {item.ok ? "：通过" : "：未通过"}
+                        </span>
+                        ：
+                        <span
+                          className={
+                            item.ok
+                              ? "text-muted-foreground"
+                              : "text-destructive"
+                          }
+                        >
+                          {item.detail}
+                        </span>
+                        {item.href && (
+                          <>
+                            {" "}
+                            <Link
+                              href={item.href}
+                              className="underline underline-offset-2"
+                            >
+                              {item.linkLabel}
+                            </Link>
+                          </>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {!startReadiness.ready && (
+                  <p className="field-error mt-2" role="alert">
+                    以上检查未全部通过，暂时无法创建正式发送任务。
+                  </p>
+                )}
+              </section>
+            )}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <Label htmlFor="delivery-confirmation-name">
@@ -1341,7 +1457,9 @@ export function Campaigns({
                   : "default"
               }
               disabled={
-                busy || confirmationName !== deliveryConfirmation?.campaign.name
+                busy ||
+                confirmationName !== deliveryConfirmation?.campaign.name ||
+                (startReadiness !== null && !startReadiness.ready)
               }
               onClick={() => void submitDeliveryConfirmation()}
             >

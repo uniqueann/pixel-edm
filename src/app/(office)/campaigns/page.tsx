@@ -5,7 +5,10 @@ import {
 } from "@/features/campaigns/actions";
 import { Campaigns } from "@/features/campaigns/campaigns";
 import type { CampaignEditorOptions } from "@/features/campaigns/model";
+import { listDeliveryChannels } from "@/features/channels/actions";
+import type { SendReadinessContext } from "@/features/campaigns/send-readiness";
 import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
+import { planUsageFromDeliveryPlan } from "@/features/workspace/plan-usage";
 
 const emptyOptions: CampaignEditorOptions = { templates: [], tags: [] };
 
@@ -23,11 +26,36 @@ export default async function Page({
   const context = await getContext();
   const canEdit = context.role !== "viewer";
   const canSend = context.role === "admin";
-  const [data, options, deliveryPlan] = await Promise.all([
+  const [data, options, deliveryPlan, channels] = await Promise.all([
     listCampaigns(filters),
     canEdit ? getCampaignEditorOptions() : Promise.resolve(emptyOptions),
     getWorkspaceDeliveryPlan(context.workspace.id),
+    canSend ? listDeliveryChannels(context.workspace.id) : Promise.resolve([]),
   ]);
+  const maxRecipientsPerCampaign =
+    deliveryPlan?.max_recipients_per_campaign ?? 500;
+  const primaryChannel = channels.find((channel) => channel.is_primary);
+  const sendReadiness: SendReadinessContext | null = canSend
+    ? {
+        primaryChannel: primaryChannel
+          ? {
+              display_name: primaryChannel.display_name,
+              status: primaryChannel.status,
+              sender_address: primaryChannel.sender_address,
+              credential_configured: primaryChannel.credential_configured,
+            }
+          : null,
+        mailingAddress: context.workspace.mailing_address,
+        quota: deliveryPlan
+          ? {
+              daily_send_quota: deliveryPlan.daily_send_quota,
+              usage_today: deliveryPlan.usage_today,
+              quota_timezone: deliveryPlan.quota_timezone,
+            }
+          : null,
+        maxRecipientsPerCampaign,
+      }
+    : null;
 
   return (
     <Campaigns
@@ -37,9 +65,9 @@ export default async function Page({
       memberName={context.member.display_name}
       canEdit={canEdit}
       canSend={canSend}
-      maxRecipientsPerCampaign={
-        deliveryPlan?.max_recipients_per_campaign ?? 500
-      }
+      maxRecipientsPerCampaign={maxRecipientsPerCampaign}
+      sendReadiness={sendReadiness}
+      planUsage={planUsageFromDeliveryPlan(deliveryPlan)}
       data={data}
       editorOptions={options}
       filters={filters}

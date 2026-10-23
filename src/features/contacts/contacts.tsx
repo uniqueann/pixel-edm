@@ -25,15 +25,22 @@ import {
 } from "./actions";
 import type { Contact, ContactList } from "./model";
 import { subscriptionLabels } from "./import-model";
+import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
+import {
+  isQuotaExhausted,
+  type PlanQuota,
+} from "@/features/workspace/plan-usage";
 
 export function Contacts({
   workspace,
   canEdit,
+  contactQuota,
   data,
   filters,
 }: {
   workspace: string;
   canEdit: boolean;
+  contactQuota: PlanQuota | null;
   data: ContactList;
   filters: Record<string, string>;
 }) {
@@ -192,7 +199,14 @@ export function Contacts({
         <span>{shown.total} 位</span>
       </div>
       <div className="list-toolbar">
-        {canEdit && <Button onClick={() => open(null)}>添加客户</Button>}
+        {canEdit && (
+          <Button
+            disabled={isQuotaExhausted(contactQuota)}
+            onClick={() => open(null)}
+          >
+            添加客户
+          </Button>
+        )}
         {canEdit && (
           <Button asChild variant="outline">
             <Link href="/contacts/import">导入名单</Link>
@@ -236,6 +250,15 @@ export function Contacts({
           ))}
         </select>
       </div>
+      {canEdit && (
+        <PlanUsageNote
+          label="有效客户（未归档）"
+          quota={contactQuota}
+          exhaustedText="无法再添加或导入新客户，可归档不再联系的客户或升级套餐"
+          testId="contact-quota"
+          className="mb-3"
+        />
+      )}
       <Input
         className="list-search"
         aria-label="搜索邮箱或姓名"

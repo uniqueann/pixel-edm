@@ -181,6 +181,39 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(card.getByText("已确认", { exact: true })).toBeVisible();
   await expect(card.getByText("已锁定 7 位收件人")).toBeVisible();
   await expect(card.getByText(/模板版本 3/)).toBeVisible();
+  await expect(page.getByTestId("campaign-send-limits")).toContainText(
+    /今日已用 0 \/ [\d,]+ 封/,
+  );
+
+  await card.getByRole("button", { name: "正式发送", exact: true }).click();
+  const sendDialog = page.getByRole("dialog");
+  const readiness = sendDialog.getByTestId("send-readiness");
+  await expect(readiness).toBeVisible();
+  await expect(
+    sendDialog.getByTestId("send-readiness-channel"),
+  ).toHaveAttribute("data-ok", "false");
+  await expect(sendDialog.getByTestId("send-readiness-channel")).toContainText(
+    "尚未设置主发信通道",
+  );
+  await expect(sendDialog.getByTestId("send-readiness-footer")).toHaveAttribute(
+    "data-ok",
+    "true",
+  );
+  await expect(sendDialog.getByTestId("send-readiness-quota")).toContainText(
+    /今日已用 0 \/ [\d,]+ 封/,
+  );
+  await expect(
+    sendDialog.getByTestId("send-readiness-recipients"),
+  ).toHaveAttribute("data-ok", "true");
+  await expect(
+    sendDialog.getByRole("link", { name: "前往发信通道" }).first(),
+  ).toHaveAttribute("href", "/settings");
+  await sendDialog.getByLabel(/输入完整活动名称/).fill("归档模板活动");
+  await expect(
+    sendDialog.getByRole("button", { name: "创建正式发送任务" }),
+  ).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(sendDialog).toBeHidden();
   const exportHref = await card
     .getByRole("link", { name: "下载 CSV" })
     .getAttribute("href");
