@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isDefaultSenderName, senderNameDefault } from "@/lib/sender-name";
 import {
   renderTemplate,
   templateVariables,
@@ -26,7 +28,7 @@ export function TemplatePreview({
     name: "Anna",
     email: "anna@example.com",
     store_name: workspaceName,
-    sender_name: memberName,
+    sender_name: senderNameDefault(memberName),
     discount: "10%",
     product: "Canvas Tote",
     order_number: "#1001",
@@ -82,6 +84,15 @@ export function TemplatePreview({
           {rendered.body}
         </pre>
       </div>
+      {isDefaultSenderName(memberName) && (
+        <p className="hint m-0" role="note">
+          你的对外署名还是系统默认的“店主”，所以发件人没有自动预填。
+          <Link href="/settings" className="underline underline-offset-2">
+            前往设置真实署名
+          </Link>
+          。
+        </p>
+      )}
       {rendered.missing.length > 0 && (
         <p className="field-error" role="alert">
           请补充预览值：{rendered.missing.join("、")}

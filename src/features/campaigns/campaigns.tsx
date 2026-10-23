@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isDefaultSenderName, senderNameDefault } from "@/lib/sender-name";
 import {
   abortCampaignDelivery,
   confirmCampaign,
@@ -181,6 +182,7 @@ export function Campaigns({
   const [previewing, setPreviewing] = useState<CampaignSummary>();
   const [preview, setPreview] = useState<CampaignPreview>();
   const [previewError, setPreviewError] = useState("");
+  const [previewSenderName, setPreviewSenderName] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [editing, setEditing] = useState<CampaignDetail | null | undefined>();
   const [duplicateSource, setDuplicateSource] = useState<CampaignSummary>();
@@ -255,7 +257,7 @@ export function Campaigns({
       } else if (key === "store_name") {
         next[key] = workspaceName;
       } else if (key === "sender_name") {
-        next[key] = memberName;
+        next[key] = senderNameDefault(memberName);
       } else {
         next[key] = "";
       }
@@ -561,11 +563,18 @@ export function Campaigns({
     setPreviewLoading(true);
     setPreviewError("");
     try {
-      const result = await getCampaignPreview({
-        workspace_id: workspace,
-        id: campaign.id,
-      });
+      const [result, detail] = await Promise.all([
+        getCampaignPreview({ workspace_id: workspace, id: campaign.id }),
+        getCampaign({ workspace_id: workspace, id: campaign.id }).catch(
+          () => undefined,
+        ),
+      ]);
       if (request !== previewRequest.current) return;
+      setPreviewSenderName(
+        detail && "data" in detail
+          ? (detail.data.variables.sender_name ?? "")
+          : "",
+      );
       if ("error" in result) {
         setPreview(undefined);
         setPreviewError(result.error ?? "活动预览失败，请重试。");
@@ -587,6 +596,7 @@ export function Campaigns({
     setPreviewing(campaign);
     setPreview(undefined);
     setPreviewError("");
+    setPreviewSenderName("");
     void loadPreview(campaign);
   }
 
@@ -1074,6 +1084,13 @@ export function Campaigns({
                 已退订/黑名单 {preview.recipients.excluded.suppressed} 位
               </p>
 
+              {preview.validation.valid &&
+                isDefaultSenderName(previewSenderName) && (
+                  <p className="field-error" role="alert">
+                    落款署名仍是系统默认的“店主”，客户会在邮件结尾看到它。请点击“编辑活动”改成真实姓名或品牌名后再确认。
+                  </p>
+                )}
+
               {preview.validation.blockers.map((blocker) => (
                 <p className="field-error" role="alert" key={blocker.code}>
                   {blocker.message}
@@ -1161,6 +1178,7 @@ export function Campaigns({
             </Button>
             {previewing &&
               (previewError ||
+                isDefaultSenderName(previewSenderName) ||
                 preview?.validation.blockers.some(
                   (blocker) => blocker.code === "missing_variables",
                 )) && (
@@ -1802,6 +1820,30 @@ export function Campaigns({
                           }
                         }}
                       />
+                      {field.key === "sender_name" &&
+                        (isDefaultSenderName(variables.sender_name) ||
+                          (!variables.sender_name?.trim() &&
+                            isDefaultSenderName(memberName))) && (
+                          <p
+                            className="mt-1 mb-0 text-sm text-amber-700 dark:text-amber-300"
+                            role="alert"
+                          >
+                            {isDefaultSenderName(variables.sender_name)
+                              ? "“店主”是系统默认称呼，不适合作为落款发给客户。请改成真实姓名或品牌名。"
+                              : "你还没有设置对外署名，请在此填写，或"}
+                            {!isDefaultSenderName(variables.sender_name) && (
+                              <>
+                                <Link
+                                  href="/settings"
+                                  className="underline underline-offset-2"
+                                >
+                                  前往设置保存常用署名
+                                </Link>
+                                。
+                              </>
+                            )}
+                          </p>
+                        )}
                     </div>
                   ))}
               </div>

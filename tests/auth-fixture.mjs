@@ -338,12 +338,13 @@ const server = createServer(async (req, res) => {
     const where = clauses.length ? ` where ${clauses.join(" and ")}` : "";
     let sql = `select * from edm.${table}${where}`;
     if (req.method === "PATCH") {
-      if (
-        table !== "workspaces" ||
-        Object.keys(input).some((k) => !["name", "mailing_address"].includes(k))
-      )
+      const patchable = {
+        workspaces: ["name", "mailing_address"],
+        members: ["display_name"],
+      }[table];
+      if (!patchable || Object.keys(input).some((k) => !patchable.includes(k)))
         return send({ message: "禁止操作" }, 403);
-      sql = `update edm.workspaces set ${Object.entries(input)
+      sql = `update edm.${table} set ${Object.entries(input)
         .map(([k, v]) => `${k}='${String(v).replaceAll("'", "''")}'`)
         .join(",")}${where} returning *`;
     }

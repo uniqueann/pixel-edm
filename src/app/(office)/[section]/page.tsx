@@ -5,6 +5,7 @@ import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/empty-state";
 import { SettingsForm } from "@/components/settings-form";
+import { MemberProfileForm } from "@/components/member-profile-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
 import { edmCheckoutAvailability } from "@/lib/billing/edm-product-config";
 import { ThemeSegmented } from "@/components/theme-toggle";
 import { mailingAddressProblem } from "@/lib/mailing-address";
+import { isDefaultSenderName } from "@/lib/sender-name";
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -70,7 +72,7 @@ export default async function Page({
     )
   )
     notFound();
-  const { workspace, role, user } = await getContext();
+  const { workspace, role, user, member } = await getContext();
   if (section === "help") {
     return (
       <>
@@ -135,6 +137,16 @@ export default async function Page({
               name={workspace.name}
               address={workspace.mailing_address}
               canEdit={role === "admin"}
+            />
+          </CardContent>
+        </Card>
+        <Card className="mt-4">
+          <CardContent className="pt-6">
+            <h2 className="mb-2">我的署名</h2>
+            <p className="hint">用于邮件落款，仅影响你本人。</p>
+            <MemberProfileForm
+              key={member.display_name}
+              displayName={member.display_name}
             />
           </CardContent>
         </Card>
@@ -281,6 +293,12 @@ export default async function Page({
               href: "/settings",
             }
           : null,
+      isDefaultSenderName(member.display_name)
+        ? {
+            label: "设置邮件落款署名（当前仍是默认的“店主”）",
+            href: "/settings",
+          }
+        : null,
       !hasVerifiedPrimaryChannel
         ? { label: "连接并验证发信通道", href: "/settings" }
         : null,
