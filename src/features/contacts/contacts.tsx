@@ -61,9 +61,15 @@ export function Contacts({
   const [name, setName] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tag, setTag] = useState("");
+  const [consentDeclared, setConsentDeclared] = useState(false);
+  const [consentSource, setConsentSource] = useState("");
+  const [consentNote, setConsentNote] = useState("");
+  const [consentAt, setConsentAt] = useState("");
   const [unsubscribing, setUnsubscribing] = useState<Contact>();
   const [unsubscribeReason, setUnsubscribeReason] = useState("");
   const archived = filters.status === "archived";
+  const canDeclareConsent =
+    !editing || editing.subscription_status === "unconfirmed";
   const hasFilters = Boolean(filters.q || filters.tag || filters.subscription);
   function navigate(changes: Record<string, string>) {
     const next = { ...filters, ...changes };
@@ -114,6 +120,10 @@ export function Contacts({
     setName(c?.name ?? "");
     setTags(c?.tags.map((t) => t.name) ?? []);
     setTag("");
+    setConsentDeclared(false);
+    setConsentSource("");
+    setConsentNote("");
+    setConsentAt("");
     setError("");
   }
   function parseTagsInput(text: string): string[] {
@@ -376,7 +386,21 @@ export function Contacts({
             <span className="font-medium text-foreground">
               💡 订阅合规提示：
             </span>
-            新添加客户初始状态为「未确认」，需经确认订阅后方可发信，以保障发信信誉。
+            未声明已获得同意的客户为「未确认」，不能用于发送活动，以保障发信信誉。
+            {editing && (
+              <>
+                {" "}
+                当前状态：
+                <span className="font-medium text-foreground">
+                  {subscriptionLabels[editing.subscription_status]}
+                </span>
+                {editing.subscription_status === "subscribed" &&
+                  editing.consent_source && (
+                    <>（同意来源：{editing.consent_source}）</>
+                  )}
+                。
+              </>
+            )}
           </div>
           <form
             className="space-y-4"
@@ -405,6 +429,16 @@ export function Contacts({
                   email: email.trim(),
                   name: name.trim(),
                   tags: all,
+                  ...(canDeclareConsent && consentDeclared
+                    ? {
+                        consent_declared: true,
+                        consent_source: consentSource,
+                        consent_note: consentNote,
+                        ...(consentAt
+                          ? { consent_at: new Date(consentAt).toISOString() }
+                          : {}),
+                      }
+                    : {}),
                 });
                 if (result.error) setError(result.error);
                 else {
@@ -531,6 +565,59 @@ export function Contacts({
                     </span>
                   </button>
                 ))}
+              </div>
+            )}
+            {canDeclareConsent && (
+              <div className="rounded-lg border p-3">
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={consentDeclared}
+                    onChange={(e) => setConsentDeclared(e.target.checked)}
+                  />
+                  我确认该客户已明确同意接收商业邮件
+                </label>
+                <p className="hint mt-2">
+                  勾选后客户将变为「已订阅」并可用于发送，来源与说明会作为订阅证据留痕。不勾选则保持「未确认」。
+                </p>
+                {consentDeclared && (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="contact-consent-source">同意来源</Label>
+                      <Input
+                        id="contact-consent-source"
+                        required
+                        maxLength={100}
+                        placeholder="例如：独立站结账勾选、展会名片"
+                        value={consentSource}
+                        onChange={(e) => setConsentSource(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact-consent-at">
+                        同意时间（选填）
+                      </Label>
+                      <Input
+                        id="contact-consent-at"
+                        type="datetime-local"
+                        value={consentAt}
+                        onChange={(e) => setConsentAt(e.target.value)}
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="contact-consent-note">授权说明</Label>
+                      <Input
+                        id="contact-consent-note"
+                        required
+                        maxLength={500}
+                        placeholder="例如：客户在结账页主动勾选接收促销邮件"
+                        value={consentNote}
+                        onChange={(e) => setConsentNote(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {error && (

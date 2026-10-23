@@ -154,4 +154,128 @@ test("客户事务、标签、搜索分页及授权", async (t) => {
       1,
     );
   });
+  await t.test("手动声明同意：留痕、不覆盖证据、不越过抑制", async () => {
+    const consent = {
+      consent_declared: true,
+      consent_source: "展会名片",
+      consent_note: "客户现场书面同意接收促销邮件",
+    };
+    const status = async (cid) =>
+      (
+        await db.query(
+          "select subscription_status s,consent_source,consent_note,consent_at,version from edm.contacts where id=$1",
+          [cid],
+        )
+      ).rows[0];
+    const events = async (cid) =>
+      (
+        await db.query(
+          "select event_type,source,note,consent_at,metadata from edm.subscription_events where contact_id=$1 and event_type='consented'",
+          [cid],
+        )
+      ).rows;
+
+    const plain = await save({ email: "plain@example.com", tags: [] });
+    assert.equal((await status(plain)).s, "unconfirmed");
+    assert.equal((await events(plain)).length, 0);
+
+    await assert.rejects(
+      save({
+        email: "no-evidence@example.com",
+        tags: [],
+        consent_declared: true,
+        consent_source: "",
+        consent_note: "",
+      }),
+      /同意来源/,
+    );
+    await assert.rejects(
+      save({
+        email: "future@example.com",
+        tags: [],
+        ...consent,
+        consent_at: "2999-01-01T00:00:00Z",
+      }),
+      /不能晚于/,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select count(*)::int n from edm.contacts where email in ('no-evidence@example.com','future@example.com')",
+        )
+      ).rows[0].n,
+      0,
+    );
+
+    const fresh = await save({
+      email: "consented@example.com",
+      tags: [],
+      ...consent,
+      consent_at: "2026-01-02T03:04:05Z",
+    });
+    const row = await status(fresh);
+    assert.equal(row.s, "subscribed");
+    assert.equal(row.consent_source, "展会名片");
+    assert.equal(row.version, 1);
+    assert.equal(
+      new Date(row.consent_at).toISOString(),
+      "2026-01-02T03:04:05.000Z",
+    );
+    const [event] = await events(fresh);
+    assert.equal(event.source, "展会名片");
+    assert.equal(event.note, "客户现场书面同意接收促销邮件");
+    assert.equal(event.metadata.channel, "manual_form");
+
+    await save({
+      id: plain,
+      expected_version: 1,
+      email: "plain@example.com",
+      tags: [],
+      ...consent,
+    });
+    const upgraded = await status(plain);
+    assert.equal(upgraded.s, "subscribed");
+    assert.equal(upgraded.version, 2);
+    assert.equal((await events(plain)).length, 1);
+
+    await save({
+      id: plain,
+      expected_version: 2,
+      email: "plain@example.com",
+      tags: [],
+      consent_declared: true,
+      consent_source: "另一来源",
+      consent_note: "不应覆盖",
+    });
+    assert.equal((await status(plain)).consent_source, "展会名片");
+    assert.equal((await events(plain)).length, 1);
+
+    const blocked = await save({ email: "blocked@example.com", tags: [] });
+    await rpc("unsubscribe_contact", {
+      workspace_id: wa,
+      id: blocked,
+      expected_version: 1,
+      reason: "客户要求退订",
+    });
+    await assert.rejects(
+      save({
+        id: blocked,
+        expected_version: 2,
+        email: "blocked@example.com",
+        tags: [],
+        ...consent,
+      }),
+      /不能标记为已获得同意/,
+    );
+    assert.equal((await status(blocked)).s, "unsubscribed");
+    await assert.rejects(
+      save({ email: "blocked@example.com", tags: [], ...consent }),
+      /unique/,
+    );
+
+    const untouched = await db.query(
+      "select count(*)::int n from edm.contacts where email like 'page%' and subscription_status<>'unconfirmed'",
+    );
+    assert.equal(untouched.rows[0].n, 0);
+  });
 });
