@@ -1822,26 +1822,23 @@ export function Campaigns({
                       />
                       {field.key === "sender_name" &&
                         (isDefaultSenderName(variables.sender_name) ||
-                          (!variables.sender_name?.trim() &&
-                            isDefaultSenderName(memberName))) && (
+                          !variables.sender_name?.trim()) && (
                           <p
                             className="mt-1 mb-0 text-sm text-amber-700 dark:text-amber-300"
                             role="alert"
                           >
                             {isDefaultSenderName(variables.sender_name)
-                              ? "“店主”是系统默认称呼，不适合作为落款发给客户。请改成真实姓名或品牌名。"
-                              : "你还没有设置对外署名，请在此填写，或"}
-                            {!isDefaultSenderName(variables.sender_name) && (
-                              <>
-                                <Link
-                                  href="/settings"
-                                  className="underline underline-offset-2"
-                                >
-                                  前往设置保存常用署名
-                                </Link>
-                                。
-                              </>
-                            )}
+                              ? "“店主”是系统默认称呼，不适合作为落款发给客户。请改成真实姓名或品牌名，或"
+                              : "发件人不能为空，请填写真实署名，或"}
+                            <Link
+                              href="/settings"
+                              className="underline underline-offset-2"
+                            >
+                              {isDefaultSenderName(variables.sender_name)
+                                ? "前往设置真实署名"
+                                : "前往设置保存常用署名"}
+                            </Link>
+                            。
                           </p>
                         )}
                     </div>

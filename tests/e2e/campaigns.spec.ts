@@ -26,9 +26,15 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
     .selectOption({ label: "欢迎系列 · 欢迎新客户" });
   await expect(editor.getByLabel(/店铺名称/)).toHaveValue("我的邮局");
   await expect(editor.getByLabel(/发件人/)).toHaveValue("");
-  await expect(editor.getByText(/你还没有设置对外署名/)).toBeVisible();
+  await expect(editor.getByText(/发件人不能为空/)).toBeVisible();
+  await expect(
+    editor.getByRole("link", { name: "前往设置保存常用署名" }),
+  ).toBeVisible();
   await editor.getByLabel(/发件人/).fill("店主");
   await expect(editor.getByText(/系统默认称呼/)).toBeVisible();
+  await expect(
+    editor.getByRole("link", { name: "前往设置真实署名" }),
+  ).toBeVisible();
   await editor.getByLabel(/优惠信息/).fill("WELCOME-20");
   await editor.getByRole("button", { name: "保存活动草稿" }).click();
   await expect(page.getByText("活动草稿已保存").last()).toBeVisible();
