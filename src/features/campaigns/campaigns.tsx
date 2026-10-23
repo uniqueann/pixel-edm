@@ -806,7 +806,7 @@ export function Campaigns({
                 <p className="hint m-0 break-words">
                   受众：
                   {campaign.audience_type === "all"
-                    ? "全部客户"
+                    ? "全部已订阅客户"
                     : `标签 · ${campaign.tag_name ?? "标签不可用"}`}
                 </p>
                 <p className="hint m-0 break-words">
@@ -1741,7 +1741,7 @@ export function Campaigns({
                   if (value === "all") setTagId("");
                 }}
               >
-                <option value="all">全部客户</option>
+                <option value="all">全部已订阅客户</option>
                 <option value="tag" disabled={!editorOptions.tags.length}>
                   按标签选择
                 </option>

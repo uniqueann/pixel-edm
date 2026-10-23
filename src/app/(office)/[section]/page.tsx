@@ -246,6 +246,7 @@ export default async function Page({
       deliveryPlan.activity_log_retention_days !== 0;
     const [
       contactSummary,
+      subscribedSummary,
       templateSummary,
       campaignStatistics,
       recentActivity,
@@ -253,6 +254,7 @@ export default async function Page({
       channelSummaries,
     ] = await Promise.all([
       listContacts({}),
+      listContacts({ subscription: "subscribed" }),
       listTemplates({}),
       getWorkspaceCampaignStatistics(),
       canViewLogs ? listActivityLogs({ pageSize: 5 }) : Promise.resolve(null),
@@ -284,7 +286,12 @@ export default async function Page({
         : null,
       contactSummary.active_count === 0
         ? { label: "添加第一批客户", href: "/contacts" }
-        : null,
+        : subscribedSummary.total === 0
+          ? {
+              label: "确认客户订阅（暂无已订阅客户，未确认客户不能发信）",
+              href: "/contacts",
+            }
+          : null,
       templateSummary.active_count === 0
         ? { label: "创建第一套模板", href: "/templates" }
         : null,
@@ -330,7 +337,8 @@ export default async function Page({
           ))}
         </div>
         <p className="hint">
-          客户数与模板数仅包含未归档记录。
+          客户数与模板数仅包含未归档记录；其中已订阅（可发送）客户{" "}
+          {subscribedSummary.total} 位。
           {statsAvailable
             ? `打开率按近 30 天启用追踪活动的已送达收件人加权计算（${campaignStatistics.opened} / ${campaignStatistics.delivered}，共 ${campaignStatistics.tracked_campaigns} 个活动）。`
             : "打开/点击统计需专业版或团队版。"}
