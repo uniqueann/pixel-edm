@@ -19,6 +19,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  EmailOutboundFooterPreview,
+  EmailOutboundFromPreview,
+} from "@/components/email-outbound-preview";
 import { isDefaultSenderName, senderNameDefault } from "@/lib/sender-name";
 import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
 import {
@@ -155,6 +159,9 @@ export function Campaigns({
   workspace,
   workspaceName,
   memberName,
+  mailingAddress,
+  senderAlias,
+  senderAddress,
   canEdit,
   canSend,
   maxRecipientsPerCampaign,
@@ -167,6 +174,9 @@ export function Campaigns({
   workspace: string;
   workspaceName: string;
   memberName: string;
+  mailingAddress: string;
+  senderAlias: string;
+  senderAddress: string;
   canEdit: boolean;
   canSend: boolean;
   maxRecipientsPerCampaign: number;
@@ -1166,6 +1176,11 @@ export function Campaigns({
                         模板版本 {preview.template.version}
                       </span>
                     </div>
+                    <EmailOutboundFromPreview
+                      senderAlias={senderAlias}
+                      senderAddress={senderAddress}
+                      className="rounded-lg border bg-card p-4"
+                    />
                     {preview.recipients.sample.map((item, index) => (
                       <div
                         className="min-w-0 rounded-lg border bg-card p-4"
@@ -1183,6 +1198,10 @@ export function Campaigns({
                         <pre className="mt-3 whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm leading-7">
                           {item.body}
                         </pre>
+                        <EmailOutboundFooterPreview
+                          workspaceName={workspaceName}
+                          mailingAddress={mailingAddress}
+                        />
                       </div>
                     ))}
                   </div>

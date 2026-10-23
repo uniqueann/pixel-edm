@@ -30,7 +30,7 @@ export default async function Page({
     listCampaigns(filters),
     canEdit ? getCampaignEditorOptions() : Promise.resolve(emptyOptions),
     getWorkspaceDeliveryPlan(context.workspace.id),
-    canSend ? listDeliveryChannels(context.workspace.id) : Promise.resolve([]),
+    listDeliveryChannels(context.workspace.id),
   ]);
   const maxRecipientsPerCampaign =
     deliveryPlan?.max_recipients_per_campaign ?? 500;
@@ -63,6 +63,9 @@ export default async function Page({
       workspace={context.workspace.id}
       workspaceName={context.workspace.name}
       memberName={context.member.display_name}
+      mailingAddress={context.workspace.mailing_address}
+      senderAlias={primaryChannel?.sender_alias ?? ""}
+      senderAddress={primaryChannel?.sender_address ?? ""}
       canEdit={canEdit}
       canSend={canSend}
       maxRecipientsPerCampaign={maxRecipientsPerCampaign}

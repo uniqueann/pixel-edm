@@ -6,6 +6,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  EmailOutboundFooterPreview,
+  EmailOutboundFromPreview,
+  formatOutboundFromLine,
+  outboundFooterPlainText,
+} from "@/components/email-outbound-preview";
 import { isDefaultSenderName, senderNameDefault } from "@/lib/sender-name";
 import {
   renderTemplate,
@@ -18,11 +24,17 @@ export function TemplatePreview({
   body,
   workspaceName,
   memberName,
+  mailingAddress,
+  senderAlias,
+  senderAddress,
 }: {
   subject: string;
   body: string;
   workspaceName: string;
   memberName: string;
+  mailingAddress: string;
+  senderAlias: string;
+  senderAddress: string;
 }) {
   const [values, setValues] = useState<TemplateValues>({
     name: "Anna",
@@ -40,9 +52,15 @@ export function TemplatePreview({
 
   async function copyPreview() {
     if (rendered.missing.length) return;
+    const fromLine = formatOutboundFromLine(senderAlias, senderAddress);
+    const bodyWithFooter = outboundFooterPlainText({
+      body: rendered.body,
+      workspaceName,
+      mailingAddress,
+    });
     try {
       await navigator.clipboard.writeText(
-        `主题：${rendered.subject}\n\n${rendered.body}`,
+        `${fromLine ? `发件人：${fromLine}\n\n` : ""}主题：${rendered.subject}\n\n${bodyWithFooter}`,
       );
       toast.success("完整预览已复制");
     } catch {
@@ -76,13 +94,24 @@ export function TemplatePreview({
         </div>
       </div>
       <div className="rounded-lg border bg-card p-4">
+        <EmailOutboundFromPreview
+          senderAlias={senderAlias}
+          senderAddress={senderAddress}
+          className="mb-4"
+        />
         <p className="mb-2 text-xs text-muted-foreground">邮件主题</p>
         <p className="break-words font-medium">{rendered.subject}</p>
         <div className="my-4 border-t" />
-        <p className="mb-2 text-xs text-muted-foreground">纯文本正文</p>
+        <p className="mb-2 text-xs text-muted-foreground">
+          纯文本正文（含系统页脚）
+        </p>
         <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-7">
           {rendered.body}
         </pre>
+        <EmailOutboundFooterPreview
+          workspaceName={workspaceName}
+          mailingAddress={mailingAddress}
+        />
       </div>
       {isDefaultSenderName(memberName) && (
         <p className="hint m-0" role="note">

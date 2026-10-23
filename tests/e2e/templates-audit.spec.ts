@@ -31,6 +31,12 @@ test("模板编辑、变量预览、复制归档与管理员审计", async ({ pa
   await editor.getByRole("button", { name: "{{name}}" }).click();
   await editor.getByText("预览当前内容").click();
   await expect(editor.getByText("Hello Anna")).toBeVisible();
+  await expect(
+    editor.getByText("发件人（收件人邮箱客户端显示的 From）"),
+  ).toBeVisible();
+  await expect(
+    editor.getByTestId("email-outbound-footer-preview"),
+  ).toContainText("上海市测试路 1 号");
 
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await editor.getByRole("button", { name: "复制完整预览" }).click();
