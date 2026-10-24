@@ -273,6 +273,11 @@ button.tab {
   gap: 12px;
   margin-bottom: 12px;
 }
+@media (min-width: 768px) {
+  .stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 .stat-card {
   padding: 18px 0;
   gap: 0;
