@@ -52,6 +52,6 @@ test("免费版在操作附近显示套餐用量，模板达到上限后禁用�
   ).toBeDisabled();
   await expect(
     page.getByTestId("template-quota").getByRole("link", { name: "查看套餐" }),
-  ).toHaveAttribute("href", "/settings");
+  ).toHaveAttribute("href", "/settings#settings-billing");
   expect(errors).toEqual([]);
 });

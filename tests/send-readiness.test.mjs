@@ -48,7 +48,7 @@ test("P1-1 发送前检查：没有主通道或通道未验证时阻止并指向
   const none = evaluateSendReadiness(context({ primaryChannel: null }), 10);
   assert.equal(none.ready, false);
   assert.deepEqual(failedKeys(none), ["channel", "sender"]);
-  assert.equal(none.items[0].href, "/settings");
+  assert.equal(none.items[0].href, "/settings#settings-channels");
 
   const configured = evaluateSendReadiness(
     context({
@@ -85,7 +85,7 @@ test("P1-1 发送前检查：今日额度与数据库一致（已用 + 收件人
   const over = evaluateSendReadiness(context(), 151);
   assert.deepEqual(failedKeys(over), ["quota"]);
   assert.match(over.items[3].detail, /本次需要 151 封/);
-  assert.equal(over.items[3].href, "/settings");
+  assert.equal(over.items[3].href, "/settings#settings-billing");
 });
 
 test("P1-1 发送前检查：额度读取失败时不阻止，由提交时校验", () => {

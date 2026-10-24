@@ -1,5 +1,12 @@
 /** 正式发送前置检查：仅复用 start_campaign_delivery 已有的校验条件，不新增规则。 */
 
+/** 与 `features/settings/anchors` 中锚点 id 保持一致（供 Node 单测直接加载本模块）。 */
+const settingsLinks = {
+  channels: "/settings#settings-channels",
+  store: "/settings#settings-store",
+  billing: "/settings#settings-billing",
+} as const;
+
 export type SendReadinessChannel = {
   display_name: string;
   status: string;
@@ -69,7 +76,10 @@ export function evaluateSendReadiness(
             : `${channel.display_name}${channelStatusLabels[channel.status] ?? "尚未验证"}，请先连接并验证`,
     ...(channelVerified
       ? {}
-      : { href: "/settings", linkLabel: "前往发信通道" }),
+      : {
+          href: settingsLinks.channels,
+          linkLabel: "前往发信通道",
+        }),
   });
 
   const senderAddress = channel?.sender_address.trim() ?? "";
@@ -80,7 +90,10 @@ export function evaluateSendReadiness(
     detail: senderAddress.length > 0 ? senderAddress : "主通道尚未填写发件地址",
     ...(senderAddress.length > 0
       ? {}
-      : { href: "/settings", linkLabel: "前往发信通道" }),
+      : {
+          href: settingsLinks.channels,
+          linkLabel: "前往发信通道",
+        }),
   });
 
   const footerAddress = context.mailingAddress.trim();
@@ -94,7 +107,10 @@ export function evaluateSendReadiness(
         : "尚未填写邮件页脚实体地址，正式邮件无法发出",
     ...(footerAddress.length > 0
       ? {}
-      : { href: "/settings", linkLabel: "前往店铺信息" }),
+      : {
+          href: settingsLinks.store,
+          linkLabel: "前往店铺信息",
+        }),
   });
 
   if (context.quota) {
@@ -108,7 +124,9 @@ export function evaluateSendReadiness(
       detail: quotaOk
         ? `今日已用 ${used} / ${limit} 封，剩余 ${remaining} 封（${quotaResetNote(context.quota.quota_timezone)}）`
         : `今日已用 ${used} / ${limit} 封，剩余 ${remaining} 封，本次需要 ${recipientCount} 封；${quotaResetNote(context.quota.quota_timezone)}，或升级套餐`,
-      ...(quotaOk ? {} : { href: "/settings", linkLabel: "查看套餐" }),
+      ...(quotaOk
+        ? {}
+        : { href: settingsLinks.billing, linkLabel: "查看套餐" }),
     });
   } else {
     items.push({
@@ -131,7 +149,9 @@ export function evaluateSendReadiness(
         : recipientsOk
           ? `${recipientCount} 位，未超过套餐单活动上限 ${context.maxRecipientsPerCampaign}`
           : `${recipientCount} 位，超过套餐单活动上限 ${context.maxRecipientsPerCampaign}`,
-    ...(recipientsOk ? {} : { href: "/settings", linkLabel: "查看套餐" }),
+    ...(recipientsOk
+      ? {}
+      : { href: settingsLinks.billing, linkLabel: "查看套餐" }),
   });
 
   return { items, ready: items.every((item) => item.ok) };

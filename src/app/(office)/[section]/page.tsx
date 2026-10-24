@@ -5,7 +5,12 @@ import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/empty-state";
 import { SettingsForm } from "@/components/settings-form";
+import { SettingsSectionNav } from "@/components/settings-section-nav";
 import { MemberProfileForm } from "@/components/member-profile-form";
+import {
+  SETTINGS_SECTION_IDS,
+  settingsSectionHref,
+} from "@/features/settings/anchors";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,49 +122,38 @@ export default async function Page({
         <Suspense fallback={null}>
           <CheckoutSuccessToast />
         </Suspense>
-        {deliveryPlan && (
-          <div className="mb-4">
-            <BillingUpgrade
-              workspaceId={workspace.id}
-              deliveryPlan={deliveryPlan}
-              billing={billingStatus}
-              canUpgrade={role === "admin"}
-              checkoutAvailability={edmCheckoutAvailability()}
-            />
-          </div>
-        )}
-        <Card>
-          <CardContent className="pt-6">
-            <h2 className="mb-2">店铺信息</h2>
-            <p className="hint">用于邮件页脚落款与发件人默认信息。</p>
-            <SettingsForm
-              key={workspace.id}
-              name={workspace.name}
-              address={workspace.mailing_address}
-              canEdit={role === "admin"}
-            />
-          </CardContent>
-        </Card>
-        <Card className="mt-4">
-          <CardContent className="pt-6">
-            <h2 className="mb-2">我的署名</h2>
-            <p className="hint">用于邮件落款，仅影响你本人。</p>
-            <MemberProfileForm
-              key={member.display_name}
-              displayName={member.display_name}
-            />
-          </CardContent>
-        </Card>
-        <Card className="mt-4">
-          <CardContent className="pt-6">
-            <h2 className="mb-2">界面外观</h2>
-            <p className="hint mb-4">
-              选择适合你的视觉风格，支持浅色、深色或随系统自动切换。
-            </p>
-            <ThemeSegmented />
-          </CardContent>
-        </Card>
-        <div className="mt-7 space-y-3">
+        <SettingsSectionNav showBilling={Boolean(deliveryPlan)} />
+        <section
+          id={SETTINGS_SECTION_IDS.store}
+          className="settings-section scroll-mt-4"
+        >
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="mb-2">店铺信息</h2>
+              <p className="hint">用于邮件页脚落款与发件人默认信息。</p>
+              <SettingsForm
+                key={workspace.id}
+                name={workspace.name}
+                address={workspace.mailing_address}
+                canEdit={role === "admin"}
+              />
+            </CardContent>
+          </Card>
+          <Card className="mt-4" id={SETTINGS_SECTION_IDS.profile}>
+            <CardContent className="pt-6">
+              <h2 className="mb-2">我的署名</h2>
+              <p className="hint">用于邮件落款，仅影响你本人。</p>
+              <MemberProfileForm
+                key={member.display_name}
+                displayName={member.display_name}
+              />
+            </CardContent>
+          </Card>
+        </section>
+        <section
+          id={SETTINGS_SECTION_IDS.channels}
+          className="settings-section scroll-mt-4 mt-7 space-y-3"
+        >
           <div>
             <h2>发信通道</h2>
             <p className="hint mt-2 mb-0">
@@ -188,7 +182,35 @@ export default async function Page({
             canEdit={role === "admin"}
             canStoreCredentials={credentialStorageReady()}
           />
-        </div>
+        </section>
+        {deliveryPlan && (
+          <section
+            id={SETTINGS_SECTION_IDS.billing}
+            className="settings-section scroll-mt-4 mt-7"
+          >
+            <BillingUpgrade
+              workspaceId={workspace.id}
+              deliveryPlan={deliveryPlan}
+              billing={billingStatus}
+              canUpgrade={role === "admin"}
+              checkoutAvailability={edmCheckoutAvailability()}
+            />
+          </section>
+        )}
+        <section
+          id={SETTINGS_SECTION_IDS.appearance}
+          className="settings-section scroll-mt-4 mt-7"
+        >
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="mb-2">界面外观</h2>
+              <p className="hint mb-4">
+                选择适合你的视觉风格，支持浅色、深色或随系统自动切换。
+              </p>
+              <ThemeSegmented />
+            </CardContent>
+          </Card>
+        </section>
       </>
     );
   }
@@ -286,21 +308,27 @@ export default async function Page({
     );
     const setupItems = [
       !workspace.mailing_address.trim()
-        ? { label: "补充邮件页脚实体地址", href: "/settings" }
+        ? {
+            label: "补充邮件页脚实体地址",
+            href: settingsSectionHref("store"),
+          }
         : mailingAddressProblem(workspace.mailing_address)
           ? {
               label: "修正邮件页脚实体地址（当前像占位文本）",
-              href: "/settings",
+              href: settingsSectionHref("store"),
             }
           : null,
       isDefaultSenderName(member.display_name)
         ? {
             label: "设置邮件落款署名（当前仍是默认的“店主”）",
-            href: "/settings",
+            href: settingsSectionHref("profile"),
           }
         : null,
       !hasVerifiedPrimaryChannel
-        ? { label: "连接并验证发信通道", href: "/settings" }
+        ? {
+            label: "连接并验证发信通道",
+            href: settingsSectionHref("channels"),
+          }
         : null,
       contactSummary.active_count === 0
         ? { label: "添加第一批客户", href: "/contacts" }
@@ -386,12 +414,25 @@ export default async function Page({
               )}
               {canEdit && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button asChild>
-                    <Link href="/campaigns">查看活动</Link>
-                  </Button>
-                  <Button asChild variant="outline">
-                    <Link href="/contacts">管理客户</Link>
-                  </Button>
+                  {setupItems.length === 0 ? (
+                    <>
+                      <Button asChild>
+                        <Link href="/campaigns">新建活动</Link>
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link href="/contacts">管理客户</Link>
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button asChild>
+                        <Link href="/campaigns">查看活动</Link>
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link href="/contacts">管理客户</Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -412,7 +453,7 @@ export default async function Page({
                   {recentCampaigns.items.slice(0, 3).map((campaign) => (
                     <Link
                       key={campaign.id}
-                      href="/campaigns"
+                      href={`/campaigns?q=${encodeURIComponent(campaign.name)}`}
                       className="dashboard-campaign-row"
                     >
                       <span className="min-w-0 flex-1">
@@ -420,8 +461,7 @@ export default async function Page({
                           {campaign.name}
                         </strong>
                         <span className="hint m-0">
-                          {campaign.recipient_count ?? 0} 位收件人 ·{" "}
-                          {campaignStatusLabels[campaign.status]}
+                          {campaign.recipient_count ?? 0} 位收件人
                         </span>
                       </span>
                       <Badge variant="outline">
