@@ -15,6 +15,7 @@ import {
   passwordRecoveryRedirectUrl,
 } from "@/lib/supabase/config";
 import { credentials } from "@/lib/validation";
+import { mapAuthError } from "@/lib/auth-errors";
 type Mode = "login" | "register" | "forgot" | "reset";
 const titles: Record<Mode, string> = {
   login: "欢迎回到邮局",
@@ -31,15 +32,20 @@ const descriptions: Record<Mode, string> = {
 export function AuthForm({
   mode,
   nextPath,
+  callbackError,
 }: {
   mode: Mode;
   nextPath?: string;
+  /** 邮件回调失败等页面级错误，显示在卡片内 */
+  callbackError?: string;
 }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"hint" | "error" | "success">(
     "hint",
   );
+  const [canResendVerification, setCanResendVerification] = useState(false);
+  const [resendPending, setResendPending] = useState(false);
   const [oauthPending, setOauthPending] = useState(false);
   const schema = z.object({
     email: mode === "reset" ? z.string() : credentials.shape.email,
@@ -54,7 +60,7 @@ export function AuthForm({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
-  const busy = form.formState.isSubmitting || oauthPending;
+  const busy = form.formState.isSubmitting || oauthPending || resendPending;
   const destination =
     nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
       ? nextPath
@@ -63,9 +69,39 @@ export function AuthForm({
     nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
       ? `?next=${encodeURIComponent(nextPath)}`
       : "";
+  async function resendVerificationEmail() {
+    const email = form.getValues("email")?.trim();
+    if (!email) {
+      setMessage("请先填写注册邮箱，再重新发送验证邮件。");
+      setMessageType("error");
+      return;
+    }
+    setResendPending(true);
+    setMessage("");
+    setMessageType("hint");
+    try {
+      const { error } = await browserClient().auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: authCallbackUrl(destination) },
+      });
+      if (error) throw error;
+      setMessage("验证邮件已重新发送，请在当前浏览器打开邮件中的链接。");
+      setMessageType("success");
+      setCanResendVerification(false);
+    } catch (err) {
+      const mapped = mapAuthError(err);
+      setMessage(mapped.message);
+      setMessageType("error");
+    } finally {
+      setResendPending(false);
+    }
+  }
+
   async function submit(values: { email?: string; password?: string }) {
     setMessage("");
     setMessageType("hint");
+    setCanResendVerification(false);
     try {
       const db = browserClient();
       if (mode === "forgot") {
@@ -119,9 +155,11 @@ export function AuthForm({
         router.replace(destination);
         router.refresh();
       }
-    } catch {
-      setMessage("操作未完成，请检查输入、邮箱验证状态或稍后重试。");
+    } catch (err) {
+      const mapped = mapAuthError(err);
+      setMessage(mapped.message);
       setMessageType("error");
+      setCanResendVerification(mapped.canResendVerification);
     }
   }
   async function google() {
@@ -147,7 +185,16 @@ export function AuthForm({
       <span className="eyebrow">卖家邮局</span>
       <h1>{titles[mode]}</h1>
       <p className="hint">{descriptions[mode]}</p>
-      {!isConfigured() && <p role="alert">系统服务配置异常，请联系管理员。</p>}
+      {callbackError && (
+        <p className="field-error mt-3" role="alert">
+          {callbackError}
+        </p>
+      )}
+      {!isConfigured() && (
+        <p className="field-error mt-3" role="alert">
+          系统服务配置异常，请联系管理员。
+        </p>
+      )}
       <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
         {mode !== "reset" && (
           <div className="space-y-2">
@@ -186,6 +233,17 @@ export function AuthForm({
           >
             {message}
           </p>
+        )}
+        {canResendVerification && (mode === "login" || mode === "register") && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={busy || !isConfigured()}
+            onClick={resendVerificationEmail}
+          >
+            {resendPending ? "正在发送…" : "重新发送验证邮件"}
+          </Button>
         )}
         <Button className="w-full" disabled={busy || !isConfigured()}>
           {busy

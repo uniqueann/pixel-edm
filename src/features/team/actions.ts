@@ -7,7 +7,12 @@ import { z } from "zod";
 import { getContext, workspaceCookie } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/supabase/config";
-import { teamRoles, type InvitationPreview, type TeamData } from "./model";
+import {
+  inviteWrongAccountMessage,
+  teamRoles,
+  type InvitationPreview,
+  type TeamData,
+} from "./model";
 
 const workspaceId = z.string().uuid();
 const role = z.enum(teamRoles);
@@ -225,14 +230,14 @@ export async function acceptWorkspaceInvitation(token: string) {
       payload: tokenPayload(token),
     });
     if (error) {
-      return { error: "邀请无法接受，请使用邀请邮箱的已验证账号登录。" };
+      return { error: inviteWrongAccountMessage };
     }
     const result = data as unknown as {
       status?: string;
       workspace_id?: string;
     };
     if (result.status !== "accepted" || !result.workspace_id)
-      return { error: "邀请无法接受，请使用邀请邮箱的已验证账号登录。" };
+      return { error: inviteWrongAccountMessage };
     const jar = await cookies();
     jar.set(workspaceCookie, result.workspace_id, {
       httpOnly: true,
@@ -244,6 +249,6 @@ export async function acceptWorkspaceInvitation(token: string) {
     revalidatePath("/dashboard");
     return { success: true };
   } catch {
-    return { error: "邀请无法接受，请使用邀请邮箱的已验证账号登录。" };
+    return { error: inviteWrongAccountMessage };
   }
 }
