@@ -18,9 +18,12 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const raw = await searchParams;
+  const exportError =
+    typeof raw.export_error === "string" ? raw.export_error : null;
   const filters = Object.fromEntries(
     Object.entries(raw).filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string",
+      (entry): entry is [string, string] =>
+        typeof entry[1] === "string" && entry[0] !== "export_error",
     ),
   );
   const context = await getContext();
@@ -74,6 +77,7 @@ export default async function Page({
       data={data}
       editorOptions={options}
       filters={filters}
+      initialExportError={exportError}
     />
   );
 }

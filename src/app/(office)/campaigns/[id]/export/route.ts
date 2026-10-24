@@ -1,8 +1,13 @@
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { csvRow } from "@/lib/csv";
 import { serverClient } from "@/lib/supabase/server";
 import { getContext } from "@/lib/workspace";
 import type { CampaignExportChunk } from "@/features/campaigns/model";
+
+function redirectExportError(message: string): never {
+  redirect(`/campaigns?export_error=${encodeURIComponent(message)}`);
+}
 
 const campaignIdSchema = z.string().uuid();
 
@@ -23,11 +28,11 @@ export async function GET(
 ) {
   const context = await getContext();
   if (!["admin", "editor"].includes(context.role)) {
-    return new Response("没有活动导出权限", { status: 403 });
+    redirectExportError("没有活动导出权限");
   }
 
   const parsedId = campaignIdSchema.safeParse((await params).id);
-  if (!parsedId.success) return new Response("活动标识无效", { status: 400 });
+  if (!parsedId.success) redirectExportError("活动标识无效");
 
   const db = await serverClient();
   const exportId = crypto.randomUUID();
@@ -43,9 +48,9 @@ export async function GET(
   });
   if (error) {
     const forbidden = error.code === "42501";
-    return new Response(forbidden ? "没有活动导出权限" : error.message, {
-      status: forbidden ? 403 : 409,
-    });
+    redirectExportError(
+      forbidden ? "没有活动导出权限" : error.message || "无法导出收件明细",
+    );
   }
 
   const first = data as unknown as CampaignExportChunk;

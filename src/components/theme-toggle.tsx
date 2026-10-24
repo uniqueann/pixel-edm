@@ -96,13 +96,19 @@ export function ThemeSegmented() {
   const mounted = useIsMounted();
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      className="flex flex-wrap gap-2"
+      role="radiogroup"
+      aria-label="外观主题"
+    >
       {themes.map(({ value, label, icon: Icon }) => {
         const isSelected = mounted && theme === value;
         return (
           <button
             key={value}
             type="button"
+            role="radio"
+            aria-checked={isSelected}
             onClick={() => setTheme(value)}
             className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
               isSelected
@@ -110,7 +116,7 @@ export function ThemeSegmented() {
                 : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             }`}
           >
-            <Icon className="size-4" />
+            <Icon className="size-4" aria-hidden />
             <span>{label}</span>
           </button>
         );

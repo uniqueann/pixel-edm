@@ -37,6 +37,41 @@ function formatPeriodEnd(iso: string | null) {
   });
 }
 
+function usagePercent(used: number, max: number) {
+  if (max <= 0) return 0;
+  return Math.min(100, Math.round((used / max) * 100));
+}
+
+function PlanUsageMetric({
+  label,
+  used,
+  max,
+  unit = "",
+}: {
+  label: string;
+  used: number;
+  max: number;
+  unit?: string;
+}) {
+  return (
+    <li className="plan-usage-item">
+      <div className="plan-usage-item-head">
+        <span className="plan-usage-label">{label}</span>
+        <span className="plan-usage-value">
+          {used.toLocaleString("zh-CN")} / {max.toLocaleString("zh-CN")}
+          {unit}
+        </span>
+      </div>
+      <div className="plan-usage-track" aria-hidden>
+        <div
+          className="plan-usage-fill"
+          style={{ width: `${usagePercent(used, max)}%` }}
+        />
+      </div>
+    </li>
+  );
+}
+
 export function BillingUpgrade({
   workspaceId,
   deliveryPlan,
@@ -79,26 +114,71 @@ export function BillingUpgrade({
 
   return (
     <div className="rounded-lg border border-border/80 bg-muted/30 px-4 py-3 text-sm">
-      <p className="font-medium text-foreground">
-        当前套餐：{label} · 有效客户 {deliveryPlan.billable_contacts} /{" "}
-        {deliveryPlan.max_billable_contacts}
-        {deliveryPlan.max_custom_templates !== null
-          ? ` · 自定义模板 ${deliveryPlan.custom_templates} / ${deliveryPlan.max_custom_templates}`
-          : " · 自定义模板不限"}
-        {deliveryPlan.max_confirmed_campaigns_per_month !== null
-          ? ` · 本月已确认活动 ${deliveryPlan.confirmed_campaigns_this_month} / ${deliveryPlan.max_confirmed_campaigns_per_month}`
-          : null}
-      </p>
-      <p className="hint mt-1 mb-0">
-        单活动最多 {deliveryPlan.max_recipients_per_campaign} 位收件人。
-        {deliveryPlan.allows_team_collaboration
-          ? ` 团队席位 ${deliveryPlan.active_members} / ${deliveryPlan.max_active_members}。`
-          : " 个人版为单人使用，协作请升级团队版。"}
-        每日发信上限 {deliveryPlan.usage_today} /{" "}
-        {deliveryPlan.daily_send_quota} 封（北京时间每日 00:00 重置）。
+      <p className="font-medium text-foreground">当前套餐：{label}</p>
+      <ul className="plan-usage-list">
+        <PlanUsageMetric
+          label="有效客户"
+          used={deliveryPlan.billable_contacts}
+          max={deliveryPlan.max_billable_contacts}
+        />
+        {deliveryPlan.max_custom_templates !== null ? (
+          <PlanUsageMetric
+            label="自定义模板"
+            used={deliveryPlan.custom_templates}
+            max={deliveryPlan.max_custom_templates}
+          />
+        ) : (
+          <li className="plan-usage-item">
+            <div className="plan-usage-item-head">
+              <span className="plan-usage-label">自定义模板</span>
+              <span className="plan-usage-value">不限</span>
+            </div>
+          </li>
+        )}
+        {deliveryPlan.max_confirmed_campaigns_per_month !== null && (
+          <PlanUsageMetric
+            label="本月已确认活动"
+            used={deliveryPlan.confirmed_campaigns_this_month}
+            max={deliveryPlan.max_confirmed_campaigns_per_month}
+          />
+        )}
+        <li className="plan-usage-item">
+          <div className="plan-usage-item-head">
+            <span className="plan-usage-label">单活动收件人上限</span>
+            <span className="plan-usage-value">
+              {deliveryPlan.max_recipients_per_campaign.toLocaleString("zh-CN")}{" "}
+              人
+            </span>
+          </div>
+        </li>
+        {deliveryPlan.allows_team_collaboration ? (
+          <PlanUsageMetric
+            label="团队席位"
+            used={deliveryPlan.active_members}
+            max={deliveryPlan.max_active_members}
+          />
+        ) : (
+          <li className="plan-usage-item">
+            <div className="plan-usage-item-head">
+              <span className="plan-usage-label">协作</span>
+              <span className="plan-usage-value">个人版单人使用</span>
+            </div>
+          </li>
+        )}
+        <PlanUsageMetric
+          label="今日发信"
+          used={deliveryPlan.usage_today}
+          max={deliveryPlan.daily_send_quota}
+          unit=" 封"
+        />
+      </ul>
+      <p className="plan-meta mb-0">
+        每日发信额度在北京时间 00:00 重置。
+        {!deliveryPlan.allows_team_collaboration &&
+          " 如需多人协作请升级团队版。"}
       </p>
       {billing?.has_payment_provider && (
-        <p className="hint mt-2 mb-0">
+        <p className="plan-meta mb-0">
           订阅：{providerLabel ?? "—"} ·{" "}
           {subscriptionStatusLabel(billing.subscription_status)}
           {periodEnd ? ` · 当前周期至 ${periodEnd}` : ""}
@@ -106,22 +186,22 @@ export function BillingUpgrade({
         </p>
       )}
       {billing?.cancel_at_period_end && (
-        <p className="hint mt-2 mb-0">
+        <p className="plan-meta mb-0">
           当前周期到期前仍可正常使用。到期后将转为免费版，已有客户和成员均会保留。
         </p>
       )}
       {contactNudge !== null && (
-        <p className="hint mt-2 mb-0">
+        <p className="notice-warning mt-3">
           有效客户还剩 {contactNudge} 个名额。用满后不能再新增，已有客户会保留。
         </p>
       )}
       {seatNudge !== null && (
-        <p className="hint mt-2 mb-0">
+        <p className="notice-warning mt-3">
           团队席位还剩 {seatNudge} 个。席位加购尚未开放。
         </p>
       )}
       {memberCapLocked && (
-        <p className="hint mt-2 mb-0">
+        <p className="notice-warning mt-3">
           当前成员数已超出套餐席位。成员仍会保留，但运营人员的操作权限已暂停。管理员可移除多余成员或升级套餐以恢复。
         </p>
       )}
@@ -153,7 +233,7 @@ export function BillingUpgrade({
           {canUpgrade &&
             (deliveryPlan.plan === "free" || deliveryPlan.plan === "pro") &&
             !teamSkuReady && (
-              <p className="hint mb-0 w-full text-left text-xs">
+              <p className="hint mb-0 w-full text-left">
                 团队版在线支付暂未开放，如需开通请联系客服或管理员。
               </p>
             )}

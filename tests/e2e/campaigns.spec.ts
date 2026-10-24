@@ -41,6 +41,7 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(page.getByText("活动草稿已保存").last()).toBeVisible();
   await expect(page.getByRole("heading", { name: "无客户草稿" })).toBeVisible();
 
+  let campaignExportPath = "";
   let card = page
     .getByRole("heading", { name: "无客户草稿", exact: true })
     .locator("xpath=ancestor::div[@data-slot='card']");
@@ -191,6 +192,17 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(card.getByText("已确认", { exact: true })).toBeVisible();
   await expect(card.getByText("已锁定 7 位收件人")).toBeVisible();
   await expect(card.getByText(/模板版本 3/)).toBeVisible();
+  const exportCampaignId = await page
+    .locator("[data-campaign-id]")
+    .filter({
+      has: page.getByRole("heading", {
+        name: "归档模板活动",
+        exact: true,
+      }),
+    })
+    .getAttribute("data-campaign-id");
+  expect(exportCampaignId).toBeTruthy();
+  campaignExportPath = `/campaigns/${exportCampaignId}/export`;
   await expect(page.getByTestId("campaign-send-limits")).toContainText(
     /今日已用 0 \/ [\d,]+ 封/,
   );
@@ -224,13 +236,8 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   ).toBeDisabled();
   await page.keyboard.press("Escape");
   await expect(sendDialog).toBeHidden();
-  const exportHref = await card
-    .getByRole("link", { name: "下载 CSV" })
-    .getAttribute("href");
-  expect(exportHref).not.toBeNull();
-
   const downloadEvent = page.waitForEvent("download");
-  await card.getByRole("link", { name: "下载 CSV" }).click();
+  await card.getByRole("button", { name: "导出收件明细 CSV" }).click();
   const download = await downloadEvent;
   expect(download.suggestedFilename()).toMatch(
     /^归档模板活动-\d{8}-[0-9a-f]{8}\.csv$/,
@@ -291,7 +298,9 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   card = page
     .getByRole("heading", { name: "归档模板活动", exact: true })
     .locator("xpath=ancestor::div[@data-slot='card']");
-  await expect(card.getByRole("link", { name: "下载 CSV" })).toBeVisible();
+  await expect(
+    card.getByRole("button", { name: "导出收件明细 CSV" }),
+  ).toBeVisible();
   await card.getByRole("button", { name: "恢复" }).click();
   await expect(page.getByText("活动已恢复")).toBeVisible();
   await page.getByLabel("活动归档状态").selectOption("active");
@@ -309,8 +318,11 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "编辑" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "归档" })).toHaveCount(0);
-  const forbiddenExport = await page.request.get(exportHref!);
-  expect(forbiddenExport.status()).toBe(403);
+  const forbiddenExport = await page.request.get(campaignExportPath, {
+    maxRedirects: 0,
+  });
+  expect(forbiddenExport.status()).toBe(307);
+  expect(forbiddenExport.headers().location).toContain("export_error");
 
   await page.getByRole("combobox", { name: "当前工作区" }).click();
   await page.getByRole("option", { name: "我的邮局", exact: true }).click();

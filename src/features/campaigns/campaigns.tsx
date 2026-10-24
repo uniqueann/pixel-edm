@@ -89,6 +89,48 @@ function formattedDate(value: string) {
   }).format(new Date(value));
 }
 
+function exportFilenameFromDisposition(
+  header: string | null,
+  fallback: string,
+) {
+  if (!header) return fallback;
+  const utf8Match = /filename\*=UTF-8''([^;\s]+)/i.exec(header);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return fallback;
+    }
+  }
+  const plainMatch = /filename="([^"]+)"/i.exec(header);
+  return plainMatch?.[1] ?? fallback;
+}
+
+async function downloadCampaignRecipientCsv(campaignId: string) {
+  const response = await fetch(`/campaigns/${campaignId}/export`, {
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    const message = (await response.text()).trim();
+    toast.error(message || "无法导出收件明细，请稍后重试。");
+    return;
+  }
+  const blob = await response.blob();
+  const filename = exportFilenameFromDisposition(
+    response.headers.get("Content-Disposition"),
+    "campaign.csv",
+  );
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.rel = "noopener";
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 function statusVariant(status: CampaignStatus) {
   if (status === "failed" || status === "completed_with_errors")
     return "destructive" as const;
@@ -182,6 +224,7 @@ export function Campaigns({
   data,
   editorOptions,
   filters,
+  initialExportError = null,
 }: {
   workspace: string;
   workspaceName: string;
@@ -197,9 +240,20 @@ export function Campaigns({
   data: CampaignList;
   editorOptions: CampaignEditorOptions;
   filters: Record<string, string>;
+  initialExportError?: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!initialExportError) return;
+    toast.error(initialExportError, { id: "campaign-export-error" });
+    const params = new URLSearchParams(filters);
+    router.replace(
+      params.size ? `/campaigns?${params.toString()}` : "/campaigns",
+      { scroll: false },
+    );
+  }, [filters, initialExportError, router]);
   const [listOverride, setListOverride] = useState<CampaignList | null>(null);
   const filterKey = JSON.stringify(filters);
   const [seenFilters, setSeenFilters] = useState(filterKey);
@@ -991,10 +1045,14 @@ export function Campaigns({
                               正式发送
                             </Button>
                           )}
-                        <Button asChild variant="outline">
-                          <a href={`/campaigns/${campaign.id}/export`}>
-                            下载 CSV
-                          </a>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() =>
+                            void downloadCampaignRecipientCsv(campaign.id)
+                          }
+                        >
+                          导出收件明细 CSV
                         </Button>
                         <Button
                           variant="outline"
