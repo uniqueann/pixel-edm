@@ -32,6 +32,7 @@ import {
 } from "@/components/email-outbound-preview";
 import { isDefaultSenderName, senderNameDefault } from "@/lib/sender-name";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { DeliveryProviderErrorBlock } from "@/components/delivery-provider-error";
 import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
 import {
@@ -1727,9 +1728,11 @@ export function Campaigns({
                       : ""}
                   </p>
                   {(task.error_category || task.error_code) && (
-                    <p className="hint mt-2 mb-0">
-                      {task.error_category ?? "-"} / {task.error_code ?? "-"}
-                    </p>
+                    <DeliveryProviderErrorBlock
+                      className="mt-2"
+                      error_category={task.error_category}
+                      error_code={task.error_code}
+                    />
                   )}
                   {task.status === "unknown" && (
                     <div className="mt-3 space-y-2">

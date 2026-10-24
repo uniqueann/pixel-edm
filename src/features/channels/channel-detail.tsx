@@ -36,6 +36,8 @@ import {
   type DeliveryChannelInput,
   type DeliveryTestAttempt,
 } from "./model";
+import { DeliveryProviderErrorBlock } from "@/components/delivery-provider-error";
+import { deliveryProviderErrorToast } from "@/lib/delivery-provider-error";
 import {
   capabilityRows,
   directMailRegionLabel,
@@ -210,7 +212,15 @@ export function ChannelDetail({
         toast.warning(
           `发送结果未知，请先核对邮箱和 ${provider.display_name} 控制台`,
         );
-      else toast.error(`测试发送失败：${result.data.error_code ?? "UNKNOWN"}`);
+      else {
+        const toastCopy = deliveryProviderErrorToast({
+          error_category: result.data.error_category,
+          error_code: result.data.error_code,
+        });
+        toast.error(toastCopy.title, {
+          description: toastCopy.description,
+        });
+      }
       router.refresh();
     });
   }
@@ -745,13 +755,15 @@ export function ChannelDetail({
                     timeStyle: "short",
                   }).format(new Date(lastTest.completed_at))
                 : "尚未完成"}
-              {lastTest.error_code && ` · ${lastTest.error_code}`}
             </p>
-            {lastTest.status === "failed" && (
-              <p className="mt-2 mb-0 text-xs text-destructive">
-                提示：请核对访问密钥（AccessKey/Secret）是否准确无误，或发件地址/域名是否已在服务商控制台通过验证。
-              </p>
-            )}
+            {lastTest.status === "failed" &&
+              (lastTest.error_category || lastTest.error_code) && (
+                <DeliveryProviderErrorBlock
+                  className="mt-2"
+                  error_category={lastTest.error_category}
+                  error_code={lastTest.error_code}
+                />
+              )}
           </div>
         )}
 
