@@ -824,6 +824,7 @@ export function Contacts({
           <>归档 {archiveConfirm?.email}？之后可以在已归档列表恢复。</>
         }
         confirmLabel="归档"
+        variant="destructive"
         onConfirm={() => {
           const contact = archiveConfirm;
           setArchiveConfirm(undefined);

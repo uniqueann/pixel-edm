@@ -2076,6 +2076,7 @@ export function Campaigns({
           </>
         }
         confirmLabel="确认并锁定名单"
+        variant="destructive"
         loading={busy}
         onConfirm={() => void runConfirmPreview()}
       />
@@ -2090,6 +2091,7 @@ export function Campaigns({
           <>归档「{archiveConfirm?.name}」？之后可以在已归档列表恢复。</>
         }
         confirmLabel="归档"
+        variant="destructive"
         onConfirm={() => {
           const campaign = archiveConfirm;
           setArchiveConfirm(undefined);
