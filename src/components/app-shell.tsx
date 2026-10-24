@@ -38,7 +38,7 @@ export function AppShell({
   role,
   workspaceId,
   workspaces,
-  type,
+  workspaceBadge,
   showTeamNav = false,
   showLogsNav = false,
 }: {
@@ -47,7 +47,7 @@ export function AppShell({
   role: string;
   workspaceId: string;
   workspaces: { id: string; name: string }[];
-  type: string;
+  workspaceBadge: string;
   showTeamNav?: boolean;
   showLogsNav?: boolean;
 }) {
@@ -63,9 +63,7 @@ export function AppShell({
       <header className="topbar">
         <Brand />
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">
-            {type === "team" ? "团队工作区" : "个人工作区"}
-          </Badge>
+          <Badge variant="secondary">{workspaceBadge}</Badge>
           <ThemeToggle />
         </div>
       </header>

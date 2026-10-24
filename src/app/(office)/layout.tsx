@@ -1,6 +1,7 @@
 import { getContext } from "@/lib/workspace";
 import { AppShell } from "@/components/app-shell";
 import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
+import { workspaceTopBadgeLabel } from "@/features/workspace/plan-labels";
 export default async function Layout({
   children,
 }: {
@@ -17,7 +18,7 @@ export default async function Layout({
       role={role}
       workspaceId={workspace.id}
       workspaces={workspaces}
-      type={workspace.type}
+      workspaceBadge={workspaceTopBadgeLabel(deliveryPlan, workspace.type)}
       showTeamNav={showTeamNav}
       showLogsNav={showLogsNav}
     >

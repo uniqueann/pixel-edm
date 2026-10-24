@@ -9,6 +9,26 @@ export function deliveryPlanLabel(planKey: string, displayName?: string) {
   return localized[planKey] ?? displayName ?? planKey;
 }
 
+/** 顶栏工作区徽标：优先展示套餐，团队版附带当前人数。 */
+export function workspaceTopBadgeLabel(
+  plan: {
+    plan: string;
+    plan_display_name: string;
+    allows_team_collaboration: boolean;
+    active_members: number;
+  } | null,
+  workspaceType: string,
+) {
+  if (!plan) {
+    return workspaceType === "team" ? "团队工作区" : "个人工作区";
+  }
+  const label = deliveryPlanLabel(plan.plan, plan.plan_display_name);
+  if (plan.allows_team_collaboration) {
+    return `${label} · ${plan.active_members} 人`;
+  }
+  return label;
+}
+
 export function billingProviderLabel(provider: string | null) {
   if (provider === "creem") return "Creem";
   if (provider === "dodo") return "Dodo Payments";

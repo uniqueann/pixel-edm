@@ -217,7 +217,7 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   ).toHaveAttribute("data-ok", "true");
   await expect(
     sendDialog.getByRole("link", { name: "前往发信通道" }).first(),
-  ).toHaveAttribute("href", "/settings");
+  ).toHaveAttribute("href", "/settings#settings-channels");
   await sendDialog.getByLabel(/输入完整活动名称/).fill("归档模板活动");
   await expect(
     sendDialog.getByRole("button", { name: "创建正式发送任务" }),
