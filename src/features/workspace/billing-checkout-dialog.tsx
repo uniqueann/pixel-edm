@@ -19,6 +19,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  CREEM_CHECKOUT_PAYMENT_HINT,
+  DODO_CHECKOUT_PAYMENT_HINT,
+} from "@/lib/billing/checkout-payment-methods";
 
 /** 结账按钮不展示支付服务商名称。 */
 
@@ -218,7 +222,7 @@ export function BillingCheckoutDialog({
             plan={checkoutPlan}
             interval={interval}
             title="订阅结账"
-            hint="推荐支付方式"
+            hint={CREEM_CHECKOUT_PAYMENT_HINT}
             variant="default"
             discountCode={applied?.creem ? applied.code : ""}
             discountHint={providerDiscountHint(applied, "creem")}
@@ -231,7 +235,7 @@ export function BillingCheckoutDialog({
             plan={checkoutPlan}
             interval={interval}
             title="其他支付方式"
-            hint="同样支持订阅与自动续费"
+            hint={DODO_CHECKOUT_PAYMENT_HINT}
             variant="outline"
             discountCode={applied?.dodo ? applied.code : ""}
             discountHint={providerDiscountHint(applied, "dodo")}

@@ -174,9 +174,9 @@
 }
 .role-pill {
   display: inline-block;
-  font-size: 10px;
+  font-size: 11px;
   border-radius: 20px;
-  padding: 1px 7px;
+  padding: 2px 8px;
   background: var(--accent);
 }
 .role-pill.admin {
@@ -464,10 +464,89 @@ button.tab {
   font-size: 13px;
 }
 .hint {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted-foreground);
   margin-bottom: 18px;
-  line-height: 1.8;
+  line-height: 1.7;
+}
+.notice-warning {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--foreground);
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #f0c878;
+  background: #fff8eb;
+}
+.plan-usage-list {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-usage-item-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.plan-usage-label {
+  color: var(--muted-foreground);
+}
+.plan-usage-value {
+  font-weight: 500;
+  color: var(--foreground);
+  white-space: nowrap;
+}
+.plan-usage-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.plan-usage-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: width 160ms ease;
+}
+.plan-meta {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.contact-subscription-summary {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 13px;
+}
+.contact-subscription-summary dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.contact-subscription-summary div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 8px;
+  align-items: start;
+}
+.contact-subscription-summary dt {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+.contact-subscription-summary dd {
+  margin: 0;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
 }
 .empty {
   padding: 40px 22px;
@@ -675,6 +754,11 @@ button.tab {
 .dark .role-pill.editor {
   color: #fde047;
   background: #362908;
+}
+.dark .notice-warning {
+  border-color: #854d0e;
+  background: #422006;
+  color: #fef3c7;
 }
 .dark .list-filter {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='m3.5 5.25 3.5 3.5 3.5-3.5' stroke='%238c9cb6' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");

@@ -41,6 +41,17 @@ import {
   type PlanQuota,
 } from "@/features/workspace/plan-usage";
 
+function formatConsentTimestamp(value: string | null) {
+  if (!value) return "未记录";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Shanghai",
+  }).format(date);
+}
+
 export function Contacts({
   workspace,
   canEdit,
@@ -518,26 +529,38 @@ export function Contacts({
               维护客户邮箱、姓名与分类标签。
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-xs leading-relaxed text-muted-foreground">
-            <span className="font-medium text-foreground">
-              💡 订阅合规提示：
-            </span>
-            未声明已获得同意的客户为「未确认」，不能用于发送活动，以保障发信信誉。
-            {editing && (
-              <>
-                {" "}
-                当前状态：
-                <span className="font-medium text-foreground">
-                  {subscriptionLabels[editing.subscription_status]}
-                </span>
-                {editing.subscription_status === "subscribed" &&
-                  editing.consent_source && (
-                    <>（同意来源：{editing.consent_source}）</>
-                  )}
-                。
-              </>
-            )}
-          </div>
+          {editing ? (
+            <section
+              className="contact-subscription-summary"
+              aria-label="订阅与同意留痕"
+            >
+              <dl>
+                <div>
+                  <dt>订阅状态</dt>
+                  <dd>{subscriptionLabels[editing.subscription_status]}</dd>
+                </div>
+                <div>
+                  <dt>同意来源</dt>
+                  <dd>{editing.consent_source?.trim() || "—"}</dd>
+                </div>
+                <div>
+                  <dt>同意时间</dt>
+                  <dd>{formatConsentTimestamp(editing.consent_at)}</dd>
+                </div>
+                <div>
+                  <dt>授权说明</dt>
+                  <dd>{editing.consent_note?.trim() || "—"}</dd>
+                </div>
+              </dl>
+            </section>
+          ) : (
+            <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-sm leading-relaxed text-muted-foreground">
+              <span className="font-medium text-foreground">
+                💡 订阅合规提示：
+              </span>
+              未声明已获得同意的客户为「未确认」，不能用于发送活动，以保障发信信誉。
+            </div>
+          )}
           <form
             className="space-y-4"
             onSubmit={async (e) => {
@@ -809,17 +832,26 @@ export function Contacts({
               event.preventDefault();
               if (!unsubscribing) return;
               setBusy(true);
-              const result = await unsubscribeContact({
-                workspace_id: workspace,
-                id: unsubscribing.id,
-                expected_version: unsubscribing.version,
-                reason: unsubscribeReason,
-              });
-              setBusy(false);
-              if (result.error) return toast.error(result.error);
-              toast.success("客户已成功退订");
-              await refreshContacts();
-              flushSync(() => setUnsubscribing(undefined));
+              try {
+                const result = await unsubscribeContact({
+                  workspace_id: workspace,
+                  id: unsubscribing.id,
+                  expected_version: unsubscribing.version,
+                  reason: unsubscribeReason,
+                });
+                if (result.error) {
+                  toast.error(result.error);
+                  return;
+                }
+                toast.success("客户已成功退订");
+                await refreshContacts();
+                flushSync(() => setUnsubscribing(undefined));
+              } catch (error) {
+                unstable_rethrow(error);
+                toast.error("退订失败，请检查网络后重试。");
+              } finally {
+                setBusy(false);
+              }
             }}
           >
             <Label htmlFor="unsubscribe-reason">退订原因</Label>
@@ -848,9 +880,23 @@ export function Contacts({
                 ),
               )}
             </div>
-            <Button disabled={busy || !unsubscribeReason.trim()}>
-              {busy ? "处理中…" : "确认退订"}
-            </Button>
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                className="w-full sm:w-auto"
+                onClick={() => setUnsubscribing(undefined)}
+              >
+                取消
+              </Button>
+              <Button
+                disabled={busy || !unsubscribeReason.trim()}
+                className="w-full sm:w-auto"
+              >
+                {busy ? "处理中…" : "确认退订"}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
