@@ -722,7 +722,8 @@ button.tab {
   .list-pagination {
     flex-wrap: wrap;
   }
-  .list-pagination > span {
+  .list-pagination > span,
+  .list-pagination-summary {
     order: -1;
     width: 100%;
   }

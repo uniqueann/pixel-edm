@@ -124,6 +124,7 @@ export type TemplateList = {
   items: Template[];
   total: number;
   page: number;
+  page_size?: number;
   active_count: number;
   categories?: string[];
 };

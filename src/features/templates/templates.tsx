@@ -437,10 +437,13 @@ export function Templates({
       )}
       <ListPagination
         page={data.page}
-        pageSize={20}
+        pageSize={(data.page_size ?? Number(filters.page_size)) || 20}
         total={data.total}
         pending={pending}
         onPageChange={(page) => navigate({ page: String(page) })}
+        onPageSizeChange={(pageSize) =>
+          navigate({ page_size: String(pageSize), page: "1" })
+        }
       />
 
       <Dialog

@@ -165,6 +165,7 @@ export function Contacts({
         status: filters.status,
         subscription: filters.subscription,
         page: filters.page,
+        page_size: filters.page_size,
       });
       setListOverride(fresh);
     } catch (error) {
@@ -526,10 +527,13 @@ export function Contacts({
       )}
       <ListPagination
         page={shown.page}
-        pageSize={20}
+        pageSize={(shown.page_size ?? Number(filters.page_size)) || 20}
         total={shown.total}
         pending={pending}
         onPageChange={(page) => navigate({ page: String(page) })}
+        onPageSizeChange={(pageSize) =>
+          navigate({ page_size: String(pageSize), page: "1" })
+        }
       />
       <Dialog
         open={editing !== undefined}

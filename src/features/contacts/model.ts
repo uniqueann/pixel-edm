@@ -46,5 +46,6 @@ export type ContactList = {
   tags: Tag[];
   total: number;
   page: number;
+  page_size?: number;
   active_count: number;
 };
