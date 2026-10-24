@@ -384,14 +384,29 @@ export function Contacts({
           </Button>
         </div>
       )}
-      <div className="my-4 space-y-3" aria-busy={pending}>
-        {shown.items.map((c) => (
-          <Card key={c.id}>
-            <CardContent className="flex flex-wrap items-center gap-3 pt-5">
-              <div className="w-full min-w-0 flex-1 sm:w-auto">
-                <p className="break-all">{c.email}</p>
-                <p className="hint">{c.name || "未填写姓名"}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+      {shown.items.length > 0 ? (
+        <div className="my-4 space-y-2 md:space-y-1.5" aria-busy={pending}>
+          <div className="hidden border-b border-border/80 px-4 py-2 text-xs font-medium text-muted-foreground md:grid md:grid-cols-12 md:gap-3">
+            <div className="col-span-4">客户邮箱 / 姓名</div>
+            <div className="col-span-2">订阅状态</div>
+            <div className="col-span-3">标签</div>
+            <div className="col-span-3 text-right">操作</div>
+          </div>
+          {shown.items.map((c) => (
+            <Card
+              key={c.id}
+              className="border-border/70 py-0 transition-colors hover:border-border hover:bg-muted/20"
+            >
+              <CardContent className="flex flex-wrap items-center gap-3 px-4 py-3 md:grid md:grid-cols-12 md:gap-3 md:py-2.5">
+                <div className="w-full min-w-0 flex-1 sm:w-auto md:col-span-4">
+                  <p className="truncate text-sm font-medium break-all md:mb-0.5">
+                    {c.email}
+                  </p>
+                  <p className="hint m-0 truncate text-xs">
+                    {c.name || "未填写姓名"}
+                  </p>
+                </div>
+                <div className="flex items-center md:col-span-2">
                   <Badge
                     variant={
                       c.subscription_status === "subscribed"
@@ -401,6 +416,8 @@ export function Contacts({
                   >
                     {subscriptionLabels[c.subscription_status]}
                   </Badge>
+                </div>
+                <div className="flex min-w-0 flex-wrap items-center gap-1 md:col-span-3">
                   {c.tags
                     .filter((t) => Boolean(t.name?.trim()))
                     .map((t) => (
@@ -412,47 +429,51 @@ export function Contacts({
                       </span>
                     ))}
                 </div>
-              </div>
-              {canEdit && (
-                <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto sm:shrink-0">
-                  {!archived && (
-                    <>
-                      <Button
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => open(c)}
-                      >
-                        编辑
-                      </Button>
-                      {!(
-                        ["unsubscribed", "bounced", "complained"] as string[]
-                      ).includes(c.subscription_status) && (
+                {canEdit && (
+                  <div className="flex w-full flex-wrap justify-end gap-1.5 sm:w-auto sm:shrink-0 md:col-span-3 md:w-auto">
+                    {!archived && (
+                      <>
                         <Button
                           variant="outline"
+                          size="sm"
                           disabled={busy}
-                          onClick={() => {
-                            setUnsubscribing(c);
-                            setUnsubscribeReason("");
-                          }}
+                          onClick={() => open(c)}
                         >
-                          退订
+                          编辑
                         </Button>
-                      )}
-                    </>
-                  )}
-                  <Button
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() => archive(c)}
-                  >
-                    {archived ? "恢复" : "归档"}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-        {!shown.items.length && (
+                        {!(
+                          ["unsubscribed", "bounced", "complained"] as string[]
+                        ).includes(c.subscription_status) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => {
+                              setUnsubscribing(c);
+                              setUnsubscribeReason("");
+                            }}
+                          >
+                            退订
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => archive(c)}
+                    >
+                      {archived ? "恢复" : "归档"}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="my-4" aria-busy={pending}>
           <EmptyState
             title={
               hasFilters
@@ -501,8 +522,8 @@ export function Contacts({
               )
             )}
           </EmptyState>
-        )}
-      </div>
+        </div>
+      )}
       <ListPagination
         page={shown.page}
         pageSize={20}
