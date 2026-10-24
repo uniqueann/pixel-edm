@@ -16,6 +16,10 @@ test("公开退订确认页、幂等状态与安全响应头", async ({ page }) 
 
   await page.getByRole("button", { name: "确认退订 / Unsubscribe" }).click();
   await expect(page.getByRole("heading", { name: "退订完成" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "停止接收营销邮件？" }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("heading")).toHaveCount(1);
   await page.reload();
   await expect(page.getByRole("heading", { name: "已经退订" })).toBeVisible();
 

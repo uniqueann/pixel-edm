@@ -38,6 +38,7 @@ import {
   type TeamMember,
   type TeamRole,
 } from "./model";
+import { inviteRoleBlurb } from "./role-descriptions";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -513,11 +514,7 @@ export function TeamManager({
                     ))}
                   </select>
                   <p className="hint m-0 text-xs">
-                    {inviteRole === "admin"
-                      ? "管理员：拥有全部权限，可配置发信通道、团队席位与套餐。"
-                      : inviteRole === "editor"
-                        ? "运营：可管理客户名单、编辑模板和创建发信活动草稿。"
-                        : "查看者：仅可查看业务数据、投递统计与操作记录。"}
+                    {inviteRoleBlurb(inviteRole)}
                   </p>
                 </div>
                 <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">

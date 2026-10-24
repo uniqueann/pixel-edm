@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { inspectUnsubscribe } from "@/features/unsubscribe/service";
-import { UnsubscribeForm } from "@/features/unsubscribe/unsubscribe-form";
+import { UnsubscribeConfirm } from "@/features/unsubscribe/unsubscribe-form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -56,19 +56,11 @@ export default async function Page({
             </p>
           </div>
         ) : (
-          <>
-            <p className="eyebrow">邮件偏好 / EMAIL PREFERENCES</p>
-            <h1>停止接收营销邮件？</h1>
-            <p>
-              即将为 {result.data.masked_email} 退订{" "}
-              {result.data.workspace_name} 的后续营销邮件。
-            </p>
-            <p>
-              Unsubscribe {result.data.masked_email} from future marketing
-              emails from {result.data.workspace_name}?
-            </p>
-            <UnsubscribeForm token={token} />
-          </>
+          <UnsubscribeConfirm
+            token={token}
+            maskedEmail={result.data.masked_email}
+            workspaceName={result.data.workspace_name}
+          />
         )}
       </section>
       <p className="auth-foot">
