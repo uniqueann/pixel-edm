@@ -1,3 +1,6 @@
+export const inviteWrongAccountMessage =
+  "邀请无法接受，请使用邀请邮箱的已验证账号登录。";
+
 export const teamRoles = ["admin", "editor", "viewer"] as const;
 export type TeamRole = (typeof teamRoles)[number];
 

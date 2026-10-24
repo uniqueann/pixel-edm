@@ -6,11 +6,12 @@ export default async function Page({
 }) {
   const { error, next } = await searchParams;
   return (
-    <>
-      {error && (
-        <p role="alert">验证链接无效或已过期，请重新登录或申请邮件。</p>
-      )}
-      <AuthForm mode="login" nextPath={next} />
-    </>
+    <AuthForm
+      mode="login"
+      nextPath={next}
+      callbackError={
+        error ? "验证链接无效或已过期，请重新登录或申请验证邮件。" : undefined
+      }
+    />
   );
 }

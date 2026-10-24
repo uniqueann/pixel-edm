@@ -17,13 +17,19 @@ export async function initialize() {
   revalidatePath("/", "layout");
   redirect("/dashboard");
 }
-export async function signOut() {
+export async function signOut(redirectToOrFormData?: string | FormData) {
+  const redirectTo =
+    typeof redirectToOrFormData === "string" ? redirectToOrFormData : undefined;
   const db = await serverClient();
   const { error } = await db.auth.signOut({ scope: "local" });
   if (error) throw new Error("退出失败，请重试。");
   (await cookies()).delete(workspaceCookie);
   revalidatePath("/", "layout");
-  redirect("/login");
+  const destination =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/login";
+  redirect(destination);
 }
 export async function switchWorkspace(id: string) {
   const { workspaces } = await getContext();
