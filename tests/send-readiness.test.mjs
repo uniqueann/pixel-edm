@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { evaluateSendReadiness } from "../src/features/campaigns/send-readiness.ts";
 import {
   isQuotaExhausted,
+  nextQuotaSlotText,
   planUsageFromDeliveryPlan,
   quotaUsageText,
 } from "../src/features/workspace/plan-usage.ts";
@@ -118,6 +119,10 @@ test("P1-12 套餐用量：复用 get_workspace_delivery_plan 字段，不限额
   assert.equal(quotaUsageText(usage.customTemplates), "已用 3 / 3");
   assert.equal(isQuotaExhausted(usage.customTemplates), true);
   assert.equal(quotaUsageText(usage.confirmedCampaignsThisMonth), "已用 1 / 3");
+  assert.equal(
+    nextQuotaSlotText(usage.confirmedCampaignsThisMonth),
+    "将占用本月第 2 / 3 次",
+  );
   assert.equal(isQuotaExhausted(usage.confirmedCampaignsThisMonth), false);
   assert.equal(quotaUsageText(usage.billableContacts), "已用 120 / 500");
 

@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { flushSync } from "react-dom";
 import { unstable_rethrow, useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
@@ -24,9 +31,12 @@ import {
   EmailOutboundFromPreview,
 } from "@/components/email-outbound-preview";
 import { isDefaultSenderName, senderNameDefault } from "@/lib/sender-name";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
 import {
   isQuotaExhausted,
+  nextQuotaSlotText,
   type PlanUsage,
 } from "@/features/workspace/plan-usage";
 import {
@@ -237,6 +247,9 @@ export function Campaigns({
   >({});
   const returnFocus = useRef<HTMLElement | null>(null);
   const previewRequest = useRef(0);
+  const [editBaseline, setEditBaseline] = useState("");
+  const [confirmPreviewOpen, setConfirmPreviewOpen] = useState(false);
+  const [archiveConfirm, setArchiveConfirm] = useState<CampaignSummary>();
   const archived = filters.status === "archived";
   const [q, setQ] = useState(filters.q ?? "");
   const [previousQuery, setPreviousQuery] = useState(filters.q ?? "");
@@ -269,6 +282,25 @@ export function Campaigns({
     (template) => template.id === templateId,
   );
   const selectedVariableKeys = selectedTemplate?.variable_keys ?? [];
+
+  const campaignEditSnapshot = useMemo(
+    () => JSON.stringify({ name, templateId, audienceType, tagId, variables }),
+    [name, templateId, audienceType, tagId, variables],
+  );
+  const isCampaignEditDirty =
+    editing !== undefined && campaignEditSnapshot !== editBaseline;
+
+  const closeCampaignEditor = useCallback(() => setEditing(undefined), []);
+  const {
+    handleOpenChange: handleCampaignEditorOpenChange,
+    editDialogContentProps: campaignEditDialogContentProps,
+    requestClose: requestCloseCampaignEditor,
+    discardConfirm: campaignDiscardConfirm,
+  } = useUnsavedEditDialog({
+    dirty: isCampaignEditDirty,
+    onClose: closeCampaignEditor,
+    busy,
+  });
 
   function variablesFor(
     keys: CampaignVariableKey[],
@@ -536,6 +568,16 @@ export function Campaigns({
     }
   }
 
+  function campaignEditSnapshotFromValues(input: {
+    name: string;
+    templateId: string;
+    audienceType: "all" | "tag";
+    tagId: string;
+    variables: CampaignVariables;
+  }) {
+    return JSON.stringify(input);
+  }
+
   function openNew() {
     if (!editorOptions.templates.length) return;
     returnFocus.current = document.activeElement as HTMLElement | null;
@@ -546,6 +588,15 @@ export function Campaigns({
     setTagId("");
     setVariables({});
     setError("");
+    setEditBaseline(
+      campaignEditSnapshotFromValues({
+        name: "",
+        templateId: "",
+        audienceType: "all",
+        tagId: "",
+        variables: {},
+      }),
+    );
   }
 
   async function openEditor(
@@ -569,13 +620,23 @@ export function Campaigns({
         detail.template.subject,
         detail.template.body,
       );
+      const nextVariables = variablesFor(keys, detail.variables);
       setEditing(detail);
       setName(detail.name);
       setTemplateId(detail.template_id);
       setAudienceType(detail.audience_type);
       setTagId(detail.tag_id ?? "");
-      setVariables(variablesFor(keys, detail.variables));
+      setVariables(nextVariables);
       setError("");
+      setEditBaseline(
+        campaignEditSnapshotFromValues({
+          name: detail.name,
+          templateId: detail.template_id,
+          audienceType: detail.audience_type,
+          tagId: detail.tag_id ?? "",
+          variables: nextVariables,
+        }),
+      );
     } catch {
       toast.error("活动加载失败，请重试。");
     } finally {
@@ -625,12 +686,7 @@ export function Campaigns({
     void loadPreview(campaign);
   }
 
-  async function archiveCampaign(campaign: CampaignSummary) {
-    if (
-      !archived &&
-      !window.confirm(`归档“${campaign.name}”？之后可以在已归档列表恢复。`)
-    )
-      return;
+  async function performArchiveCampaign(campaign: CampaignSummary) {
     setBusy(true);
     try {
       const result = await setCampaignArchived({
@@ -652,14 +708,16 @@ export function Campaigns({
     }
   }
 
-  async function confirmPreview() {
-    if (!previewing || !preview || !preview.validation.valid) return;
-    if (
-      !window.confirm(
-        `确认“${preview.campaign.name}”并锁定 ${preview.recipients.eligible_count} 位收件人名单？确认后不可撤回或编辑。`,
-      )
-    )
+  function archiveCampaign(campaign: CampaignSummary) {
+    if (!archived) {
+      setArchiveConfirm(campaign);
       return;
+    }
+    void performArchiveCampaign(campaign);
+  }
+
+  async function runConfirmPreview() {
+    if (!previewing || !preview || !preview.validation.valid) return;
     setBusy(true);
     try {
       const result = await confirmCampaign({
@@ -1231,7 +1289,7 @@ export function Campaigns({
                 <Button
                   type="button"
                   disabled={busy || previewLoading || confirmQuotaExhausted}
-                  onClick={() => void confirmPreview()}
+                  onClick={() => setConfirmPreviewOpen(true)}
                 >
                   {busy ? "确认中…" : "确认活动名单"}
                 </Button>
@@ -1440,20 +1498,6 @@ export function Campaigns({
                 <Label htmlFor="delivery-confirmation-name">
                   输入完整活动名称“{deliveryConfirmation?.campaign.name}”确认
                 </Label>
-                {deliveryConfirmation?.mode === "abort" && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs text-muted-foreground"
-                    onClick={() =>
-                      deliveryConfirmation &&
-                      setConfirmationName(deliveryConfirmation.campaign.name)
-                    }
-                  >
-                    一键填入
-                  </Button>
-                )}
               </div>
               <Input
                 id="delivery-confirmation-name"
@@ -1779,13 +1823,12 @@ export function Campaigns({
 
       <Dialog
         open={editing !== undefined}
-        onOpenChange={(open) => {
-          if (!open && !busy) setEditing(undefined);
-        }}
+        onOpenChange={handleCampaignEditorOpenChange}
       >
         <DialogContent
           placement="bottom"
           className="bottom-sheet max-h-[90dvh] overflow-y-auto"
+          {...campaignEditDialogContentProps}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             returnFocus.current?.focus();
@@ -1992,7 +2035,7 @@ export function Campaigns({
                 type="button"
                 variant="outline"
                 disabled={busy}
-                onClick={() => setEditing(undefined)}
+                onClick={requestCloseCampaignEditor}
                 className="w-full sm:w-auto"
               >
                 取消
@@ -2010,6 +2053,49 @@ export function Campaigns({
           </form>
         </DialogContent>
       </Dialog>
+
+      {campaignDiscardConfirm}
+
+      <ConfirmDialog
+        open={confirmPreviewOpen}
+        onOpenChange={setConfirmPreviewOpen}
+        title="确认活动名单"
+        description={
+          <>
+            <p className="m-0">
+              将确认「{preview?.campaign.name ?? previewing?.name}
+              」，锁定 {preview?.recipients.eligible_count ?? 0}{" "}
+              位收件人名单。确认后不可撤回，活动草稿也无法再编辑。
+            </p>
+            {nextQuotaSlotText(planUsage?.confirmedCampaignsThisMonth) && (
+              <p className="m-0 font-medium text-foreground">
+                {nextQuotaSlotText(planUsage?.confirmedCampaignsThisMonth)}
+                确认额度。
+              </p>
+            )}
+          </>
+        }
+        confirmLabel="确认并锁定名单"
+        loading={busy}
+        onConfirm={() => void runConfirmPreview()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(archiveConfirm)}
+        onOpenChange={(open) => {
+          if (!open) setArchiveConfirm(undefined);
+        }}
+        title="归档活动"
+        description={
+          <>归档「{archiveConfirm?.name}」？之后可以在已归档列表恢复。</>
+        }
+        confirmLabel="归档"
+        onConfirm={() => {
+          const campaign = archiveConfirm;
+          setArchiveConfirm(undefined);
+          if (campaign) void performArchiveCampaign(campaign);
+        }}
+      />
     </>
   );
 }

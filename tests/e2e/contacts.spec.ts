@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { acceptConfirmDialog } from "./confirm-dialog";
 test("客户新增、标签、编辑、归档恢复与窄屏", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("邮箱", { exact: true }).fill("owner@example.test");
@@ -36,8 +37,8 @@ test("客户新增、标签、编辑、归档恢复与窄屏", async ({ page }) 
   await page.getByLabel("姓名（选填）").fill("客户改名");
   await page.getByRole("button", { name: "保存客户" }).click();
   await expect(page.getByText("客户改名", { exact: true })).toBeVisible();
-  page.once("dialog", (d) => d.accept());
   await customerCard.getByRole("button", { name: "归档", exact: true }).click();
+  await acceptConfirmDialog(page, "归档");
   await expect(
     page.getByText("customer@example.test", { exact: true }),
   ).not.toBeVisible();
