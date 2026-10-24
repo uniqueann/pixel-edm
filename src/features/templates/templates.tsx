@@ -638,6 +638,7 @@ export function Templates({
           <>归档「{archiveConfirm?.name}」？之后可以在已归档列表恢复。</>
         }
         confirmLabel="归档"
+        variant="destructive"
         onConfirm={() => {
           const template = archiveConfirm;
           setArchiveConfirm(undefined);

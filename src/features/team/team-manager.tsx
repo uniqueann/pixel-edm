@@ -263,7 +263,7 @@ function MemberRow({
         title={roleConfirm?.step === 2 ? "再次确认角色降级" : "调整成员角色"}
         description={roleConfirmDescription ?? ""}
         confirmLabel={roleConfirm?.step === 2 ? "确认降级" : "更新角色"}
-        variant={roleConfirm ? "destructive" : "default"}
+        variant="destructive"
         loading={busy}
         onConfirm={confirmRoleChange}
       />
