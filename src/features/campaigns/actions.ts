@@ -52,6 +52,7 @@ export async function listCampaigns(input: {
   q?: string;
   campaign_status?: string;
   page?: string;
+  page_size?: string;
 }) {
   const { workspace } = await getContext();
   const db = await authorizedWorkspace(workspace.id);
@@ -64,6 +65,10 @@ export async function listCampaigns(input: {
       page: Math.min(
         1000000,
         Math.max(1, Number.parseInt(input.page ?? "1") || 1),
+      ),
+      page_size: Math.min(
+        100,
+        Math.max(1, Number.parseInt(input.page_size ?? "20") || 20),
       ),
     },
   });

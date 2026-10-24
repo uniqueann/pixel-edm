@@ -1224,6 +1224,9 @@ export function Campaigns({
         total={campaigns.total}
         pending={pending}
         onPageChange={(page) => navigate({ page: String(page) })}
+        onPageSizeChange={(pageSize) =>
+          navigate({ page_size: String(pageSize), page: "1" })
+        }
       />
 
       <Dialog

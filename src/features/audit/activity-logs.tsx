@@ -141,42 +141,66 @@ export function ActivityLogs({
       <div aria-live="polite" className="hint">
         {pending ? "正在加载…" : ""}
       </div>
-      <div className="space-y-3" aria-busy={pending}>
-        {data.items.map((item) => (
-          <Card key={item.id}>
-            <CardContent className="flex flex-wrap items-start gap-3 pt-5">
-              <div className="min-w-0 flex-1">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <strong>{activityLabel(item.action)}</strong>
-                  <Badge variant="secondary">
+      {data.items.length > 0 ? (
+        <div className="my-4 space-y-2 md:space-y-1" aria-busy={pending}>
+          <div className="hidden border-b border-border/80 px-4 py-2 text-xs font-medium text-muted-foreground md:grid md:grid-cols-12 md:gap-3">
+            <div className="col-span-3">操作时间</div>
+            <div className="col-span-3">操作人 / 角色</div>
+            <div className="col-span-3">操作动作</div>
+            <div className="col-span-3">目标对象 / 说明</div>
+          </div>
+          {data.items.map((item) => (
+            <Card
+              key={item.id}
+              className="border-border/70 py-0 transition-colors hover:border-border hover:bg-muted/20"
+            >
+              <CardContent className="flex flex-wrap items-start gap-2 px-4 py-3 md:grid md:grid-cols-12 md:gap-3 md:items-center md:py-2.5">
+                <div className="md:col-span-3">
+                  <time
+                    className="hint m-0 block whitespace-nowrap text-xs md:text-xs"
+                    dateTime={item.created_at}
+                  >
+                    {new Intl.DateTimeFormat("zh-CN", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                      timeZone: "Asia/Shanghai",
+                    }).format(new Date(item.created_at))}
+                  </time>
+                </div>
+                <div className="flex min-w-0 items-center gap-1.5 md:col-span-3">
+                  <span className="truncate text-sm font-medium">
+                    {item.actor_name}
+                  </span>
+                  <Badge variant="secondary" className="shrink-0 text-xs">
                     {roleLabels[item.actor_role] ?? item.actor_role}
                   </Badge>
                 </div>
-                <p className="break-words">
-                  {item.actor_name}
-                  {item.target_label ? ` · ${item.target_label}` : ""}
-                </p>
-                <time className="hint m-0 block" dateTime={item.created_at}>
-                  {new Intl.DateTimeFormat("zh-CN", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                    timeZone: "Asia/Shanghai",
-                  }).format(new Date(item.created_at))}
-                </time>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {!data.items.length && (
-          <p className="py-10 text-center">暂无匹配的操作记录。</p>
-        )}
-      </div>
+                <div className="md:col-span-3">
+                  <strong className="block truncate text-sm font-semibold">
+                    {activityLabel(item.action)}
+                  </strong>
+                </div>
+                <div className="min-w-0 flex-1 md:col-span-3 md:flex-none">
+                  <p className="m-0 truncate text-sm text-muted-foreground">
+                    {item.target_label || "—"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <p className="py-10 text-center">暂无匹配的操作记录。</p>
+      )}
       <ListPagination
         page={data.page}
         pageSize={data.page_size}
         total={data.total}
         pending={pending}
         onPageChange={(page) => navigate({ page: String(page) })}
+        onPageSizeChange={(pageSize) =>
+          navigate({ page_size: String(pageSize), page: "1" })
+        }
       />
     </>
   );

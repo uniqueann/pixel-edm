@@ -325,64 +325,78 @@ export function Templates({
       <div aria-live="polite" className="hint mt-2">
         {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
       </div>
-      <div className="my-4 space-y-3" aria-busy={pending}>
-        {data.items.map((template) => (
-          <Card key={template.id}>
-            <CardContent className="flex flex-col items-stretch gap-4 pt-5 sm:flex-row sm:items-center">
-              <div className="w-full min-w-0 flex-1">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary">{template.category}</Badge>
-                  {template.default_key && (
-                    <Badge variant="outline">起步模板</Badge>
-                  )}
+      {data.items.length > 0 ? (
+        <div
+          className="my-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          aria-busy={pending}
+        >
+          {data.items.map((template) => (
+            <Card key={template.id} className="flex flex-col justify-between">
+              <CardContent className="flex flex-1 flex-col justify-between gap-4 pt-5">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="secondary">{template.category}</Badge>
+                    {template.default_key && (
+                      <Badge variant="outline">起步模板</Badge>
+                    )}
+                  </div>
+                  <h2 className="break-words line-clamp-1 text-base font-semibold">
+                    {template.name}
+                  </h2>
+                  <p className="hint m-0 break-words line-clamp-2 text-xs">
+                    {template.subject}
+                  </p>
                 </div>
-                <h2 className="break-words">{template.name}</h2>
-                <p className="hint m-0 break-words">{template.subject}</p>
-              </div>
-              <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto sm:shrink-0">
-                <Button
-                  variant="outline"
-                  onClick={() => setPreviewing(template)}
-                >
-                  预览
-                </Button>
-                {canEdit && (
-                  <>
-                    {!archived && (
+                <div className="flex w-full flex-wrap items-center justify-end gap-1.5 border-t border-border/60 pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPreviewing(template)}
+                  >
+                    预览
+                  </Button>
+                  {canEdit && (
+                    <>
+                      {!archived && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => openEditor(template)}
+                        >
+                          编辑
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
-                        disabled={busy}
-                        onClick={() => openEditor(template)}
+                        size="sm"
+                        disabled={busy || templateQuotaExhausted}
+                        title={
+                          templateQuotaExhausted
+                            ? "已达套餐自定义模板上限"
+                            : undefined
+                        }
+                        onClick={() => duplicate(template)}
                       >
-                        编辑
+                        复制模板
                       </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      disabled={busy || templateQuotaExhausted}
-                      title={
-                        templateQuotaExhausted
-                          ? "已达套餐自定义模板上限"
-                          : undefined
-                      }
-                      onClick={() => duplicate(template)}
-                    >
-                      复制模板
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() => archive(template)}
-                    >
-                      {archived ? "恢复" : "归档"}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {!data.items.length && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => archive(template)}
+                      >
+                        {archived ? "恢复" : "归档"}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="my-4" aria-busy={pending}>
           <EmptyState
             title={
               hasFilters
@@ -419,14 +433,17 @@ export function Templates({
               )
             )}
           </EmptyState>
-        )}
-      </div>
+        </div>
+      )}
       <ListPagination
         page={data.page}
-        pageSize={20}
+        pageSize={(data.page_size ?? Number(filters.page_size)) || 20}
         total={data.total}
         pending={pending}
         onPageChange={(page) => navigate({ page: String(page) })}
+        onPageSizeChange={(pageSize) =>
+          navigate({ page_size: String(pageSize), page: "1" })
+        }
       />
 
       <Dialog

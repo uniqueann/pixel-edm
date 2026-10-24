@@ -291,7 +291,7 @@ export default async function Page({
       listContacts({ subscription: "subscribed" }),
       listTemplates({}),
       getWorkspaceCampaignStatistics(),
-      canViewLogs ? listActivityLogs({ pageSize: 5 }) : Promise.resolve(null),
+      canViewLogs ? listActivityLogs({ pageSize: 8 }) : Promise.resolve(null),
       listCampaigns({ page: "1" }),
       listDeliveryChannels(workspace.id),
     ]);
@@ -450,7 +450,7 @@ export default async function Page({
               </div>
               {recentCampaigns.items.length ? (
                 <div className="dashboard-campaign-list">
-                  {recentCampaigns.items.slice(0, 3).map((campaign) => (
+                  {recentCampaigns.items.slice(0, 5).map((campaign) => (
                     <Link
                       key={campaign.id}
                       href={`/campaigns?q=${encodeURIComponent(campaign.name)}`}
