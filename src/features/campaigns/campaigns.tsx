@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/empty-state";
 import { ListPagination } from "@/components/list-pagination";
 import {
   Dialog,
@@ -255,6 +256,7 @@ export function Campaigns({
   const [q, setQ] = useState(filters.q ?? "");
   const [previousQuery, setPreviousQuery] = useState(filters.q ?? "");
   const hasFilters = Boolean(filters.q || filters.campaign_status);
+  const showInitialEmpty = !campaigns.items.length && !hasFilters && !archived;
 
   const templateChoices: SelectableTemplate[] = editorOptions.templates.map(
     (template) => ({
@@ -658,7 +660,7 @@ export function Campaigns({
       ]);
       if (request !== previewRequest.current) return;
       setPreviewSenderName(
-        detail && "data" in detail
+        detail && "data" in detail && detail.data
           ? (detail.data.variables.sender_name ?? "")
           : "",
       );
@@ -807,12 +809,12 @@ export function Campaigns({
         草稿预览按当前最新的客户订阅和退订状态实时计算；确认后将锁定收件名单，管理员可创建正式发送任务。
       </p>
       <div className="list-toolbar">
-        {canEdit && (
+        {canEdit && !showInitialEmpty && (
           <Button disabled={!editorOptions.templates.length} onClick={openNew}>
             新建活动
           </Button>
         )}
-        {canEdit && !editorOptions.templates.length && (
+        {canEdit && !showInitialEmpty && !editorOptions.templates.length && (
           <Button asChild variant="outline">
             <Link href="/templates">前往模板库</Link>
           </Button>
@@ -875,7 +877,7 @@ export function Campaigns({
         </div>
       )}
       {canEdit && !editorOptions.templates.length && (
-        <p className="field-error" role="status">
+        <p className="guidance-note" role="status">
           新建活动前，需要至少一套使用中的模板。
         </p>
       )}
@@ -1106,15 +1108,55 @@ export function Campaigns({
           </Card>
         ))}
         {!campaigns.items.length && (
-          <p className="py-10 text-center">
-            {hasFilters
-              ? "没有匹配的活动，请调整搜索或筛选。"
-              : archived
-                ? "暂无已归档活动。"
-                : canEdit
-                  ? "还没有活动，准备第一份草稿吧。"
-                  : "当前工作区还没有活动。"}
-          </p>
+          <EmptyState
+            title={
+              hasFilters
+                ? "没有匹配的活动"
+                : archived
+                  ? "暂无已归档活动"
+                  : canEdit
+                    ? "还没有活动"
+                    : "当前工作区还没有活动"
+            }
+            description={
+              hasFilters
+                ? "请调整搜索或筛选条件，或清空筛选查看全部活动。"
+                : archived
+                  ? "归档的活动会保留在这里，可随时恢复。"
+                  : canEdit
+                    ? "创建第一份草稿，选择模板并圈定收件人后预览发送。"
+                    : "管理员或运营创建活动后，你会在这里看到记录。"
+            }
+          >
+            {hasFilters ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  navigate({ q: "", campaign_status: "", page: "1" })
+                }
+              >
+                清空筛选
+              </Button>
+            ) : (
+              canEdit &&
+              !archived && (
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button
+                    disabled={!editorOptions.templates.length}
+                    onClick={openNew}
+                  >
+                    新建活动
+                  </Button>
+                  {!editorOptions.templates.length && (
+                    <Button asChild variant="outline">
+                      <Link href="/templates">前往模板库</Link>
+                    </Button>
+                  )}
+                </div>
+              )
+            )}
+          </EmptyState>
         )}
       </div>
 

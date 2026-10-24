@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/empty-state";
 import { ListPagination } from "@/components/list-pagination";
 import {
   listContacts,
@@ -89,6 +90,7 @@ export function Contacts({
   const canDeclareConsent =
     !editing || editing.subscription_status === "unconfirmed";
   const hasFilters = Boolean(filters.q || filters.tag || filters.subscription);
+  const showInitialEmpty = !shown.items.length && !hasFilters && !archived;
 
   const contactEditSnapshot = useMemo(
     () =>
@@ -270,7 +272,7 @@ export function Contacts({
         <span>{shown.total} 位</span>
       </div>
       <div className="list-toolbar">
-        {canEdit && (
+        {canEdit && !showInitialEmpty && (
           <Button
             disabled={isQuotaExhausted(contactQuota)}
             onClick={() => open(null)}
@@ -278,7 +280,7 @@ export function Contacts({
             添加客户
           </Button>
         )}
-        {canEdit && (
+        {canEdit && !showInitialEmpty && (
           <Button asChild variant="outline">
             <Link href="/contacts/import">导入名单</Link>
           </Button>
@@ -440,13 +442,54 @@ export function Contacts({
           </Card>
         ))}
         {!shown.items.length && (
-          <p className="py-10 text-center">
-            {hasFilters
-              ? "没有匹配的客户，请调整搜索或筛选。"
-              : archived
-                ? "暂无已归档客户。"
-                : "名单是空的，添加第一位客户吧。"}
-          </p>
+          <EmptyState
+            title={
+              hasFilters
+                ? "没有匹配的客户"
+                : archived
+                  ? "暂无已归档客户"
+                  : "名单还是空的"
+            }
+            description={
+              hasFilters
+                ? "请调整搜索或筛选条件，或清空筛选查看全部客户。"
+                : archived
+                  ? "归档的客户会保留在这里，可随时恢复。"
+                  : "导入 CSV 或手动添加第一位客户，开始维护订阅名单。"
+            }
+          >
+            {hasFilters ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  navigate({
+                    q: "",
+                    subscription: "",
+                    tag: "",
+                    page: "1",
+                  })
+                }
+              >
+                清空筛选
+              </Button>
+            ) : (
+              canEdit &&
+              !archived && (
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button
+                    disabled={isQuotaExhausted(contactQuota)}
+                    onClick={() => open(null)}
+                  >
+                    添加客户
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href="/contacts/import">导入名单</Link>
+                  </Button>
+                </div>
+              )
+            )}
+          </EmptyState>
         )}
       </div>
       <ListPagination

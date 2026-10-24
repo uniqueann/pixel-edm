@@ -4,7 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { LogOut } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
 import { Brand } from "./brand";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -32,6 +33,12 @@ const roleNames: Record<string, string> = {
   editor: "运营",
   viewer: "查看者",
 };
+/** 窄屏收入「更多」菜单的低频导航项 */
+const overflowTabSlugs = new Set(["logs", "help"]);
+
+function tabIsActive(pathname: string, slug: string) {
+  return pathname === `/${slug}` || pathname.startsWith(`/${slug}/`);
+}
 export function AppShell({
   children,
   name,
@@ -55,6 +62,18 @@ export function AppShell({
   const [pending, startTransition] = useTransition();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const visibleTabs = tabs
+    .filter(([slug]) => slug !== "team" || showTeamNav)
+    .filter(([slug]) => slug !== "logs" || (role === "admin" && showLogsNav));
+  const primaryTabs = visibleTabs.filter(
+    ([slug]) => !overflowTabSlugs.has(slug),
+  );
+  const overflowTabs = visibleTabs.filter(([slug]) =>
+    overflowTabSlugs.has(slug),
+  );
+  const overflowActive = overflowTabs.some(([slug]) =>
+    tabIsActive(pathname, slug),
+  );
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -114,31 +133,59 @@ export function AppShell({
           </form>
         </div>
       </section>
-      <nav className="tabs" aria-label="邮局导航">
-        {tabs
-          .filter(([slug]) => slug !== "team" || showTeamNav)
-          .filter(
-            ([slug]) => slug !== "logs" || (role === "admin" && showLogsNav),
-          )
-          .map(([slug, label]) => (
+      <div className="tabs-scroll-wrap">
+        <nav className="tabs" aria-label="邮局导航">
+          {[...primaryTabs, ...overflowTabs].map(([slug, label]) => (
             <Link
               key={slug}
               href={`/${slug}`}
-              aria-current={
-                pathname === `/${slug}` || pathname.startsWith(`/${slug}/`)
-                  ? "page"
-                  : undefined
-              }
+              aria-current={tabIsActive(pathname, slug) ? "page" : undefined}
               className={
-                pathname === `/${slug}` || pathname.startsWith(`/${slug}/`)
-                  ? "tab active"
-                  : "tab"
+                tabIsActive(pathname, slug)
+                  ? `tab active${overflowTabSlugs.has(slug) ? " tab-collapsible" : ""}`
+                  : `tab${overflowTabSlugs.has(slug) ? " tab-collapsible" : ""}`
               }
             >
               {label}
             </Link>
           ))}
-      </nav>
+          {overflowTabs.length > 0 && (
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  type="button"
+                  className={`tabs-more tab${overflowActive ? " active" : ""}`}
+                  aria-label="更多导航"
+                >
+                  更多
+                  <ChevronDown size={14} aria-hidden />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  align="end"
+                  sideOffset={6}
+                  className="z-50 min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+                >
+                  {overflowTabs.map(([slug, label]) => (
+                    <DropdownMenu.Item key={slug} asChild>
+                      <Link
+                        href={`/${slug}`}
+                        className="flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                        aria-current={
+                          tabIsActive(pathname, slug) ? "page" : undefined
+                        }
+                      >
+                        {label}
+                      </Link>
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )}
+        </nav>
+      </div>
       <main id="main-content" className="view" key={workspaceId}>
         {children}
       </main>

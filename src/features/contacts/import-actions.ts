@@ -21,6 +21,12 @@ async function authorizedWorkspace(workspaceId: string) {
 }
 
 function actionError(error: unknown) {
+  if (error instanceof z.ZodError) {
+    const first = error.issues[0];
+    return {
+      error: first?.message ?? "数据格式不正确，请检查后重试。",
+    };
+  }
   return {
     error: error instanceof Error ? error.message : "操作失败，请重试。",
   };

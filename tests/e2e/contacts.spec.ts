@@ -60,7 +60,7 @@ test("客户新增、标签、编辑、归档恢复与窄屏", async ({ page }) 
   ).toBeVisible();
   await page.getByLabel("搜索邮箱或姓名").fill("没有匹配");
   await expect(
-    page.getByText("没有匹配的客户，请调整搜索或筛选。"),
+    page.getByRole("heading", { name: "没有匹配的客户", exact: true }),
   ).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(

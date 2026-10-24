@@ -24,6 +24,21 @@ import {
   type ContactImportHistory,
 } from "./import-model";
 
+function formatImportTimestamp(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Shanghai",
+  }).format(new Date(value));
+}
+
+const importJobStatusLabels: Record<string, string> = {
+  completed: "已完成",
+  prepared: "待确认",
+  processing: "处理中",
+  failed: "失败",
+};
+
 const resultLabels: Record<string, string> = {
   new: "将新增",
   update: "将更新",
@@ -382,7 +397,7 @@ export function ContactImporter({
       )}
 
       {warnings.map((warning) => (
-        <p className="field-error" key={warning}>
+        <p className="guidance-note" role="status" key={warning}>
           {warning}
         </p>
       ))}
@@ -443,7 +458,13 @@ export function ContactImporter({
                         ] ?? row.result}
                       </td>
                       <td className="p-2">{row.tags.join("、")}</td>
-                      <td className="p-2 text-destructive">
+                      <td
+                        className={
+                          row.result === "error"
+                            ? "p-2 text-destructive"
+                            : "p-2 text-muted-foreground"
+                        }
+                      >
                         {dedupeImportMessages(row.message)}
                       </td>
                     </tr>
@@ -508,18 +529,17 @@ export function ContactImporter({
         <CardContent className="space-y-2">
           {history.map((item) => (
             <Link
-              className="flex justify-between gap-3 rounded border p-3 text-sm hover:bg-muted"
+              className="flex flex-col gap-1 rounded border p-3 text-sm hover:bg-muted sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               href={`/contacts/import?id=${item.id}`}
               key={item.id}
             >
-              <span className="min-w-0 truncate">{item.source_name}</span>
-              <span>
+              <span className="min-w-0 truncate font-medium">
+                {item.source_name}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {formatImportTimestamp(item.created_at)} ·{" "}
                 {item.processed_groups}/{item.total_groups} ·{" "}
-                {item.status === "completed"
-                  ? "已完成"
-                  : item.status === "prepared"
-                    ? "待确认"
-                    : "处理中"}
+                {importJobStatusLabels[item.status] ?? item.status}
               </span>
             </Link>
           ))}

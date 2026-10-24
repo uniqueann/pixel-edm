@@ -191,6 +191,19 @@
   max-width: 180px;
   font-size: 12px;
 }
+.tabs-scroll-wrap {
+  position: relative;
+}
+.tabs-scroll-wrap::after {
+  content: "";
+  position: absolute;
+  top: 22px;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--background));
+}
 .tabs {
   display: flex;
   gap: 26px;
@@ -198,12 +211,38 @@
   overflow-x: auto;
   scrollbar-width: none;
 }
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+.tab-collapsible {
+  display: inline;
+}
+.tabs-more {
+  display: none;
+  flex-shrink: 0;
+  padding-bottom: 12px;
+}
+.guidance-note {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
 .tab {
   white-space: nowrap;
   font-size: 13px;
   color: var(--muted-foreground);
   padding-bottom: 12px;
   border-bottom: 2px solid transparent;
+}
+button.tab {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: inherit;
 }
 .tab.active {
   border-bottom-color: var(--primary);
@@ -586,6 +625,12 @@
   }
   .tabs {
     gap: 23px;
+  }
+  .tab-collapsible {
+    display: none;
+  }
+  .tabs-more {
+    display: block;
   }
   .dashboard-columns {
     grid-template-columns: 1fr;

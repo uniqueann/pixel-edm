@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EmptyState } from "@/components/empty-state";
 import { ListPagination } from "@/components/list-pagination";
 import {
   duplicateTemplate,
@@ -108,6 +109,7 @@ export function Templates({
   });
   const validationErrors = validateTemplateText(subject, body);
   const hasFilters = Boolean(filters.q || filters.category);
+  const showInitialEmpty = !data.items.length && !hasFilters && !archived;
 
   function navigate(changes: Record<string, string>) {
     const next = { ...filters, ...changes };
@@ -251,7 +253,7 @@ export function Templates({
         支持使用起步模板参考样例，或创建自定义模板；主题与正文中的动态变量将在发信时自动替换为对应信息。
       </p>
       <div className="list-toolbar">
-        {canEdit && (
+        {canEdit && !showInitialEmpty && (
           <Button
             disabled={templateQuotaExhausted}
             onClick={() => openEditor(null)}
@@ -381,13 +383,42 @@ export function Templates({
           </Card>
         ))}
         {!data.items.length && (
-          <p className="py-10 text-center">
-            {hasFilters
-              ? "没有匹配的模板，请调整搜索或筛选。"
-              : archived
-                ? "暂无已归档模板。"
-                : "还没有模板，新建一套开始吧。"}
-          </p>
+          <EmptyState
+            title={
+              hasFilters
+                ? "没有匹配的模板"
+                : archived
+                  ? "暂无已归档模板"
+                  : "还没有模板"
+            }
+            description={
+              hasFilters
+                ? "请调整搜索条件，或清空筛选查看全部模板。"
+                : archived
+                  ? "归档的模板会保留在这里，可随时恢复。"
+                  : "新建一套邮件模板，或在编辑器中参考起步样例。"
+            }
+          >
+            {hasFilters ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate({ q: "", page: "1" })}
+              >
+                清空筛选
+              </Button>
+            ) : (
+              canEdit &&
+              !archived && (
+                <Button
+                  disabled={templateQuotaExhausted}
+                  onClick={() => openEditor(null)}
+                >
+                  新建模板
+                </Button>
+              )
+            )}
+          </EmptyState>
         )}
       </div>
       <ListPagination
