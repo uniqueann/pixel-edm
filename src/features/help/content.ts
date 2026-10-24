@@ -1,5 +1,7 @@
 /** 邮局内帮助文档：与 UI 同步维护，面向管理员与运营。 */
 
+import { roleHelpBullets } from "@/features/team/role-descriptions";
+
 export type HelpSection = {
   id: string;
   title: string;
@@ -42,11 +44,7 @@ export const helpSections: HelpSection[] = [
     icon: "shield",
     targetRoleLabel: "全员通用",
     keywords: ["管理员", "运营", "查看者", "席位", "权限", "邀请"],
-    bullets: [
-      "管理员：工作区设置、发信通道、团队成员、正式发送、行为追踪与 Webhook、操作记录。",
-      "运营：客户管理、邮件模板、活动草稿、预览、确认、导出 CSV；不能修改通道或开始正式发送。",
-      "查看者：只读客户/模板/活动摘要；不能修改设置、通道或发送。",
-    ],
+    bullets: roleHelpBullets,
   },
   {
     id: "onboarding",
@@ -55,13 +53,13 @@ export const helpSections: HelpSection[] = [
     targetRoleLabel: "管理员与运营",
     keywords: ["快速开始", "步骤", "流程", "初始化", "发信", "向导"],
     steps: [
-      "登录后完成工作区初始化（个人工作区可邀请同事转为团队工作区）。",
+      "登录后完成工作区初始化；多人协作需订阅团队版（团队页邀请成员，首条邀请会将个人工作区转为团队工作区）。",
       "设置 → 填写店铺/工作区名称与邮件页脚实体地址（真实的街道门牌地址，会显示在每封营销邮件页脚）→ 保存设置。",
       "设置 → 发信通道 → 添加「阿里云邮件推送」→ 填写发件域名/地址与 AccessKey → 保存配置。",
       "在同一通道卡片上发送测试邮件，直至状态变为「已验证」。",
       "（可选）配置打开/点击追踪与 DirectMail 回执 Webhook，便于活动统计。",
       "客户 → 导入或新增订阅客户；模板 → 编辑模板；活动 → 创建草稿 → 预览 → 确认活动名单。",
-      "活动详情中由管理员开始正式发送，并在活动统计中查看送达与反馈。",
+      "活动列表中由管理员开始正式发送，并在同一界面查看活动统计与送达反馈。",
     ],
   },
   {
