@@ -1358,7 +1358,7 @@ export function Campaigns({
                 <Label htmlFor="duplicate-campaign-template">邮件模板</Label>
                 <select
                   id="duplicate-campaign-template"
-                  className="w-full rounded-md border bg-card px-3 py-2"
+                  className="list-filter w-full"
                   value={duplicateTemplateId}
                   onChange={(event) =>
                     setDuplicateTemplateId(event.target.value)
@@ -1668,7 +1668,7 @@ export function Campaigns({
               <Label htmlFor="delivery-task-status">结果筛选</Label>
               <select
                 id="delivery-task-status"
-                className="rounded-md border bg-card px-3 py-2"
+                className="list-filter"
                 value={taskStatus}
                 onChange={(event) => {
                   const value = event.target.value as typeof taskStatus;
@@ -1900,7 +1900,7 @@ export function Campaigns({
               <select
                 id="campaign-template"
                 required
-                className="w-full rounded-md border bg-card px-3 py-2 pr-8 text-sm"
+                className="list-filter w-full"
                 value={templateId}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -1931,7 +1931,7 @@ export function Campaigns({
               <Label htmlFor="campaign-audience">发送对象</Label>
               <select
                 id="campaign-audience"
-                className="w-full rounded-md border bg-card px-3 py-2 pr-8 text-sm"
+                className="list-filter w-full"
                 value={audienceType}
                 onChange={(event) => {
                   const value = event.target.value as "all" | "tag";
@@ -1954,7 +1954,7 @@ export function Campaigns({
                 <select
                   id="campaign-tag"
                   required
-                  className="w-full rounded-md border bg-card px-3 py-2 pr-8 text-sm"
+                  className="list-filter w-full"
                   value={tagId}
                   onChange={(event) => setTagId(event.target.value)}
                 >

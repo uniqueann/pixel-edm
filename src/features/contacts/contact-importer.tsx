@@ -310,7 +310,7 @@ export function ContactImporter({
                 <label className="flex items-center gap-2 text-sm">
                   分隔符
                   <select
-                    className="rounded border bg-card p-2"
+                    className="list-filter w-full max-w-xs"
                     value={delimiter}
                     onChange={(event) =>
                       setDelimiter(event.target.value as "" | "," | "\t")

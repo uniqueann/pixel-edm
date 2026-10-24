@@ -3,6 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  color-scheme: light;
   --background: #f6f6f3;
   --foreground: #1c2b45;
   --card: #fff;
@@ -28,6 +29,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0d121c;
   --foreground: #e6edf7;
   --card: #151c2a;
