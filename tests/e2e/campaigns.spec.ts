@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { acceptConfirmDialog } from "./confirm-dialog";
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -127,8 +128,8 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(previewDialog.getByText(/计算时间/)).toBeVisible();
   await previewDialog.getByRole("button", { name: "关闭" }).click();
 
-  page.once("dialog", (dialog) => dialog.accept());
   await card.getByRole("button", { name: "归档" }).click();
+  await acceptConfirmDialog(page, "归档");
   await expect(page.getByText("活动已归档")).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "VIP 物流提醒", exact: true }),
@@ -146,8 +147,8 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   const shippingTemplate = page
     .getByRole("heading", { name: "物流通知", exact: true })
     .locator("xpath=ancestor::div[@data-slot='card']");
-  page.once("dialog", (dialog) => dialog.accept());
   await shippingTemplate.getByRole("button", { name: "归档" }).click();
+  await acceptConfirmDialog(page, "归档");
   await expect(page.getByText("模板已归档")).toBeVisible();
   await page.goto("/campaigns");
   card = page
@@ -181,8 +182,8 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   await expect(
     previewDialog.getByRole("button", { name: "确认活动名单" }),
   ).toBeVisible();
-  page.once("dialog", (dialog) => dialog.accept());
   await previewDialog.getByRole("button", { name: "确认活动名单" }).click();
+  await acceptConfirmDialog(page, "确认并锁定名单");
   await expect(page.getByText(/活动已确认，已锁定 7 位收件人/)).toBeVisible();
   card = page
     .getByRole("heading", { name: "归档模板活动", exact: true })
@@ -253,8 +254,8 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   const activeShippingTemplate = page
     .getByRole("heading", { name: "物流通知", exact: true })
     .locator("xpath=ancestor::div[@data-slot='card']");
-  page.once("dialog", (dialog) => dialog.accept());
   await activeShippingTemplate.getByRole("button", { name: "归档" }).click();
+  await acceptConfirmDialog(page, "归档");
   await expect(page.getByText("模板已归档")).toBeVisible();
   await page.goto("/campaigns");
   card = page
@@ -283,8 +284,8 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   card = page
     .getByRole("heading", { name: "归档模板活动", exact: true })
     .locator("xpath=ancestor::div[@data-slot='card']");
-  page.once("dialog", (dialog) => dialog.accept());
   await card.getByRole("button", { name: "归档" }).click();
+  await acceptConfirmDialog(page, "归档");
   await expect(page.getByText("活动已归档")).toBeVisible();
   await page.getByLabel("活动归档状态").selectOption("archived");
   card = page

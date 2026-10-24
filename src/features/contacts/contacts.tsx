@@ -1,5 +1,12 @@
 "use client";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { flushSync } from "react-dom";
 import { unstable_rethrow, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -25,6 +32,8 @@ import {
 } from "./actions";
 import type { Contact, ContactList } from "./model";
 import { subscriptionLabels } from "./import-model";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
 import {
   isQuotaExhausted,
@@ -61,6 +70,8 @@ export function Contacts({
   const shown = listOverride ?? data;
   const [q, setQ] = useState(filters.q ?? "");
   const returnFocus = useRef<HTMLElement | null>(null);
+  const [editBaseline, setEditBaseline] = useState("");
+  const [archiveConfirm, setArchiveConfirm] = useState<Contact>();
   const [editing, setEditing] = useState<Contact | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -78,6 +89,34 @@ export function Contacts({
   const canDeclareConsent =
     !editing || editing.subscription_status === "unconfirmed";
   const hasFilters = Boolean(filters.q || filters.tag || filters.subscription);
+
+  const contactEditSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        email,
+        name,
+        tags: [...tags].sort(),
+        consentDeclared,
+        consentSource,
+        consentNote,
+        consentAt,
+      }),
+    [email, name, tags, consentDeclared, consentSource, consentNote, consentAt],
+  );
+  const isContactEditDirty =
+    editing !== undefined && contactEditSnapshot !== editBaseline;
+
+  const closeContactEditor = useCallback(() => setEditing(undefined), []);
+  const {
+    handleOpenChange: handleContactEditorOpenChange,
+    editDialogContentProps: contactEditDialogContentProps,
+    requestClose: requestCloseContactEditor,
+    discardConfirm: contactDiscardConfirm,
+  } = useUnsavedEditDialog({
+    dirty: isContactEditDirty,
+    onClose: closeContactEditor,
+    busy,
+  });
   function navigate(changes: Record<string, string>) {
     const next = { ...filters, ...changes };
     Object.entries(next).forEach(([key, value]) => {
@@ -120,18 +159,47 @@ export function Contacts({
     }
     start(() => router.refresh());
   }
+  function contactSnapshotFromValues(input: {
+    email: string;
+    name: string;
+    tags: string[];
+    consentDeclared: boolean;
+    consentSource: string;
+    consentNote: string;
+    consentAt: string;
+  }) {
+    return JSON.stringify({
+      ...input,
+      tags: [...input.tags].sort(),
+    });
+  }
+
   function open(c: Contact | null) {
     returnFocus.current = document.activeElement as HTMLElement | null;
+    const nextEmail = c?.email ?? "";
+    const nextName = c?.name ?? "";
+    const nextTags = c?.tags.map((t) => t.name) ?? [];
     setEditing(c);
-    setEmail(c?.email ?? "");
-    setName(c?.name ?? "");
-    setTags(c?.tags.map((t) => t.name) ?? []);
+    setEmail(nextEmail);
+    setName(nextName);
+    setTags(nextTags);
     setTag("");
     setConsentDeclared(false);
     setConsentSource("");
     setConsentNote("");
     setConsentAt("");
     setError("");
+    setEditBaseline(
+      contactSnapshotFromValues({
+        email: nextEmail,
+        name: nextName,
+        tags: nextTags,
+        consentDeclared: false,
+        consentSource: "",
+        consentNote: "",
+        consentAt: "",
+      }),
+    );
   }
   function parseTagsInput(text: string): string[] {
     return text
@@ -166,12 +234,7 @@ export function Contacts({
       setTag("");
     }
   }
-  async function archive(c: Contact) {
-    if (
-      !archived &&
-      !window.confirm(`归档 ${c.email}？之后可以在已归档列表恢复。`)
-    )
-      return;
+  async function performArchive(c: Contact) {
     setBusy(true);
     try {
       const result = await setContactArchived({
@@ -191,6 +254,14 @@ export function Contacts({
     } finally {
       setBusy(false);
     }
+  }
+
+  function archive(c: Contact) {
+    if (!archived) {
+      setArchiveConfirm(c);
+      return;
+    }
+    void performArchive(c);
   }
   return (
     <>
@@ -387,13 +458,12 @@ export function Contacts({
       />
       <Dialog
         open={editing !== undefined}
-        onOpenChange={(value) => {
-          if (!value && !busy) setEditing(undefined);
-        }}
+        onOpenChange={handleContactEditorOpenChange}
       >
         <DialogContent
           placement="bottom"
           className="bottom-sheet max-h-[85vh] overflow-y-auto"
+          {...contactEditDialogContentProps}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             returnFocus.current?.focus();
@@ -653,7 +723,7 @@ export function Contacts({
                 type="button"
                 variant="outline"
                 disabled={busy}
-                onClick={() => setEditing(undefined)}
+                onClick={requestCloseContactEditor}
                 className="w-full sm:w-auto"
               >
                 取消
@@ -741,6 +811,25 @@ export function Contacts({
           </form>
         </DialogContent>
       </Dialog>
+
+      {contactDiscardConfirm}
+
+      <ConfirmDialog
+        open={Boolean(archiveConfirm)}
+        onOpenChange={(open) => {
+          if (!open) setArchiveConfirm(undefined);
+        }}
+        title="归档客户"
+        description={
+          <>归档 {archiveConfirm?.email}？之后可以在已归档列表恢复。</>
+        }
+        confirmLabel="归档"
+        onConfirm={() => {
+          const contact = archiveConfirm;
+          setArchiveConfirm(undefined);
+          if (contact) void performArchive(contact);
+        }}
+      />
     </>
   );
 }

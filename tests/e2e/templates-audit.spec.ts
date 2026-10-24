@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { acceptConfirmDialog } from "./confirm-dialog";
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -56,8 +57,8 @@ test("模板编辑、变量预览、复制归档与管理员审计", async ({ pa
   await expect(
     page.getByRole("heading", { name: "测试模板 副本" }),
   ).toBeVisible();
-  page.once("dialog", (dialog) => dialog.accept());
   await card.getByRole("button", { name: "归档" }).click();
+  await acceptConfirmDialog(page, "归档");
   await expect(page.getByText("模板已归档")).toBeVisible();
 
   await page.getByLabel("模板状态").selectOption("archived");

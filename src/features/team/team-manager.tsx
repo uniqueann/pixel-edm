@@ -29,7 +29,9 @@ import {
   revokeWorkspaceInvitation,
   transferWorkspaceOwnership,
 } from "./actions";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
+  isRoleDemotion,
   roleNames,
   teamRoles,
   type TeamData,
@@ -66,8 +68,15 @@ function MemberRow({
   onRefresh: () => void;
 }) {
   const [busy, startTransition] = useTransition();
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [roleConfirm, setRoleConfirm] = useState<{
+    nextRole: TeamRole;
+    step: 1 | 2;
+  }>();
   const isSelf = member.user_id === currentUserId;
-  const changeRole = (nextRole: TeamRole) => {
+
+  const applyRole = (nextRole: TeamRole) => {
     startTransition(async () => {
       const result = await changeWorkspaceMemberRole({
         workspace_id: workspaceId,
@@ -82,13 +91,28 @@ function MemberRow({
       }
     });
   };
-  const remove = () => {
-    if (
-      !window.confirm(
-        `确定移除 ${member.display_name} 吗？历史业务数据会保留。`,
-      )
-    )
+
+  const changeRole = (nextRole: TeamRole) => {
+    if (nextRole === member.role) return;
+    if (!isRoleDemotion(member.role, nextRole)) {
+      applyRole(nextRole);
       return;
+    }
+    setRoleConfirm({ nextRole, step: 1 });
+  };
+
+  const confirmRoleChange = (): boolean | void => {
+    if (!roleConfirm) return;
+    const { nextRole, step } = roleConfirm;
+    if (member.role === "admin" && step === 1) {
+      setRoleConfirm({ nextRole, step: 2 });
+      return false;
+    }
+    setRoleConfirm(undefined);
+    applyRole(nextRole);
+  };
+
+  const remove = () => {
     startTransition(async () => {
       const result = await removeWorkspaceMember({
         workspace_id: workspaceId,
@@ -102,9 +126,8 @@ function MemberRow({
       }
     });
   };
+
   const transfer = () => {
-    if (!window.confirm(`确定将工作区所有权转移给 ${member.display_name} 吗？`))
-      return;
     startTransition(async () => {
       const result = await transferWorkspaceOwnership({
         workspace_id: workspaceId,
@@ -117,6 +140,27 @@ function MemberRow({
       }
     });
   };
+
+  const roleConfirmDescription =
+    roleConfirm &&
+    (roleConfirm.step === 2 ? (
+      <>
+        最后确认：将 {member.display_name} 从管理员调整为
+        {roleNames[roleConfirm.nextRole]}。对方将失去成员与账单管理权限。
+      </>
+    ) : (
+      <>
+        将 {member.display_name} 的角色从 {roleNames[member.role]} 调整为
+        {roleNames[roleConfirm.nextRole]}？
+        {member.role === "admin" && (
+          <>
+            {" "}
+            管理员降级后可能无法管理成员、账单与正式发送；需再次确认后才会生效。
+          </>
+        )}
+      </>
+    ));
+
   return (
     <div className="flex flex-wrap items-center gap-3 border-t py-3 first:border-t-0">
       <span className="avatar">{member.display_name.slice(0, 2)}</span>
@@ -158,7 +202,7 @@ function MemberRow({
               variant="outline"
               size="sm"
               disabled={busy || pending}
-              onClick={transfer}
+              onClick={() => setTransferOpen(true)}
             >
               转移所有权
             </Button>
@@ -167,12 +211,62 @@ function MemberRow({
             variant="outline"
             size="sm"
             disabled={busy || pending}
-            onClick={remove}
+            onClick={() => setRemoveOpen(true)}
           >
             移除
           </Button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={removeOpen}
+        onOpenChange={setRemoveOpen}
+        title="移除成员"
+        description={
+          <>
+            确定移除 {member.display_name}{" "}
+            吗？对方将无法再访问此工作区，历史业务数据会保留。
+          </>
+        }
+        confirmLabel="移除"
+        variant="destructive"
+        loading={busy}
+        onConfirm={remove}
+      />
+
+      <ConfirmDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        title="转移工作区所有权"
+        description={
+          <>
+            <p className="m-0">
+              确定将工作区所有权转移给 {member.display_name} 吗？
+            </p>
+            <p className="m-0">
+              转移后，{member.display_name}{" "}
+              将成为工作区所有者并负责账单与套餐；你仍会保留管理员身份，但不再拥有所有者专属权限。
+            </p>
+          </>
+        }
+        confirmLabel="转移所有权"
+        variant="destructive"
+        loading={busy}
+        onConfirm={transfer}
+      />
+
+      <ConfirmDialog
+        open={Boolean(roleConfirm)}
+        onOpenChange={(open) => {
+          if (!open) setRoleConfirm(undefined);
+        }}
+        title={roleConfirm?.step === 2 ? "再次确认角色降级" : "调整成员角色"}
+        description={roleConfirmDescription ?? ""}
+        confirmLabel={roleConfirm?.step === 2 ? "确认降级" : "更新角色"}
+        variant={roleConfirm ? "destructive" : "default"}
+        loading={busy}
+        onConfirm={confirmRoleChange}
+      />
     </div>
   );
 }
@@ -195,6 +289,7 @@ export function TeamManager({
   const [inviteRole, setInviteRole] = useState<TeamRole>("editor");
   const [inviteUrl, setInviteUrl] = useState("");
   const [linkOpen, setLinkOpen] = useState(false);
+  const [revokeId, setRevokeId] = useState<string>();
   const [busy, startTransition] = useTransition();
   const refresh = () => router.refresh();
   const submitInvite = (event: React.FormEvent<HTMLFormElement>) => {
@@ -231,7 +326,6 @@ export function TeamManager({
     });
   };
   const revoke = (id: string) => {
-    if (!window.confirm("确定撤销这条邀请吗？旧链接会立即失效。")) return;
     startTransition(async () => {
       const result = await revokeWorkspaceInvitation({
         workspace_id: data.workspace.id,
@@ -309,7 +403,7 @@ export function TeamManager({
                     variant="outline"
                     size="sm"
                     disabled={busy}
-                    onClick={() => revoke(invitation.id)}
+                    onClick={() => setRevokeId(invitation.id)}
                   >
                     撤销
                   </Button>
@@ -484,6 +578,22 @@ export function TeamManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(revokeId)}
+        onOpenChange={(open) => {
+          if (!open) setRevokeId(undefined);
+        }}
+        title="撤销邀请"
+        description="确定撤销这条邀请吗？旧链接会立即失效。"
+        confirmLabel="撤销邀请"
+        variant="destructive"
+        loading={busy}
+        onConfirm={() => {
+          if (revokeId) revoke(revokeId);
+          setRevokeId(undefined);
+        }}
+      />
     </div>
   );
 }

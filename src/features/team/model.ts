@@ -48,3 +48,13 @@ export const roleNames: Record<TeamRole, string> = {
   editor: "运营",
   viewer: "查看者",
 };
+
+export const roleRank: Record<TeamRole, number> = {
+  admin: 3,
+  editor: 2,
+  viewer: 1,
+};
+
+export function isRoleDemotion(from: TeamRole, to: TeamRole) {
+  return roleRank[from] > roleRank[to];
+}

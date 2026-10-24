@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +36,8 @@ import {
   type TemplateVariable,
 } from "./model";
 import { TemplatePreview } from "./template-preview";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
 import {
   isQuotaExhausted,
@@ -75,7 +84,28 @@ export function Templates({
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const [editBaseline, setEditBaseline] = useState("");
+  const [archiveConfirm, setArchiveConfirm] = useState<Template>();
   const archived = filters.status === "archived";
+
+  const templateEditSnapshot = useMemo(
+    () => JSON.stringify({ name, category, subject, body }),
+    [name, category, subject, body],
+  );
+  const isTemplateEditDirty =
+    editing !== undefined && templateEditSnapshot !== editBaseline;
+
+  const closeTemplateEditor = useCallback(() => setEditing(undefined), []);
+  const {
+    handleOpenChange: handleTemplateEditorOpenChange,
+    editDialogContentProps: templateEditDialogContentProps,
+    requestClose: requestCloseTemplateEditor,
+    discardConfirm: templateDiscardConfirm,
+  } = useUnsavedEditDialog({
+    dirty: isTemplateEditDirty,
+    onClose: closeTemplateEditor,
+    busy,
+  });
   const validationErrors = validateTemplateText(subject, body);
   const hasFilters = Boolean(filters.q || filters.category);
 
@@ -119,13 +149,25 @@ export function Templates({
 
   function openEditor(template: Template | null) {
     returnFocus.current = document.activeElement as HTMLElement | null;
+    const nextName = template?.name ?? "";
+    const nextCategory = template?.category ?? "自定义";
+    const nextSubject = template?.subject ?? "";
+    const nextBody = template?.body ?? "";
     setEditing(template);
-    setName(template?.name ?? "");
-    setCategory(template?.category ?? "自定义");
-    setSubject(template?.subject ?? "");
-    setBody(template?.body ?? "");
+    setName(nextName);
+    setCategory(nextCategory);
+    setSubject(nextSubject);
+    setBody(nextBody);
     setError("");
     setActiveField("body");
+    setEditBaseline(
+      JSON.stringify({
+        name: nextName,
+        category: nextCategory,
+        subject: nextSubject,
+        body: nextBody,
+      }),
+    );
   }
 
   function insertVariable(variable: TemplateVariable) {
@@ -170,12 +212,7 @@ export function Templates({
     }
   }
 
-  async function archive(template: Template) {
-    if (
-      !archived &&
-      !window.confirm(`归档“${template.name}”？之后可以在已归档列表恢复。`)
-    )
-      return;
+  async function performArchive(template: Template) {
     setBusy(true);
     try {
       const result = await setTemplateArchived({
@@ -194,6 +231,14 @@ export function Templates({
     } finally {
       setBusy(false);
     }
+  }
+
+  function archive(template: Template) {
+    if (!archived) {
+      setArchiveConfirm(template);
+      return;
+    }
+    void performArchive(template);
   }
 
   return (
@@ -355,13 +400,12 @@ export function Templates({
 
       <Dialog
         open={editing !== undefined}
-        onOpenChange={(open) => {
-          if (!open && !busy) setEditing(undefined);
-        }}
+        onOpenChange={handleTemplateEditorOpenChange}
       >
         <DialogContent
           placement="bottom"
           className="bottom-sheet max-h-[90vh] overflow-y-auto"
+          {...templateEditDialogContentProps}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             returnFocus.current?.focus();
@@ -537,7 +581,7 @@ export function Templates({
                 type="button"
                 variant="outline"
                 disabled={busy}
-                onClick={() => setEditing(undefined)}
+                onClick={requestCloseTemplateEditor}
                 className="w-full sm:w-auto"
               >
                 取消
@@ -581,6 +625,25 @@ export function Templates({
           )}
         </DialogContent>
       </Dialog>
+
+      {templateDiscardConfirm}
+
+      <ConfirmDialog
+        open={Boolean(archiveConfirm)}
+        onOpenChange={(open) => {
+          if (!open) setArchiveConfirm(undefined);
+        }}
+        title="归档模板"
+        description={
+          <>归档「{archiveConfirm?.name}」？之后可以在已归档列表恢复。</>
+        }
+        confirmLabel="归档"
+        onConfirm={() => {
+          const template = archiveConfirm;
+          setArchiveConfirm(undefined);
+          if (template) void performArchive(template);
+        }}
+      />
     </>
   );
 }

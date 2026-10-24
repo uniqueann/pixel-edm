@@ -43,3 +43,10 @@ export function quotaUsageText(quota: PlanQuota | null | undefined) {
   if (!quota || quota.max === null) return null;
   return `已用 ${quota.used} / ${quota.max}`;
 }
+
+/** 确认操作将占用的额度序号，例如「将占用本月第 2 / 3 次」。 */
+export function nextQuotaSlotText(quota: PlanQuota | null | undefined) {
+  if (!quota || quota.max === null) return null;
+  const next = Math.min(quota.used + 1, quota.max);
+  return `将占用本月第 ${next} / ${quota.max} 次`;
+}
