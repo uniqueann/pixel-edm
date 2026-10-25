@@ -14,6 +14,18 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
   await expect(
     page.getByRole("link", { name: "团队", exact: true }),
   ).toHaveCount(0);
+  await page.setViewportSize({ width: 375, height: 800 });
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth + 1,
+    ),
+  ).toBe(true);
+  await expect(
+    page.getByRole("heading", { name: "最近活动", exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 720 });
   for (const [label, title] of [
     ["客户", "客户名单"],
     ["模板", "邮件模板库"],

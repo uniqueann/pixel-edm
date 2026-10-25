@@ -465,6 +465,9 @@ button.tab {
   gap: 12px;
   margin: 24px 0 28px;
 }
+.dashboard-columns > * {
+  min-width: 0;
+}
 .dashboard-checklist,
 .dashboard-campaign-list {
   display: grid;
@@ -506,6 +509,7 @@ button.tab {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
   text-decoration: none;
@@ -810,7 +814,7 @@ button.tab {
     display: inline-flex;
   }
   .dashboard-columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .list-pagination {
     flex-wrap: wrap;
