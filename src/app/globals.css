@@ -217,7 +217,8 @@
 .tab-collapsible {
   display: inline;
 }
-.tabs-more {
+.tabs-more,
+button.tabs-more {
   display: none;
   flex-shrink: 0;
   padding-bottom: 12px;
@@ -713,8 +714,9 @@ button.tab {
   .tab-collapsible {
     display: none;
   }
-  .tabs-more {
-    display: block;
+  .tabs-more,
+  button.tabs-more {
+    display: inline-flex;
   }
   .dashboard-columns {
     grid-template-columns: 1fr;
