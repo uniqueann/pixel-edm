@@ -127,6 +127,16 @@ test("登录、初始化、主导航、设置保存、工作区切换和退出",
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, 300));
+  const stickyHeaderBox = await page
+    .locator(".app-sticky-header")
+    .boundingBox();
+  expect(stickyHeaderBox).not.toBeNull();
+  expect(Math.round(stickyHeaderBox!.y)).toBe(0);
+  const tabsBox = await page.locator(".tabs-scroll-wrap").boundingBox();
+  expect(tabsBox).not.toBeNull();
+  expect(tabsBox!.y).toBeGreaterThanOrEqual(0);
+  expect(tabsBox!.y).toBeLessThan(120);
   await page.screenshot({
     path: "test-results/office-mobile.png",
     fullPage: true,
