@@ -79,48 +79,55 @@ export function AppShell({
       <a className="skip-link" href="#main-content">
         跳到内容
       </a>
-      <header className="topbar">
-        <Brand />
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">{workspaceBadge}</Badge>
-          <ThemeToggle />
-        </div>
-      </header>
-      <section className="identity-bar" aria-label="账号与工作区">
-        <div className="identity-who">
-          <span className="avatar">{name.slice(0, 2)}</span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{name}</p>
-            <span className={`role-pill ${role}`}>{roleNames[role]}</span>
+      <header className="topbar unified-header" aria-label="账号与工作区">
+        <div className="topbar-main">
+          <Brand />
+          <div className="topbar-divider" aria-hidden="true" />
+          <div className="workspace-control">
+            <Select
+              value={workspaceId}
+              disabled={pending}
+              onValueChange={(id) =>
+                startTransition(async () => {
+                  try {
+                    await switchWorkspace(id);
+                    queryClient.clear();
+                    router.refresh();
+                  } catch {
+                    toast.error("工作区切换失败，请重试。");
+                  }
+                })
+              }
+            >
+              <SelectTrigger
+                aria-label="当前工作区"
+                className="workspace-select"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {workspaces.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant="secondary" className="workspace-badge">
+              {workspaceBadge}
+            </Badge>
           </div>
         </div>
-        <div className="flex items-center gap-2 min-w-0">
-          <Select
-            value={workspaceId}
-            disabled={pending}
-            onValueChange={(id) =>
-              startTransition(async () => {
-                try {
-                  await switchWorkspace(id);
-                  queryClient.clear();
-                  router.refresh();
-                } catch {
-                  toast.error("工作区切换失败，请重试。");
-                }
-              })
-            }
-          >
-            <SelectTrigger aria-label="当前工作区" className="workspace-select">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {workspaces.map((w) => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+        <div className="topbar-actions">
+          <div className="identity-who">
+            <span className="avatar">{name.slice(0, 2)}</span>
+            <div className="identity-meta min-w-0">
+              <p className="truncate text-sm font-medium">{name}</p>
+              <span className={`role-pill ${role}`}>{roleNames[role]}</span>
+            </div>
+          </div>
+          <ThemeToggle />
           <form
             action={async () => {
               queryClient.clear();
@@ -132,7 +139,7 @@ export function AppShell({
             </Button>
           </form>
         </div>
-      </section>
+      </header>
       <div className="tabs-scroll-wrap">
         <nav className="tabs" aria-label="邮局导航">
           {[...primaryTabs, ...overflowTabs].map(([slug, label]) => (
