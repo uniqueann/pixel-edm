@@ -79,11 +79,15 @@ export function AppShell({
       <a className="skip-link" href="#main-content">
         跳到内容
       </a>
-      <header className="topbar unified-header" aria-label="账号与工作区">
-        <div className="topbar-main">
-          <Brand />
+      <div className="app-sticky-header">
+        <header className="topbar unified-header" aria-label="账号与工作区">
+          <div className="topbar-brand">
+            <Brand />
+          </div>
+
           <div className="topbar-divider" aria-hidden="true" />
-          <div className="workspace-control">
+
+          <div className="topbar-workspace">
             <Select
               value={workspaceId}
               disabled={pending}
@@ -113,85 +117,94 @@ export function AppShell({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="topbar-badge">
             <Badge variant="secondary" className="workspace-badge">
               {workspaceBadge}
             </Badge>
           </div>
-        </div>
 
-        <div className="topbar-actions">
-          <div className="identity-who">
-            <span className="avatar">{name.slice(0, 2)}</span>
-            <div className="identity-meta min-w-0">
-              <p className="truncate text-sm font-medium">{name}</p>
-              <span className={`role-pill ${role}`}>{roleNames[role]}</span>
+          <div className="topbar-identity">
+            <div className="identity-who">
+              <span className="avatar">{name.slice(0, 2)}</span>
+              <div className="identity-meta min-w-0">
+                <p className="truncate text-sm font-medium">{name}</p>
+                <span className={`role-pill ${role}`}>{roleNames[role]}</span>
+              </div>
             </div>
           </div>
-          <ThemeToggle />
-          <form
-            action={async () => {
-              queryClient.clear();
-              await signOut();
-            }}
-          >
-            <Button variant="ghost" size="icon" aria-label="退出当前账号">
-              <LogOut size={16} />
-            </Button>
-          </form>
-        </div>
-      </header>
-      <div className="tabs-scroll-wrap">
-        <nav className="tabs" aria-label="邮局导航">
-          {[...primaryTabs, ...overflowTabs].map(([slug, label]) => (
-            <Link
-              key={slug}
-              href={`/${slug}`}
-              aria-current={tabIsActive(pathname, slug) ? "page" : undefined}
-              className={
-                tabIsActive(pathname, slug)
-                  ? `tab active${overflowTabSlugs.has(slug) ? " tab-collapsible" : ""}`
-                  : `tab${overflowTabSlugs.has(slug) ? " tab-collapsible" : ""}`
-              }
+
+          <div className="topbar-theme">
+            <ThemeToggle />
+          </div>
+
+          <div className="topbar-signout">
+            <form
+              action={async () => {
+                queryClient.clear();
+                await signOut();
+              }}
             >
-              {label}
-            </Link>
-          ))}
-          {overflowTabs.length > 0 && (
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild>
-                <button
-                  type="button"
-                  className={`tabs-more tab${overflowActive ? " active" : ""}`}
-                  aria-label="更多导航"
-                >
-                  更多
-                  <ChevronDown size={14} aria-hidden />
-                </button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  align="end"
-                  sideOffset={6}
-                  className="z-50 min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-                >
-                  {overflowTabs.map(([slug, label]) => (
-                    <DropdownMenu.Item key={slug} asChild>
-                      <Link
-                        href={`/${slug}`}
-                        className="flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
-                        aria-current={
-                          tabIsActive(pathname, slug) ? "page" : undefined
-                        }
-                      >
-                        {label}
-                      </Link>
-                    </DropdownMenu.Item>
-                  ))}
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-          )}
-        </nav>
+              <Button variant="ghost" size="icon" aria-label="退出当前账号">
+                <LogOut size={16} />
+              </Button>
+            </form>
+          </div>
+        </header>
+        <div className="tabs-scroll-wrap">
+          <nav className="tabs" aria-label="邮局导航">
+            {[...primaryTabs, ...overflowTabs].map(([slug, label]) => (
+              <Link
+                key={slug}
+                href={`/${slug}`}
+                aria-current={tabIsActive(pathname, slug) ? "page" : undefined}
+                className={
+                  tabIsActive(pathname, slug)
+                    ? `tab active${overflowTabSlugs.has(slug) ? " tab-collapsible" : ""}`
+                    : `tab${overflowTabSlugs.has(slug) ? " tab-collapsible" : ""}`
+                }
+              >
+                {label}
+              </Link>
+            ))}
+            {overflowTabs.length > 0 && (
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    className={`tabs-more tab${overflowActive ? " active" : ""}`}
+                    aria-label="更多导航"
+                  >
+                    更多
+                    <ChevronDown size={14} aria-hidden />
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    align="end"
+                    sideOffset={6}
+                    className="z-50 min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+                  >
+                    {overflowTabs.map(([slug, label]) => (
+                      <DropdownMenu.Item key={slug} asChild>
+                        <Link
+                          href={`/${slug}`}
+                          className="flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                          aria-current={
+                            tabIsActive(pathname, slug) ? "page" : undefined
+                          }
+                        >
+                          {label}
+                        </Link>
+                      </DropdownMenu.Item>
+                    ))}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            )}
+          </nav>
+        </div>
       </div>
       <main id="main-content" className="view" key={workspaceId}>
         {children}

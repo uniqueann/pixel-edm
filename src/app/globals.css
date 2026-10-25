@@ -121,18 +121,26 @@
   margin: 0 auto;
   padding-bottom: 40px;
 }
+.app-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--background);
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   padding: 14px 20px 10px;
 }
-.topbar-main {
+.topbar-brand {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 0;
+  flex-shrink: 0;
 }
 .brand {
   display: flex;
@@ -157,10 +165,9 @@
   background: var(--border);
   flex-shrink: 0;
 }
-.workspace-control {
+.topbar-workspace {
   display: flex;
   align-items: center;
-  gap: 8px;
   min-width: 0;
 }
 .workspace-select {
@@ -168,16 +175,20 @@
   font-size: 12px;
   height: 32px;
 }
+.topbar-badge {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+}
 .workspace-badge {
   font-size: 11px;
   padding: 2px 7px;
   white-space: nowrap;
   flex-shrink: 0;
 }
-.topbar-actions {
+.topbar-identity {
   display: flex;
   align-items: center;
-  gap: 10px;
   flex-shrink: 0;
 }
 .identity-who {
@@ -218,6 +229,16 @@
   color: var(--gold);
   background: var(--gold-tint);
 }
+.topbar-theme {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.topbar-signout {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
 .tabs-scroll-wrap {
   position: relative;
 }
@@ -237,6 +258,7 @@
   padding: 10px 20px 0;
   overflow-x: auto;
   scrollbar-width: none;
+  margin-bottom: -1px;
 }
 .tabs::-webkit-scrollbar {
   display: none;
@@ -727,37 +749,73 @@ button.tab {
   top: 10px;
 }
 @media (max-width: 640px) {
-  .topbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 12px 16px 6px;
+  .app-sticky-header {
+    position: static;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: none;
   }
-  .topbar-main {
-    justify-content: space-between;
-    width: 100%;
+  .tabs-scroll-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--background);
+    background: color-mix(in srgb, var(--background) 94%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "brand    badge    theme"
+      "workspace identity signout";
+    gap: 8px 8px;
+    align-items: center;
+    padding: 12px 16px 8px;
+  }
+  .topbar-brand {
+    grid-area: brand;
   }
   .topbar-divider {
     display: none;
   }
-  .topbar-actions {
-    justify-content: space-between;
-    width: 100%;
+  .topbar-badge {
+    grid-area: badge;
+    margin-right: 0;
   }
-  .workspace-select {
-    max-width: 136px;
+  .topbar-theme {
+    grid-area: theme;
+  }
+  .topbar-workspace {
+    grid-area: workspace;
+    min-width: 0;
+  }
+  .topbar-workspace .workspace-select {
+    width: 100%;
+    max-width: 170px;
+  }
+  .topbar-identity {
+    grid-area: identity;
+    min-width: 0;
+  }
+  .topbar-signout {
+    grid-area: signout;
   }
 }
 @media (max-width: 420px) {
   .topbar {
     padding: 10px 12px 6px;
-    gap: 6px;
+    gap: 6px 6px;
   }
-  .workspace-select {
-    max-width: 120px;
+  .topbar-workspace .workspace-select {
+    max-width: 126px;
   }
   .identity-meta p {
-    max-width: 90px;
+    max-width: 75px;
   }
   .tabs {
     gap: 23px;
