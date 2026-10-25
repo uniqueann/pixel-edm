@@ -217,8 +217,7 @@
 .tab-collapsible {
   display: inline;
 }
-.tabs-more,
-button.tabs-more {
+button.tab.tabs-more {
   display: none;
   flex-shrink: 0;
   padding-bottom: 12px;
@@ -714,8 +713,7 @@ button.tab {
   .tab-collapsible {
     display: none;
   }
-  .tabs-more,
-  button.tabs-more {
+  button.tab.tabs-more {
     display: inline-flex;
   }
   .dashboard-columns {
