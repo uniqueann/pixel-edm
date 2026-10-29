@@ -1,0 +1,525 @@
+.pageHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 24px;
+  margin: 4px 0 24px;
+}
+
+.heading {
+  display: contents;
+}
+
+.titleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.titleLine h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.4;
+}
+
+.total {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.description {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  max-width: 70ch;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.headerActions {
+  display: flex;
+  grid-row: 1;
+  grid-column: 2;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.headerActions button {
+  min-height: 40px;
+}
+
+.headerActions button,
+.campaignActions button,
+.editorFooter button {
+  transition-property: background-color, color, border-color, box-shadow;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px 180px;
+  align-items: end;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.searchField,
+.filterField {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.toolbar label {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.toolbar input,
+.toolbar select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  background-color: var(--background);
+  box-shadow: none;
+}
+
+.toolbar input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.searchInput {
+  position: relative;
+}
+
+.searchInput > svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.searchInput input {
+  padding-left: 38px;
+}
+
+.activeFilters {
+  margin: 12px 0 0;
+}
+
+.usageNotes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 20px;
+  row-gap: 8px;
+  margin: 12px 0 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sendLimits {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.sendLimits > svg {
+  position: relative;
+  top: 2px;
+  flex-shrink: 0;
+}
+
+.confirmQuota,
+.readOnly {
+  margin: 0;
+  font-size: 12px;
+}
+
+.readOnly {
+  color: var(--muted-foreground);
+}
+
+.campaignList {
+  display: grid;
+  gap: 12px;
+}
+
+.campaignList[aria-busy="true"] {
+  opacity: 0.6;
+}
+
+.campaignList > :global(.empty) {
+  padding: 48px 24px;
+  border-style: solid;
+  background: var(--card);
+}
+
+.campaignCard {
+  gap: 0;
+  padding: 0;
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+
+.campaignContent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 34%);
+  column-gap: 28px;
+  padding: 20px 20px 0;
+}
+
+.campaignIdentity {
+  min-width: 0;
+  padding-bottom: 18px;
+}
+
+.campaignIdentity:only-child,
+.campaignIdentity:not(:has(~ .deliverySummary)) {
+  grid-column: 1 / -1;
+}
+
+.campaignBadges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.category {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.campaignStatus {
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.campaignStatus[data-status="completed"] {
+  border-color: color-mix(in srgb, var(--green) 20%, var(--border));
+  background: color-mix(in srgb, var(--green) 9%, var(--card));
+  color: var(--green);
+}
+
+.campaignStatus:is(
+  [data-status="confirmed"],
+  [data-status="paused"],
+  [data-status="needs_review"]
+) {
+  border-color: color-mix(in srgb, var(--gold) 30%, var(--border));
+  background: var(--gold-tint);
+  color: color-mix(in srgb, var(--gold) 70%, var(--foreground));
+}
+
+.campaignStatus:is(
+  [data-status="failed"],
+  [data-status="completed_with_errors"]
+) {
+  border-color: color-mix(in srgb, var(--destructive) 25%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 8%, var(--card));
+  color: var(--destructive);
+}
+
+.campaignStatus:is([data-status="sending"], [data-status="queued"]) {
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.campaignName {
+  margin: 0 0 8px;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.campaignMeta {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 20px;
+  row-gap: 6px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.campaignMeta p {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.campaignMeta svg {
+  position: relative;
+  top: 2px;
+  flex-shrink: 0;
+}
+
+.campaignDate {
+  margin: 10px 0 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.campaignActions {
+  display: flex;
+  grid-row: 2;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.campaignActions:empty {
+  display: none;
+}
+
+.campaignActions button {
+  min-height: 36px;
+  box-shadow: none;
+}
+
+.archiveAction {
+  margin-left: auto;
+  color: var(--muted-foreground);
+}
+
+.deliverySummary {
+  grid-row: 1;
+  grid-column: 2;
+  align-self: start;
+  margin-bottom: 18px;
+  padding-left: 24px;
+  border-left: 1px solid var(--border);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.deliveryMetrics {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.receiptSummary,
+.deliveryDate {
+  margin: 4px 0 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.editor {
+  gap: 20px;
+  background: var(--card);
+}
+
+.editorHeader {
+  gap: 10px;
+  padding-right: 24px;
+  text-align: left;
+}
+
+.draftNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.draftNote svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.draftNote p {
+  margin: 0;
+}
+
+.editorForm {
+  display: grid;
+  min-width: 0;
+  gap: 24px;
+}
+
+.editorSection {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.editorSection legend {
+  margin-bottom: 14px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.editorFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+}
+
+.editorFields > div {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 8px;
+}
+
+.editorFields input,
+.editorFields select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  background-color: var(--card);
+  box-shadow: none;
+}
+
+.editorFields label {
+  flex-wrap: wrap;
+  line-height: 1.5;
+}
+
+.fullWidthField {
+  grid-column: 1 / -1;
+}
+
+.sectionHint {
+  margin: -4px 0 18px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.variableKey {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.editorFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 -24px -28px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+
+.editorFooter button {
+  min-height: 40px;
+}
+
+@media (max-width: 767px) {
+  .pageHeader {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .headerActions {
+    max-width: 160px;
+  }
+
+  .toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
+    padding: 16px;
+  }
+
+  .searchField {
+    grid-column: 1 / -1;
+  }
+
+  .campaignContent {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px 16px 0;
+  }
+
+  .campaignMeta {
+    flex-direction: column;
+  }
+
+  .campaignActions {
+    grid-row: 3;
+  }
+
+  .deliverySummary {
+    grid-row: 2;
+    grid-column: 1;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+
+  .deliveryMetrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .deliveryMetrics > div > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .receiptSummary {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 639px) {
+  .editorFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbar input,
+  .toolbar select,
+  .headerActions button,
+  .activeFilters button,
+  .campaignList > :global(.empty) button,
+  .campaignActions button,
+  .editorFields input,
+  .editorFields select,
+  .editorFooter button {
+    min-height: 44px;
+  }
+
+  .editorFooter button[type="submit"] {
+    flex: 1;
+  }
+}

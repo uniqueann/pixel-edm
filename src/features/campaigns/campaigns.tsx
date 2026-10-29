@@ -11,7 +11,23 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { unstable_rethrow, useRouter } from "next/navigation";
-import { Check, X } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  BarChart3,
+  Check,
+  Copy,
+  Download,
+  Eye,
+  FileText,
+  Info,
+  Pencil,
+  Plus,
+  Search,
+  Send,
+  Users,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,6 +94,7 @@ import {
   type CampaignVariables,
   type DeliveryResultFilter,
 } from "./model";
+import styles from "./campaigns.module.css";
 
 type SelectableTemplate = CampaignEditorTemplate & { archived: boolean };
 
@@ -855,61 +872,88 @@ export function Campaigns({
 
   return (
     <>
-      <div className="section-heading">
-        <h1>发信活动</h1>
-        <span>{campaigns.total} 条</span>
-      </div>
-      <p className="hint">
-        草稿预览按当前最新的客户订阅和退订状态实时计算；确认后将锁定收件名单，管理员可创建正式发送任务。
-      </p>
-      <div className="list-toolbar">
+      <header className={styles.pageHeader}>
+        <div className={styles.heading}>
+          <div className={styles.titleLine}>
+            <h1>发信活动</h1>
+            <span className={styles.total}>{campaigns.total} 条</span>
+          </div>
+          <p className={styles.description}>
+            草稿预览按当前最新的客户订阅和退订状态实时计算；确认后将锁定收件名单，管理员可创建正式发送任务。
+          </p>
+        </div>
         {canEdit && !showInitialEmpty && (
-          <Button disabled={!editorOptions.templates.length} onClick={openNew}>
-            新建活动
-          </Button>
+          <div className={styles.headerActions}>
+            {!editorOptions.templates.length && (
+              <Button asChild variant="outline">
+                <Link href="/templates">前往模板库</Link>
+              </Button>
+            )}
+            <Button
+              disabled={!editorOptions.templates.length}
+              onClick={openNew}
+            >
+              <Plus aria-hidden="true" />
+              新建活动
+            </Button>
+          </div>
         )}
-        {canEdit && !showInitialEmpty && !editorOptions.templates.length && (
-          <Button asChild variant="outline">
-            <Link href="/templates">前往模板库</Link>
-          </Button>
-        )}
-        <select
-          aria-label="活动归档状态"
-          className="list-filter"
-          value={archived ? "archived" : "active"}
-          onChange={(event) =>
-            navigate({ status: event.target.value, page: "1" })
-          }
-        >
-          <option value="active">未归档活动</option>
-          <option value="archived">已归档活动</option>
-        </select>
-        <select
-          aria-label="活动状态"
-          className="list-filter"
-          value={filters.campaign_status ?? ""}
-          onChange={(event) =>
-            navigate({ campaign_status: event.target.value, page: "1" })
-          }
-        >
-          <option value="">全部活动状态</option>
-          {Object.entries(campaignStatusLabels).map(([status, label]) => (
-            <option key={status} value={status}>
-              {label}
-            </option>
-          ))}
-        </select>
+      </header>
+      <div className={styles.toolbar} role="search" aria-label="查找发信活动">
+        <div className={styles.searchField}>
+          <Label htmlFor="campaign-search">搜索活动</Label>
+          <div className={styles.searchInput}>
+            <Search aria-hidden="true" size={17} />
+            <Input
+              id="campaign-search"
+              aria-label="搜索活动名称"
+              placeholder="搜索活动名称"
+              value={q}
+              maxLength={200}
+              onChange={(event) => setQ(event.target.value)}
+            />
+          </div>
+        </div>
+        <div className={styles.filterField}>
+          <Label htmlFor="campaign-archive-filter">显示范围</Label>
+          <select
+            id="campaign-archive-filter"
+            aria-label="活动归档状态"
+            className="list-filter"
+            value={archived ? "archived" : "active"}
+            onChange={(event) =>
+              navigate({ status: event.target.value, page: "1" })
+            }
+          >
+            <option value="active">未归档活动</option>
+            <option value="archived">已归档活动</option>
+          </select>
+        </div>
+        <div className={styles.filterField}>
+          <Label htmlFor="campaign-status-filter">活动状态</Label>
+          <select
+            id="campaign-status-filter"
+            aria-label="活动状态"
+            className="list-filter"
+            value={filters.campaign_status ?? ""}
+            onChange={(event) =>
+              navigate({ campaign_status: event.target.value, page: "1" })
+            }
+          >
+            <option value="">全部活动状态</option>
+            {Object.entries(campaignStatusLabels).map(([status, label]) => (
+              <option key={status} value={status}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      <Input
-        className="list-search"
-        aria-label="搜索活动名称"
-        placeholder="搜索活动名称"
-        value={q}
-        maxLength={200}
-        onChange={(event) => setQ(event.target.value)}
-      />
       {hasFilters && (
-        <div className="active-filters" aria-label="已应用筛选">
+        <div
+          className={`active-filters ${styles.activeFilters}`}
+          aria-label="已应用筛选"
+        >
           <span>已筛选</span>
           {filters.q && <span className="filter-chip">搜索：{filters.q}</span>}
           {filters.campaign_status && (
@@ -935,187 +979,91 @@ export function Campaigns({
           新建活动前，需要至少一套使用中的模板。
         </p>
       )}
-      {canSend && (
-        <p className="hint mt-2" data-testid="campaign-send-limits">
-          当前套餐单个活动最多发送{" "}
-          {maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人
-          {sendReadiness?.quota
-            ? `；今日已用 ${sendReadiness.quota.usage_today.toLocaleString("zh-CN")} / ${sendReadiness.quota.daily_send_quota.toLocaleString("zh-CN")} 封`
-            : ""}
-          。
-        </p>
-      )}
-      {canEdit && (
-        <PlanUsageNote
-          label="本月已确认活动名单"
-          quota={planUsage?.confirmedCampaignsThisMonth}
-          exhaustedText="本月无法再确认新的活动名单"
-          testId="campaign-confirm-quota"
-          className="mt-2"
-        />
-      )}
-      <div aria-live="polite" className="hint mt-2">
-        {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
+      <div className={styles.usageNotes}>
+        {canSend && (
+          <p className={styles.sendLimits} data-testid="campaign-send-limits">
+            <Send aria-hidden="true" size={14} />
+            <span>
+              当前套餐单个活动最多发送{" "}
+              {maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人
+              {sendReadiness?.quota
+                ? `；今日已用 ${sendReadiness.quota.usage_today.toLocaleString("zh-CN")} / ${sendReadiness.quota.daily_send_quota.toLocaleString("zh-CN")} 封`
+                : ""}
+              。
+            </span>
+          </p>
+        )}
+        {canEdit && (
+          <PlanUsageNote
+            label="本月已确认活动名单"
+            quota={planUsage?.confirmedCampaignsThisMonth}
+            exhaustedText="本月无法再确认新的活动名单"
+            testId="campaign-confirm-quota"
+            className={styles.confirmQuota}
+          />
+        )}
+        {!canEdit && <p className={styles.readOnly}>当前为只读权限。</p>}
+      </div>
+      <div role="status" className="sr-only">
+        {pending ? "正在加载…" : ""}
       </div>
 
-      <div className="my-4 space-y-3" aria-busy={pending}>
+      <div className={styles.campaignList} aria-busy={pending}>
         {campaigns.items.map((campaign) => (
-          <Card key={campaign.id} data-campaign-id={campaign.id}>
-            <CardContent className="flex flex-col items-stretch gap-4 pt-5 sm:flex-row sm:items-start">
-              <div className="w-full min-w-0 flex-1">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <Badge variant={statusVariant(campaign.status)}>
+          <Card
+            key={campaign.id}
+            data-campaign-id={campaign.id}
+            className={styles.campaignCard}
+          >
+            <CardContent className={styles.campaignContent}>
+              <div className={styles.campaignIdentity}>
+                <div className={styles.campaignBadges}>
+                  <Badge
+                    variant={statusVariant(campaign.status)}
+                    className={styles.campaignStatus}
+                    data-status={campaign.status}
+                  >
                     {campaignStatusLabels[campaign.status]}
                   </Badge>
-                  <Badge variant="outline">{campaign.template_category}</Badge>
+                  <span className={styles.category}>
+                    {campaign.template_category}
+                  </span>
                   {campaign.template_archived && (
                     <Badge variant="destructive">模板已归档</Badge>
                   )}
                 </div>
-                <h2 className="break-words">{campaign.name}</h2>
-                <p className="hint m-0 break-words">
-                  模板：{campaign.template_name}
-                </p>
-                <p className="hint m-0 break-words">
-                  受众：
-                  {campaign.audience_type === "all"
-                    ? "全部已订阅客户"
-                    : `标签 · ${campaign.tag_name ?? "标签不可用"}`}
-                </p>
-                <p className="hint m-0 break-words">
+                <h2 className={styles.campaignName}>{campaign.name}</h2>
+                <div className={styles.campaignMeta}>
+                  <p>
+                    <FileText aria-hidden="true" size={14} />
+                    <span>模板：{campaign.template_name}</span>
+                  </p>
+                  <p>
+                    <Users aria-hidden="true" size={14} />
+                    <span>
+                      受众：
+                      {campaign.audience_type === "all"
+                        ? "全部已订阅客户"
+                        : `标签 · ${campaign.tag_name ?? "标签不可用"}`}
+                    </span>
+                  </p>
+                </div>
+                <p className={styles.campaignDate}>
                   {campaign.created_by_name} ·{" "}
-                  {formattedDate(campaign.created_at)}
+                  <time dateTime={campaign.created_at}>
+                    {formattedDate(campaign.created_at)}
+                  </time>
                 </p>
               </div>
-              {canEdit &&
-                (campaign.status === "draft" ||
-                  [
-                    "confirmed",
-                    "completed",
-                    "completed_with_errors",
-                    "failed",
-                  ].includes(campaign.status)) && (
-                  <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
-                    {!archived && campaign.status === "draft" && (
-                      <>
-                        <Button
-                          variant="outline"
-                          disabled={busy || Boolean(loadingCampaignId)}
-                          onClick={() => openPreview(campaign)}
-                        >
-                          预览
-                        </Button>
-                        <Button
-                          variant="outline"
-                          disabled={busy || Boolean(loadingCampaignId)}
-                          onClick={() => openEditor(campaign)}
-                        >
-                          {loadingCampaignId === campaign.id
-                            ? "加载中…"
-                            : "编辑"}
-                        </Button>
-                      </>
-                    )}
-                    {[
-                      "confirmed",
-                      "completed",
-                      "completed_with_errors",
-                      "failed",
-                    ].includes(campaign.status) && (
-                      <>
-                        {canSend &&
-                          !archived &&
-                          campaign.status === "confirmed" && (
-                            <Button
-                              disabled={
-                                busy ||
-                                (campaign.recipient_count ?? 0) >
-                                  maxRecipientsPerCampaign
-                              }
-                              title={
-                                (campaign.recipient_count ?? 0) >
-                                maxRecipientsPerCampaign
-                                  ? `当前套餐单个活动最多 ${maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人`
-                                  : undefined
-                              }
-                              onClick={() =>
-                                openDeliveryConfirmation(campaign, "start")
-                              }
-                            >
-                              正式发送
-                            </Button>
-                          )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() =>
-                            void downloadCampaignRecipientCsv(campaign.id)
-                          }
-                        >
-                          导出收件明细 CSV
-                        </Button>
-                        <Button
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() => openDuplicate(campaign)}
-                        >
-                          复制为草稿
-                        </Button>
-                      </>
-                    )}
-                    {["draft", "confirmed"].includes(campaign.status) && (
-                      <Button
-                        variant="outline"
-                        disabled={busy || Boolean(loadingCampaignId)}
-                        onClick={() => archiveCampaign(campaign)}
-                      >
-                        {archived ? "恢复" : "归档"}
-                      </Button>
-                    )}
-                  </div>
-                )}
-              {campaign.delivery && (
-                <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
-                  <Button
-                    variant="outline"
-                    onClick={() => openDeliveryDetails(campaign)}
-                  >
-                    {canSend ? "统计与明细" : "查看统计"}
-                  </Button>
-                  {canSend &&
-                    ["queued", "sending", "paused"].includes(
-                      campaign.status,
-                    ) && (
-                      <Button
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => void toggleDeliveryPaused(campaign)}
-                      >
-                        {campaign.status === "paused" ? "继续发送" : "暂停发送"}
-                      </Button>
-                    )}
-                  {canSend && campaign.status === "paused" && (
-                    <Button
-                      variant="destructive"
-                      disabled={busy}
-                      onClick={() =>
-                        openDeliveryConfirmation(campaign, "abort")
-                      }
-                    >
-                      放弃剩余
-                    </Button>
-                  )}
-                </div>
-              )}
               {(campaign.status === "confirmed" || campaign.delivery) && (
-                <div className="w-full border-t pt-3 text-sm sm:w-auto sm:min-w-48 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                <div className={styles.deliverySummary}>
                   <p className="m-0 font-medium">
                     {campaign.delivery
                       ? `已受理 ${campaign.delivery.counts.accepted} / ${campaign.delivery.recipient_count}`
                       : `已锁定 ${campaign.recipient_count ?? 0} 位收件人`}
                   </p>
                   {campaign.delivery && (
-                    <div className="mt-3 space-y-2">
+                    <div className={styles.deliveryMetrics}>
                       <MetricBar
                         label="送达率"
                         value={campaign.delivery.statistics.counts.delivered}
@@ -1137,7 +1085,7 @@ export function Campaigns({
                           !campaign.delivery.statistics.tracking_enabled
                         }
                       />
-                      <p className="hint m-0">
+                      <p className={styles.receiptSummary}>
                         等待回执{" "}
                         {campaign.delivery.statistics.counts.awaiting_receipt} ·
                         投递失败{" "}
@@ -1149,19 +1097,155 @@ export function Campaigns({
                       </p>
                     </div>
                   )}
-                  <p className="hint m-0">
+                  <p className={styles.deliveryDate}>
                     {campaign.delivery?.completed_at
                       ? `完成于 ${formattedDate(campaign.delivery.completed_at)}`
                       : campaign.confirmed_at
                         ? formattedDate(campaign.confirmed_at)
                         : "确认时间不可用"}
                   </p>
-                  <p className="hint m-0">
+                  <p className={styles.deliveryDate}>
                     {campaign.confirmed_by_name ?? "工作区成员"} · 模板版本{" "}
                     {campaign.snapshot_template_version ?? "-"}
                   </p>
                 </div>
               )}
+              <div className={styles.campaignActions}>
+                {campaign.delivery && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      onClick={() => openDeliveryDetails(campaign)}
+                    >
+                      <BarChart3 aria-hidden="true" />
+                      {canSend ? "统计与明细" : "查看统计"}
+                    </Button>
+                    {canSend &&
+                      ["queued", "sending", "paused"].includes(
+                        campaign.status,
+                      ) && (
+                        <Button
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => void toggleDeliveryPaused(campaign)}
+                        >
+                          {campaign.status === "paused"
+                            ? "继续发送"
+                            : "暂停发送"}
+                        </Button>
+                      )}
+                    {canSend && campaign.status === "paused" && (
+                      <Button
+                        variant="destructive"
+                        disabled={busy}
+                        onClick={() =>
+                          openDeliveryConfirmation(campaign, "abort")
+                        }
+                      >
+                        放弃剩余
+                      </Button>
+                    )}
+                  </>
+                )}
+                {canEdit &&
+                  (campaign.status === "draft" ||
+                    [
+                      "confirmed",
+                      "completed",
+                      "completed_with_errors",
+                      "failed",
+                    ].includes(campaign.status)) && (
+                    <>
+                      {!archived && campaign.status === "draft" && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            disabled={busy || Boolean(loadingCampaignId)}
+                            onClick={() => openPreview(campaign)}
+                          >
+                            <Eye aria-hidden="true" />
+                            预览
+                          </Button>
+                          <Button
+                            variant="outline"
+                            disabled={busy || Boolean(loadingCampaignId)}
+                            onClick={() => openEditor(campaign)}
+                          >
+                            <Pencil aria-hidden="true" />
+                            {loadingCampaignId === campaign.id
+                              ? "加载中…"
+                              : "编辑"}
+                          </Button>
+                        </>
+                      )}
+                      {[
+                        "confirmed",
+                        "completed",
+                        "completed_with_errors",
+                        "failed",
+                      ].includes(campaign.status) && (
+                        <>
+                          {canSend &&
+                            !archived &&
+                            campaign.status === "confirmed" && (
+                              <Button
+                                disabled={
+                                  busy ||
+                                  (campaign.recipient_count ?? 0) >
+                                    maxRecipientsPerCampaign
+                                }
+                                title={
+                                  (campaign.recipient_count ?? 0) >
+                                  maxRecipientsPerCampaign
+                                    ? `当前套餐单个活动最多 ${maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人`
+                                    : undefined
+                                }
+                                onClick={() =>
+                                  openDeliveryConfirmation(campaign, "start")
+                                }
+                              >
+                                <Send aria-hidden="true" />
+                                正式发送
+                              </Button>
+                            )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                              void downloadCampaignRecipientCsv(campaign.id)
+                            }
+                          >
+                            <Download aria-hidden="true" />
+                            导出收件明细 CSV
+                          </Button>
+                          <Button
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => openDuplicate(campaign)}
+                          >
+                            <Copy aria-hidden="true" />
+                            复制为草稿
+                          </Button>
+                        </>
+                      )}
+                      {["draft", "confirmed"].includes(campaign.status) && (
+                        <Button
+                          variant="ghost"
+                          className={styles.archiveAction}
+                          disabled={busy || Boolean(loadingCampaignId)}
+                          onClick={() => archiveCampaign(campaign)}
+                        >
+                          {archived ? (
+                            <ArchiveRestore aria-hidden="true" />
+                          ) : (
+                            <Archive aria-hidden="true" />
+                          )}
+                          {archived ? "恢复" : "归档"}
+                        </Button>
+                      )}
+                    </>
+                  )}
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -1204,6 +1288,7 @@ export function Campaigns({
                     disabled={!editorOptions.templates.length}
                     onClick={openNew}
                   >
+                    <Plus aria-hidden="true" />
                     新建活动
                   </Button>
                   {!editorOptions.templates.length && (
@@ -1933,25 +2018,28 @@ export function Campaigns({
       >
         <DialogContent
           placement="bottom"
-          className="bottom-sheet max-h-[90dvh] overflow-y-auto"
+          className={`bottom-sheet ${styles.editor}`}
           {...campaignEditDialogContentProps}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             returnFocus.current?.focus();
           }}
         >
-          <DialogHeader>
+          <DialogHeader className={styles.editorHeader}>
             <DialogTitle>{editing ? "编辑活动草稿" : "新建活动"}</DialogTitle>
             <DialogDescription>
               配置活动名称、关联模板与目标受众。
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-xs leading-relaxed text-muted-foreground">
-            <span className="font-medium text-foreground">💡 草稿规则：</span>
-            活动变量允许暂留空，受众去重与黑名单将在预览发送阶段实时计算。
+          <div className={styles.draftNote}>
+            <Info aria-hidden="true" size={16} />
+            <p>
+              <span className="font-medium text-foreground">草稿规则：</span>
+              活动变量允许暂留空，受众去重与黑名单将在预览发送阶段实时计算。
+            </p>
           </div>
           <form
-            className="space-y-4"
+            className={styles.editorForm}
             onSubmit={async (event) => {
               event.preventDefault();
               setError("");
@@ -1989,160 +2077,172 @@ export function Campaigns({
               }
             }}
           >
-            <div>
-              <Label htmlFor="campaign-name">活动名称</Label>
-              <Input
-                id="campaign-name"
-                required
-                maxLength={100}
-                placeholder="如：九月客户问候"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                onBlur={() => setName((prev) => prev.trim())}
-              />
-            </div>
-            <div>
-              <Label htmlFor="campaign-template">邮件模板</Label>
-              <select
-                id="campaign-template"
-                required
-                className="list-filter w-full"
-                value={templateId}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setTemplateId(value);
-                  const template = templateChoices.find(
-                    (item) => item.id === value,
-                  );
-                  setVariables(
-                    variablesFor(template?.variable_keys ?? [], variables),
-                  );
-                }}
-              >
-                <option value="">请选择模板</option>
-                {templateChoices.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.category} · {template.name}
-                    {template.archived ? "（已归档，仅保留当前引用）" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedTemplate?.archived && (
-              <p className="field-error" role="status">
-                当前模板已归档。可以保留这项引用并编辑草稿，但预览或导出前需要恢复模板或改选使用中的模板。
-              </p>
-            )}
-            <div>
-              <Label htmlFor="campaign-audience">发送对象</Label>
-              <select
-                id="campaign-audience"
-                className="list-filter w-full"
-                value={audienceType}
-                onChange={(event) => {
-                  const value = event.target.value as "all" | "tag";
-                  setAudienceType(value);
-                  if (value === "all") setTagId("");
-                }}
-              >
-                <option value="all">全部已订阅客户</option>
-                <option value="tag" disabled={!editorOptions.tags.length}>
-                  按标签选择
-                </option>
-              </select>
-              {!editorOptions.tags.length && (
-                <p className="hint m-0">当前没有可选标签。</p>
-              )}
-            </div>
-            {audienceType === "tag" && (
-              <div>
-                <Label htmlFor="campaign-tag">客户标签</Label>
-                <select
-                  id="campaign-tag"
-                  required
-                  className="list-filter w-full"
-                  value={tagId}
-                  onChange={(event) => setTagId(event.target.value)}
-                >
-                  <option value="">请选择标签</option>
-                  {editorOptions.tags.map((tag) => (
-                    <option key={tag.id} value={tag.id}>
-                      {tag.name}
+            <fieldset className={styles.editorSection}>
+              <legend>活动信息</legend>
+              <div className={styles.editorFields}>
+                <div className={styles.fullWidthField}>
+                  <Label htmlFor="campaign-name">活动名称</Label>
+                  <Input
+                    id="campaign-name"
+                    required
+                    maxLength={100}
+                    placeholder="如：九月客户问候"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    onBlur={() => setName((prev) => prev.trim())}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="campaign-template">邮件模板</Label>
+                  <select
+                    id="campaign-template"
+                    required
+                    className="list-filter w-full"
+                    value={templateId}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setTemplateId(value);
+                      const template = templateChoices.find(
+                        (item) => item.id === value,
+                      );
+                      setVariables(
+                        variablesFor(template?.variable_keys ?? [], variables),
+                      );
+                    }}
+                  >
+                    <option value="">请选择模板</option>
+                    {templateChoices.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.category} · {template.name}
+                        {template.archived ? "（已归档，仅保留当前引用）" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {selectedTemplate?.archived && (
+                  <p
+                    className={`field-error ${styles.fullWidthField}`}
+                    role="status"
+                  >
+                    当前模板已归档。可以保留这项引用并编辑草稿，但预览或导出前需要恢复模板或改选使用中的模板。
+                  </p>
+                )}
+                <div>
+                  <Label htmlFor="campaign-audience">发送对象</Label>
+                  <select
+                    id="campaign-audience"
+                    className="list-filter w-full"
+                    value={audienceType}
+                    onChange={(event) => {
+                      const value = event.target.value as "all" | "tag";
+                      setAudienceType(value);
+                      if (value === "all") setTagId("");
+                    }}
+                  >
+                    <option value="all">全部已订阅客户</option>
+                    <option value="tag" disabled={!editorOptions.tags.length}>
+                      按标签选择
                     </option>
-                  ))}
-                </select>
+                  </select>
+                  {!editorOptions.tags.length && (
+                    <p className="hint m-0">当前没有可选标签。</p>
+                  )}
+                </div>
+                {audienceType === "tag" && (
+                  <div className={styles.fullWidthField}>
+                    <Label htmlFor="campaign-tag">客户标签</Label>
+                    <select
+                      id="campaign-tag"
+                      required
+                      className="list-filter w-full"
+                      value={tagId}
+                      onChange={(event) => setTagId(event.target.value)}
+                    >
+                      <option value="">请选择标签</option>
+                      {editorOptions.tags.map((tag) => (
+                        <option key={tag.id} value={tag.id}>
+                          {tag.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
-            )}
+            </fieldset>
             {selectedVariableKeys.length > 0 && (
-              <div className="space-y-4 rounded-lg border p-4">
-                <p className="text-sm font-medium">模板活动变量</p>
-                <p className="hint m-0">
+              <fieldset className={styles.editorSection}>
+                <legend>模板活动变量</legend>
+                <p className={styles.sectionHint}>
                   客户姓名和邮箱会在后续按收件人替换；以下内容对本次活动统一生效。
                 </p>
-                {campaignVariableFields
-                  .filter((field) => selectedVariableKeys.includes(field.key))
-                  .map((field) => (
-                    <div key={field.key}>
-                      <Label htmlFor={`campaign-variable-${field.key}`}>
-                        {field.label}（{`{{${field.key}}}`}）
-                      </Label>
-                      <Input
-                        id={`campaign-variable-${field.key}`}
-                        maxLength={200}
-                        value={variables[field.key] ?? ""}
-                        onChange={(event) =>
-                          setVariables({
-                            ...variables,
-                            [field.key]: event.target.value,
-                          })
-                        }
-                        onBlur={() => {
-                          const val = variables[field.key];
-                          if (typeof val === "string" && val !== val.trim()) {
+                <div className={styles.editorFields}>
+                  {campaignVariableFields
+                    .filter((field) => selectedVariableKeys.includes(field.key))
+                    .map((field) => (
+                      <div key={field.key}>
+                        <Label htmlFor={`campaign-variable-${field.key}`}>
+                          {field.label}
+                          <code
+                            className={styles.variableKey}
+                          >{`{{${field.key}}}`}</code>
+                        </Label>
+                        <Input
+                          id={`campaign-variable-${field.key}`}
+                          maxLength={200}
+                          value={variables[field.key] ?? ""}
+                          onChange={(event) =>
                             setVariables({
                               ...variables,
-                              [field.key]: val.trim(),
-                            });
+                              [field.key]: event.target.value,
+                            })
                           }
-                        }}
-                      />
-                      {field.key === "sender_name" &&
-                        (isDefaultSenderName(variables.sender_name) ||
-                          !variables.sender_name?.trim()) && (
-                          <p
-                            className="mt-1 mb-0 text-sm text-amber-700 dark:text-amber-300"
-                            role="alert"
-                          >
-                            {isDefaultSenderName(variables.sender_name)
-                              ? "“店主”是系统默认称呼，不适合作为落款发给客户。请改成真实姓名或品牌名，或"
-                              : "发件人不能为空，请填写真实署名，或"}
-                            <Link
-                              href="/settings"
-                              className="underline underline-offset-2"
+                          onBlur={() => {
+                            const val = variables[field.key];
+                            if (typeof val === "string" && val !== val.trim()) {
+                              setVariables({
+                                ...variables,
+                                [field.key]: val.trim(),
+                              });
+                            }
+                          }}
+                        />
+                        {field.key === "sender_name" &&
+                          (isDefaultSenderName(variables.sender_name) ||
+                            !variables.sender_name?.trim()) && (
+                            <p
+                              className="mt-1 mb-0 text-sm text-amber-700 dark:text-amber-300"
+                              role="alert"
                             >
                               {isDefaultSenderName(variables.sender_name)
-                                ? "前往设置真实署名"
-                                : "前往设置保存常用署名"}
-                            </Link>
-                            。
-                          </p>
-                        )}
-                    </div>
-                  ))}
-              </div>
+                                ? "“店主”是系统默认称呼，不适合作为落款发给客户。请改成真实姓名或品牌名，或"
+                                : "发件人不能为空，请填写真实署名，或"}
+                              <Link
+                                href="/settings"
+                                className="underline underline-offset-2"
+                              >
+                                {isDefaultSenderName(variables.sender_name)
+                                  ? "前往设置真实署名"
+                                  : "前往设置保存常用署名"}
+                              </Link>
+                              。
+                            </p>
+                          )}
+                      </div>
+                    ))}
+                </div>
+              </fieldset>
             )}
             {error && (
               <p className="field-error" role="alert">
                 {error}
               </p>
             )}
-            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+            <div className={styles.editorFooter}>
               <Button
                 type="button"
                 variant="outline"
                 disabled={busy}
                 onClick={requestCloseCampaignEditor}
-                className="w-full sm:w-auto"
               >
                 取消
               </Button>
@@ -2151,7 +2251,6 @@ export function Campaigns({
                 disabled={
                   busy || !templateId || (audienceType === "tag" && !tagId)
                 }
-                className="w-full sm:w-auto"
               >
                 {busy ? "保存中…" : "保存活动草稿"}
               </Button>
