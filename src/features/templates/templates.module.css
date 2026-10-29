@@ -1,0 +1,465 @@
+.editor[data-slot="dialog-content"] {
+  display: flex;
+  right: 12px;
+  left: 12px;
+  flex-direction: column;
+  gap: 0;
+  width: auto;
+  max-width: 1120px;
+  height: min(880px, 90dvh, calc(var(--dialog-visual-height, 100dvh) - 16px));
+  overflow: hidden;
+  padding: 0;
+  background: var(--card);
+}
+
+.editorHeader {
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 20px 56px 20px 20px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.editorHeader [data-slot="dialog-title"] {
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.editorHeader [data-slot="dialog-description"] {
+  max-width: 70ch;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.editor [data-slot="dialog-close"] {
+  display: grid;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 9px;
+}
+
+.viewSwitch {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.viewSwitch button {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid transparent;
+  color: var(--muted-foreground);
+}
+
+.viewSwitch button[aria-pressed="true"] {
+  border-color: var(--border);
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.editorBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 16px;
+  scrollbar-color: var(--muted-foreground) transparent;
+  scrollbar-width: thin;
+}
+
+.editorForm {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 24px;
+  padding: 24px 20px;
+}
+
+.identityFields {
+  display: grid;
+  min-width: 0;
+  align-items: start;
+  gap: 20px;
+}
+
+.field {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.field label {
+  flex-wrap: wrap;
+  line-height: 1.5;
+}
+
+.field input,
+.sampleFields input {
+  height: 44px;
+  background: var(--card);
+  box-shadow: none;
+  caret-color: var(--foreground);
+  font-size: 16px;
+}
+
+.categorySuggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.categoryChoices > summary {
+  min-height: 44px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 44px;
+  cursor: pointer;
+}
+
+.categorySuggestion {
+  min-height: 44px;
+  padding: 4px 8px;
+  border-radius: 9px;
+  background: var(--muted);
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+
+.categorySuggestion:hover {
+  background: var(--secondary);
+}
+
+.characterCount {
+  flex-shrink: 0;
+  margin-left: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bodyInput {
+  width: 100%;
+  min-width: 0;
+  height: min(
+    240px,
+    max(96px, calc(var(--dialog-visual-height, 100dvh) - 320px))
+  );
+  min-height: 96px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid var(--input);
+  border-radius: 11px;
+  outline: none;
+  background: var(--card);
+  caret-color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+
+.bodyInput:focus-visible {
+  border-color: var(--ring);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.variables {
+  display: grid;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.help,
+.previewNote {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.previewValidation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--destructive);
+  font-size: 12px;
+}
+
+.previewValidation p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.previewValidation button {
+  padding-inline: 0;
+  font-size: 12px;
+}
+
+.variableGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.groupLabel {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.variableButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.variableButton {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--foreground);
+  font-size: 12px;
+  transition: background-color 150ms;
+}
+
+.variableButton:hover {
+  background: var(--muted);
+}
+
+.variableButton code,
+.sampleFields code {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.previewPane {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 12px;
+  padding: 24px 20px;
+  background: var(--background);
+}
+
+.editorFooter {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 20px max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+
+.editorFooter button,
+.copyButton {
+  min-height: 44px;
+  transition-property: background-color, color, border-color, box-shadow;
+}
+
+.saveStatus {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.saveStatus[data-error="true"] {
+  color: var(--destructive);
+}
+
+.preview {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.sampleControls {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sampleControls > summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+}
+
+.sampleControls > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sampleControls > summary svg {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.sampleControls[open] > summary svg {
+  transform: rotate(180deg);
+}
+
+.sampleGroups {
+  display: grid;
+  gap: 20px;
+  padding-top: 12px;
+}
+
+.sampleFields {
+  display: grid;
+  gap: 16px;
+}
+
+.sampleFields label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  line-height: 1.5;
+}
+
+.otherSamples > summary {
+  min-height: 44px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 44px;
+  cursor: pointer;
+}
+
+.mail {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  overflow-wrap: anywhere;
+}
+
+.mailLabel {
+  margin: 0 0 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.mail p {
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.mailSubject {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.mailBody {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+
+.copyButton {
+  justify-self: start;
+}
+
+@media (max-width: 959px) {
+  .editorPane[data-active="false"] {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .editor[data-slot="dialog-content"] {
+    right: auto;
+    left: 50%;
+    width: calc(100% - 48px);
+  }
+
+  .identityFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editorHeader {
+    padding: 24px 64px 24px 28px;
+  }
+
+  .editorForm,
+  .previewPane {
+    padding: 24px 28px;
+  }
+
+  .editorFooter {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    padding: 16px 28px;
+  }
+
+  .saveStatus {
+    grid-column: auto;
+  }
+
+  .sampleFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .viewSwitch {
+    display: none;
+  }
+
+  .editorBody {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .previewPane {
+    min-height: 100%;
+    border-left: 1px solid var(--border);
+  }
+
+  .field input,
+  .sampleFields input,
+  .bodyInput {
+    font-size: 14px;
+  }
+}

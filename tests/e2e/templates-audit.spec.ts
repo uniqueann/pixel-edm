@@ -30,7 +30,7 @@ test("模板编辑、变量预览、复制归档与管理员审计", async ({ pa
   await expect(editor.getByRole("button", { name: "保存模板" })).toBeDisabled();
   await editor.getByLabel("纯文本正文").fill("Dear ");
   await editor.getByRole("button", { name: "{{name}}" }).click();
-  await editor.getByText("预览当前内容").click();
+  await expect(editor.getByRole("heading", { name: "邮件预览" })).toBeVisible();
   await expect(editor.getByText("Hello Anna")).toBeVisible();
   await expect(
     editor.getByText("发件人（收件人邮箱客户端显示的 From）"),

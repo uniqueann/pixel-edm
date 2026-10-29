@@ -3,12 +3,27 @@ import { createServer } from "node:http";
 import { createDatabase, asUser } from "./database-helper.mjs";
 const db = await createDatabase();
 const a = "10000000-0000-0000-0000-000000000001",
-  b = "10000000-0000-0000-0000-000000000002";
+  b = "10000000-0000-0000-0000-000000000002",
+  templateUser = "10000000-0000-0000-0000-000000000003";
+const testAccounts = {
+  [a]: "owner@example.test",
+  [b]: "viewer@example.test",
+  [templateUser]: "templates@example.test",
+};
 await db.exec(`
   insert into auth.users(id,email,email_confirmed_at) values
     ('${a}','owner@example.test',now()),
-    ('${b}','viewer@example.test',now())
+    ('${b}','viewer@example.test',now()),
+    ('${templateUser}','templates@example.test',now())
 `);
+// 模板交互使用独立账号，避免设置页回归保存真实署名后改变缺省状态。
+const templateWorkspace = (
+  await asUser(db, templateUser, "select edm.initialize_member() as id")
+).rows[0].id;
+await db.query(
+  "update edm.workspaces set name='模板验证邮局', plan='pro' where id=$1",
+  [templateWorkspace],
+);
 const wb = (await asUser(db, b, "select edm.initialize_member() as id")).rows[0]
   .id;
 await db.exec(
@@ -105,7 +120,7 @@ const user = (id) => ({
   id,
   aud: "authenticated",
   role: "authenticated",
-  email: id === a ? "owner@example.test" : "viewer@example.test",
+  email: testAccounts[id],
   email_confirmed_at: new Date().toISOString(),
   app_metadata: { provider: "email" },
   user_metadata: {},
@@ -173,12 +188,9 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === "/auth/v1/token") {
       // viewer@example.test 是免费版「协作邮局」的管理员，用于套餐用量上限场景。
-      const loginId =
-        input.email === "owner@example.test"
-          ? a
-          : input.email === "viewer@example.test"
-            ? b
-            : null;
+      const loginId = Object.keys(testAccounts).find(
+        (accountId) => testAccounts[accountId] === input.email,
+      );
       if (!loginId || input.password !== "edm-test-password")
         return send({ message: "登录失败" }, 400);
       return send({
@@ -214,7 +226,7 @@ const server = createServer(async (req, res) => {
       const claims = JSON.parse(
         Buffer.from(bearer.split(".")[1], "base64url").toString(),
       );
-      if ([a, b].includes(claims.sub)) uid = claims.sub;
+      if (Object.hasOwn(testAccounts, claims.sub)) uid = claims.sub;
     }
     if (url.pathname === "/auth/v1/user")
       return uid ? send(user(uid)) : send({ message: "需要登录" }, 401);
@@ -263,10 +275,11 @@ const server = createServer(async (req, res) => {
         uid,
         "select edm.initialize_member() as id",
       );
-      await db.query(
-        "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'viewer') on conflict do nothing",
-        [wb, uid],
-      );
+      if (uid !== templateUser)
+        await db.query(
+          "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'viewer') on conflict do nothing",
+          [wb, uid],
+        );
       return send(result.rows[0].id);
     }
     const rpc = url.pathname.split("/").pop();

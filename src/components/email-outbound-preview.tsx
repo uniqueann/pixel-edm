@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ComponentProps } from "react";
 import { formatOutboundFromLine } from "@/lib/email-outbound-preview";
 import { mailingAddressProblem } from "@/lib/mailing-address";
 import { cn } from "@/lib/utils";
@@ -12,10 +13,12 @@ export function EmailOutboundFromPreview({
   senderAlias,
   senderAddress,
   className,
+  onSettingsNavigate,
 }: {
   senderAlias: string | null | undefined;
   senderAddress: string | null | undefined;
   className?: string;
+  onSettingsNavigate?: ComponentProps<typeof Link>["onNavigate"];
 }) {
   const fromLine = formatOutboundFromLine(senderAlias, senderAddress);
   const missingAlias = !(senderAlias ?? "").trim();
@@ -35,7 +38,11 @@ export function EmailOutboundFromPreview({
             : missingAddress
               ? "主通道尚未填写发件地址。"
               : "主通道尚未填写发件人显示名称。"}
-          <Link href="/settings" className="ml-1 underline underline-offset-2">
+          <Link
+            href="/settings"
+            onNavigate={onSettingsNavigate}
+            className="ml-1 underline underline-offset-2"
+          >
             前往发信通道
           </Link>
         </p>
@@ -48,10 +55,12 @@ export function EmailOutboundFooterPreview({
   workspaceName,
   mailingAddress,
   className,
+  onSettingsNavigate,
 }: {
   workspaceName: string;
   mailingAddress: string;
   className?: string;
+  onSettingsNavigate?: ComponentProps<typeof Link>["onNavigate"];
 }) {
   const name = workspaceName.trim() || "（店铺 / 工作区名称）";
   const address = mailingAddress.trim();
@@ -82,6 +91,7 @@ export function EmailOutboundFooterPreview({
             {addressProblem}
             <Link
               href="/settings"
+              onNavigate={onSettingsNavigate}
               className="ml-1 underline underline-offset-2"
             >
               前往店铺信息
