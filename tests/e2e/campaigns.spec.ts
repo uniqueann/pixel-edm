@@ -345,3 +345,101 @@ test("活动草稿创建编辑、动态变量、归档模板、权限与窄屏",
   expect(Math.abs(dialogBox!.y + dialogBox!.height - 844)).toBeLessThan(1);
   expect(errors).toEqual([]);
 });
+
+test("活动页长名称、响应式筛选、草稿编辑与手机键盘", async ({ page }) => {
+  await login(page);
+  await page.goto("/campaigns");
+  await page.getByRole("button", { name: "新建活动", exact: true }).click();
+  const editor = page.getByRole("dialog");
+  const name = "黑色星期五客户回访与年度新品专属优惠邀请".repeat(3);
+  await editor.getByLabel("活动名称").fill(name);
+  await editor
+    .getByLabel("邮件模板", { exact: true })
+    .selectOption({ label: "欢迎系列 · 欢迎新客户" });
+  await editor.getByLabel(/发件人/).fill("Anna Chen");
+  await editor.getByLabel(/优惠信息/).fill("会员专享优惠");
+  await editor.getByRole("button", { name: "保存活动草稿" }).click();
+  await expect(editor).toBeHidden();
+  const card = page.locator("[data-campaign-id]").filter({
+    has: page.getByRole("heading", { name, exact: true }),
+  });
+  await expect(card).toBeVisible();
+
+  for (const width of [320, 390, 820, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+    for (const control of [
+      page.getByRole("search").getByLabel("搜索活动名称"),
+      page.getByLabel("活动归档状态"),
+      page.getByLabel("活动状态", { exact: true }),
+      card.getByRole("button", { name: "预览", exact: true }),
+      card.getByRole("button", { name: "编辑", exact: true }),
+      card.getByRole("button", { name: "归档", exact: true }),
+    ]) {
+      const bounds = await control.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+      if (width < 640) expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    }
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByLabel("活动状态", { exact: true }).selectOption("draft");
+  await expect(page).toHaveURL(/campaign_status=draft/);
+  await page.getByLabel("搜索活动名称").fill("不存在的活动".repeat(20));
+  await expect(
+    page.getByRole("heading", { name: "没有匹配的活动" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page
+    .getByLabel("已应用筛选")
+    .getByRole("button", { name: "清空筛选" })
+    .click();
+  await expect(card).toBeVisible();
+
+  const editButton = card.getByRole("button", { name: "编辑", exact: true });
+  await editButton.click();
+  await expect(editor.getByLabel("活动名称")).toHaveValue(name);
+  await editor.getByLabel(/优惠信息/).focus();
+  await page.evaluate(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) throw new Error("浏览器未提供 VisualViewport");
+    Object.defineProperty(viewport, "height", {
+      configurable: true,
+      value: 420,
+    });
+    viewport.dispatchEvent(new Event("resize"));
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const field = document.activeElement?.getBoundingClientRect();
+        const dialog = document.querySelector("[role='dialog']");
+        const bounds = dialog?.getBoundingClientRect();
+        const footer = dialog
+          ?.querySelector("button[type='submit']")
+          ?.parentElement?.getBoundingClientRect();
+        return Boolean(
+          field &&
+          bounds &&
+          footer &&
+          bounds.bottom <= 421 &&
+          field.top >= bounds.top &&
+          field.bottom <= footer.top,
+        );
+      }),
+    )
+    .toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(editor).toBeHidden();
+  await expect(editButton).toBeFocused();
+});
