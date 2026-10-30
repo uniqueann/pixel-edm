@@ -11,8 +11,23 @@ async function scenario(
   request: APIRequestContext,
   values: Record<string, unknown> = {},
 ) {
-  const response = await request.post(fixtureUrl, { data: values });
-  expect(response.ok(), await response.text()).toBe(true);
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await request.post(fixtureUrl, { data: values });
+      expect(response.ok(), await response.text()).toBe(true);
+      return;
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      const transient = /socket hang up|ECONNRESET|ECONNREFUSED|EPIPE/.test(
+        message,
+      );
+      if (!transient || attempt === 2) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+    }
+  }
+  throw lastError;
 }
 
 async function login(page: Page) {

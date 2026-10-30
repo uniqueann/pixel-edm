@@ -222,6 +222,9 @@ async function completeChannelTest(attemptId, status = "accepted") {
   );
 }
 const server = createServer(async (req, res) => {
+  // Playwright 的 API 请求会复用 keep-alive。Node 默认空闲 5 秒就拆连接，
+  // 与下一次 POST（常见于用例 afterEach 重置）撞上时客户端只看到 socket hang up。
+  res.setHeader("Connection", "close");
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3100");
   res.setHeader(
     "Access-Control-Allow-Headers",
@@ -627,6 +630,8 @@ const server = createServer(async (req, res) => {
     send({ message: String(error) }, 400);
   }
 });
+server.keepAliveTimeout = 60_000;
+server.headersTimeout = 65_000;
 server.listen(54329, "127.0.0.1", () =>
   console.log("本地测试认证与数据库接口已就绪"),
 );
