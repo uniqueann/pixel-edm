@@ -66,9 +66,15 @@ function DialogContent({
     if (!(focused instanceof HTMLElement) || !content.contains(focused)) return;
     const contentBox = content.getBoundingClientRect();
     const focusedBox = focused.getBoundingClientRect();
+    // 仅带固定操作栏标记的弹窗需要额外避让，其他弹窗沿用原有边界。
+    const footer = content.querySelector("[data-dialog-scroll-footer]");
+    const visibleBottom =
+      footer && !footer.contains(focused)
+        ? Math.min(contentBox.bottom, footer.getBoundingClientRect().top)
+        : contentBox.bottom;
     const gap = 12;
-    if (focusedBox.bottom > contentBox.bottom - gap) {
-      content.scrollTop += focusedBox.bottom - contentBox.bottom + gap;
+    if (focusedBox.bottom > visibleBottom - gap) {
+      content.scrollTop += focusedBox.bottom - visibleBottom + gap;
     } else if (focusedBox.top < contentBox.top + gap) {
       content.scrollTop -= contentBox.top + gap - focusedBox.top;
     }

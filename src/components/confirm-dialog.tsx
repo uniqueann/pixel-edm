@@ -22,6 +22,8 @@ export function ConfirmDialog({
   variant = "default",
   loading = false,
   onConfirm,
+  onReturnFocus,
+  contentClassName,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -33,14 +35,24 @@ export function ConfirmDialog({
   loading?: boolean;
   /** 返回 false 时保持弹窗打开（用于多步确认）。 */
   onConfirm: () => void | boolean;
+  onReturnFocus?: () => void;
+  contentClassName?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-md"
+        className={`sm:max-w-md ${contentClassName ?? ""}`}
         showCloseButton={false}
         onInteractOutside={(event) => event.preventDefault()}
         data-testid="confirm-dialog"
+        onCloseAutoFocus={
+          onReturnFocus
+            ? (event) => {
+                event.preventDefault();
+                onReturnFocus();
+              }
+            : undefined
+        }
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

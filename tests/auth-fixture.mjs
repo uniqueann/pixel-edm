@@ -1,21 +1,37 @@
 // 仅供本地端到端测试：模拟认证协议，业务查询仍执行真实 PostgreSQL RLS。
 import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
+import {
+  parseCredentialKeyring,
+  sealCredentialPayload,
+} from "../src/features/channels/crypto-core.ts";
 import { createDatabase, asUser } from "./database-helper.mjs";
 const db = await createDatabase();
 const a = "10000000-0000-0000-0000-000000000001",
   b = "10000000-0000-0000-0000-000000000002",
-  templateUser = "10000000-0000-0000-0000-000000000003";
+  templateUser = "10000000-0000-0000-0000-000000000003",
+  channelUser = "10000000-0000-0000-0000-000000000004";
 const testAccounts = {
   [a]: "owner@example.test",
   [b]: "viewer@example.test",
   [templateUser]: "templates@example.test",
+  [channelUser]: "channels@example.test",
 };
 await db.exec(`
   insert into auth.users(id,email,email_confirmed_at) values
     ('${a}','owner@example.test',now()),
     ('${b}','viewer@example.test',now()),
-    ('${templateUser}','templates@example.test',now())
+    ('${templateUser}','templates@example.test',now()),
+    ('${channelUser}','channels@example.test',now())
 `);
+// 通道流程使用独立工作区，避免视觉记录与既有设置、活动回归互相改变状态。
+const channelWorkspace = (
+  await asUser(db, channelUser, "select edm.initialize_member() as id")
+).rows[0].id;
+await db.query(
+  "update edm.workspaces set name='通道测试邮局', mailing_address='上海市测试路 3 号', plan='pro' where id=$1",
+  [channelWorkspace],
+);
 // 模板交互使用独立账号，避免设置页回归保存真实署名后改变缺省状态。
 const templateWorkspace = (
   await asUser(db, templateUser, "select edm.initialize_member() as id")
@@ -141,6 +157,70 @@ const token = (id) =>
     "test-signature",
   ].join(".");
 const publicUnsubscribedTokens = new Set(["already.suppressed"]);
+const originalProviders = (
+  await db.query("select provider,enabled from edm.delivery_providers")
+).rows;
+const fixtureKeyring = parseCredentialKeyring(
+  '{"active":"test-v1","keys":{"test-v1":"MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="}}',
+);
+let channelScenario = {};
+let channelRequests = [];
+let providerAcceptances = 0;
+const waitChannelRequest = (milliseconds) =>
+  new Promise((resolve) => setTimeout(resolve, Number(milliseconds) || 0));
+async function channelRpc(name, payload, worker = false) {
+  const sql = `select edm.${name}('${JSON.stringify(payload).replaceAll("'", "''")}'::jsonb) as result`;
+  return (await (worker ? db.query(sql) : asUser(db, channelUser, sql))).rows[0]
+    .result;
+}
+async function seedChannel(provider) {
+  const id = randomUUID();
+  return channelRpc("save_delivery_channel", {
+    workspace_id: channelWorkspace,
+    id,
+    provider,
+    provider_config: {
+      region: provider === "amazon_ses" ? "us-east-1" : "cn-hangzhou",
+    },
+    sender_domain: provider === "amazon_ses" ? null : "send.example.com",
+    sender_address:
+      provider === "amazon_ses"
+        ? "hello@ses.example.test"
+        : "hello@send.example.com",
+    sender_alias: "通道测试邮局",
+    credential: sealCredentialPayload(
+      fixtureKeyring,
+      {
+        workspaceId: channelWorkspace,
+        channelId: id,
+        credentialVersion: 1,
+        provider,
+      },
+      {
+        accessKeyId: "LTAI5tFixture1234",
+        accessKeySecret: "local-fixture-secret",
+      },
+    ),
+  });
+}
+async function completeChannelTest(attemptId, status = "accepted") {
+  return channelRpc(
+    "worker_complete_delivery_test",
+    {
+      workspace_id: channelWorkspace,
+      attempt_id: attemptId,
+      status,
+      provider_request_id: "fixture-request-123456",
+      provider_event_id: "fixture-env-654321",
+      ...(status === "failed"
+        ? { error_category: "authentication", error_code: "InvalidAccessKeyId" }
+        : status === "unknown"
+          ? { error_category: "unknown", error_code: "NETWORK_BOUNDARY" }
+          : {}),
+    },
+    true,
+  );
+}
 const server = createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3100");
   res.setHeader(
@@ -163,6 +243,128 @@ const server = createServer(async (req, res) => {
     for await (const chunk of req) body += chunk;
     const input = body ? JSON.parse(body) : {};
     if (url.pathname === "/health") return send({ ok: true });
+    // 仅此 127.0.0.1 测试进程提供场景控制，数据局限于独立通道测试工作区。
+    if (url.pathname === "/__fixtures/channels") {
+      if (req.method === "GET")
+        return send({
+          requests: channelRequests,
+          providerAcceptances,
+          attempts: (
+            await db.query(
+              "select id,status from edm.delivery_test_attempts where workspace_id=$1 order by created_at",
+              [channelWorkspace],
+            )
+          ).rows,
+        });
+      if (input.operation === "complete") {
+        const attempts = (
+          await db.query(
+            "select id,status from edm.delivery_test_attempts where workspace_id=$1 and status in ('pending','processing')",
+            [channelWorkspace],
+          )
+        ).rows;
+        for (const attempt of attempts) {
+          if (attempt.status === "pending")
+            await channelRpc(
+              "worker_claim_delivery_test",
+              {
+                workspace_id: channelWorkspace,
+                attempt_id: attempt.id,
+                recipient_email: testAccounts[channelUser],
+              },
+              true,
+            );
+          await completeChannelTest(attempt.id, input.status ?? "accepted");
+        }
+        return send({ ok: true });
+      }
+      if (input.operation === "faults") {
+        channelScenario = { ...channelScenario, ...input };
+        return send({ ok: true });
+      }
+      await db.transaction(async (tx) => {
+        await tx.query(
+          "update edm.workspace_members set role='admin' where workspace_id=$1 and user_id=$2",
+          [channelWorkspace, channelUser],
+        );
+        await tx.query("update edm.workspaces set owner_id=$2 where id=$1", [
+          channelWorkspace,
+          channelUser,
+        ]);
+        await tx.query(
+          "delete from edm.workspace_members where workspace_id=$1 and user_id=$2",
+          [channelWorkspace, b],
+        );
+      });
+      await db.query(
+        "delete from edm.delivery_channels where workspace_id=$1",
+        [channelWorkspace],
+      );
+      for (const provider of originalProviders)
+        await db.query(
+          "update edm.delivery_providers set enabled=$2 where provider=$1",
+          [provider.provider, provider.enabled],
+        );
+      channelScenario = { ...input };
+      channelRequests = [];
+      providerAcceptances = 0;
+      await db.query(
+        "update edm.workspaces set mailing_address=$2 where id=$1",
+        [channelWorkspace, input.missingAddress ? "" : "上海市测试路 3 号"],
+      );
+      await db.query(
+        "update edm.members set display_name='店主' where user_id=$1",
+        [channelUser],
+      );
+      if (input.seed) {
+        const seeded = await seedChannel("aliyun_directmail");
+        if (input.status)
+          await db.query(
+            "update edm.delivery_channels set status=$2 where id=$1",
+            [seeded.id, input.status],
+          );
+        if (input.missingCredentials)
+          await db.query(
+            "delete from edm_private.delivery_channel_credentials where channel_id=$1",
+            [seeded.id],
+          );
+        if (input.longContent)
+          await db.query(
+            "update edm.delivery_channels set sender_domain=$2,sender_address=$3 where id=$1",
+            [
+              seeded.id,
+              "long-domain-".repeat(4) + "mail.example.test",
+              "long-sender-".repeat(4) +
+                "@" +
+                "long-domain-".repeat(4) +
+                "mail.example.test",
+            ],
+          );
+      }
+      if (input.multiple) {
+        await db.query(
+          "update edm.delivery_providers set enabled=true where provider='amazon_ses'",
+        );
+        await seedChannel("amazon_ses");
+      }
+      if (input.readOnly)
+        await db.transaction(async (tx) => {
+          // 保留有效管理员与所有者约束，再设置当前测试成员的只读角色。
+          await tx.query(
+            "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'admin')",
+            [channelWorkspace, b],
+          );
+          await tx.query("update edm.workspaces set owner_id=$2 where id=$1", [
+            channelWorkspace,
+            b,
+          ]);
+          await tx.query(
+            "update edm.workspace_members set role='viewer' where workspace_id=$1 and user_id=$2",
+            [channelWorkspace, channelUser],
+          );
+        });
+      return send({ ok: true });
+    }
     if (url.pathname === "/functions/v1/edm-unsubscribe") {
       const publicToken = req.headers["x-edm-unsubscribe-token"];
       if (typeof publicToken !== "string" || publicToken === "invalid.invalid")
@@ -236,6 +438,18 @@ const server = createServer(async (req, res) => {
       url.pathname === "/functions/v1/edm-directmail-test" ||
       url.pathname === "/functions/v1/edm-delivery-test"
     ) {
+      const isolatedChannel = uid === channelUser;
+      const outcome = isolatedChannel
+        ? (channelScenario.testOutcomes?.shift() ?? "accepted")
+        : "accepted";
+      if (isolatedChannel) {
+        channelRequests.push({
+          operation: "test",
+          channelId: input.channel_id,
+          key: input.idempotency_key,
+        });
+        await waitChannelRequest(channelScenario.testDelayMs);
+      }
       const prepared = (
         await asUser(
           db,
@@ -245,6 +459,7 @@ const server = createServer(async (req, res) => {
       ).rows[0].result;
       if (!prepared.is_new)
         return send({ data: prepared.attempt, reused: true });
+      if (outcome === "pending") return send({ data: prepared.attempt });
       const claim = (
         await db.query(
           `select edm.worker_claim_delivery_test('${JSON.stringify({
@@ -256,17 +471,32 @@ const server = createServer(async (req, res) => {
       ).rows[0].result;
       if (!claim.claim_acquired)
         return send({ data: claim.attempt, reused: true });
+      if (outcome === "processing") return send({ data: claim.attempt });
       const completed = (
         await db.query(
           `select edm.worker_complete_delivery_test('${JSON.stringify({
             workspace_id: input.workspace_id,
             attempt_id: input.attempt_id,
-            status: "accepted",
+            status: ["failed", "unknown"].includes(outcome)
+              ? outcome
+              : "accepted",
+            ...(outcome === "failed"
+              ? {
+                  error_category: "authentication",
+                  error_code: "InvalidAccessKeyId",
+                }
+              : outcome === "unknown"
+                ? { error_category: "unknown", error_code: "NETWORK_BOUNDARY" }
+                : {}),
             provider_request_id: "fixture-request-123456",
             provider_event_id: "fixture-env-654321",
           }).replaceAll("'", "''")}'::jsonb) as result`,
         )
       ).rows[0].result;
+      if (isolatedChannel && !["failed", "unknown"].includes(outcome))
+        providerAcceptances += 1;
+      if (outcome === "transport")
+        return send({ error: "模拟发送完成后响应中断" }, 503);
       return send({ data: completed });
     }
     if (url.pathname === "/rest/v1/rpc/initialize_member") {
@@ -283,6 +513,26 @@ const server = createServer(async (req, res) => {
       return send(result.rows[0].id);
     }
     const rpc = url.pathname.split("/").pop();
+    if (uid === channelUser && url.pathname.startsWith("/rest/v1/rpc/")) {
+      if (
+        [
+          "save_delivery_channel",
+          "disconnect_delivery_channel",
+          "configure_delivery_tracking",
+          "configure_delivery_webhook",
+          "set_primary_delivery_channel",
+        ].includes(rpc)
+      ) {
+        channelRequests.push({ operation: rpc });
+        if (rpc === "save_delivery_channel") {
+          await waitChannelRequest(channelScenario.saveDelayMs);
+          if (channelScenario.saveFailures > 0) {
+            channelScenario.saveFailures -= 1;
+            return send({ message: "模拟保存失败，请核对后重试。" }, 503);
+          }
+        }
+      }
+    }
     const noPayloadRpcs = new Set(["list_delivery_providers"]);
     if (
       url.pathname.startsWith("/rest/v1/rpc/") &&

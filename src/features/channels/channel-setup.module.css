@@ -1,0 +1,328 @@
+.settings {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.settings :is(button, input:not([type="checkbox"]), [role="combobox"], summary),
+.dialog :is(button, input, [role="combobox"], summary) {
+  min-height: 44px;
+}
+
+.settings :is(a, summary),
+.dialog a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.settings :is(p, h2, h3, dd, span),
+.dialog :is(p, h2, h3) {
+  overflow-wrap: anywhere;
+}
+
+.settings :is(p, dl),
+.dialog p {
+  margin-block-end: 0;
+}
+
+.intro {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.intro h3 {
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+
+.preparation {
+  display: grid;
+  gap: 12px 24px;
+  padding: 0;
+  margin: 16px 0;
+  list-style: none;
+}
+
+.preparation li {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.preparation strong,
+.preparation span {
+  display: block;
+}
+
+.preparation span,
+.supporting {
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.status {
+  display: grid;
+  gap: 8px;
+  padding-block: 4px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.status h3 {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.continuation {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.continuation h3 {
+  font-size: 16px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.result {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  scroll-margin-top: 150px;
+}
+
+.result[data-tone="error"] {
+  border-color: var(--destructive);
+}
+
+.identity {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+}
+
+.identity > div {
+  min-width: 0;
+}
+
+.identity dt {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.identity dd {
+  margin: 4px 0 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.disclosure {
+  border-top: 1px solid var(--border);
+}
+
+.disclosure > summary {
+  width: 100%;
+  gap: 12px;
+  padding-block: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.disclosure > summary::before {
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  content: "";
+  transform: rotate(-45deg);
+  flex-shrink: 0;
+}
+
+.disclosure[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.disclosure > summary span {
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.disclosureBody {
+  padding-bottom: 16px;
+}
+
+.dialog {
+  gap: 0;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.dialog > [data-slot="dialog-close"] {
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+}
+
+.settings [data-size="icon"] {
+  min-width: 44px;
+}
+
+.confirmation button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.dialogHeader {
+  padding: 24px 56px 16px 24px;
+  text-align: left;
+}
+
+.form {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.formGroup {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 0 24px;
+  margin: 0;
+  border: 0;
+}
+
+.formGroup > legend {
+  width: 100%;
+  padding: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.fieldGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dialog input {
+  width: 100%;
+  caret-color: var(--foreground);
+}
+
+.dialog input::placeholder,
+.dialog textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+.fieldError {
+  color: var(--destructive);
+  font-size: 14px;
+}
+
+.formError {
+  margin: 0 24px;
+  padding: 12px;
+  border: 1px solid var(--destructive);
+  border-radius: 8px;
+  scroll-margin-block: 16px;
+}
+
+.formError:focus {
+  outline-offset: 2px;
+}
+
+.formFooter {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+
+.formFooter > p {
+  flex: 1 1 180px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+@media (min-width: 640px) {
+  .preparation,
+  .fieldGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .preparation {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .identity {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .actions > :is(button, a) {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .dialog :is(input, textarea) {
+    font-size: 16px;
+  }
+
+  .dialogHeader {
+    padding: 20px 52px 16px 16px;
+  }
+
+  .formGroup {
+    padding-inline: 16px;
+  }
+
+  .formFooter {
+    padding-inline: 16px;
+  }
+
+  .formFooter > p {
+    flex-basis: 100%;
+  }
+
+  .formFooter > button {
+    flex: 1;
+  }
+
+  .formError {
+    margin-inline: 16px;
+  }
+}
