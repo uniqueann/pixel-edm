@@ -189,9 +189,9 @@ export function ChannelSettings({
           </Button>
         )}
         <Button asChild>
-          <Link href="/dashboard">返回总览核对准备</Link>
+          <Link href="/dashboard#onboarding">返回总览核对准备</Link>
         </Button>
-        {storeReady && signatureReady && (
+        {storeReady && (
           <Button asChild variant="outline">
             <Link href="/campaigns">前往创建活动</Link>
           </Button>

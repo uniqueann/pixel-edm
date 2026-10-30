@@ -19,10 +19,13 @@ export default async function Page({
   return (
     <section className="auth-card">
       <h1>准备你的工作区</h1>
-      <p className="hint">
+      <p className="hint" role="status">
         {error
           ? "初始化未完成。账号可能已停用，或服务暂时不可用；请重试，重复操作不会创建重复工作区。"
           : "正在为你准备工作区…"}
+      </p>
+      <p className="hint">
+        进入后可从总览准备清单开始，创建活动草稿、预览邮件并核对名单；这些操作不会立即正式发送。
       </p>
       <InitializeForm retry={Boolean(error)} />
       <form className="mt-4" action={signOut}>

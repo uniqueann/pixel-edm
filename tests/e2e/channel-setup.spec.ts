@@ -400,12 +400,12 @@ test("主通道验证后衔接地址、正文署名、总览准备与创建活�
   await page.getByRole("button", { name: "保存署名", exact: true }).click();
   await expect(next.getByRole("link", { name: "前往创建活动" })).toBeVisible();
   await next.getByRole("link", { name: "返回总览核对准备" }).click();
-  await expect(page).toHaveURL(/dashboard$/);
+  await expect(page).toHaveURL(/dashboard#onboarding$/);
+  await expect(page.locator('[data-preparation="channels"]')).toContainText(
+    "已完成",
+  );
   await expect(
-    page.getByRole("link", { name: "连接并验证发信通道" }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("link", { name: "添加第一批客户" }),
+    page.getByRole("link", { name: "准备已订阅客户" }),
   ).toBeVisible();
   await page.goto("/settings#settings-channels");
   await next.getByRole("link", { name: "前往创建活动" }).click();

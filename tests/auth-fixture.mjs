@@ -10,20 +10,57 @@ const db = await createDatabase();
 const a = "10000000-0000-0000-0000-000000000001",
   b = "10000000-0000-0000-0000-000000000002",
   templateUser = "10000000-0000-0000-0000-000000000003",
-  channelUser = "10000000-0000-0000-0000-000000000004";
+  channelUser = "10000000-0000-0000-0000-000000000004",
+  onboardingUser = "10000000-0000-0000-0000-000000000005",
+  returningUser = "10000000-0000-0000-0000-000000000006",
+  freshUser = "10000000-0000-0000-0000-000000000007",
+  journeyUser = "10000000-0000-0000-0000-000000000008",
+  mobileJourneyUser = "10000000-0000-0000-0000-000000000009";
 const testAccounts = {
   [a]: "owner@example.test",
   [b]: "viewer@example.test",
   [templateUser]: "templates@example.test",
   [channelUser]: "channels@example.test",
+  [onboardingUser]: "onboarding@example.test",
+  [returningUser]: "returning@example.test",
+  [freshUser]: "fresh@example.test",
+  [journeyUser]: "journey@example.test",
+  [mobileJourneyUser]: "mobile-journey@example.test",
 };
 await db.exec(`
   insert into auth.users(id,email,email_confirmed_at) values
     ('${a}','owner@example.test',now()),
     ('${b}','viewer@example.test',now()),
     ('${templateUser}','templates@example.test',now()),
-    ('${channelUser}','channels@example.test',now())
+    ('${channelUser}','channels@example.test',now()),
+    ('${onboardingUser}','onboarding@example.test',now()),
+    ('${returningUser}','returning@example.test',now()),
+    ('${freshUser}','fresh@example.test',now()),
+    ('${journeyUser}','journey@example.test',now()),
+    ('${mobileJourneyUser}','mobile-journey@example.test',now())
 `);
+// 首次使用验证使用独立账号和工作区，场景控制不接触现有回归账号。
+const onboardingWorkspaces = [];
+for (const uid of [
+  onboardingUser,
+  returningUser,
+  journeyUser,
+  mobileJourneyUser,
+]) {
+  const workspaceId = (
+    await asUser(db, uid, "select edm.initialize_member() as id")
+  ).rows[0].id;
+  onboardingWorkspaces.push(workspaceId);
+  await db.query("update edm.workspaces set name=$2,plan='team' where id=$1", [
+    workspaceId,
+    uid === returningUser ? "回访协作邮局" : "初次使用邮局",
+  ]);
+}
+await db.query(
+  "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'viewer')",
+  [onboardingWorkspaces[1], onboardingUser],
+);
+let onboardingScenario = {};
 // 通道流程使用独立工作区，避免视觉记录与既有设置、活动回归互相改变状态。
 const channelWorkspace = (
   await asUser(db, channelUser, "select edm.initialize_member() as id")
@@ -246,6 +283,181 @@ const server = createServer(async (req, res) => {
     for await (const chunk of req) body += chunk;
     const input = body ? JSON.parse(body) : {};
     if (url.pathname === "/health") return send({ ok: true });
+    if (url.pathname === "/__fixtures/onboarding") {
+      if (req.method === "GET")
+        return send({
+          workspaces: onboardingWorkspaces,
+          freshWorkspaces: Number(
+            (
+              await db.query(
+                "select count(*) as total from edm.workspaces where bootstrap_owner_id=$1",
+                [freshUser],
+              )
+            ).rows[0].total,
+          ),
+        });
+      onboardingScenario = { ...input };
+      const workspaceId =
+        onboardingWorkspaces[
+          input.journey === "mobile" ? 3 : input.journey ? 2 : 0
+        ];
+      const scenarioUser =
+        input.journey === "mobile"
+          ? mobileJourneyUser
+          : input.journey
+            ? journeyUser
+            : onboardingUser;
+      await db.transaction(async (tx) => {
+        await tx.query(
+          "update edm.workspace_members set role='admin' where workspace_id=$1 and user_id=$2",
+          [workspaceId, scenarioUser],
+        );
+        await tx.query("update edm.workspaces set owner_id=$2 where id=$1", [
+          workspaceId,
+          scenarioUser,
+        ]);
+        await tx.query(
+          "delete from edm.workspace_members where workspace_id=$1 and user_id=$2",
+          [workspaceId, b],
+        );
+      });
+      await db.query("delete from edm.campaigns where workspace_id=$1", [
+        workspaceId,
+      ]);
+      await db.query("delete from edm.suppressions where workspace_id=$1", [
+        workspaceId,
+      ]);
+      await db.query(
+        "delete from edm.subscription_events where workspace_id=$1",
+        [workspaceId],
+      );
+      await db.query(
+        "delete from edm.contact_import_rows where workspace_id=$1",
+        [workspaceId],
+      );
+      await db.query("delete from edm.contact_imports where workspace_id=$1", [
+        workspaceId,
+      ]);
+      await db.query("delete from edm.contacts where workspace_id=$1", [
+        workspaceId,
+      ]);
+      await db.query(
+        "delete from edm.delivery_channels where workspace_id=$1",
+        [workspaceId],
+      );
+      await db.query(
+        "update edm.templates set archived_at=null where workspace_id=$1",
+        [workspaceId],
+      );
+      await db.query(
+        "update edm.members set display_name='店主' where user_id=$1",
+        [scenarioUser],
+      );
+      const prepared = ["ready", "existing", "invalidated"].includes(
+        input.state,
+      );
+      await db.query(
+        "update edm.workspaces set name=$2,mailing_address=$3,plan=$4 where id=$1",
+        [
+          workspaceId,
+          input.longName
+            ? "跨境电商与设计工作室的首次邮件营销准备".repeat(5).slice(0, 80)
+            : "初次使用邮局",
+          prepared || input.state === "partial" ? "上海市测试路 5 号" : "",
+          input.overCapacity ? "free" : "team",
+        ],
+      );
+      if (prepared || input.state === "partial") {
+        await db.query(
+          "insert into edm.contacts(workspace_id,email,name,subscription_status,created_by) values($1,'reader@example.test','测试客户',$2,$3)",
+          [
+            workspaceId,
+            input.unconfirmed ? "unconfirmed" : "subscribed",
+            scenarioUser,
+          ],
+        );
+      }
+      if (prepared) {
+        const channelId = randomUUID();
+        const credential = sealCredentialPayload(
+          fixtureKeyring,
+          {
+            workspaceId,
+            channelId,
+            credentialVersion: 1,
+            provider: "aliyun_directmail",
+          },
+          {
+            accessKeyId: "LTAI5tFixture1234",
+            accessKeySecret: "local-fixture-secret",
+          },
+        );
+        const payload = {
+          workspace_id: workspaceId,
+          id: channelId,
+          provider: "aliyun_directmail",
+          provider_config: { region: "cn-hangzhou" },
+          sender_domain: "send.example.com",
+          sender_address: "hello@send.example.com",
+          sender_alias: "初次使用邮局",
+          credential,
+        };
+        await asUser(
+          db,
+          scenarioUser,
+          `select edm.save_delivery_channel('${JSON.stringify(payload).replaceAll("'", "''")}'::jsonb)`,
+        );
+        await db.query(
+          "update edm.delivery_channels set status=$2 where id=$1",
+          [
+            channelId,
+            input.state === "invalidated" ? "disconnected" : "verified",
+          ],
+        );
+      }
+      if (input.state === "existing") {
+        const templateId = (
+          await db.query(
+            "select id from edm.templates where workspace_id=$1 order by id limit 1",
+            [workspaceId],
+          )
+        ).rows[0].id;
+        const payload = {
+          workspace_id: workspaceId,
+          name: "第一场新品介绍活动",
+          template_id: templateId,
+          audience_type: "all",
+          variables: {},
+        };
+        await asUser(
+          db,
+          scenarioUser,
+          `select edm.save_campaign('${JSON.stringify(payload)}'::jsonb)`,
+        );
+      }
+      if (input.archivedTemplates)
+        await db.query(
+          "update edm.templates set archived_at=now() where workspace_id=$1",
+          [workspaceId],
+        );
+      if (input.role && input.role !== "admin") {
+        await db.transaction(async (tx) => {
+          await tx.query(
+            "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'admin')",
+            [workspaceId, b],
+          );
+          await tx.query("update edm.workspaces set owner_id=$2 where id=$1", [
+            workspaceId,
+            b,
+          ]);
+          await tx.query(
+            "update edm.workspace_members set role=$3 where workspace_id=$1 and user_id=$2",
+            [workspaceId, scenarioUser, input.role],
+          );
+        });
+      }
+      return send({ ok: true, workspaceId });
+    }
     // 仅此 127.0.0.1 测试进程提供场景控制，数据局限于独立通道测试工作区。
     if (url.pathname === "/__fixtures/channels") {
       if (req.method === "GET")
@@ -503,12 +715,25 @@ const server = createServer(async (req, res) => {
       return send({ data: completed });
     }
     if (url.pathname === "/rest/v1/rpc/initialize_member") {
+      if (uid === freshUser && onboardingScenario.initializeFailures > 0) {
+        onboardingScenario.initializeFailures -= 1;
+        return send({ message: "模拟初始化暂时不可用" }, 503);
+      }
       const result = await asUser(
         db,
         uid,
         "select edm.initialize_member() as id",
       );
-      if (uid !== templateUser)
+      if (
+        ![
+          templateUser,
+          onboardingUser,
+          returningUser,
+          freshUser,
+          journeyUser,
+          mobileJourneyUser,
+        ].includes(uid)
+      )
         await db.query(
           "insert into edm.workspace_members(workspace_id,user_id,role) values($1,$2,'viewer') on conflict do nothing",
           [wb, uid],
@@ -516,6 +741,8 @@ const server = createServer(async (req, res) => {
       return send(result.rows[0].id);
     }
     const rpc = url.pathname.split("/").pop();
+    if (uid === onboardingUser && onboardingScenario.failedRpcs?.includes(rpc))
+      return send({ message: "模拟准备信息暂时不可用" }, 503);
     if (uid === channelUser && url.pathname.startsWith("/rest/v1/rpc/")) {
       if (
         [

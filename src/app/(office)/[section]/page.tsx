@@ -7,10 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { SettingsForm } from "@/components/settings-form";
 import { SettingsSectionNav } from "@/components/settings-section-nav";
 import { MemberProfileForm } from "@/components/member-profile-form";
-import {
-  SETTINGS_SECTION_IDS,
-  settingsSectionHref,
-} from "@/features/settings/anchors";
+import { SETTINGS_SECTION_IDS } from "@/features/settings/anchors";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +37,17 @@ import { edmCheckoutAvailability } from "@/lib/billing/edm-product-config";
 import { ThemeSegmented } from "@/components/theme-toggle";
 import { mailingAddressProblem } from "@/lib/mailing-address";
 import { isDefaultSenderName } from "@/lib/sender-name";
+import { channelSetupCopy } from "@/features/channels/channel-presentation";
+import { PreparationGuide } from "@/features/onboarding/preparation-guide";
+import {
+  preparationWritePermission,
+  type PreparationFacts,
+} from "@/features/onboarding/model";
+import styles from "@/features/onboarding/preparation.module.css";
+
+function available<T>(result: PromiseSettledResult<T>): T | null {
+  return result.status === "fulfilled" ? result.value : null;
+}
 const pages: Record<
   string,
   { title: string; description: string; empty: string }
@@ -226,7 +234,8 @@ export default async function Page({
       .select("*")
       .eq("workspace_id", workspace.id)
       .eq("status", "active");
-    if (error) throw new Error("成员信息加载失败，请重试。");
+    if (error && section === "team")
+      throw new Error("成员信息加载失败，请重试。");
     const deliveryPlan = await getWorkspaceDeliveryPlan(workspace.id);
     if (section === "team") {
       if (!deliveryPlan?.allows_team_collaboration) {
@@ -284,14 +293,14 @@ export default async function Page({
       deliveryPlan !== null &&
       deliveryPlan.activity_log_retention_days !== 0;
     const [
-      contactSummary,
-      subscribedSummary,
-      templateSummary,
-      campaignStatistics,
-      recentActivity,
-      recentCampaigns,
-      channelSummaries,
-    ] = await Promise.all([
+      contactsResult,
+      subscribedResult,
+      templatesResult,
+      statisticsResult,
+      activityResult,
+      campaignsResult,
+      channelsResult,
+    ] = await Promise.allSettled([
       listContacts({}),
       listContacts({ subscription: "subscribed" }),
       listTemplates({}),
@@ -300,78 +309,94 @@ export default async function Page({
       listCampaigns({ page: "1" }),
       listDeliveryChannels(workspace.id),
     ]);
+    const contactSummary = available(contactsResult);
+    const subscribedSummary = available(subscribedResult);
+    const templateSummary = available(templatesResult);
+    const campaignStatistics = available(statisticsResult);
+    const recentActivity = available(activityResult);
+    const recentCampaigns = available(campaignsResult);
+    const channelSummaries = available(channelsResult);
     const statsAvailable = deliveryPlan?.allows_campaign_statistics ?? false;
     const weightedOpenRate =
-      statsAvailable && campaignStatistics.delivered
+      statsAvailable && campaignStatistics?.delivered
         ? `${Math.round(
             (campaignStatistics.opened / campaignStatistics.delivered) * 100,
           )}%`
         : "—";
-    const canEdit = role !== "viewer";
-    const hasVerifiedPrimaryChannel = channelSummaries.some(
-      (channel) =>
-        channel.is_primary &&
-        channel.status === "verified" &&
-        channel.credential_configured,
+    const primaryChannel =
+      channelSummaries?.find((channel) => channel.is_primary) ?? null;
+    const hasVerifiedPrimaryChannel = Boolean(
+      primaryChannel?.status === "verified" &&
+      primaryChannel.credential_configured,
     );
-    const setupItems = [
-      !workspace.mailing_address.trim()
-        ? {
-            label: "补充邮件页脚实体地址",
-            href: settingsSectionHref("store"),
-          }
-        : mailingAddressProblem(workspace.mailing_address)
+    const canWrite = preparationWritePermission(role, deliveryPlan);
+    const facts: PreparationFacts = {
+      role,
+      canWrite,
+      storeReady:
+        Boolean(workspace.mailing_address.trim()) &&
+        !mailingAddressProblem(workspace.mailing_address),
+      signatureReady: !isDefaultSenderName(member.display_name),
+      channel:
+        channelSummaries === null
+          ? null
+          : {
+              ready: hasVerifiedPrimaryChannel,
+              detail: primaryChannel
+                ? channelSetupCopy(primaryChannel).detail
+                : channelSummaries.length
+                  ? "已有通道，请选择并验证主发信通道。"
+                  : channelSetupCopy(null).detail,
+            },
+      contacts:
+        contactSummary && subscribedSummary
           ? {
-              label: "修正邮件页脚实体地址（当前像占位文本）",
-              href: settingsSectionHref("store"),
+              active: contactSummary.active_count,
+              subscribed: subscribedSummary.total,
             }
           : null,
-      isDefaultSenderName(member.display_name)
-        ? {
-            label: "设置邮件落款署名（当前仍是默认的“店主”）",
-            href: settingsSectionHref("profile"),
-          }
-        : null,
-      !hasVerifiedPrimaryChannel
-        ? {
-            label: "连接并验证发信通道",
-            href: settingsSectionHref("channels"),
-          }
-        : null,
-      contactSummary.active_count === 0
-        ? { label: "添加第一批客户", href: "/contacts" }
-        : subscribedSummary.total === 0
-          ? {
-              label: "确认客户订阅（暂无已订阅客户，未确认客户不能发信）",
-              href: "/contacts",
-            }
-          : null,
-      templateSummary.active_count === 0
-        ? { label: "创建第一套模板", href: "/templates" }
-        : null,
-    ].filter((item): item is { label: string; href: string } => item !== null);
+      templates: templateSummary?.active_count ?? null,
+      campaigns: recentCampaigns?.total ?? null,
+    };
+    const hasCampaigns = (recentCampaigns?.total ?? 0) > 0;
+    const guide = (
+      <PreparationGuide
+        key={`${workspace.id}:${user.id}:${role}`}
+        facts={facts}
+        userId={user.id}
+        workspaceId={workspace.id}
+        otherDataUnavailable={
+          Boolean(error) ||
+          deliveryPlan === null ||
+          statisticsResult.status === "rejected" ||
+          activityResult.status === "rejected"
+        }
+      />
+    );
     return (
       <>
-        <div className="welcome">
-          <span className="eyebrow">卖家邮局</span>
+        <div className={`welcome ${styles.welcome}`}>
           <h1>{workspace.name}</h1>
           <p>管理客户、设计模板并高效发送营销邮件。</p>
         </div>
+        {!hasCampaigns && guide}
         <div className="stat-grid">
           {[
             {
               label: "客户数",
-              value: String(contactSummary.active_count),
+              value: contactSummary ? String(contactSummary.active_count) : "—",
               href: "/contacts",
             },
             {
               label: "模板数",
-              value: String(templateSummary.active_count),
+              value: templateSummary
+                ? String(templateSummary.active_count)
+                : "—",
               href: "/templates",
             },
             {
               label: "工作区成员",
-              value: String(members.length),
+              value: error ? "—" : String(members?.length ?? 0),
               href: "/team",
             },
             {
@@ -391,60 +416,19 @@ export default async function Page({
           ))}
         </div>
         <p className="hint">
-          客户数与模板数仅包含未归档记录；其中已订阅（可发送）客户{" "}
-          {subscribedSummary.total} 位。
-          {statsAvailable
+          客户数与模板数仅包含未归档记录；其中未归档的已订阅客户{" "}
+          {subscribedSummary ? `${subscribedSummary.total} 位` : "数量待核对"}
+          。活动名单仍会排除退订与防打扰地址。
+          {statsAvailable && campaignStatistics
             ? `打开率按近 30 天启用追踪活动的已送达收件人加权计算（${campaignStatistics.opened} / ${campaignStatistics.delivered}，共 ${campaignStatistics.tracked_campaigns} 个活动）。`
-            : "打开/点击统计需专业版或团队版。"}
+            : deliveryPlan === null
+              ? "套餐与统计权限暂时无法读取，请重试核对。"
+              : statsAvailable
+                ? "活动统计暂时无法读取，请重试核对。"
+                : "打开/点击统计需专业版或团队版。"}
         </p>
-        <div className="dashboard-columns">
-          <Card>
-            <CardContent className="pt-5">
-              <div className="section-heading mb-3">
-                <div>
-                  <h2>下一步</h2>
-                  <p className="hint m-0">完成这些准备，就可以开始发信。</p>
-                </div>
-              </div>
-              {setupItems.length ? (
-                <ul className="dashboard-checklist">
-                  {setupItems.map((item) => (
-                    <li key={item.label}>
-                      <span className="checklist-dot" aria-hidden="true" />
-                      <Link href={item.href}>{item.label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="dashboard-success">
-                  基础配置已完成，可以创建发信活动。
-                </p>
-              )}
-              {canEdit && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {setupItems.length === 0 ? (
-                    <>
-                      <Button asChild>
-                        <Link href="/campaigns">新建活动</Link>
-                      </Button>
-                      <Button asChild variant="outline">
-                        <Link href="/contacts">管理客户</Link>
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button asChild>
-                        <Link href="/campaigns">查看活动</Link>
-                      </Button>
-                      <Button asChild variant="outline">
-                        <Link href="/contacts">管理客户</Link>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {hasCampaigns && guide}
+        <div className={styles.recent}>
           <Card>
             <CardContent className="pt-5">
               <div className="section-heading mb-3">
@@ -453,10 +437,10 @@ export default async function Page({
                   href="/campaigns"
                   className="text-xs underline underline-offset-2"
                 >
-                  查看全部
+                  查看全部发信活动
                 </Link>
               </div>
-              {recentCampaigns.items.length ? (
+              {recentCampaigns?.items.length ? (
                 <div className="dashboard-campaign-list">
                   {recentCampaigns.items.slice(0, 5).map((campaign) => (
                     <Link
@@ -480,7 +464,9 @@ export default async function Page({
                 </div>
               ) : (
                 <p className="dashboard-success">
-                  还没有活动，创建第一份草稿吧。
+                  {recentCampaigns === null
+                    ? "最近活动暂时无法读取，请重试核对。"
+                    : "还没有活动，可从准备清单进入活动页创建草稿。"}
                 </p>
               )}
             </CardContent>
@@ -490,7 +476,7 @@ export default async function Page({
           <h2>最近动态</h2>
           {canViewLogs && (
             <Link href="/logs" className="text-xs underline underline-offset-2">
-              查看全部
+              查看全部操作记录
             </Link>
           )}
         </div>
@@ -518,6 +504,8 @@ export default async function Page({
               ))}
             </CardContent>
           </Card>
+        ) : canViewLogs && activityResult.status === "rejected" ? (
+          <p className="hint">最近动态暂时无法读取，其他准备操作仍可继续。</p>
         ) : canViewLogs ? (
           <EmptyState
             title="还没有操作记录"
@@ -526,11 +514,17 @@ export default async function Page({
         ) : (
           <EmptyState
             title={
-              role === "admin" ? "当前套餐不含操作日志" : "动态仅管理员可见"
+              role === "admin"
+                ? deliveryPlan === null
+                  ? "套餐信息待核对"
+                  : "当前套餐不含操作日志"
+                : "动态仅管理员可见"
             }
             description={
               role === "admin"
-                ? "升级套餐后可在总览和日志页查看业务审计。"
+                ? deliveryPlan === null
+                  ? "请重试读取，暂时无法确认日志权限。"
+                  : "升级套餐后可在总览和日志页查看业务审计。"
                 : "管理员可以在总览和日志页查看业务审计。"
             }
           >

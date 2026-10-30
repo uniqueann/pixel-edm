@@ -21,8 +21,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { helpNav, helpSections, type HelpSection } from "./content";
+import { helpNav, helpSections } from "./content";
 import { DirectMailSetupGuide } from "./directmail-setup-guide";
+import { settingsSectionHref } from "@/features/settings/anchors";
 
 const sectionIcons: Record<
   string,
@@ -115,7 +116,7 @@ export function HelpGuide({ role }: { role: string }) {
           <p className="hint m-0 text-xs sm:text-sm">
             通道与追踪问题请先查看{" "}
             <Link
-              href="/settings"
+              href={settingsSectionHref("channels")}
               className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
             >
               设置 → 发信通道
@@ -277,6 +278,19 @@ export function HelpGuide({ role }: { role: string }) {
                 ) : null}
 
                 {/* 补充说明 */}
+                {section.links?.length ? (
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    {section.links.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="inline-flex min-h-11 min-w-11 items-center text-sm underline underline-offset-4"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
                 {section.note ? (
                   <div className="flex items-start gap-2.5 rounded-xl bg-muted/60 px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed text-foreground/90">
                     <Info

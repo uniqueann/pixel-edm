@@ -289,12 +289,15 @@ export function useContactImport({
     if (focus) requestAnimationFrame(() => resultRef.current?.focus());
   }
   function updateAddress(id?: string, page = 1) {
+    const params = new URLSearchParams();
+    if (new URL(window.location.href).searchParams.get("guide") === "contacts")
+      params.set("guide", "contacts");
+    if (id) params.set("id", id);
+    if (page > 1 && id) params.set("page", String(page));
     window.history.replaceState(
       null,
       "",
-      id
-        ? `/contacts/import?id=${id}${page > 1 ? `&page=${page}` : ""}`
-        : "/contacts/import",
+      `/contacts/import${params.size ? `?${params}` : ""}`,
     );
   }
 
