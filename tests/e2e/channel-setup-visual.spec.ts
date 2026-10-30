@@ -59,7 +59,7 @@ test("通道首次配置与测试的四种宽度和明暗主题对照", async ({
   await page.getByRole("button", { name: "登录", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.getByRole("link", { name: "连接并验证发信通道" }).click();
-  await expect(page).toHaveURL(/\/settings#settings-channels$/);
+  await expect(page).toHaveURL(/\/settings\?guide=channels#settings-channels$/);
 
   async function captureSizes(state: string, dialog = false) {
     for (const theme of ["light", "dark"]) {

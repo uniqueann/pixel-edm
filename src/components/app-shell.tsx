@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { Suspense, useTransition } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronDown, LogOut } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { signOut, switchWorkspace } from "@/app/actions";
+import { GuideContext } from "@/features/onboarding/guide-context";
 const tabs = [
   ["dashboard", "总览"],
   ["contacts", "客户"],
@@ -44,6 +45,8 @@ export function AppShell({
   name,
   role,
   workspaceId,
+  userId,
+  canWrite,
   workspaces,
   workspaceBadge,
   showTeamNav = false,
@@ -53,6 +56,8 @@ export function AppShell({
   name: string;
   role: string;
   workspaceId: string;
+  userId: string;
+  canWrite: boolean | null;
   workspaces: { id: string; name: string }[];
   workspaceBadge: string;
   showTeamNav?: boolean;
@@ -206,7 +211,14 @@ export function AppShell({
           </nav>
         </div>
       </div>
-      <main id="main-content" className="view" key={workspaceId}>
+      <main
+        id="main-content"
+        className="view"
+        key={`${userId}:${workspaceId}:${role}`}
+      >
+        <Suspense fallback={null}>
+          <GuideContext role={role} canWrite={canWrite} />
+        </Suspense>
         {children}
       </main>
       <footer className="app-footer">卖家邮局 · 独立站与外贸邮件营销</footer>
