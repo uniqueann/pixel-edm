@@ -156,14 +156,20 @@ export function isInvalidEmailImportMessage(message: string) {
   return dedupeImportMessages(message).split("；").includes("邮箱格式无效");
 }
 
-/** 去重后、邮箱格式有效的组数。格式无效的地址不计入。 */
+/** 展示用的不同邮箱数：排除格式无效地址，字段错误记录也按邮箱去重。 */
 export function countDedupedValidEmails(
-  rows: { message?: string; validation_error?: string }[],
+  rows: { email: string; message?: string; validation_error?: string }[],
 ) {
-  return rows.filter(
-    (row) =>
-      !isInvalidEmailImportMessage(row.message ?? row.validation_error ?? ""),
-  ).length;
+  return new Set(
+    rows
+      .filter(
+        (row) =>
+          !isInvalidEmailImportMessage(
+            row.message ?? row.validation_error ?? "",
+          ),
+      )
+      .map((row) => row.email.trim().toLowerCase()),
+  ).size;
 }
 
 function splitTags(value = "") {
