@@ -94,6 +94,28 @@ test("通道表单在软键盘模拟与小高度视口中，字段不被操作�
   await page.goto("/settings#settings-channels");
   await page.getByRole("button", { name: "更新发信通道" }).click();
   const dialog = page.getByRole("dialog");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const footer = document
+          .querySelector("[data-channel-form-footer]")!
+          .getBoundingClientRect();
+        const scroll = document.querySelector("[data-dialog-scroll-body]")!;
+        const scrollBox = scroll.getBoundingClientRect();
+        const targets = [
+          ...scroll.querySelectorAll("label, .supporting, p[id$='-help']"),
+        ];
+        return targets.every((element) => {
+          const box = element.getBoundingClientRect();
+          const inScrollView =
+            box.height > 0 &&
+            box.bottom > scrollBox.top + 4 &&
+            box.top < scrollBox.bottom - 4;
+          return !inScrollView || box.bottom <= footer.top - 4;
+        });
+      }),
+    )
+    .toBe(true);
   const secret = dialog.getByLabel("AccessKey Secret", { exact: true });
   await secret.focus();
   await simulateKeyboard(page, 420);

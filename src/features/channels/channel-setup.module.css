@@ -166,11 +166,12 @@
   padding-bottom: 16px;
 }
 
-.dialog {
+.dialog[data-slot="dialog-content"] {
+  display: flex;
+  flex-direction: column;
   gap: 0;
   padding: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
 }
 
 .dialog > [data-slot="dialog-close"] {
@@ -191,14 +192,28 @@
 }
 
 .dialogHeader {
+  flex-shrink: 0;
   padding: 24px 56px 16px 24px;
   text-align: left;
 }
 
-.form {
-  display: grid;
-  gap: 24px;
+.formShell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   min-width: 0;
+}
+
+.formScroll {
+  display: grid;
+  flex: 1;
+  gap: 24px;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 12px;
 }
 
 .formGroup {
@@ -257,9 +272,7 @@
 }
 
 .formFooter {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
+  flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;

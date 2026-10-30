@@ -64,19 +64,22 @@ function DialogContent({
   const scrollFocusedIntoView = React.useCallback((content: HTMLDivElement) => {
     const focused = document.activeElement;
     if (!(focused instanceof HTMLElement) || !content.contains(focused)) return;
-    const contentBox = content.getBoundingClientRect();
+    const scrollEl =
+      content.querySelector<HTMLElement>("[data-dialog-scroll-body]") ??
+      content;
+    const scrollBox = scrollEl.getBoundingClientRect();
     const focusedBox = focused.getBoundingClientRect();
     // 仅带固定操作栏标记的弹窗需要额外避让，其他弹窗沿用原有边界。
     const footer = content.querySelector("[data-dialog-scroll-footer]");
     const visibleBottom =
       footer && !footer.contains(focused)
-        ? Math.min(contentBox.bottom, footer.getBoundingClientRect().top)
-        : contentBox.bottom;
+        ? Math.min(scrollBox.bottom, footer.getBoundingClientRect().top)
+        : scrollBox.bottom;
     const gap = 12;
     if (focusedBox.bottom > visibleBottom - gap) {
-      content.scrollTop += focusedBox.bottom - visibleBottom + gap;
-    } else if (focusedBox.top < contentBox.top + gap) {
-      content.scrollTop -= contentBox.top + gap - focusedBox.top;
+      scrollEl.scrollTop += focusedBox.bottom - visibleBottom + gap;
+    } else if (focusedBox.top < scrollBox.top + gap) {
+      scrollEl.scrollTop -= scrollBox.top + gap - focusedBox.top;
     }
   }, []);
 
