@@ -526,6 +526,12 @@ export function ChannelFormDialog({
             )}
           </form>
           <div
+            aria-hidden="true"
+            data-channel-form-gap
+            className={styles.formGap}
+            style={{ flex: "0 0 8px", height: 8, minHeight: 8 }}
+          />
+          <div
             className={styles.formFooter}
             data-channel-form-footer
             data-dialog-scroll-footer

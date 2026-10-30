@@ -14,6 +14,16 @@ async function simulateKeyboard(page: Page, visibleHeight: number) {
   }, visibleHeight);
 }
 
+async function channelFooterGap(page: Page) {
+  return page.evaluate(() => {
+    const footer = document.querySelector("[data-channel-form-footer]")!;
+    const scroll = document.querySelector("[data-dialog-scroll-body]")!;
+    return (
+      footer.getBoundingClientRect().top - scroll.getBoundingClientRect().bottom
+    );
+  });
+}
+
 async function expectFocusedFieldVisible(page: Page, visibleHeight: number) {
   const dialog = page.getByRole("dialog");
   await expect
@@ -104,7 +114,7 @@ test("通道表单在软键盘模拟与小高度视口中，字段不被操作�
         const scroll = document.querySelector("[data-dialog-scroll-body]")!;
         const scrollBox = scroll.getBoundingClientRect();
         if (scroll.scrollTop !== 0) return false;
-        if (scrollBox.bottom > footer.top + 1) return false;
+        if (footer.top - scrollBox.bottom < 8) return false;
         const controls = [
           ...scroll.querySelectorAll(
             "label, input, textarea, select, .supporting, p[id$='-help']",
@@ -121,6 +131,7 @@ test("通道表单在软键盘模拟与小高度视口中，字段不被操作�
     )
     .toBe(true);
   await expect(replyInput).toBeVisible();
+  await expect.poll(() => channelFooterGap(page)).toBeGreaterThanOrEqual(8);
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -133,7 +144,7 @@ test("通道表单在软键盘模拟与小高度视口中，字段不被操作�
         const label = document.querySelector('label[for*="reply_to_address"]')!;
         const help = document.querySelector('[id*="reply_to_address-help"]')!;
         const gap = 8;
-        if (scrollBox.bottom > footer.top - gap + 1) return false;
+        if (footer.top - scrollBox.bottom < gap) return false;
         for (const element of [label, reply, help]) {
           const box = element.getBoundingClientRect();
           const visibleBottom = Math.min(box.bottom, scrollBox.bottom);
@@ -188,6 +199,9 @@ test("通道表单在软键盘模拟与小高度视口中，字段不被操作�
     animations: "disabled",
     caret: "hide",
   });
+  await simulateKeyboard(page, 800);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect.poll(() => channelFooterGap(page)).toBeGreaterThanOrEqual(8);
   await dialog.getByRole("button", { name: "取消", exact: true }).click();
   await request.post("http://127.0.0.1:54329/__fixtures/channels", {
     data: {},
