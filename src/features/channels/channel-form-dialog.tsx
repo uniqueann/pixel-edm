@@ -109,9 +109,10 @@ export function ChannelFormDialog({
 }) {
   const router = useRouter();
   const prefix = useId();
+  const formId = `${prefix}-channel-form`;
   const errorRef = useRef<HTMLDivElement>(null);
   const lastFieldRef = useRef<HTMLElement | null>(null);
-  const formScrollRef = useRef<HTMLDivElement>(null);
+  const formScrollRef = useRef<HTMLFormElement>(null);
   const schema = createDeliveryChannelInput({
     provider: provider.provider,
     senderAliasMaxLength: provider.sender_alias_max_length,
@@ -170,8 +171,7 @@ export function ChannelFormDialog({
       const scrollEl = formScrollRef.current;
       const field = lastFieldRef.current;
       if (!scrollEl || !field || document.activeElement !== field) return;
-      const footer = scrollEl
-        .closest("form")
+      const footer = scrollEl.parentElement
         ?.querySelector("[data-channel-form-footer]")
         ?.getBoundingClientRect();
       const scrollBox = scrollEl.getBoundingClientRect();
@@ -254,7 +254,7 @@ export function ChannelFormDialog({
       <Dialog open={open} onOpenChange={guard.handleOpenChange}>
         <DialogContent
           placement="bottom"
-          className={`bottom-sheet ${styles.dialog}`}
+          className={styles.dialog}
           {...guard.editDialogContentProps}
           onFocusCapture={(event) => {
             if (
@@ -291,7 +291,10 @@ export function ChannelFormDialog({
             )}
           </DialogHeader>
           <form
-            className={styles.formShell}
+            id={formId}
+            ref={formScrollRef}
+            className={styles.formScroll}
+            data-dialog-scroll-body
             noValidate
             aria-busy={isSubmitting}
             onSubmit={form.handleSubmit(async (values) => {
@@ -305,256 +308,247 @@ export function ChannelFormDialog({
               }
             })}
           >
-            <div
-              ref={formScrollRef}
-              className={styles.formScroll}
-              data-dialog-scroll-body
-            >
-              <fieldset className={styles.formGroup} disabled={isSubmitting}>
-                <legend>发件身份</legend>
-                <p className={styles.supporting}>
-                  先在服务商控制台完成发件身份验证，再将相同信息填入下方。
-                </p>
-                <div className={styles.fieldGrid}>
-                  {renderField(
-                    "sender_alias",
-                    "发件人名称",
-                    `显示在收件人邮箱的“发件人”一栏，最多 ${provider.sender_alias_max_length} 个字符。`,
-                    {
-                      maxLength: provider.sender_alias_max_length,
-                      required: true,
-                      autoComplete: "off",
-                    },
-                  )}
-                  {renderField(
-                    "sender_address",
-                    "发件地址",
-                    provider.requires_sender_domain
-                      ? "须属于下方发件域名，并已在服务商控制台完成验证。"
-                      : "使用已在服务商控制台验证的发件身份。",
-                    {
-                      type: "email",
-                      required: true,
-                      placeholder: "hello@send.example.com",
-                      autoComplete: "off",
-                      spellCheck: false,
-                    },
-                  )}
-                </div>
-                {provider.requires_sender_domain &&
-                  renderField(
-                    "sender_domain",
-                    "发件域名",
-                    "填写已验证的域名，不含 https:// 或路径。",
-                    {
-                      required: true,
-                      placeholder: "send.example.com",
-                      autoComplete: "off",
-                      spellCheck: false,
-                    },
-                  )}
+            <fieldset className={styles.formGroup} disabled={isSubmitting}>
+              <legend>发件身份</legend>
+              <p className={styles.supporting}>
+                先在服务商控制台完成发件身份验证，再将相同信息填入下方。
+              </p>
+              <div className={styles.fieldGrid}>
                 {renderField(
-                  "reply_to_address",
-                  "回复地址（选填）",
-                  "收件人点击回复时使用；留空则跟随发件地址。",
+                  "sender_alias",
+                  "发件人名称",
+                  `显示在收件人邮箱的“发件人”一栏，最多 ${provider.sender_alias_max_length} 个字符。`,
                   {
-                    type: "email",
-                    placeholder: "support@example.com",
+                    maxLength: provider.sender_alias_max_length,
+                    required: true,
                     autoComplete: "off",
                   },
                 )}
-                <p className={styles.supporting}>
-                  发件人名称与邮件正文署名分别设置。需要修改落款时，
-                  <Link
-                    className="underline underline-offset-2"
-                    href={settingsSectionHref("profile")}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      guard.requestLeave(() =>
-                        router.push(settingsSectionHref("profile")),
-                      );
-                    }}
-                  >
-                    前往我的署名
-                  </Link>
-                  ；页脚联系地址在店铺信息中填写。
-                </p>
-              </fieldset>
+                {renderField(
+                  "sender_address",
+                  "发件地址",
+                  provider.requires_sender_domain
+                    ? "须属于下方发件域名，并已在服务商控制台完成验证。"
+                    : "使用已在服务商控制台验证的发件身份。",
+                  {
+                    type: "email",
+                    required: true,
+                    placeholder: "hello@send.example.com",
+                    autoComplete: "off",
+                    spellCheck: false,
+                  },
+                )}
+              </div>
+              {provider.requires_sender_domain &&
+                renderField(
+                  "sender_domain",
+                  "发件域名",
+                  "填写已验证的域名，不含 https:// 或路径。",
+                  {
+                    required: true,
+                    placeholder: "send.example.com",
+                    autoComplete: "off",
+                    spellCheck: false,
+                  },
+                )}
+              {renderField(
+                "reply_to_address",
+                "回复地址（选填）",
+                "收件人点击回复时使用；留空则跟随发件地址。",
+                {
+                  type: "email",
+                  placeholder: "support@example.com",
+                  autoComplete: "off",
+                },
+              )}
+              <p className={styles.supporting}>
+                发件人名称与邮件正文署名分别设置。需要修改落款时，
+                <Link
+                  className="underline underline-offset-2"
+                  href={settingsSectionHref("profile")}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    guard.requestLeave(() =>
+                      router.push(settingsSectionHref("profile")),
+                    );
+                  }}
+                >
+                  前往我的署名
+                </Link>
+                ；页脚联系地址在店铺信息中填写。
+              </p>
+            </fieldset>
 
-              <fieldset className={styles.formGroup} disabled={isSubmitting}>
-                <legend>服务区域</legend>
-                <div className={styles.field}>
-                  <Label htmlFor={`${prefix}-region`}>
-                    {regionFieldLabel(provider.provider)}
-                  </Label>
-                  {regionFieldKind(provider.provider) === "select" ? (
-                    <Controller
-                      control={form.control}
-                      name="region"
-                      render={({ field }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={isSubmitting}
+            <fieldset className={styles.formGroup} disabled={isSubmitting}>
+              <legend>服务区域</legend>
+              <div className={styles.field}>
+                <Label htmlFor={`${prefix}-region`}>
+                  {regionFieldLabel(provider.provider)}
+                </Label>
+                {regionFieldKind(provider.provider) === "select" ? (
+                  <Controller
+                    control={form.control}
+                    name="region"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger
+                          {...fieldAttributes("region")}
+                          ref={field.ref}
+                          onBlur={field.onBlur}
+                          className="w-full"
+                          aria-label={regionFieldLabel(provider.provider)}
                         >
-                          <SelectTrigger
-                            {...fieldAttributes("region")}
-                            ref={field.ref}
-                            onBlur={field.onBlur}
-                            className="w-full"
-                            aria-label={regionFieldLabel(provider.provider)}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {regionOptions.map((option) => (
-                              <SelectItem
-                                value={option.value}
-                                key={option.value}
-                              >
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  ) : (
-                    <Input
-                      placeholder="us-east-1"
-                      spellCheck={false}
-                      {...fieldAttributes("region")}
-                      {...form.register("region")}
-                    />
-                  )}
-                  <p id={`${prefix}-region-help`} className={styles.supporting}>
-                    与服务商控制台中发件身份所在区域保持一致；默认选项不代表已核对。
-                  </p>
-                  {errors.region && (
-                    <p
-                      id={`${prefix}-region-error`}
-                      className={styles.fieldError}
-                      role="alert"
-                    >
-                      {errors.region.message}
-                    </p>
-                  )}
-                </div>
-              </fieldset>
-
-              <fieldset className={styles.formGroup} disabled={isSubmitting}>
-                <legend>
-                  访问凭据{credentialRequired ? "（必填）" : "（可替换）"}
-                </legend>
-                <p className={styles.supporting}>
-                  {credentialRequired
-                    ? "从服务商控制台获取具有发信权限的专用凭据。"
-                    : "已有凭据已安全保存。留空则保留；替换时需填写完整的新凭据。"}
-                </p>
-                <div className={styles.fieldGrid}>
-                  {provider.provider !== "sendgrid" &&
-                    renderField(
-                      "access_key_id",
-                      provider.credentialIdLabel,
-                      "与 Secret 配套使用。",
-                      {
-                        autoComplete: "off",
-                        spellCheck: false,
-                        required: credentialRequired,
-                      },
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {regionOptions.map((option) => (
+                            <SelectItem value={option.value} key={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
-                  {renderField(
-                    "access_key_secret",
-                    provider.credentialSecretLabel,
-                    provider.provider === "sendgrid"
-                      ? "API Key 需具备 Mail Send 权限。"
-                      : "仅本次输入可见，保存后不回显明文。",
+                  />
+                ) : (
+                  <Input
+                    placeholder="us-east-1"
+                    spellCheck={false}
+                    {...fieldAttributes("region")}
+                    {...form.register("region")}
+                  />
+                )}
+                <p id={`${prefix}-region-help`} className={styles.supporting}>
+                  与服务商控制台中发件身份所在区域保持一致；默认选项不代表已核对。
+                </p>
+                {errors.region && (
+                  <p
+                    id={`${prefix}-region-error`}
+                    className={styles.fieldError}
+                    role="alert"
+                  >
+                    {errors.region.message}
+                  </p>
+                )}
+              </div>
+            </fieldset>
+
+            <fieldset className={styles.formGroup} disabled={isSubmitting}>
+              <legend>
+                访问凭据{credentialRequired ? "（必填）" : "（可替换）"}
+              </legend>
+              <p className={styles.supporting}>
+                {credentialRequired
+                  ? "从服务商控制台获取具有发信权限的专用凭据。"
+                  : "已有凭据已安全保存。留空则保留；替换时需填写完整的新凭据。"}
+              </p>
+              <div className={styles.fieldGrid}>
+                {provider.provider !== "sendgrid" &&
+                  renderField(
+                    "access_key_id",
+                    provider.credentialIdLabel,
+                    "与 Secret 配套使用。",
                     {
-                      type: "password",
-                      autoComplete: "new-password",
+                      autoComplete: "off",
                       spellCheck: false,
                       required: credentialRequired,
                     },
                   )}
-                </div>
-              </fieldset>
+                {renderField(
+                  "access_key_secret",
+                  provider.credentialSecretLabel,
+                  provider.provider === "sendgrid"
+                    ? "API Key 需具备 Mail Send 权限。"
+                    : "仅本次输入可见，保存后不回显明文。",
+                  {
+                    type: "password",
+                    autoComplete: "new-password",
+                    spellCheck: false,
+                    required: credentialRequired,
+                  },
+                )}
+              </div>
+            </fieldset>
 
-              {provider.provider !== "aliyun_directmail" && (
-                <div className={styles.formGroup}>
-                  <details
-                    className={styles.disclosure}
-                    open={
-                      Boolean(
-                        errors.sns_topic_arn || errors.event_webhook_public_key,
-                      ) || undefined
-                    }
-                  >
-                    <summary>
-                      回执验证信息 <span>首次测试可暂不填写</span>
-                    </summary>
-                    <div className={styles.disclosureBody}>
-                      {provider.provider === "amazon_ses"
-                        ? renderField(
-                            "sns_topic_arn",
-                            "SNS Topic ARN（选填）",
-                            "配置回执前填写；Topic 所在区域须与上方 AWS 区域一致。",
-                            {
-                              placeholder:
-                                "arn:aws:sns:us-east-1:123456789012:ses-events",
-                              spellCheck: false,
-                            },
-                          )
-                        : renderField(
-                            "event_webhook_public_key",
-                            "Event Webhook 验签公钥（选填）",
-                            "启用 Signed Event Webhook 前必须填写服务商控制台提供的验签公钥。",
-                            { spellCheck: false, autoComplete: "off" },
-                          )}
-                    </div>
-                  </details>
-                </div>
-              )}
-
-              {error && (
-                <div
-                  ref={errorRef}
-                  tabIndex={-1}
-                  role="alert"
-                  className={styles.formError}
+            {provider.provider !== "aliyun_directmail" && (
+              <div className={styles.formGroup}>
+                <details
+                  className={styles.disclosure}
+                  open={
+                    Boolean(
+                      errors.sns_topic_arn || errors.event_webhook_public_key,
+                    ) || undefined
+                  }
                 >
-                  <p className={styles.fieldError}>配置未能确认保存</p>
-                  <p className={styles.supporting}>{error}</p>
-                  <p className={styles.supporting}>
-                    当前输入仍保留在此弹窗，可核对后再次保存。若提示版本冲突，请先关闭并重新打开最新配置。
-                  </p>
-                </div>
-              )}
-            </div>
-            <div
-              className={styles.formFooter}
-              data-channel-form-footer
-              data-dialog-scroll-footer
-            >
-              <p role="status">
-                {isSubmitting
-                  ? "正在保存配置，请保持页面打开。"
-                  : isDirty
-                    ? "有未保存的更改"
-                    : "保存后还需发送测试验证"}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={guard.requestClose}
+                  <summary>
+                    回执验证信息 <span>首次测试可暂不填写</span>
+                  </summary>
+                  <div className={styles.disclosureBody}>
+                    {provider.provider === "amazon_ses"
+                      ? renderField(
+                          "sns_topic_arn",
+                          "SNS Topic ARN（选填）",
+                          "配置回执前填写；Topic 所在区域须与上方 AWS 区域一致。",
+                          {
+                            placeholder:
+                              "arn:aws:sns:us-east-1:123456789012:ses-events",
+                            spellCheck: false,
+                          },
+                        )
+                      : renderField(
+                          "event_webhook_public_key",
+                          "Event Webhook 验签公钥（选填）",
+                          "启用 Signed Event Webhook 前必须填写服务商控制台提供的验签公钥。",
+                          { spellCheck: false, autoComplete: "off" },
+                        )}
+                  </div>
+                </details>
+              </div>
+            )}
+
+            {error && (
+              <div
+                ref={errorRef}
+                tabIndex={-1}
+                role="alert"
+                className={styles.formError}
               >
-                取消
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "正在保存…" : "保存配置"}
-              </Button>
-            </div>
+                <p className={styles.fieldError}>配置未能确认保存</p>
+                <p className={styles.supporting}>{error}</p>
+                <p className={styles.supporting}>
+                  当前输入仍保留在此弹窗，可核对后再次保存。若提示版本冲突，请先关闭并重新打开最新配置。
+                </p>
+              </div>
+            )}
           </form>
+          <div
+            className={styles.formFooter}
+            data-channel-form-footer
+            data-dialog-scroll-footer
+          >
+            <p role="status">
+              {isSubmitting
+                ? "正在保存配置，请保持页面打开。"
+                : isDirty
+                  ? "有未保存的更改"
+                  : "保存后还需发送测试验证"}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={guard.requestClose}
+            >
+              取消
+            </Button>
+            <Button type="submit" form={formId} disabled={isSubmitting}>
+              {isSubmitting ? "正在保存…" : "保存配置"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
       {guard.discardConfirm}
