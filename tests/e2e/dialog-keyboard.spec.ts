@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
 
 async function simulateKeyboard(page: Page, visibleHeight: number) {
   await page.evaluate((height) => {
@@ -74,4 +76,69 @@ test("移动端输入法出现后底部和居中弹窗仍可见且可滚动", as
   await dialog.getByPlaceholder("折扣代码").focus();
   await simulateKeyboard(page, 420);
   await expectFocusedFieldVisible(page, 420);
+});
+
+test("通道表单在软键盘模拟与小高度视口中，字段不被操作栏遮挡", async ({
+  page,
+  request,
+}, info) => {
+  await request.post("http://127.0.0.1:54329/__fixtures/channels", {
+    data: { seed: true },
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login");
+  await page.getByLabel("邮箱", { exact: true }).fill("channels@example.test");
+  await page.getByLabel("密码", { exact: true }).fill("edm-test-password");
+  await page.getByRole("button", { name: "登录", exact: true }).click();
+  await expect(page).toHaveURL(/dashboard$/);
+  await page.goto("/settings#settings-channels");
+  await page.getByRole("button", { name: "更新发信通道" }).click();
+  const dialog = page.getByRole("dialog");
+  const secret = dialog.getByLabel("AccessKey Secret", { exact: true });
+  await secret.focus();
+  await simulateKeyboard(page, 420);
+  await expectFocusedFieldVisible(page, 420);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const field = document.activeElement!.getBoundingClientRect();
+        const footer = document
+          .querySelector("[data-channel-form-footer]")!
+          .getBoundingClientRect();
+        return field.bottom <= footer.top - 8 && footer.bottom <= 421;
+      }),
+    )
+    .toBe(true);
+  await expect(
+    dialog.getByRole("button", { name: "保存配置", exact: true }),
+  ).toBeInViewport();
+  const destination = process.env.EDM_CHANNEL_VISUAL_PHASE
+    ? path.resolve(
+        ".impeccable/visual/channel-setup",
+        process.env.EDM_CHANNEL_VISUAL_PHASE,
+      )
+    : info.outputPath("visual");
+  await mkdir(destination, { recursive: true });
+  await page.screenshot({
+    path: path.join(destination, "keyboard-390-light.png"),
+    animations: "disabled",
+    caret: "hide",
+  });
+  await simulateKeyboard(page, 844);
+  await page.setViewportSize({ width: 820, height: 360 });
+  await simulateKeyboard(page, 360);
+  await secret.focus();
+  await expectFocusedFieldVisible(page, 360);
+  await expect(
+    dialog.getByRole("button", { name: "保存配置", exact: true }),
+  ).toBeInViewport();
+  await page.screenshot({
+    path: path.join(destination, "short-height-820-light.png"),
+    animations: "disabled",
+    caret: "hide",
+  });
+  await dialog.getByRole("button", { name: "取消", exact: true }).click();
+  await request.post("http://127.0.0.1:54329/__fixtures/channels", {
+    data: {},
+  });
 });

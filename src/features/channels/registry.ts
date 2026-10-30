@@ -146,22 +146,29 @@ export function capabilityRows(
     {
       label: "打开追踪",
       supported: source.supports_open_tracking,
+      value: source.supports_open_tracking ? "支持" : "不支持",
     },
     {
       label: "点击追踪",
       supported: source.supports_click_tracking,
+      value: source.supports_click_tracking ? "支持" : "不支持",
     },
     {
       label: "追踪需 HTML 正文",
       supported: source.requires_html_for_tracking,
+      value: source.requires_html_for_tracking ? "需要 HTML" : "无需 HTML",
     },
     {
       label: "退订链接免追踪",
       supported: source.supports_link_tracking_opt_out,
+      value: source.supports_link_tracking_opt_out ? "支持" : "不支持",
     },
     {
       label: "Webhook 订阅握手",
       supported: source.requires_webhook_subscription_confirmation,
+      value: source.requires_webhook_subscription_confirmation
+        ? "需要握手"
+        : "无需握手",
     },
   ];
 }

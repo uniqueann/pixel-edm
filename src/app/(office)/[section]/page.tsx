@@ -160,7 +160,7 @@ export default async function Page({
               为工作区配置发信服务商与主通道，保存后可发送测试邮件验证连通性。首次开通请参考{" "}
               <Link
                 href="/help#help-directmail-setup"
-                className="underline underline-offset-2"
+                className="inline-flex min-h-11 items-center underline underline-offset-2"
               >
                 DirectMail 图文教程
               </Link>
@@ -168,7 +168,7 @@ export default async function Page({
             </p>
           </div>
           <ChannelSettings
-            key={workspace.id}
+            key={`${workspace.id}:${user.id}:${role}`}
             workspaceId={workspace.id}
             workspaceName={workspace.name}
             providers={providers}
@@ -181,6 +181,11 @@ export default async function Page({
             testRecipient={user.email ?? ""}
             canEdit={role === "admin"}
             canStoreCredentials={credentialStorageReady()}
+            storeReady={
+              Boolean(workspace.mailing_address.trim()) &&
+              !mailingAddressProblem(workspace.mailing_address)
+            }
+            signatureReady={!isDefaultSenderName(member.display_name)}
           />
         </section>
         {deliveryPlan && (
@@ -304,7 +309,10 @@ export default async function Page({
         : "—";
     const canEdit = role !== "viewer";
     const hasVerifiedPrimaryChannel = channelSummaries.some(
-      (channel) => channel.is_primary && channel.status === "verified",
+      (channel) =>
+        channel.is_primary &&
+        channel.status === "verified" &&
+        channel.credential_configured,
     );
     const setupItems = [
       !workspace.mailing_address.trim()

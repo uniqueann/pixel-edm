@@ -1,0 +1,715 @@
+{
+  "baseCommit": "f9ed26f55ff7c135f2a108afc04900ca5c732f02",
+  "environment": "本地 Next.js 与 Playwright Chrome，认证和服务商响应为隔离夹具，SQL/RLS 在 PGlite 执行。",
+  "evidenceTypes": [
+    "本地自动化截图",
+    "模拟视口与主题",
+    "VisualViewport 收缩模拟",
+    "Chromium CSS 200% 缩放",
+    "模拟服务商响应"
+  ],
+  "notVerified": [
+    "真实服务商或真实邮件收件",
+    "实体手机与原生软键盘",
+    "Safari/Firefox/VoiceOver",
+    "用户浏览器手动走查：Work 设置禁用本地浏览器"
+  ],
+  "commands": [
+    "EDM_CHANNEL_VISUAL_PHASE=after npm run ci:verify",
+    "EDM_CHANNEL_NO_KEY=1 npx playwright test --config tests/channel-no-key.config.ts"
+  ],
+  "sourceSha256": {
+    "src/features/channels/channel-settings.tsx": "fffcb9f987ac0934f67f936df9599f2d3431f1ba0d03b9c18b86b8a1deb953da",
+    "src/features/channels/channel-detail.tsx": "239867681da65501607e82e7d2ce6c6616f76241f5fbc32d43617564a6352141",
+    "src/features/channels/channel-form-dialog.tsx": "5bffa4e3cd34a80fcc53a04316b94f6380ef57703c221ba094f39416b3c31c8b",
+    "src/features/channels/channel-setup.module.css": "73c551cba4913188206cb6c6830f2d009f25c035a185e18ba84227b967256fa2",
+    "src/features/channels/channel-presentation.ts": "83da5612857bfcacdc1688cf9e8df76e7346d85c524a9228e05fc75b9e09bc3a",
+    "src/features/channels/channel-test-result.tsx": "3dc0e207f1c3c42d03abd1d1beab5cf963e41d52cb45b7250fdcac7d1c5c4a1f",
+    "src/features/channels/use-channel-operation.ts": "353aba73d3e4609842121e10e31d89101e9ef0553da278ae9294ccc8e7514460",
+    "src/features/channels/registry.ts": "7b65147610162694c64ed1d7339c3277b9df0cb8c041ed921df6053eee496a8f",
+    "src/components/ui/dialog.tsx": "56ef55968c3d2613e73fd5ec5a04cb7350ac6b3153a91dd333a94814a2cb5700",
+    "src/components/confirm-dialog.tsx": "ad34f49e8ec41d70d2c1c9ba8ab07df446453a47b3e72ed89f0ca1bd1dc7535b",
+    "src/hooks/use-unsaved-edit-dialog.tsx": "24240f2b33de5db6aaf0cce2f158b32f4847dd7f3ac29f9e2b1af99bcbde79e7",
+    "src/app/(office)/[section]/page.tsx": "c9e4663ea6b9b0bb3097676674bef09b00483a8a40a2ddf4410d26ffc9e4f449"
+  },
+  "summary": {
+    "matrixScenarios": 32,
+    "longContentScenarios": 8,
+    "minimumTextContrast": 5.140918995145028,
+    "minimumControlHeight": 44,
+    "minimumControlWidth": 44,
+    "maximumHorizontalOverflow": 0,
+    "pageErrors": [],
+    "cliDetectorFindings": []
+  },
+  "files": [
+    {
+      "file": "before-empty-1440-light.png",
+      "phase": "before",
+      "width": 1440,
+      "height": 960,
+      "sha256": "95de9ac88027eb5283b6ed6d9a29f051667a07ade7786f855268947390299d83",
+      "capturedAt": "2026-10-30T13:41:05.240668+08:00"
+    },
+    {
+      "file": "before-form-390-light.png",
+      "phase": "before",
+      "width": 390,
+      "height": 960,
+      "sha256": "d0b5d5248ebb9b1a8e2b7a695717060fca69c29ff3df0f97444a11180b35a1a9",
+      "capturedAt": "2026-10-30T13:41:05.689352+08:00"
+    },
+    {
+      "file": "before-configured-390-light.png",
+      "phase": "before",
+      "width": 390,
+      "height": 960,
+      "sha256": "3bce39b235558d7dc87e2bef7d80f441603d2eaaba8e775b0eed84bf38b76363",
+      "capturedAt": "2026-10-30T13:41:10.650831+08:00"
+    },
+    {
+      "file": "before-configured-820-dark.png",
+      "phase": "before",
+      "width": 820,
+      "height": 960,
+      "sha256": "ced6d39672ece652177e2b3414862746fb2d2249f62a7f7b1c8af6f57916d0a3",
+      "capturedAt": "2026-10-30T13:41:11.072058+08:00"
+    },
+    {
+      "file": "before-accepted-1440-dark.png",
+      "phase": "before",
+      "width": 1440,
+      "height": 960,
+      "sha256": "71361193d5afd7747813f98d77261128ab6649e8e5faf60e2d76dcb4664a9293",
+      "capturedAt": "2026-10-30T13:41:16.285738+08:00"
+    },
+    {
+      "file": "before-accepted-320-dark.png",
+      "phase": "before",
+      "width": 320,
+      "height": 960,
+      "sha256": "ac0de7f7c1d8606fe416f59730df767f49b27432908c0e433739744077ad6c6b",
+      "capturedAt": "2026-10-30T13:41:16.036009+08:00"
+    },
+    {
+      "file": "after-empty-1440-light.png",
+      "phase": "after",
+      "width": 1440,
+      "height": 960,
+      "sha256": "cad01dfe7652f651c861062a473926bdee9a9b93903738b3cfb5655a817f773f",
+      "capturedAt": "2026-10-30T17:37:40.042854+08:00"
+    },
+    {
+      "file": "after-form-390-light.png",
+      "phase": "after",
+      "width": 390,
+      "height": 960,
+      "sha256": "69fe5c6166c24e94f71aa97b7ecafb6d78b10742e5d23d9bfde0ed4de954d822",
+      "capturedAt": "2026-10-30T17:37:40.531425+08:00"
+    },
+    {
+      "file": "after-configured-390-light.png",
+      "phase": "after",
+      "width": 390,
+      "height": 960,
+      "sha256": "a09563c159e4bab136dafd2c45dc372883f4ce38ac0f9f8372cfd366766aaf87",
+      "capturedAt": "2026-10-30T17:37:45.500270+08:00"
+    },
+    {
+      "file": "after-configured-820-dark.png",
+      "phase": "after",
+      "width": 820,
+      "height": 960,
+      "sha256": "f0ca21dd96c851159eb12cc995264ae28a1c82094f0352f53311516e3577af45",
+      "capturedAt": "2026-10-30T17:37:45.955841+08:00"
+    },
+    {
+      "file": "after-accepted-1440-dark.png",
+      "phase": "after",
+      "width": 1440,
+      "height": 960,
+      "sha256": "35d920cbd7c5a0f4296cd6f10b4939a4fe2bac785fa3d4e64b0e61ba4b3bae9a",
+      "capturedAt": "2026-10-30T17:37:51.191876+08:00"
+    },
+    {
+      "file": "after-accepted-320-dark.png",
+      "phase": "after",
+      "width": 320,
+      "height": 960,
+      "sha256": "3fa702f57b56449b9d770461d3b126835c0c12ba0efb2061c53b4091ac5c4973",
+      "capturedAt": "2026-10-30T17:37:50.947310+08:00"
+    },
+    {
+      "file": "after-long-320-dark.png",
+      "phase": "after",
+      "width": 320,
+      "height": 800,
+      "sha256": "a4b37034b6558af3448884662e80689519df67d407173db009a3331e22708946",
+      "capturedAt": "2026-10-30T17:37:52.459716+08:00"
+    },
+    {
+      "file": "after-unknown-390-dark.png",
+      "phase": "after",
+      "width": 390,
+      "height": 844,
+      "sha256": "03ee8665e3cde14b4814c387babed9e9f40316cfcb4dcd9f57756e8dfa55c716",
+      "capturedAt": "2026-10-30T17:37:57.437193+08:00"
+    },
+    {
+      "file": "after-disconnected-390-dark.png",
+      "phase": "after",
+      "width": 390,
+      "height": 844,
+      "sha256": "83be87919b525a11415a52abb080aea563c4bcf0e397541969c342a30bb0f36e",
+      "capturedAt": "2026-10-30T17:37:58.175060+08:00"
+    },
+    {
+      "file": "after-keyboard-390-light.png",
+      "phase": "after",
+      "width": 390,
+      "height": 844,
+      "sha256": "ea004cd6d56397a747d9df4c932a1109c0786a4c8cd836d226d985bc38220dfb",
+      "capturedAt": "2026-10-30T17:39:03.164791+08:00"
+    },
+    {
+      "file": "after-short-height-820-light.png",
+      "phase": "after",
+      "width": 820,
+      "height": 360,
+      "sha256": "5197d0f6f111119c079f756c5c7c9756a6e2f70debdb64ca86136230f6b6f0f0",
+      "capturedAt": "2026-10-30T17:39:03.612753+08:00"
+    },
+    {
+      "file": "after-zoom-1440-dark.png",
+      "phase": "after",
+      "width": 1440,
+      "height": 900,
+      "sha256": "00e2cd02b17d73e7dc11573110fc95756160650da569468ad42216db90ef9590",
+      "capturedAt": "2026-10-30T17:37:58.510373+08:00"
+    }
+  ],
+  "measurements": [
+    {
+      "state": "empty",
+      "theme": "light",
+      "width": 320,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 114.28125,
+      "minimumTextContrast": {
+        "text": "DirectMail 图文教程",
+        "contrast": 5.4805236715050105
+      },
+      "textSampleCount": 5
+    },
+    {
+      "state": "empty",
+      "theme": "light",
+      "width": 390,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 114.28125,
+      "minimumTextContrast": {
+        "text": "DirectMail 图文教程",
+        "contrast": 5.4805236715050105
+      },
+      "textSampleCount": 5
+    },
+    {
+      "state": "empty",
+      "theme": "light",
+      "width": 820,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 114.28125,
+      "minimumTextContrast": {
+        "text": "DirectMail 图文教程",
+        "contrast": 5.4805236715050105
+      },
+      "textSampleCount": 5
+    },
+    {
+      "state": "empty",
+      "theme": "light",
+      "width": 1440,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 114.28125,
+      "minimumTextContrast": {
+        "text": "DirectMail 图文教程",
+        "contrast": 5.4805236715050105
+      },
+      "textSampleCount": 5
+    },
+    {
+      "state": "empty",
+      "theme": "dark",
+      "width": 320,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 114.28125,
+      "minimumTextContrast": {
+        "text": "发件人名称用于邮箱列表；正文落款在“我的署名”设置，页脚联系地址在“店铺信息”设",
+        "contrast": 6.127844973989011
+      },
+      "textSampleCount": 5
+    },
+    {
+      "state": "empty",
+      "theme": "dark",
+      "width": 390,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 114.28125,
+      "minimumTextContrast": {
+        "text": "发件人名称用于邮箱列表；正文落款在“我的署名”设置，页脚联系地址在“店铺信息”设",
+        "contrast": 6.127844973989011
+      },
+      "textSampleCount": 5
+    },
+    {
+      "state": "empty",
+      "theme": "dark",
+      "width": 820,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 114.28125,
+      "minimumTextContrast": {
+        "text": "发件人名称用于邮箱列表；正文落款在“我的署名”设置，页脚联系地址在“店铺信息”设",
+        "contrast": 6.127844973989011
+      },
+      "textSampleCount": 5
+    },
+    {
+      "state": "empty",
+      "theme": "dark",
+      "width": 1440,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 114.28125,
+      "minimumTextContrast": {
+        "text": "发件人名称用于邮箱列表；正文落款在“我的署名”设置，页脚联系地址在“店铺信息”设",
+        "contrast": 6.127844973989011
+      },
+      "textSampleCount": 5
+    },
+    {
+      "state": "form",
+      "theme": "light",
+      "width": 320,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "保存后还需发送测试验证",
+        "contrast": 5.4805236715050105
+      },
+      "textSampleCount": 24
+    },
+    {
+      "state": "form",
+      "theme": "light",
+      "width": 390,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "保存后还需发送测试验证",
+        "contrast": 5.4805236715050105
+      },
+      "textSampleCount": 24
+    },
+    {
+      "state": "form",
+      "theme": "light",
+      "width": 820,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "保存后还需发送测试验证",
+        "contrast": 5.4805236715050105
+      },
+      "textSampleCount": 24
+    },
+    {
+      "state": "form",
+      "theme": "light",
+      "width": 1440,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "保存后还需发送测试验证",
+        "contrast": 5.4805236715050105
+      },
+      "textSampleCount": 24
+    },
+    {
+      "state": "form",
+      "theme": "dark",
+      "width": 320,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "保存后还需发送测试验证",
+        "contrast": 6.735033510828399
+      },
+      "textSampleCount": 24
+    },
+    {
+      "state": "form",
+      "theme": "dark",
+      "width": 390,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "保存后还需发送测试验证",
+        "contrast": 6.735033510828399
+      },
+      "textSampleCount": 24
+    },
+    {
+      "state": "form",
+      "theme": "dark",
+      "width": 820,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "保存后还需发送测试验证",
+        "contrast": 6.735033510828399
+      },
+      "textSampleCount": 24
+    },
+    {
+      "state": "form",
+      "theme": "dark",
+      "width": 1440,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "保存后还需发送测试验证",
+        "contrast": 6.735033510828399
+      },
+      "textSampleCount": 24
+    },
+    {
+      "state": "configured",
+      "theme": "light",
+      "width": 320,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "configured",
+      "theme": "light",
+      "width": 390,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "configured",
+      "theme": "light",
+      "width": 820,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "configured",
+      "theme": "light",
+      "width": 1440,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "configured",
+      "theme": "dark",
+      "width": 320,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "configured",
+      "theme": "dark",
+      "width": 390,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "configured",
+      "theme": "dark",
+      "width": 820,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "configured",
+      "theme": "dark",
+      "width": 1440,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "accepted",
+      "theme": "light",
+      "width": 320,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 43
+    },
+    {
+      "state": "accepted",
+      "theme": "light",
+      "width": 390,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 43
+    },
+    {
+      "state": "accepted",
+      "theme": "light",
+      "width": 820,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 43
+    },
+    {
+      "state": "accepted",
+      "theme": "light",
+      "width": 1440,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 43
+    },
+    {
+      "state": "accepted",
+      "theme": "dark",
+      "width": 320,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 43
+    },
+    {
+      "state": "accepted",
+      "theme": "dark",
+      "width": 390,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 43
+    },
+    {
+      "state": "accepted",
+      "theme": "dark",
+      "width": 820,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 43
+    },
+    {
+      "state": "accepted",
+      "theme": "dark",
+      "width": 1440,
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 43
+    }
+  ],
+  "edgeMeasurements": [
+    {
+      "state": "long",
+      "width": 320,
+      "theme": "light",
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "long",
+      "width": 390,
+      "theme": "light",
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "long",
+      "width": 820,
+      "theme": "light",
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "long",
+      "width": 1440,
+      "theme": "light",
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.140918995145028
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "long",
+      "width": 320,
+      "theme": "dark",
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "long",
+      "width": 390,
+      "theme": "dark",
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "long",
+      "width": 820,
+      "theme": "dark",
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 38
+    },
+    {
+      "state": "long",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": 0,
+      "minimumControlHeight": 44,
+      "minimumControlWidth": 44,
+      "minimumTextContrast": {
+        "text": "访问凭据已加密保存，页面不回显明文。",
+        "contrast": 5.728630414418832
+      },
+      "textSampleCount": 38
+    }
+  ]
+}

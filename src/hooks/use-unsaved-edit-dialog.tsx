@@ -8,10 +8,16 @@ export function useUnsavedEditDialog({
   dirty,
   onClose,
   busy = false,
+  cancelLabel = "取消",
+  onReturnFocus,
+  confirmClassName,
 }: {
   dirty: boolean;
   onClose: () => void;
   busy?: boolean;
+  cancelLabel?: string;
+  onReturnFocus?: () => void;
+  confirmClassName?: string;
 }) {
   const [discardOpen, setDiscardOpen] = useState(false);
   const [pendingLeave, setPendingLeave] = useState<{ run: () => void } | null>(
@@ -73,8 +79,10 @@ export function useUnsavedEditDialog({
           : "关闭后，当前编辑内容将不会保存。"
       }
       confirmLabel={pendingLeave ? "放弃并离开" : "放弃更改"}
-      cancelLabel={pendingLeave ? "继续编辑" : "取消"}
+      cancelLabel={pendingLeave ? "继续编辑" : cancelLabel}
       variant="destructive"
+      onReturnFocus={onReturnFocus}
+      contentClassName={confirmClassName}
       onConfirm={() => {
         setDiscardOpen(false);
         setPendingLeave(null);

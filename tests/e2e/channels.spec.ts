@@ -29,7 +29,9 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
     .getByLabel("AccessKey Secret")
     .fill("test-secret-that-is-never-rendered");
   await dialog.getByRole("button", { name: "保存配置", exact: true }).click();
-  await expect(page.getByText("发信通道已连接")).toBeVisible();
+  await expect(
+    page.getByText("配置已保存，下一步发送测试邮件", { exact: true }).first(),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "阿里云邮件推送 DirectMail" }),
   ).toBeVisible();
@@ -40,13 +42,18 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   ).toHaveCount(0);
 
   await page.getByRole("button", { name: "发送测试邮件" }).click();
-  await expect(page.getByText("测试邮件已被 DirectMail 接收")).toBeVisible();
+  await expect(
+    page.getByText("DirectMail 已接收测试邮件", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("已验证", { exact: true })).toBeVisible();
   await expect(page.getByText(/收件人 o\*\*\*@example\.test/)).toBeVisible();
   await expect(
-    page.getByText("DirectMail 已接收", { exact: false }),
+    page
+      .getByRole("region", { name: "最近测试结果" })
+      .getByText("DirectMail 已接收", { exact: false }),
   ).toBeVisible();
 
+  await page.locator("[data-channel-tracking] > summary").click();
   await expect(
     page.getByRole("heading", { name: "打开与点击追踪" }),
   ).toBeVisible();
@@ -58,6 +65,7 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
     page.getByText("已开启 · pixel_edm_tracking", { exact: true }),
   ).toBeVisible();
 
+  await page.locator("[data-channel-webhook] > summary").click();
   await expect(
     page.getByRole("heading", { name: "投递回执 Webhook" }),
   ).toBeVisible();
@@ -70,6 +78,7 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   expect(firstWebhookToken.length).toBeGreaterThanOrEqual(40);
   await expect(page.getByText("等待首个事件", { exact: true })).toBeVisible();
   await page.reload();
+  await page.locator("[data-channel-webhook] > summary").click();
   await expect(
     page.getByRole("textbox", { name: "Webhook 令牌", exact: true }),
   ).toHaveCount(0);
@@ -93,7 +102,7 @@ test("管理员配置轮换断开 DirectMail，查看者保持只读且移动端
   await dialog.getByLabel("AccessKey ID").fill("LTAI5tRotatedAccess5678");
   await dialog.getByLabel("AccessKey Secret").fill("rotated-test-secret-value");
   await dialog.getByRole("button", { name: "保存配置", exact: true }).click();
-  await expect(page.getByText("发信通道已更新")).toBeVisible();
+  await expect(page.getByText("配置已更新，请核对当前验证状态")).toBeVisible();
   await expect(page.getByText("••••5678", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
