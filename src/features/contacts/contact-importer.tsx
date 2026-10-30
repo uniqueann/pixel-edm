@@ -1,241 +1,110 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { ArrowLeft, Download, FileUp, Play, RotateCw } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Download,
+  FileUp,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { csvCell } from "@/lib/csv";
+import type { ContactImportDetail, ContactImportHistory } from "./import-model";
 import {
-  confirmContactImport,
-  exportContactImport,
-  getContactImport,
-  prepareContactImport,
-  processContactImportBatch,
-} from "./import-actions";
-import { parseImportText } from "./import-parser";
-import {
-  countDedupedValidEmails,
-  dedupeImportMessages,
-  type ContactImportDetail,
-  type ContactImportHistory,
-} from "./import-model";
+  formatImportTimestamp,
+  importJobStatusLabels,
+} from "./import-presentation";
+import { ContactImportResults } from "./contact-import-results";
+import { downloadImportCsv, useContactImport } from "./use-contact-import";
+import styles from "./contact-importer.module.css";
 
-function formatImportTimestamp(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Shanghai",
-  }).format(new Date(value));
-}
-
-const importJobStatusLabels: Record<string, string> = {
-  completed: "已完成",
-  prepared: "待确认",
-  processing: "处理中",
-  failed: "失败",
-};
-
-const resultLabels: Record<string, string> = {
-  new: "将新增",
-  update: "将更新",
-  unchanged: "无变化",
-  archived_skipped: "归档跳过",
-  suppressed_protected: "已退订（跳过）",
-  suppressed: "加入退订名单",
-  error: "错误",
-  pending: "待处理",
-  created: "已新增",
-  updated: "已更新",
-};
-
-function downloadCsv(name: string, rows: unknown[][]) {
-  const csv = `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
-  const url = URL.createObjectURL(
-    new Blob([csv], { type: "text/csv;charset=utf-8" }),
-  );
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
-export function ContactImporter({
-  workspace,
-  history,
-  initialJob,
-}: {
+export function ContactImporter(props: {
   workspace: string;
   history: ContactImportHistory;
   initialJob?: ContactImportDetail;
+  initialError?: string;
+  selectedId?: string;
 }) {
-  const [sourceType, setSourceType] = useState<"paste" | "csv">("paste");
-  const [sourceName, setSourceName] = useState("手动导入");
-  const [text, setText] = useState("");
-  const [delimiter, setDelimiter] = useState<"" | "," | "\t">("");
-  const [consentDeclared, setConsentDeclared] = useState(false);
-  const [consentSource, setConsentSource] = useState("");
-  const [consentNote, setConsentNote] = useState("");
-  const [consentAt, setConsentAt] = useState("");
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [job, setJob] = useState(initialJob);
-  const [busy, setBusy] = useState(false);
-  // 预检行超过一页时，当前页算不出全部有效邮箱，按任务记住导出结果。
-  const [validEmailCounts, setValidEmailCounts] = useState<
-    Record<string, number>
-  >({});
-  const fileRef = useRef<HTMLInputElement>(null);
+  const {
+    activity,
+    busy,
+    canEdit,
+    consentAt,
+    consentDeclared,
+    consentNote,
+    consentSource,
+    delimiter,
+    discardConfirm,
+    downloadReport,
+    editDraft,
+    errorRef,
+    failure,
+    fieldErrors,
+    fileName,
+    fileRef,
+    job,
+    loadJob,
+    prepare,
+    process,
+    readFile,
+    recent,
+    requestLeave,
+    resultRef,
+    retry,
+    setConsentAt,
+    setConsentDeclared,
+    setConsentNote,
+    setConsentSource,
+    setDelimiter,
+    setSourceName,
+    setSourceType,
+    setText,
+    sourceName,
+    sourceType,
+    startNew,
+    text,
+    validEmails,
+    warnings,
+  } = useContactImport(props);
+  const stage = !job ? 0 : job.job.status === "prepared" ? 1 : 2;
+  const stages = ["提供名单与授权", "预检与确认", "处理与结果"];
 
-  async function prepare() {
-    setBusy(true);
-    try {
-      const parsed = parseImportText(text, { sourceType, delimiter });
-      setWarnings(parsed.warnings);
-      const result = await prepareContactImport({
-        workspace_id: workspace,
-        source_type: sourceType,
-        source_name: sourceName,
-        consent_declared: consentDeclared,
-        consent_source: consentSource,
-        consent_note: consentNote,
-        consent_at: consentAt ? new Date(consentAt).toISOString() : "",
-        rows: parsed.rows,
-      });
-      if ("error" in result) throw new Error(result.error);
-      setJob(result.data);
-      window.history.replaceState(
-        null,
-        "",
-        `/contacts/import?id=${result.data.job.id}`,
-      );
-      toast.success("预检完成，请确认结果后开始导入");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "预检失败，请重试。",
-      );
-    } finally {
-      setBusy(false);
-    }
+  function fieldError(id: string) {
+    return fieldErrors[id] ? (
+      <p id={`${id}-error`} className={styles.fieldError} role="alert">
+        {fieldErrors[id]}
+      </p>
+    ) : null;
   }
-
-  async function process(jobId: string, confirm = false) {
-    setBusy(true);
-    try {
-      let current = job;
-      if (confirm) {
-        const confirmed = await confirmContactImport({
-          workspace_id: workspace,
-          id: jobId,
-        });
-        if ("error" in confirmed) throw new Error(confirmed.error);
-        current = confirmed.data;
-        setJob(current);
-      }
-      for (
-        let batch = 0;
-        batch < 10 && current?.job.status === "processing";
-        batch++
-      ) {
-        const result = await processContactImportBatch({
-          workspace_id: workspace,
-          id: jobId,
-        });
-        if ("error" in result) throw new Error(result.error);
-        current = result.data;
-        setJob(current);
-      }
-      if (current?.job.status === "completed") toast.success("名单导入完成");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "导入中断，可稍后继续。",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function changePage(page: number) {
-    if (!job) return;
-    setBusy(true);
-    const result = await getContactImport({
-      workspace_id: workspace,
-      id: job.job.id,
-      page,
-    });
-    setBusy(false);
-    if ("error" in result) return toast.error(result.error);
-    setJob(result.data);
-    window.history.replaceState(
-      null,
-      "",
-      `/contacts/import?id=${job.job.id}&page=${page}`,
+  function describedBy(id: string, hint?: string) {
+    return (
+      [hint, fieldErrors[id] ? `${id}-error` : null]
+        .filter(Boolean)
+        .join(" ") || undefined
     );
   }
 
-  async function downloadReport() {
-    if (!job) return;
-    const result = await exportContactImport({
-      workspace_id: workspace,
-      id: job.job.id,
-    });
-    if ("error" in result) return toast.error(result.error);
-    downloadCsv(`名单导入报告-${job.job.id}.csv`, [
-      ["来源行", "邮箱", "处理结果", "说明"],
-      ...result.data.map((row) => [
-        row.source_rows.join("|"),
-        row.email,
-        resultLabels[row.result] ?? row.result,
-        dedupeImportMessages(row.message),
-      ]),
-    ]);
-  }
-
-  const pageHasEveryRow = Boolean(job && job.rows.length >= job.row_total);
-  const validEmails = !job
-    ? null
-    : pageHasEveryRow
-      ? countDedupedValidEmails(job.rows)
-      : (validEmailCounts[job.job.id] ?? null);
-
-  useEffect(() => {
-    if (!job || job.rows.length >= job.row_total) return;
-    if (validEmailCounts[job.job.id] != null) return;
-    let cancelled = false;
-    void exportContactImport({
-      workspace_id: workspace,
-      id: job.job.id,
-    }).then((result) => {
-      if (cancelled || !("data" in result) || !result.data) return;
-      setValidEmailCounts((current) => ({
-        ...current,
-        [job.job.id]: countDedupedValidEmails(result.data),
-      }));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [job, validEmailCounts, workspace]);
-
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+    <div className={styles.importer} data-contact-import>
+      <header className={styles.header}>
         <div>
           <Link
-            className="hint inline-flex items-center gap-1"
+            className={styles.backLink}
             href="/contacts"
+            aria-disabled={busy || undefined}
           >
-            <ArrowLeft className="size-3" /> 返回客户名单
+            <ArrowLeft aria-hidden="true" /> 返回客户名单
           </Link>
           <h1>导入客户名单</h1>
         </div>
         <Button
           variant="outline"
+          disabled={busy}
           onClick={() =>
-            downloadCsv("pixel-edm-客户导入模板.csv", [
+            downloadImportCsv("pixel-edm-客户导入模板.csv", [
               [
                 "邮箱",
                 "姓名",
@@ -257,295 +126,418 @@ export function ContactImporter({
             ])
           }
         >
-          <Download /> 下载模板
+          <Download aria-hidden="true" /> 下载模板
         </Button>
-      </div>
+      </header>
+
+      <ol className={styles.steps} aria-label="导入步骤">
+        {stages.map((label, index) => (
+          <li
+            key={label}
+            aria-current={index === stage ? "step" : undefined}
+            data-complete={index < stage || undefined}
+          >
+            <span className={styles.stepNumber} aria-hidden="true">
+              {index + 1}
+            </span>
+            <span>{label}</span>
+          </li>
+        ))}
+      </ol>
+
+      {failure && (
+        <div
+          className={styles.failure}
+          role="alert"
+          ref={errorRef}
+          tabIndex={-1}
+        >
+          <div>
+            <strong>
+              {failure.operation === "file"
+                ? "文件未读取"
+                : failure.operation === "process"
+                  ? "导入请求未完成"
+                  : failure.operation === "load"
+                    ? "结果未加载"
+                    : failure.operation === "report"
+                      ? "报告未下载"
+                      : "预检未完成"}
+            </strong>
+            <p>{failure.message}</p>
+            <p>
+              {job
+                ? "原任务已保留。重试会先核对任务进度，请勿重复上传。"
+                : "当前输入已保留，可以修改后重试。"}
+            </p>
+          </div>
+          <Button variant="outline" disabled={busy} onClick={retry}>
+            {failure.operation === "file"
+              ? "重新选择文件"
+              : failure.operation === "process"
+                ? "重试原任务"
+                : "重试"}
+          </Button>
+        </div>
+      )}
 
       {!job && (
-        <Card>
-          <CardHeader>
-            <CardTitle>1. 提供名单</CardTitle>
+        <Card className={styles.surface}>
+          <CardHeader className={styles.sectionHeader}>
+            <h2>提供名单</h2>
+            <p className={styles.description}>
+              每次最多 1000 行、2 MiB。预检不会写入客户资料。
+            </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Button
-                variant={sourceType === "paste" ? "default" : "outline"}
-                onClick={() => setSourceType("paste")}
-              >
-                粘贴
-              </Button>
-              <Button
-                variant={sourceType === "csv" ? "default" : "outline"}
-                onClick={() => setSourceType("csv")}
-              >
-                CSV 文件
-              </Button>
-            </div>
-            <div>
-              <Label htmlFor="import-name">名单来源名称</Label>
-              <Input
-                id="import-name"
-                maxLength={200}
-                value={sourceName}
-                onChange={(event) => setSourceName(event.target.value)}
-              />
-            </div>
-            {sourceType === "paste" ? (
-              <div>
-                <Label htmlFor="import-text">名单内容</Label>
-                <textarea
-                  id="import-text"
-                  className="mt-2 min-h-48 w-full rounded-md border bg-card p-3 font-mono text-sm"
-                  placeholder={
-                    "邮箱,姓名,标签\ncustomer@example.com,张三,VIP|老客"
-                  }
-                  value={text}
-                  onChange={(event) => setText(event.target.value)}
-                />
-                <p className="hint mt-1">
-                  可粘贴带表头的逗号/制表符表格，也可按“邮箱、姓名、标签”三列粘贴。
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <Input
-                  ref={fileRef}
-                  aria-label="选择 CSV 文件"
-                  type="file"
-                  accept=".csv,text/csv"
-                  onChange={async (event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) return;
-                    if (file.size > 2 * 1024 * 1024)
-                      return toast.error("CSV 文件不能超过 2 MiB");
-                    setSourceName(file.name);
-                    setText(await file.text());
-                  }}
-                />
-                <label className="flex items-center gap-2 text-sm">
-                  分隔符
-                  <select
-                    className="list-filter w-full max-w-xs"
-                    value={delimiter}
-                    onChange={(event) =>
-                      setDelimiter(event.target.value as "" | "," | "\t")
-                    }
-                  >
-                    <option value="">自动识别</option>
-                    <option value=",">逗号</option>
-                    <option value="\t">制表符</option>
-                  </select>
-                </label>
-              </div>
-            )}
-            <div className="rounded-lg border p-4">
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={consentDeclared}
-                  onChange={(event) => setConsentDeclared(event.target.checked)}
-                />
-                我确认名单中的客户已明确同意接收商业邮件
-              </label>
-              <p className="hint mt-2">
-                不勾选时，新客户默认为“未确认”，不能用于后续发送。已退订或投诉的地址不会向其发信。
-              </p>
-              {consentDeclared && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="consent-source">同意来源</Label>
-                    <Input
-                      id="consent-source"
-                      required
-                      maxLength={100}
-                      placeholder="例如：独立站结账勾选、展会名片、历史下单客户"
-                      value={consentSource}
-                      onChange={(event) => setConsentSource(event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="consent-at">同意时间（选填）</Label>
-                    <Input
-                      id="consent-at"
-                      type="datetime-local"
-                      value={consentAt}
-                      onChange={(event) => setConsentAt(event.target.value)}
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="consent-note">授权说明</Label>
-                    <Input
-                      id="consent-note"
-                      required
-                      maxLength={500}
-                      placeholder="例如：客户在独立站结账页面主动勾选接收促销邮件"
-                      value={consentNote}
-                      onChange={(event) => setConsentNote(event.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-            <Button
-              disabled={busy || !text.trim() || !sourceName.trim()}
-              onClick={prepare}
+          <CardContent>
+            <form
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault();
+                void prepare();
+              }}
             >
-              <FileUp /> {busy ? "正在预检…" : "预检名单"}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {warnings.map((warning) => (
-        <p className="guidance-note" role="status" key={warning}>
-          {warning}
-        </p>
-      ))}
-
-      {job && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              2. {job.job.status === "prepared" ? "确认预检结果" : "导入结果"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <div className="rounded-lg bg-muted p-3">
-                <span className="hint">源数据行</span>
-                <strong className="block text-xl">
-                  {job.job.total_source_rows}
-                </strong>
-              </div>
-              <div className="rounded-lg bg-muted p-3">
-                <span className="hint">去重后有效邮箱数</span>
-                <strong className="block text-xl">{validEmails ?? "…"}</strong>
-              </div>
-              <div className="rounded-lg bg-muted p-3">
-                <span className="hint">已处理</span>
-                <strong className="block text-xl">
-                  {job.job.processed_groups}
-                </strong>
-              </div>
-              <div className="rounded-lg bg-muted p-3">
-                <span className="hint">错误</span>
-                <strong className="block text-xl">
-                  {job.job.summary.error ?? 0}
-                </strong>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[620px] text-left text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="p-2">来源行</th>
-                    <th className="p-2">邮箱</th>
-                    <th className="p-2">状态</th>
-                    <th className="p-2">标签</th>
-                    <th className="p-2">说明</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {job.rows.map((row) => (
-                    <tr className="border-b" key={row.item_no}>
-                      <td className="p-2">{row.source_rows.join(", ")}</td>
-                      <td className="max-w-64 break-all p-2">{row.email}</td>
-                      <td className="p-2">
-                        {resultLabels[
-                          row.result === "pending"
-                            ? row.preview_result
-                            : row.result
-                        ] ?? row.result}
-                      </td>
-                      <td className="p-2">{row.tags.join("、")}</td>
-                      <td
-                        className={
-                          row.result === "error"
-                            ? "p-2 text-destructive"
-                            : "p-2 text-muted-foreground"
+              <fieldset disabled={busy} className={styles.inputLayout}>
+                <legend className="sr-only">名单内容及授权信息</legend>
+                <section
+                  className={styles.sourceSection}
+                  aria-labelledby="source-heading"
+                >
+                  <h3 id="source-heading" className="sr-only">
+                    名单输入区
+                  </h3>
+                  <div
+                    className={styles.sourceSwitch}
+                    role="group"
+                    aria-label="名单提供方式"
+                  >
+                    <Button
+                      type="button"
+                      aria-pressed={sourceType === "paste"}
+                      variant={sourceType === "paste" ? "default" : "outline"}
+                      onClick={() => setSourceType("paste")}
+                    >
+                      粘贴
+                    </Button>
+                    <Button
+                      type="button"
+                      aria-pressed={sourceType === "csv"}
+                      variant={sourceType === "csv" ? "default" : "outline"}
+                      onClick={() => setSourceType("csv")}
+                    >
+                      CSV 文件
+                    </Button>
+                  </div>
+                  <div className={styles.field}>
+                    <Label htmlFor="import-name">
+                      名单来源名称 <span className={styles.required}>必填</span>
+                    </Label>
+                    <Input
+                      id="import-name"
+                      required
+                      maxLength={200}
+                      value={sourceName}
+                      aria-invalid={Boolean(fieldErrors["import-name"])}
+                      aria-describedby={describedBy("import-name")}
+                      onChange={(event) => setSourceName(event.target.value)}
+                    />
+                    {fieldError("import-name")}
+                  </div>
+                  {sourceType === "paste" ? (
+                    <div className={styles.field}>
+                      <Label htmlFor="import-text">
+                        名单内容 <span className={styles.required}>必填</span>
+                      </Label>
+                      <textarea
+                        id="import-text"
+                        required
+                        className={styles.textarea}
+                        placeholder={
+                          "邮箱,姓名,标签\ncustomer@example.com,张三,VIP|老客"
+                        }
+                        value={text}
+                        aria-invalid={Boolean(fieldErrors["import-text"])}
+                        aria-describedby={describedBy(
+                          "import-text",
+                          "import-text-hint",
+                        )}
+                        onChange={(event) => setText(event.target.value)}
+                      />
+                      <p id="import-text-hint" className={styles.hint}>
+                        可粘贴逗号或制表符表格；无表头时按“邮箱、姓名、标签”三列读取。
+                      </p>
+                      {fieldError("import-text")}
+                    </div>
+                  ) : (
+                    <div className={styles.field}>
+                      <Label htmlFor="import-file">
+                        选择 CSV 文件{" "}
+                        <span className={styles.required}>必填</span>
+                      </Label>
+                      <Input
+                        ref={fileRef}
+                        id="import-file"
+                        aria-label="选择 CSV 文件"
+                        type="file"
+                        accept=".csv,text/csv"
+                        aria-describedby={describedBy(
+                          "import-text",
+                          "import-file-hint import-file-status",
+                        )}
+                        aria-invalid={Boolean(fieldErrors["import-text"])}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) void readFile(file);
+                        }}
+                      />
+                      <p id="import-file-hint" className={styles.hint}>
+                        UTF-8 编码，须有“邮箱”或 email 表头；每次最多 1000 行、2
+                        MiB。
+                      </p>
+                      <p
+                        id="import-file-status"
+                        className={styles.fileStatus}
+                        role="status"
+                      >
+                        {activity === "file"
+                          ? "正在读取文件，请稍候…"
+                          : fileName
+                            ? `已读取：${fileName}`
+                            : text
+                              ? "已保留粘贴内容；选择文件后会替换。"
+                              : "尚未选择文件。"}
+                      </p>
+                      {fieldError("import-text")}
+                      <Label htmlFor="import-delimiter">分隔符</Label>
+                      <select
+                        id="import-delimiter"
+                        className="list-filter"
+                        value={delimiter}
+                        onChange={(event) =>
+                          setDelimiter(event.target.value as "" | "," | "\t")
                         }
                       >
-                        {dedupeImportMessages(row.message)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {job.job.status === "prepared" && (
-                <Button
-                  disabled={busy}
-                  onClick={() => process(job.job.id, true)}
+                        <option value="">自动识别</option>
+                        <option value=",">逗号</option>
+                        <option value="\t">制表符</option>
+                      </select>
+                    </div>
+                  )}
+                </section>
+
+                <section
+                  className={styles.consentSection}
+                  aria-labelledby="consent-heading"
                 >
-                  <Play /> {busy ? "导入中…" : "确认并开始导入"}
+                  <h3 id="consent-heading">
+                    <ShieldCheck aria-hidden="true" /> 授权与订阅状态
+                  </h3>
+                  <p className={styles.hint}>
+                    导入名单不等于获得发信资格。未确认客户不能发信，已有退订、投诉、硬退信及归档保护不会自动解除。
+                  </p>
+                  <label className={styles.consentCheck}>
+                    <input
+                      type="checkbox"
+                      checked={consentDeclared}
+                      onChange={(event) =>
+                        setConsentDeclared(event.target.checked)
+                      }
+                    />
+                    <span>我确认名单中的客户已明确同意接收商业邮件</span>
+                  </label>
+                  <p className={styles.hint}>
+                    此声明设置未填写订阅状态的记录；CSV
+                    逐行状态优先。不声明且未填写状态的新客户以“未确认”导入。
+                  </p>
+                  {(consentDeclared ||
+                    consentSource ||
+                    consentNote ||
+                    consentAt) && (
+                    <div className={styles.consentFields}>
+                      {!consentDeclared && (
+                        <p className={styles.hint}>
+                          已取消批量声明。填写过的授权信息仍会随名单提交，可在下方修改或清空；不会仅凭这些信息将未确认客户设为已订阅。
+                        </p>
+                      )}
+                      <div className={styles.field}>
+                        <Label htmlFor="consent-source">
+                          同意来源{" "}
+                          <span className={styles.required}>
+                            {consentDeclared ? "必填" : "选填"}
+                          </span>
+                        </Label>
+                        <Input
+                          id="consent-source"
+                          required={consentDeclared}
+                          maxLength={100}
+                          placeholder="例如：会员注册页主动勾选"
+                          value={consentSource}
+                          aria-invalid={Boolean(fieldErrors["consent-source"])}
+                          aria-describedby={describedBy("consent-source")}
+                          onChange={(event) =>
+                            setConsentSource(event.target.value)
+                          }
+                        />
+                        {fieldError("consent-source")}
+                      </div>
+                      <div className={styles.field}>
+                        <Label htmlFor="consent-at">
+                          同意时间 <span className={styles.required}>选填</span>
+                        </Label>
+                        <Input
+                          id="consent-at"
+                          type="datetime-local"
+                          value={consentAt}
+                          aria-invalid={Boolean(fieldErrors["consent-at"])}
+                          aria-describedby={describedBy(
+                            "consent-at",
+                            "consent-at-hint",
+                          )}
+                          onChange={(event) => setConsentAt(event.target.value)}
+                        />
+                        <p id="consent-at-hint" className={styles.hint}>
+                          按当前设备时区填写，不能晚于现在。
+                        </p>
+                        {fieldError("consent-at")}
+                      </div>
+                      <div className={styles.field}>
+                        <Label htmlFor="consent-note">
+                          授权说明{" "}
+                          <span className={styles.required}>
+                            {consentDeclared ? "必填" : "选填"}
+                          </span>
+                        </Label>
+                        <textarea
+                          id="consent-note"
+                          className={styles.noteInput}
+                          required={consentDeclared}
+                          maxLength={500}
+                          placeholder="例如：客户主动勾选接收促销邮件，记录可在会员后台核对"
+                          value={consentNote}
+                          aria-invalid={Boolean(fieldErrors["consent-note"])}
+                          aria-describedby={describedBy("consent-note")}
+                          onChange={(event) =>
+                            setConsentNote(event.target.value)
+                          }
+                        />
+                        {fieldError("consent-note")}
+                      </div>
+                    </div>
+                  )}
+                  <details className={styles.help}>
+                    <summary>CSV 逐行授权如何填写？</summary>
+                    <p>
+                      “订阅状态”列可填写未确认、已订阅、已退订、硬退信、已投诉。已订阅记录必须提供同意来源及授权说明。
+                    </p>
+                    <p>
+                      CSV
+                      包含“同意来源”“授权说明”或“同意时间”列时，各列逐行值优先；其中空值不会由批量信息补齐。未提供这些列时才使用批量信息。
+                    </p>
+                  </details>
+                </section>
+              </fieldset>
+              <div className={styles.formActions}>
+                <p className={styles.hint}>
+                  {busy
+                    ? "正在处理当前请求，请完成后再切换名单。"
+                    : "下一步查看新增、更新、保护及错误记录，再决定是否导入。"}
+                </p>
+                <Button
+                  type="submit"
+                  disabled={busy || failure?.operation === "file"}
+                >
+                  <FileUp aria-hidden="true" />{" "}
+                  {activity === "prepare" ? "正在预检…" : "预检名单"}
                 </Button>
-              )}
-              {job.job.status === "processing" && (
-                <Button disabled={busy} onClick={() => process(job.job.id)}>
-                  <RotateCw /> {busy ? "继续处理中…" : "继续导入"}
-                </Button>
-              )}
-              <Button variant="outline" onClick={downloadReport}>
-                <Download /> 下载报告
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setJob(undefined);
-                  window.history.replaceState(null, "", "/contacts/import");
-                }}
-              >
-                新建导入
-              </Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                disabled={busy || job.page <= 1}
-                onClick={() => changePage(job.page - 1)}
-              >
-                上一页
-              </Button>
-              <span>
-                {job.page} / {Math.max(1, Math.ceil(job.row_total / 50))}
-              </span>
-              <Button
-                variant="outline"
-                disabled={busy || job.page * 50 >= job.row_total}
-                onClick={() => changePage(job.page + 1)}
-              >
-                下一页
-              </Button>
-            </div>
+              </div>
+            </form>
           </CardContent>
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>最近导入</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {history.map((item) => (
-            <Link
-              className="flex flex-col gap-1 rounded border p-3 text-sm hover:bg-muted sm:flex-row sm:items-center sm:justify-between sm:gap-3"
-              href={`/contacts/import?id=${item.id}`}
-              key={item.id}
-            >
-              <span className="min-w-0 truncate font-medium">
-                {item.source_name}
-              </span>
-              <span className="shrink-0 text-muted-foreground">
-                {formatImportTimestamp(item.created_at)} ·{" "}
-                {item.processed_groups}/{item.total_groups} ·{" "}
-                {importJobStatusLabels[item.status] ?? item.status}
-              </span>
-            </Link>
+      {!!warnings.length && (
+        <div className={styles.warnings} role="status">
+          {warnings.map((warning) => (
+            <p key={warning}>{warning}</p>
           ))}
-          {!history.length && <p className="hint">暂无导入记录。</p>}
-        </CardContent>
-      </Card>
+        </div>
+      )}
+
+      {job && (
+        <ContactImportResults
+          detail={job}
+          headingRef={resultRef}
+          validEmails={validEmails}
+          busy={busy}
+          activity={activity}
+          canEdit={canEdit}
+          onEdit={editDraft}
+          onNew={startNew}
+          onProcess={(confirm) => void process(job.job.id, confirm)}
+          onDownload={() => void downloadReport()}
+          onPage={(page) => void loadJob(job.job.id, page)}
+          onLocateError={() => void loadJob(job.job.id, 1, true)}
+        />
+      )}
+
+      <section
+        className={styles.history}
+        aria-labelledby="import-history-heading"
+      >
+        <div className={styles.historyHeading}>
+          <h2 id="import-history-heading">最近导入</h2>
+          <p className={styles.hint}>
+            保留最近 10 次，可继续原任务或查看结果。
+          </p>
+        </div>
+        {!recent.length ? (
+          <p className={styles.hint}>
+            暂无导入记录。完成预检后，任务会出现在这里。
+          </p>
+        ) : (
+          <ul>
+            {recent.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={styles.historyItem}
+                  disabled={busy}
+                  aria-current={job?.job.id === item.id ? "true" : undefined}
+                  onClick={() => requestLeave(() => void loadJob(item.id))}
+                >
+                  <span className={styles.historyName}>
+                    {item.source_name}
+                    <span className={styles.hint}>
+                      {formatImportTimestamp(item.created_at)} ·{" "}
+                      {item.source_type === "csv" ? "CSV 文件" : "粘贴名单"}
+                    </span>
+                  </span>
+                  <span className={styles.historyState}>
+                    <strong>
+                      {job?.job.id === item.id && activity === "process"
+                        ? "处理中"
+                        : importJobStatusLabels[item.status]}
+                    </strong>
+                    <span>
+                      {item.status === "prepared"
+                        ? `${item.total_groups} 条待确认`
+                        : `${item.processed_groups}/${item.total_groups} 条（含错误与跳过）`}{" "}
+                      ·{" "}
+                      {item.status === "processing"
+                        ? "继续原任务"
+                        : item.status === "prepared"
+                          ? "查看预检"
+                          : "查看结果"}
+                    </span>
+                  </span>
+                  <ArrowRight aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      {discardConfirm}
     </div>
   );
 }

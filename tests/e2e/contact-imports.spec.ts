@@ -27,7 +27,7 @@ test("粘贴去重、错误报告、退订保护和 CSV 引号解析", async ({ 
   await expect(page.getByText("去重后").locator("..")).toContainText("1");
   await expect(page.getByText("邮箱格式无效")).toBeVisible();
   await page.getByRole("button", { name: "确认并开始导入" }).click();
-  await expect(page.getByText("已新增", { exact: true })).toBeVisible();
+  await expect(page.getByText("已新增", { exact: true }).first()).toBeVisible();
   const report = page.waitForEvent("download");
   await page.getByRole("button", { name: "下载报告" }).click();
   expect((await report).suggestedFilename()).toMatch(/^名单导入报告-.*\.csv$/);
@@ -64,10 +64,10 @@ test("粘贴去重、错误报告、退订保护和 CSV 引号解析", async ({ 
   await page.getByLabel("同意来源").fill("会员注册");
   await page.getByLabel("授权说明").fill("注册页勾选记录");
   await page.getByRole("button", { name: "预检名单" }).click();
-  await expect(page.getByText("已退订（跳过）", { exact: true })).toBeVisible();
+  await expect(page.getByText("保留防打扰状态", { exact: true })).toBeVisible();
 
   await page.goto("/contacts/import");
-  await page.getByRole("button", { name: "CSV 文件" }).click();
+  await page.getByRole("button", { name: "CSV 文件", exact: true }).click();
   await page.getByLabel("名单来源名称").fill("CSV 引号回归名单");
   await page.locator('input[type="file"]').setInputFiles({
     name: "quoted.csv",

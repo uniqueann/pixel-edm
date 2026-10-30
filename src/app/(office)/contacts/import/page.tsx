@@ -27,9 +27,14 @@ export default async function Page({
   const initialJob = selected && "data" in selected ? selected.data : undefined;
   return (
     <ContactImporter
+      key={context.workspace.id}
       workspace={context.workspace.id}
       history={history}
       initialJob={initialJob}
+      selectedId={params.id}
+      initialError={
+        selected && "error" in selected ? selected.error : undefined
+      }
     />
   );
 }

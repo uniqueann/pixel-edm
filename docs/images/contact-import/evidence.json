@@ -1,0 +1,55 @@
+{
+  "基线提交": "8b1828a",
+  "证据类型": "本地隔离Playwright模拟视口截图，非真机或线上验证",
+  "视口高度": 960,
+  "截图": [
+    {
+      "文件": "before-initial-1440-light.png",
+      "sha256": "664b80cff7accc8574ade35167ad939383865f323e020be9b1cce088a7849556"
+    },
+    {
+      "文件": "before-preview-1440-light.png",
+      "sha256": "85a5501176ec56ee6b944aa9e55927732cde821ebf02988a604ef8a26ad2de44"
+    },
+    {
+      "文件": "before-preview-error-390-light.png",
+      "sha256": "c2ac4d2adb1799e65e92d9789754dfa2aea58fc6f1dbc1037da5059bfee84a01"
+    },
+    {
+      "文件": "before-preview-error-320-dark.png",
+      "sha256": "7e95d2216bfbecfa1df2dccef7bdd8d44a7b6da3cdfc8582c3558187d8f9be41"
+    },
+    {
+      "文件": "before-preview-820-dark.png",
+      "sha256": "12f2b5923c8ae17b2f1c616aa934f99513a900fd76a860936fe90c4073305429"
+    },
+    {
+      "文件": "before-completed-390-dark.png",
+      "sha256": "9eeffa7b133bac3972e2eb122a7da4b272556d43ab0d4cdc76ce6fd3174c34b5"
+    },
+    {
+      "文件": "after-initial-1440-light.png",
+      "sha256": "61a1152e5756fd62aa2c0771a0d0e973e5329ad2f2fdda5cd39d3a94121a26ca"
+    },
+    {
+      "文件": "after-preview-1440-light.png",
+      "sha256": "9874469f466e8aaca840ca4876f4c818b861d25e9d783bfcfb357e2b4e029642"
+    },
+    {
+      "文件": "after-preview-error-390-light.png",
+      "sha256": "69dc0831d09a56450d215a9513fe57fe86ed6931ecc60600f4061449cab0a57b"
+    },
+    {
+      "文件": "after-preview-error-320-dark.png",
+      "sha256": "c95e9ea8232957fda075a99fea03cd1e60ed26e4d5bd16a8684c40118030ebac"
+    },
+    {
+      "文件": "after-preview-820-dark.png",
+      "sha256": "e25b980c33f83f4f8365d3cb0421c1453b15d496e95618ea1726a012c8a2cf30"
+    },
+    {
+      "文件": "after-completed-390-dark.png",
+      "sha256": "d298204afa4fb748a9577946a9d865aa5829978e77615f16c5bdae5372cfbd52"
+    }
+  ]
+}
