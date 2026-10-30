@@ -94,6 +94,7 @@ test("通道表单在软键盘模拟与小高度视口中，字段不被操作�
   await page.goto("/settings#settings-channels");
   await page.getByRole("button", { name: "更新发信通道" }).click();
   const dialog = page.getByRole("dialog");
+  const replyInput = dialog.getByLabel("回复地址（选填）", { exact: true });
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -102,17 +103,45 @@ test("通道表单在软键盘模拟与小高度视口中，字段不被操作�
           .getBoundingClientRect();
         const scroll = document.querySelector("[data-dialog-scroll-body]")!;
         const scrollBox = scroll.getBoundingClientRect();
-        const targets = [
-          ...scroll.querySelectorAll("label, .supporting, p[id$='-help']"),
+        if (scroll.scrollTop !== 0) return false;
+        if (scrollBox.bottom > footer.top + 1) return false;
+        const controls = [
+          ...scroll.querySelectorAll(
+            "label, input, textarea, select, .supporting, p[id$='-help']",
+          ),
         ];
-        return targets.every((element) => {
+        return controls.every((element) => {
           const box = element.getBoundingClientRect();
-          const inScrollView =
-            box.height > 0 &&
-            box.bottom > scrollBox.top + 4 &&
-            box.top < scrollBox.bottom - 4;
-          return !inScrollView || box.bottom <= footer.top - 4;
+          const visibleTop = Math.max(box.top, scrollBox.top);
+          const visibleBottom = Math.min(box.bottom, scrollBox.bottom);
+          if (visibleBottom - visibleTop <= 1) return true;
+          return visibleBottom <= footer.top - 8;
         });
+      }),
+    )
+    .toBe(true);
+  await expect(replyInput).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const footer = document
+          .querySelector("[data-channel-form-footer]")!
+          .getBoundingClientRect();
+        const scroll = document.querySelector("[data-dialog-scroll-body]")!;
+        const scrollBox = scroll.getBoundingClientRect();
+        const reply = document.querySelector('input[id*="reply_to_address"]')!;
+        const label = document.querySelector('label[for*="reply_to_address"]')!;
+        const help = document.querySelector('[id*="reply_to_address-help"]')!;
+        const gap = 8;
+        if (scrollBox.bottom > footer.top - gap + 1) return false;
+        for (const element of [label, reply, help]) {
+          const box = element.getBoundingClientRect();
+          const visibleBottom = Math.min(box.bottom, scrollBox.bottom);
+          const visibleTop = Math.max(box.top, scrollBox.top);
+          if (visibleBottom - visibleTop <= 1) continue;
+          if (visibleBottom > footer.top - gap) return false;
+        }
+        return true;
       }),
     )
     .toBe(true);
