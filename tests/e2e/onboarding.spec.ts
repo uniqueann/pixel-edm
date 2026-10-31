@@ -388,3 +388,151 @@ test("短视口和放大后的准备操作可达，焦点可见且收起内容�
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/settings\?guide=store#settings-store$/);
 });
+
+async function expectGuideAnchorVisible(
+  page: Page,
+  hash: string,
+  title: string,
+) {
+  const rail = page.getByRole("complementary", { name: "首次使用引导" });
+  const back = rail.getByRole("link", { name: "返回准备清单" });
+  const heading = page
+    .locator(`#${hash}`)
+    .getByRole("heading", { level: 2 })
+    .first();
+  await expect(rail).toContainText(title);
+  await expect(page).toHaveURL(new RegExp(`#${hash}$`));
+  await expect(back).toBeInViewport();
+  await expect(async () => {
+    const railBox = await rail.boundingBox();
+    const backBox = await back.boundingBox();
+    const headingBox = await heading.boundingBox();
+    const headerBox = await page.locator(".app-sticky-header").boundingBox();
+    const viewport = page.viewportSize();
+    expect(railBox).not.toBeNull();
+    expect(backBox).not.toBeNull();
+    expect(headingBox).not.toBeNull();
+    expect(headerBox).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    const headerBottom = headerBox!.y + headerBox!.height;
+    const railBottom = railBox!.y + railBox!.height;
+    expect(railBox!.y).toBeGreaterThanOrEqual(-1);
+    expect(backBox!.y).toBeGreaterThanOrEqual(headerBottom - 1);
+    expect(backBox!.y + backBox!.height).toBeLessThanOrEqual(
+      viewport!.height + 1,
+    );
+    expect(headingBox!.y).toBeGreaterThanOrEqual(railBottom - 1);
+    expect(headingBox!.y + headingBox!.height).toBeLessThanOrEqual(
+      viewport!.height + 1,
+    );
+  }).toPass({ timeout: 8000 });
+  expect(
+    await rail.evaluate((element) => getComputedStyle(element).position),
+  ).toBe("sticky");
+}
+
+test("设置页引导深链保持返回清单可见，并露出对应分区", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(60000);
+  await scenario(request, { state: "ready" });
+  await login(page);
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 960 });
+    await page.goto("/dashboard");
+    await guide(page)
+      .getByRole("link", { name: "补充邮件页脚实体地址", exact: true })
+      .click();
+    await expectGuideAnchorVisible(page, "settings-store", "准备发件身份");
+    await page
+      .getByRole("navigation", { name: "设置分区" })
+      .getByRole("link", { name: "发信通道", exact: true })
+      .click();
+    await expectGuideAnchorVisible(page, "settings-channels", "准备发件身份");
+    await page.goto("/settings?guide=channels#settings-channels");
+    await expectGuideAnchorVisible(
+      page,
+      "settings-channels",
+      "连接并验证主通道",
+    );
+    await page.goto("/settings?guide=store#settings-store");
+    await expectGuideAnchorVisible(page, "settings-store", "准备发件身份");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - innerWidth,
+      ),
+    ).toBeLessThanOrEqual(1);
+  }
+  await page.goto("/contacts?guide=contacts");
+  const contactsRail = page.getByRole("complementary", {
+    name: "首次使用引导",
+  });
+  await expect(contactsRail).toBeVisible();
+  expect(
+    await contactsRail.evaluate((element) => ({
+      sticky: element.getAttribute("data-sticky"),
+      position: getComputedStyle(element).position,
+    })),
+  ).toEqual({ sticky: null, position: "static" });
+});
+
+test("总览清单滚过顶栏时不会透出文字", async ({ page, request }) => {
+  await scenario(request, { state: "ready" });
+  await login(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addStyleTag({
+    content: "nextjs-portal { display: none !important; }",
+  });
+  await expect(guide(page)).toBeVisible();
+  for (const theme of ["light", "dark"]) {
+    await page.evaluate((value) => {
+      document.documentElement.classList.toggle("dark", value === "dark");
+      document.documentElement.style.colorScheme = value;
+    }, theme);
+    const sample = await page.evaluate(() => {
+      const header = document.querySelector<HTMLElement>(".app-sticky-header");
+      const text = document.querySelector<HTMLElement>(
+        "[data-testid='onboarding-guide'] p",
+      );
+      if (!header || !text) return null;
+      window.scrollTo(0, 0);
+      const delta =
+        text.getBoundingClientRect().top -
+        header.getBoundingClientRect().bottom +
+        28;
+      window.scrollBy(0, delta);
+      const headerRect = header.getBoundingClientRect();
+      const textRect = text.getBoundingClientRect();
+      const x = Math.min(
+        Math.max(textRect.left + 16, headerRect.left + 8),
+        headerRect.right - 8,
+      );
+      const y = headerRect.bottom - 8;
+      const hit = document.elementFromPoint(x, y);
+      const style = getComputedStyle(header);
+      const color = style.backgroundColor;
+      const channels = color.match(/[\d.]+/g)?.map(Number) ?? [];
+      const alpha =
+        color.startsWith("rgba") || color.includes("/")
+          ? (channels.at(-1) ?? 1)
+          : channels.length === 4
+            ? channels[3]
+            : 1;
+      return {
+        alpha,
+        backdrop: style.backdropFilter,
+        hitInHeader: Boolean(hit && header.contains(hit)),
+        overlaps:
+          textRect.top < headerRect.bottom - 1 &&
+          textRect.bottom > headerRect.top,
+        color,
+      };
+    });
+    expect(sample, theme).not.toBeNull();
+    expect(sample!.overlaps, JSON.stringify(sample)).toBe(true);
+    expect(sample!.hitInHeader, JSON.stringify(sample)).toBe(true);
+    expect(sample!.alpha, JSON.stringify(sample)).toBe(1);
+    expect(["none", ""]).toContain(sample!.backdrop);
+  }
+});

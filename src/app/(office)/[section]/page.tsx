@@ -131,10 +131,7 @@ export default async function Page({
           <CheckoutSuccessToast />
         </Suspense>
         <SettingsSectionNav showBilling={Boolean(deliveryPlan)} />
-        <section
-          id={SETTINGS_SECTION_IDS.store}
-          className="settings-section scroll-mt-4"
-        >
+        <section id={SETTINGS_SECTION_IDS.store} className="settings-section">
           <Card>
             <CardContent className="pt-6">
               <h2 className="mb-2">店铺信息</h2>
@@ -160,7 +157,7 @@ export default async function Page({
         </section>
         <section
           id={SETTINGS_SECTION_IDS.channels}
-          className="settings-section scroll-mt-4 mt-7 space-y-3"
+          className="settings-section mt-7 space-y-3"
         >
           <div>
             <h2>发信通道</h2>
@@ -199,7 +196,7 @@ export default async function Page({
         {deliveryPlan && (
           <section
             id={SETTINGS_SECTION_IDS.billing}
-            className="settings-section scroll-mt-4 mt-7"
+            className="settings-section mt-7"
           >
             <BillingUpgrade
               workspaceId={workspace.id}
@@ -212,7 +209,7 @@ export default async function Page({
         )}
         <section
           id={SETTINGS_SECTION_IDS.appearance}
-          className="settings-section scroll-mt-4 mt-7"
+          className="settings-section mt-7"
         >
           <Card>
             <CardContent className="pt-6">

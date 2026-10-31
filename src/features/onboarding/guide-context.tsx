@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLayoutEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import {
@@ -62,6 +63,57 @@ const contexts: Record<
   },
 };
 
+function stickyChrome() {
+  return {
+    header: document.querySelector<HTMLElement>(".app-sticky-header"),
+    rail: document.querySelector<HTMLElement>(
+      "[data-guide-context][data-sticky='true']",
+    ),
+  };
+}
+
+/** 写入顶栏 / 引导条高度，供吸顶偏移和 scroll-padding 使用。 */
+function measureStickyOffsets() {
+  const { header, rail } = stickyChrome();
+  const root = document.documentElement;
+  if (header) {
+    root.style.setProperty(
+      "--app-header-height",
+      `${Math.floor(header.getBoundingClientRect().height)}px`,
+    );
+  }
+  if (rail) {
+    root.style.setProperty(
+      "--guide-rail-height",
+      `${Math.ceil(rail.getBoundingClientRect().height)}px`,
+    );
+  } else {
+    root.style.removeProperty("--guide-rail-height");
+  }
+}
+
+function settingsHashTarget() {
+  const id = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+  if (!id.startsWith("settings-")) return null;
+  return document.getElementById(id);
+}
+
+/**
+ * 带锚点的设置页在水合后可能被路由滚回顶部。
+ * 只在仍停在页面顶端、目标却在首屏之下时补一次滚动，避免锁死用户之后的滚动。
+ */
+function revealSettingsAnchor(force = false) {
+  measureStickyOffsets();
+  const target = settingsHashTarget();
+  if (!target) return;
+  const cover =
+    parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
+    0;
+  const top = target.getBoundingClientRect().top;
+  // 目标还在吸顶区下方一大截时补滚。已经对齐或用户继续下滚（top 变小）时不打断。
+  if (force || top > cover + 80) target.scrollIntoView();
+}
+
 export function GuideContext({
   role,
   canWrite,
@@ -71,14 +123,108 @@ export function GuideContext({
 }) {
   const pathname = usePathname();
   const guide = useSearchParams().get("guide");
+  useLayoutEffect(() => {
+    let frame = 0;
+    let correcting = false;
+    let stuck = 0;
+    const run = (force: boolean) => {
+      if (correcting) return;
+      const before = window.scrollY;
+      correcting = true;
+      revealSettingsAnchor(force);
+      correcting = false;
+      if (force || window.scrollY !== before) stuck = 0;
+      else stuck += 1;
+    };
+    const schedule = (force: boolean) => {
+      if (!force && stuck > 2) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => run(force));
+    };
+    run(true);
+    schedule(true);
+    void document.fonts?.ready.then(() => schedule(true));
+    const timer = window.setInterval(() => revealSettingsAnchor(false), 150);
+    const stopTimer = window.setTimeout(
+      () => window.clearInterval(timer),
+      2000,
+    );
+    const { header, rail } = stickyChrome();
+    const observer = new ResizeObserver(() => measureStickyOffsets());
+    if (header) observer.observe(header);
+    if (rail) observer.observe(rail);
+    let pendingId = "";
+    let followUntil = 0;
+    const alignTo = (id: string) => {
+      if (correcting) return;
+      correcting = true;
+      measureStickyOffsets();
+      const target = document.getElementById(id);
+      if (target) {
+        void getComputedStyle(document.documentElement).scrollPaddingTop;
+        target.scrollIntoView();
+      }
+      correcting = false;
+    };
+    const onHashChange = () => schedule(true);
+    const onScroll = () => {
+      if (correcting) return;
+      if (pendingId && performance.now() < followUntil) {
+        const target = document.getElementById(pendingId);
+        const cover =
+          parseFloat(
+            getComputedStyle(document.documentElement).scrollPaddingTop,
+          ) || 0;
+        const top = target?.getBoundingClientRect().top ?? cover;
+        if (Math.abs(top - cover) > 24) alignTo(pendingId);
+        return;
+      }
+      if (!window.location.hash.startsWith("#settings-")) return;
+      schedule(false);
+    };
+    // 同页锚点由路由 pushState 更新，不一定触发 hashchange。
+    const onClick = (event: MouseEvent) => {
+      const node = event.target;
+      if (!(node instanceof Element)) return;
+      const id = node
+        .closest("a")
+        ?.getAttribute("href")
+        ?.match(/#(settings-[a-z0-9-]+)/)?.[1];
+      if (!id) return;
+      pendingId = id;
+      followUntil = performance.now() + 600;
+      alignTo(id);
+      requestAnimationFrame(() => alignTo(id));
+      window.setTimeout(() => alignTo(id), 50);
+      window.setTimeout(() => alignTo(id), 200);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("click", onClick);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearInterval(timer);
+      window.clearTimeout(stopTimer);
+      observer.disconnect();
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("click", onClick);
+    };
+  }, [pathname, guide]);
   if (!guide || !Object.hasOwn(contexts, guide)) return null;
   const task = guide as GuideTask;
   const context = contexts[task];
   if (pathname !== context.path && !pathname.startsWith(`${context.path}/`))
     return null;
   const requiresAdmin = task === "store" || task === "channels";
+  const sticky = pathname === "/settings";
   return (
-    <aside aria-label="首次使用引导" className={styles.context}>
+    <aside
+      aria-label="首次使用引导"
+      data-guide-context=""
+      data-sticky={sticky ? "true" : undefined}
+      className={styles.context}
+    >
       <div>
         <strong>{context.title}</strong>
         <p>

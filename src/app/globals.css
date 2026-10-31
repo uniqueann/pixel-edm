@@ -26,6 +26,9 @@
   --gold: #a67b25;
   --gold-tint: #f6edd9;
   --green: #2f6e52;
+  /* 顶栏和引导条的实际高度由客户端测量覆盖，这里只给首屏锚点一个接近的初值。 */
+  --app-header-height: 6.5rem;
+  --guide-rail-height: 9rem;
 }
 
 .dark {
@@ -125,11 +128,19 @@
   position: sticky;
   top: 0;
   z-index: 40;
+  isolation: isolate;
+  /* 必须不透明。半透明加模糊时，总览清单等滚动内容会从顶栏透出来。 */
   background: var(--background);
-  background: color-mix(in srgb, var(--background) 92%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
+}
+/* 设置页锚点要让出顶栏；引导条吸顶时再让出引导条，避免标题钻到导轨下面。 */
+html:has(.settings-section) {
+  scroll-padding-top: calc(var(--app-header-height) + 12px);
+}
+html:has([data-guide-context][data-sticky="true"]) {
+  scroll-padding-top: calc(
+    var(--app-header-height) + var(--guide-rail-height) + 12px
+  );
 }
 .topbar {
   display: flex;
@@ -753,6 +764,10 @@ button.tab {
   top: 10px;
 }
 @media (max-width: 640px) {
+  :root {
+    --app-header-height: 9.5rem;
+    --guide-rail-height: 16rem;
+  }
   .topbar {
     display: grid;
     grid-template-columns: 1fr auto auto;
