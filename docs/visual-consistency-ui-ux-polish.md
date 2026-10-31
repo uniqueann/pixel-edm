@@ -14,7 +14,7 @@
 | 页面 / 路由 | 主要组件 | 本轮处理与检查 |
 | --- | --- | --- |
 | `/` → `/dashboard` 总览 | `AppShell`、`PreparationGuide`、指标卡、最近活动 | 共享页头、长名称、引导展开/收起、读取失败、角色限制；保留事实推导与完成条件 |
-| `/contacts` 客户 | `Contacts`、`ListPagination`、客户/退订/归档弹窗 | 页头主要操作、可见筛选标签、语义订阅标签、空态与无结果、普通弹窗 |
+| `/contacts` 客户 | `Contacts`、`ListPagination`、客户/退订/归档弹窗 | 页头主要操作、可访问筛选名称、语义订阅标签、空态与无结果、普通弹窗 |
 | `/contacts/import` 导入 | `ContactImporter`、`ContactImportResults` | 共享控件影响、步骤、预检、确认、分批恢复、错误和下载；保留专用流程结构 |
 | `/templates` 模板 | `Templates`、`TemplatePreview` | 页头、工具栏、卡片表面、操作层级、空态；保留网格布局 |
 | `/templates` 内编辑器 | 独立编辑/预览区、未保存确认 | 共享 Dialog/字段影响；保留示例值边界、保存操作区与双栏/手机切换 |
@@ -82,7 +82,7 @@
 | 共享模式 | 重复使用位置 | 移除或收敛的旧规则 |
 | --- | --- | --- |
 | `PageHeader` | 总览、客户、模板、活动、设置、团队、帮助、日志 | 删除 `.section-heading h1` 的旧尺度、活动页独立页头/计数/说明/操作样式和 welcome 样式 |
-| `ListToolbar` / `FilterField` | 客户、模板、活动、日志 | 删除独立 list-search 与常规列表 36/38px 高度覆盖；活动只保留任务网格和搜索图标布局 |
+| `ListToolbar` / `FilterField` | 客户、模板、活动、日志 | 删除独立 list-search、外层卡片与独占一行的视觉标签；保留关联标签和选项文字，活动只保留任务网格和搜索图标布局 |
 | `Notice` | 地址提示、署名提示、套餐/席位、通道注意、帮助说明/警告 | 删除 `.notice-warning` 的浅/深硬编码覆盖，迁移重复 amber 提示容器 |
 | 语义 Badge | 订阅、活动状态、通道验证 | 删除活动中覆盖全部 Badge 变体的局部状态 CSS；保留状态文本和原枚举 |
 | 共享控件和 Dialog | 全部业务页、认证/邀请/退订/系统页 | 常规高度来自同一 control-height；显式保留 sm 密度和复杂编辑器布局 |
@@ -113,6 +113,35 @@
 | 登录，手机浅色：表单与品牌层级 | ![登录优化前](images/visual-consistency/login-390-light-before.png) | ![登录优化后](images/visual-consistency/login-390-light-after.png) |
 | 320px 短视口长名称：换行与导航 | ![长名称优化前](images/visual-consistency/short-long-320-before.png) | ![长名称优化后](images/visual-consistency/short-long-320-after.png) |
 
+## 搜索区域密度收紧
+
+针对首版 `e7588df` 的搜索区高度反馈，进一步将客户、模板、活动和日志工具栏改为紧凑排列。首版的外层卡片、上下内边距和独占一行标签叠加，在宽屏占用 101.5px；它们属于查找操作，不需要与正文内容卡片同样的重量。
+
+- 去掉工具栏外层卡片、边框与内边距，字段行间距 8px、列间距 12px，与列表相隔 16px。
+- 关联标签保留在可访问树中，搜索提示、当前选项和已应用筛选摘要继续说明用途；普通表单标签不变。
+- 手机继续保持 44px 高度和 16px 字号。常规筛选参考宽度由 8rem 调整为 9rem，空间不足时自然换行，避免为减少行数挤压选项。
+- 新增四类列表在 320 / 390 / 820 / 1440px 下的高度预算、可访问名称、Tab 顺序与触控区回归；既有筛选、URL 参数和提交行为不变。
+
+相同隔离数据、主题、视口和位置下的计算尺寸：
+
+| 场景 | 首版 | 收紧后 |
+| --- | ---: | ---: |
+| 客户，1440px 浅色 | 101.5px | 40px |
+| 客户，390px 深色 | 280.5px | 148px |
+| 活动，390px 深色 | 191px | 96px |
+
+| 场景 | 首版 | 收紧后 |
+| --- | --- | --- |
+| 客户，桌面浅色 | ![客户工具栏首版](images/visual-consistency/toolbar-contacts-1440-light-before.png) | ![客户工具栏收紧后](images/visual-consistency/contacts-1440-light-after.png) |
+| 客户，手机深色 | ![客户手机工具栏首版](images/visual-consistency/toolbar-contacts-390-dark-before.png) | ![客户手机工具栏收紧后](images/visual-consistency/contacts-390-dark-after.png) |
+| 活动，手机深色 | ![活动手机工具栏首版](images/visual-consistency/toolbar-campaigns-390-dark-before.png) | ![活动手机工具栏收紧后](images/visual-consistency/campaigns-390-dark-after.png) |
+
+线上活动地址本次跳转至登录页，没有操作线上账号；密度结论来自当前实现、修改前采集和本地隔离渲染。
+
+本轮人工复核覆盖本地隔离 production build：1440px 客户、390px 客户与活动、820px 模板、320px 日志，检查主题、筛选摘要、Tab 顺序与换行；主题已恢复跟随系统，视口复位，测试标签已关闭。局部 layout 检测在修改前后均为 0 项，仅代表本次三处目标文件的布局扫描，不替代前述全站建议项记录。
+
+首次完整回归有一项导入测试失败。轨迹显示“新建导入”的下一帧自动聚焦与测试极速填入相撞，名单文本追加到了名称字段，名单内容实际尚未写入。测试现等待原有名称焦点恢复再输入，保留原有取消离开、后退、刷新和历史跳转的全部断言，未修改导入或离开保护实现。诊断时的同进程 repeat-each 还命中了重复历史记录的选择器冲突，后续使用独立启动的夹具验证，避免把测试数据复用当作业务回归。
+
 ## 业务兼容边界
 
 本轮没有修改认证实现、角色/权限判断、工作区/账号隔离、Server Actions、业务 model、导入解析器、订阅/去重/保护规则、模板保存参数、变量替换、示例值边界、通道验证/幂等/密钥处理、活动名单/发送/额度/套餐与统计口径。
@@ -126,11 +155,12 @@
 | 验证 | 实际结果 |
 | --- | --- |
 | 针对性回归：引导、套餐、模板审计、菜单、错误关联及弹窗标签 | 18 项通过；原有导入、通道、编辑器、键盘恢复回归也已执行，最终由完整 CI 再覆盖 |
-| `EDM_CONSISTENCY_PHASE=after npm run ci:verify` | 通过：lint、typecheck、format:check、222 项单元/数据库测试、生产构建、61 项 E2E；1 项默认条件跳过 |
+| 首版 `EDM_CONSISTENCY_PHASE=after npm run ci:verify` | 通过：lint、typecheck、format:check、222 项单元/数据库测试、生产构建、61 项 E2E；1 项默认条件跳过 |
+| 收紧搜索区域后重新运行 `EDM_CONSISTENCY_PHASE=after npm run ci:verify` | 全部通过：lint、typecheck、format:check、222 项单元/数据库测试、生产构建、62 项 E2E；1 项默认条件跳过，导入焦点时序修正后的针对性回归也通过 |
 | `EDM_CHANNEL_NO_KEY=1 npx playwright test --config tests/channel-no-key.config.ts` | 默认跳过的无密钥场景独立补跑，1 项通过 |
 | 旧 main 固定夹具视觉矩阵 | 3 项采集测试通过，129 个场景；其中首次 UI 修改前的初始基线为 128 个场景 |
-| 最终开发模式视觉矩阵 | 129 个同数据对照场景，全部无页面横向溢出；16 张代表截图随 PR 提交 |
-| 独立本地 production build + 7 项专项 | 构建及 7 项测试通过，再覆盖 129 个视觉场景；生产检查工作区与主工作区全部 157 个运行时源码文件逐一匹配 |
+| 最终开发模式视觉矩阵 | 129 个同数据对照场景，全部无页面横向溢出；16 张主对照截图及 3 张密度调整前截图随 PR 提交 |
+| 独立本地 production build + 8 项专项 | 收紧搜索区域后重新构建及 8 项测试通过，再覆盖 129 个视觉场景；生产检查工作区与主工作区全部 157 个运行时源码文件逐一匹配 |
 | 计算样式 | 390px 场景中共享按钮、输入、选择与关闭目标最小 44×44px；选取的共同文字最低对比度 5.44:1，常规字段边界最低 3.12:1 |
 
 对比度样本覆盖页头、说明、筛选标签、Notice、Badge、字段错误及常规字段边界，排除不可见/禁用内容；这不等同于完整读屏器或全站 WCAG 认证。前后对照采用同为开发模式的捕获，production build 的结果独立记录，避免混合构建模式解释差异。

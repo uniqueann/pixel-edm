@@ -1,6 +1,63 @@
 import { expect, test } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 
+test("列表工具栏保持紧凑、可辨识且不压缩手机点击区", async ({
+  page,
+  request,
+}, info) => {
+  await request.post("http://127.0.0.1:54329/__fixtures/onboarding", {
+    data: { state: "existing", visualSnapshot: true },
+  });
+  await page.goto("/login");
+  await page
+    .getByLabel("邮箱", { exact: true })
+    .fill("onboarding@example.test");
+  await page.getByLabel("密码", { exact: true }).fill("edm-test-password");
+  await page.getByRole("button", { name: "登录", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const measurements = [];
+  for (const route of ["/contacts", "/templates", "/campaigns", "/logs"]) {
+    await page.goto(route);
+    const toolbar = page.locator(".list-toolbar:visible");
+    for (const width of [1440, 820, 390, 320]) {
+      await page.setViewportSize({ width, height: 960 });
+      const height = await toolbar.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      );
+      // 限制搜索区占用的首屏高度，同时给窄屏自然换行留下空间。
+      const budget =
+        width >= 1024 ? 48 : width >= 640 ? 96 : width >= 390 ? 160 : 208;
+      expect(height, `${route} / ${width}px`).toBeLessThanOrEqual(budget);
+      measurements.push({ route, width, height });
+      for (const control of await toolbar.locator("input, select").all()) {
+        await expect(control).toHaveAccessibleName(/\S/);
+        const box = await control.boundingBox();
+        if (width <= 640) {
+          expect(box!.height).toBeGreaterThanOrEqual(44);
+          expect(box!.width).toBeGreaterThanOrEqual(44);
+        }
+      }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth - window.innerWidth,
+        ),
+      ).toBeLessThanOrEqual(1);
+    }
+    const controls = toolbar.locator("input, select");
+    await controls.first().focus();
+    await page.keyboard.press("Tab");
+    await expect(controls.nth(1)).toBeFocused();
+  }
+  await mkdir(info.outputPath("measurements"), { recursive: true });
+  await writeFile(
+    info.outputPath("measurements", "toolbar-density.json"),
+    JSON.stringify(measurements, null, 2),
+  );
+  await request.post("http://127.0.0.1:54329/__fixtures/onboarding", {
+    data: {},
+  });
+});
+
 test("窄屏更多导航的键盘高亮、焦点与跳转保持可见", async ({
   page,
   request,

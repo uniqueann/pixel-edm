@@ -69,6 +69,12 @@ async function capture(page: Page, info: TestInfo, name: string) {
       });
     return {
       overflow: document.documentElement.scrollWidth - window.innerWidth,
+      toolbar: (() => {
+        const element = document.querySelector<HTMLElement>(".list-toolbar");
+        if (!element) return null;
+        const box = element.getBoundingClientRect();
+        return { height: box.height, width: box.width };
+      })(),
       heading: style && {
         size: style.fontSize,
         weight: style.fontWeight,

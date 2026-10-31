@@ -440,25 +440,16 @@ button.tab {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 16px;
-  padding: 16px 20px;
+  gap: 8px 12px;
   margin-bottom: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
 }
 .filter-field {
   display: grid;
   flex: 1 1 10rem;
   min-width: 0;
-  gap: 8px;
 }
 .filter-field-search {
   flex: 2 1 16rem;
-}
-.filter-field > label {
-  color: var(--muted-foreground);
-  font-size: 0.8125rem;
 }
 .filter-field :is(input, select) {
   width: 100%;
@@ -1017,12 +1008,8 @@ label:has(input[type="radio"]) {
   }
 }
 @media (max-width: 640px) {
-  .list-toolbar {
-    padding: 16px;
-    gap: 16px 12px;
-  }
   .filter-field {
-    flex-basis: 8rem;
+    flex-basis: 9rem;
   }
   .filter-field-search {
     flex-basis: 100%;
