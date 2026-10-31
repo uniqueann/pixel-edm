@@ -24,6 +24,7 @@ export default async function Page({
   if (!plan || plan.activity_log_retention_days === 0) {
     return (
       <EmptyState
+        kind="restricted"
         title="当前套餐不含操作日志"
         description="个人专业版可查看近 7 天日志，团队版可查看完整历史。请在设置页升级。"
       >

@@ -1,4 +1,5 @@
 "use client";
+import { Notice } from "@/components/ui/notice";
 
 import { useState } from "react";
 import type { EdmBilledPlan } from "@/lib/billing/metadata";
@@ -191,19 +192,19 @@ export function BillingUpgrade({
         </p>
       )}
       {contactNudge !== null && (
-        <p className="notice-warning mt-3">
+        <Notice tone="warning" className="mt-3">
           有效客户还剩 {contactNudge} 个名额。用满后不能再新增，已有客户会保留。
-        </p>
+        </Notice>
       )}
       {seatNudge !== null && (
-        <p className="notice-warning mt-3">
+        <Notice tone="warning" className="mt-3">
           团队席位还剩 {seatNudge} 个。席位加购尚未开放。
-        </p>
+        </Notice>
       )}
       {memberCapLocked && (
-        <p className="notice-warning mt-3">
+        <Notice tone="warning" className="mt-3">
           当前成员数已超出套餐席位。成员仍会保留，但运营人员的操作权限已暂停。管理员可移除多余成员或升级套餐以恢复。
-        </p>
+        </Notice>
       )}
       {deliveryPlan.plan === "free" && !canUpgrade && (
         <p className="hint mt-2 mb-0">仅管理员可为工作区升级套餐。</p>

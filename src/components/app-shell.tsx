@@ -111,6 +111,7 @@ export function AppShell({
               <SelectTrigger
                 aria-label="当前工作区"
                 className="workspace-select"
+                size="sm"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -135,7 +136,7 @@ export function AppShell({
               <span className="avatar">{name.slice(0, 2)}</span>
               <div className="identity-meta min-w-0">
                 <p className="truncate text-sm font-medium">{name}</p>
-                <span className={`role-pill ${role}`}>{roleNames[role]}</span>
+                <span className="role-pill">{roleNames[role]}</span>
               </div>
             </div>
           </div>
@@ -195,7 +196,7 @@ export function AppShell({
                       <DropdownMenu.Item key={slug} asChild>
                         <Link
                           href={`/${slug}`}
-                          className="flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                          className="flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
                           aria-current={
                             tabIsActive(pathname, slug) ? "page" : undefined
                           }

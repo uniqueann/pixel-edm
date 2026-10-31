@@ -40,7 +40,6 @@ export function InviteAcceptance({
   const active = preview.status === "pending" && preview.workspace_name;
   return (
     <section className="auth-card">
-      <span className="eyebrow">团队协作邀请</span>
       {active ? (
         <>
           <h1>加入「{preview.workspace_name}」</h1>

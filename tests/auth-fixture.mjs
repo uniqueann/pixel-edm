@@ -307,6 +307,10 @@ const server = createServer(async (req, res) => {
           : input.journey
             ? journeyUser
             : onboardingUser;
+      if (input.visualSnapshot)
+        await db.query("delete from edm.activity_logs where workspace_id=$1", [
+          workspaceId,
+        ]);
       await db.transaction(async (tx) => {
         await tx.query(
           "update edm.workspace_members set role='admin' where workspace_id=$1 and user_id=$2",
@@ -415,10 +419,22 @@ const server = createServer(async (req, res) => {
           ],
         );
       }
+      if (input.visualSnapshot)
+        await db.query(
+          `with ordered as (
+            select id,row_number() over(order by name,id) as position
+            from edm.templates where workspace_id=$1
+          ) update edm.templates as template
+          set created_at='2026-10-31T01:00:00Z'::timestamptz + ordered.position * interval '1 second'
+          from ordered where template.id=ordered.id`,
+          [workspaceId],
+        );
       if (input.state === "existing") {
         const templateId = (
           await db.query(
-            "select id from edm.templates where workspace_id=$1 order by id limit 1",
+            input.visualSnapshot
+              ? "select id from edm.templates where workspace_id=$1 order by name,id limit 1"
+              : "select id from edm.templates where workspace_id=$1 order by id limit 1",
             [workspaceId],
           )
         ).rows[0].id;
@@ -455,6 +471,22 @@ const server = createServer(async (req, res) => {
             [workspaceId, scenarioUser, input.role],
           );
         });
+      }
+      // 视觉对照只固定隔离工作区的展示时间和日志顺序，不改认证时钟或业务门槛。
+      if (input.visualSnapshot) {
+        await db.query(
+          "update edm.campaigns set created_at='2026-10-31T02:00:00Z' where workspace_id=$1",
+          [workspaceId],
+        );
+        await db.query(
+          `with ordered as (
+            select id,row_number() over(order by action,target_label,id) as position
+            from edm.activity_logs where workspace_id=$1
+          ) update edm.activity_logs as log
+          set created_at='2026-10-31T02:00:00Z'::timestamptz + ordered.position * interval '1 second'
+          from ordered where log.id=ordered.id`,
+          [workspaceId],
+        );
       }
       return send({ ok: true, workspaceId });
     }

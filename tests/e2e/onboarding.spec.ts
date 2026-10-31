@@ -17,11 +17,16 @@ async function scenario(
   const response = await request.post(fixtureUrl, { data });
   expect(response.ok(), await response.text()).toBe(true);
 }
-async function login(page: Page, email = "onboarding@example.test") {
+async function login(
+  page: Page,
+  email = "onboarding@example.test",
+  destination = /\/dashboard$/,
+) {
   await page.goto("/login");
   await page.getByLabel("邮箱", { exact: true }).fill(email);
   await page.getByLabel("密码", { exact: true }).fill("edm-test-password");
   await page.getByRole("button", { name: "登录", exact: true }).click();
+  await expect(page).toHaveURL(destination);
 }
 const guide = (page: Page) => page.getByTestId("onboarding-guide");
 const item = (page: Page, key: string) =>
@@ -32,7 +37,7 @@ test("自动初始化失败只手动重试，重复进入不创建第二个工�
   request,
 }) => {
   await scenario(request, { initializeFailures: 1 });
-  await login(page, "fresh@example.test");
+  await login(page, "fresh@example.test", /onboarding\?error=1$/);
   await expect(page).toHaveURL(/onboarding\?error=1$/);
   await expect(page.getByRole("status")).toContainText(
     "重复操作不会创建重复工作区",

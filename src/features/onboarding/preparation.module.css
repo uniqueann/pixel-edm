@@ -217,14 +217,25 @@
   padding-inline: 20px;
   background: var(--background);
 }
-.welcome h1 {
-  overflow-wrap: anywhere;
-}
 .recent {
   margin-block: 24px;
 }
 .recent a {
   min-height: 44px;
+}
+@container office (max-width: 300px) {
+  .header,
+  .nextStage,
+  .recommendation {
+    padding: 12px;
+  }
+  .body {
+    padding: 0 12px 12px;
+  }
+  .context[data-sticky="true"] {
+    margin-inline: -12px;
+    padding-inline: 12px;
+  }
 }
 @media (min-width: 900px) {
   .body {

@@ -47,7 +47,7 @@ export function ListPagination({
         {onPageSizeChange && (
           <select
             aria-label="每页显示条数"
-            className="list-filter h-7 rounded border border-input bg-background px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="list-filter list-filter-compact text-xs"
             value={pageSize}
             disabled={pending}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}

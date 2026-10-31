@@ -56,7 +56,9 @@ test("首次使用总览的真实准备状态、角色与双主题响应式对�
       content: "nextjs-portal { display: none !important; }",
     });
     if (!before)
-      await expect(page.getByTestId("onboarding-guide")).toBeVisible();
+      await expect(
+        page.locator('[data-testid="onboarding-guide"]:visible'),
+      ).toBeVisible();
     for (const theme of ["light", "dark"]) {
       await page.evaluate((value) => {
         localStorage.setItem("theme", value);

@@ -182,7 +182,6 @@ export function AuthForm({
   }
   return (
     <section className="auth-card">
-      <span className="eyebrow">卖家邮局</span>
       <h1>{titles[mode]}</h1>
       <p className="hint">{descriptions[mode]}</p>
       {callbackError && (
@@ -203,9 +202,17 @@ export function AuthForm({
               id="email"
               type="email"
               autoComplete="email"
+              aria-invalid={Boolean(form.formState.errors.email)}
+              aria-describedby={
+                form.formState.errors.email ? "email-error" : undefined
+              }
               {...form.register("email")}
             />
-            <p className="field-error">
+            <p
+              id="email-error"
+              className="field-error"
+              role={form.formState.errors.email ? "alert" : undefined}
+            >
               {form.formState.errors.email?.message}
             </p>
           </div>
@@ -216,12 +223,20 @@ export function AuthForm({
             <Input
               id="password"
               type="password"
+              aria-invalid={Boolean(form.formState.errors.password)}
+              aria-describedby={
+                form.formState.errors.password ? "password-error" : undefined
+              }
               autoComplete={
                 mode === "login" ? "current-password" : "new-password"
               }
               {...form.register("password")}
             />
-            <p className="field-error">
+            <p
+              id="password-error"
+              className="field-error"
+              role={form.formState.errors.password ? "alert" : undefined}
+            >
               {form.formState.errors.password?.message}
             </p>
           </div>

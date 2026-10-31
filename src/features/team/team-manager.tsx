@@ -1,4 +1,5 @@
 "use client";
+import { Notice } from "@/components/ui/notice";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -172,7 +173,7 @@ function MemberRow({
         </p>
         <p className="hint m-0">{member.email}</p>
       </div>
-      {member.is_owner && <span className="role-pill admin">所有者</span>}
+      {member.is_owner && <span className="role-pill">所有者</span>}
       {canManage && !member.is_owner ? (
         <Select
           value={member.role}
@@ -342,7 +343,9 @@ export function TeamManager({
   return (
     <div className="space-y-6">
       {memberCapNote ? (
-        <p className="notice-warning m-0">{memberCapNote}</p>
+        <Notice tone="warning" className="m-0">
+          {memberCapNote}
+        </Notice>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -374,8 +377,10 @@ export function TeamManager({
       </section>
       {canManage && (
         <section>
-          <div className="flex items-baseline justify-between gap-3">
-            <h2>待处理邀请（{data.invitations.length}）</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+            <h2 className="shrink-0">
+              待处理邀请（{data.invitations.length}）
+            </h2>
             <span className="hint m-0">
               为保障安全，仅显示部分邮箱字符；邀请链接关闭后不可再次查看，失效请重新生成。
             </span>

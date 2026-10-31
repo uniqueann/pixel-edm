@@ -1,4 +1,5 @@
 "use client";
+import { Notice } from "@/components/ui/notice";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,12 +37,9 @@ export function MemberProfileForm({ displayName }: { displayName: string }) {
       })}
     >
       {usingDefault && (
-        <div
-          role="alert"
-          className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"
-        >
+        <Notice tone="warning" role="alert">
           你还在使用系统默认称呼“店主”。收到邮件的海外客户会在落款处看到它，请先填写真实署名。
-        </div>
+        </Notice>
       )}
       <div className="space-y-2">
         <Label htmlFor="member-display-name">
@@ -51,7 +49,7 @@ export function MemberProfileForm({ displayName }: { displayName: string }) {
           id="member-display-name"
           maxLength={80}
           placeholder="例：Anna Chen 或 Canvas Studio Team"
-          aria-describedby="member-display-name-help"
+          aria-describedby={`member-display-name-help${form.formState.errors.display_name ? " member-display-name-error" : ""}`}
           aria-invalid={Boolean(form.formState.errors.display_name)}
           {...form.register("display_name")}
         />
@@ -59,7 +57,7 @@ export function MemberProfileForm({ displayName }: { displayName: string }) {
           会作为邮件落款（模板里的 {"{{sender_name}}"}
           ）出现在发给客户的邮件中，也会显示在团队成员列表和操作记录里。建议填写客户能认出的姓名或品牌名，面向海外客户时可用英文。只影响之后新建或重新编辑的活动，已保存的活动内容不会被改动。
         </p>
-        <p className="field-error">
+        <p id="member-display-name-error" className="field-error">
           {form.formState.errors.display_name?.message}
         </p>
       </div>

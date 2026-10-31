@@ -134,6 +134,8 @@ test("未预检内容的站内导航、后退、刷新及历史跳转均可取�
   await fillList(page, "可恢复预检", "guard-history@example.test");
   const id = await preflight(page);
   await page.getByRole("button", { name: "新建导入", exact: true }).click();
+  // 新建导入在下一帧恢复名称焦点；等待完成，避免自动化输入被焦点切换截断。
+  await expect(page.getByLabel("名单来源名称")).toBeFocused();
   await fillList(page, "未保存草稿", "guard-unsaved@example.test");
   const confirm = page.getByTestId("confirm-dialog");
   await page.getByRole("link", { name: "返回客户名单", exact: true }).click();
@@ -187,6 +189,7 @@ test("未预检内容的站内导航、后退、刷新及历史跳转均可取�
     page.getByRole("heading", { name: "确认预检结果", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "新建导入", exact: true }).click();
+  await expect(page.getByLabel("名单来源名称")).toBeFocused();
   await fillList(
     page,
     "确认离开后的新草稿",
@@ -209,6 +212,7 @@ test("未预检内容的站内导航、后退、刷新及历史跳转均可取�
     page.getByRole("heading", { name: "确认预检结果", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "新建导入", exact: true }).click();
+  await expect(page.getByLabel("名单来源名称")).toBeFocused();
   await fillList(page, "再次编辑仍受保护", "guard-third-session@example.test");
   expect(await protectedOnUnload(page)).toBe(true);
   await page.getByRole("link", { name: "返回客户名单", exact: true }).click();

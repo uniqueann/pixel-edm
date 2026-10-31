@@ -1,4 +1,5 @@
 "use client";
+import { Notice } from "@/components/ui/notice";
 
 import {
   useRef,
@@ -487,7 +488,14 @@ export function ChannelDetail({
             </div>
           </div>
           <Badge
-            variant={channel?.status === "error" ? "destructive" : "outline"}
+            variant={
+              channel?.status === "error"
+                ? "destructive"
+                : channel?.status === "verified" &&
+                    channel.credential_configured
+                  ? "success"
+                  : "outline"
+            }
           >
             {channel
               ? channel.status === "verified" && !channel.credential_configured
@@ -498,9 +506,7 @@ export function ChannelDetail({
         </div>
 
         {provider.sandboxNotice && connected && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
-            {provider.sandboxNotice}
-          </div>
+          <Notice tone="warning">{provider.sandboxNotice}</Notice>
         )}
 
         <div className={styles.status}>
