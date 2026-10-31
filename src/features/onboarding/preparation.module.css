@@ -208,6 +208,15 @@
   flex-wrap: wrap;
   gap: 0 20px;
 }
+/* 设置锚点会把视口滚到分区。引导条吸在顶栏下沿，返回清单才不会被滚出画面。 */
+.context[data-sticky="true"] {
+  position: sticky;
+  top: calc(var(--app-header-height) - 1px);
+  z-index: 30;
+  margin-inline: -20px;
+  padding-inline: 20px;
+  background: var(--background);
+}
 .welcome h1 {
   overflow-wrap: anywhere;
 }
