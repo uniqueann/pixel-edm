@@ -144,7 +144,15 @@ export function GuideContext({
     run(true);
     schedule(true);
     void document.fonts?.ready.then(() => schedule(true));
-    const timer = window.setInterval(() => revealSettingsAnchor(false), 150);
+    // 只有引导条吸顶时才持续把锚点拉回。普通设置锚点若跟着滚动，
+    // 会在点击「发送测试邮件」时把说明文字盖住按钮。
+    const railIsSticky = () =>
+      Boolean(
+        document.querySelector("[data-guide-context][data-sticky='true']"),
+      );
+    const timer = window.setInterval(() => {
+      if (railIsSticky()) revealSettingsAnchor(false);
+    }, 150);
     const stopTimer = window.setTimeout(
       () => window.clearInterval(timer),
       2000,
@@ -168,7 +176,7 @@ export function GuideContext({
     };
     const onHashChange = () => schedule(true);
     const onScroll = () => {
-      if (correcting) return;
+      if (correcting || !railIsSticky()) return;
       if (pendingId && performance.now() < followUntil) {
         const target = document.getElementById(pendingId);
         const cover =

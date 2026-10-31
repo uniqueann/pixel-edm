@@ -312,10 +312,19 @@ test("发送完成后响应中断，手动恢复沿用幂等键且仅接收一�
     testOutcomes: ["transport", "accepted"],
   });
   await login(page);
-  await page.getByRole("button", { name: "发送测试邮件", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "本次测试结果暂时无法确认" }),
-  ).toBeVisible();
+  const send = page.getByRole("button", {
+    name: "发送测试邮件",
+    exact: true,
+  });
+  const unknown = page.getByRole("heading", {
+    name: "本次测试结果暂时无法确认",
+  });
+  // 水合完成前的点击不会发出请求，按钮文案保持不变；此时再点一次。
+  // 请求已开始后按钮会改成「测试发送中…」，第二次点击拿不到操作锁。
+  await expect(async () => {
+    if (await send.isVisible()) await send.click();
+    await expect(unknown).toBeVisible({ timeout: 2500 });
+  }).toPass({ timeout: 15000 });
   await page.getByRole("button", { name: "恢复本次测试" }).click();
   await expect(
     page.getByRole("region", { name: "最近测试结果" }),
