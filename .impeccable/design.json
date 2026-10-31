@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-31T07:35:31.705387+00:00",
+  "title": "卖家邮局设计规范",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "auth-container",
+        "value": "0 4px 20px #1c2b4505",
+        "purpose": "认证任务容器的轻微层次"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "zoom-container",
+        "value": "300px"
+      },
+      {
+        "name": "narrow-navigation",
+        "value": "420px"
+      },
+      {
+        "name": "touch-layout",
+        "value": "640px"
+      },
+      {
+        "name": "data-columns",
+        "value": "768px"
+      },
+      {
+        "name": "preparation-columns",
+        "value": "900px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "主要按钮",
+      "kind": "button",
+      "description": "日常提交和页头主要操作",
+      "html": "<button class=\"ds-button\">保存设置</button>",
+      "css": ".ds-button {display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;border:0;border-radius:11px;background:var(--primary);color:var(--primary-foreground);font:500 14px var(--font-sans);}.ds-button:hover {opacity:.9}.ds-button:focus-visible {outline:2px solid var(--ring);outline-offset:3px}",
+      "refersTo": "button-primary"
+    },
+    {
+      "name": "次要按钮",
+      "kind": "button",
+      "description": "与主操作相邻的次要操作",
+      "html": "<button class=\"ds-outline\">取消</button>",
+      "css": ".ds-outline {min-height:40px;padding:8px 16px;border:1px solid var(--border);border-radius:11px;background:var(--background);color:var(--foreground);font:500 14px var(--font-sans)}.ds-outline:hover {background:var(--accent)}.ds-outline:focus-visible {outline:2px solid var(--ring);outline-offset:3px}"
+    },
+    {
+      "name": "表单字段",
+      "kind": "input",
+      "description": "带有字段标签的常规文本输入",
+      "html": "<label class=\"ds-field\">店铺名称<input class=\"ds-input\" placeholder=\"填写店铺名称\"></label>",
+      "css": ".ds-field {display:grid;gap:8px;font:500 14px var(--font-sans);color:var(--foreground)}.ds-input {height:40px;padding:0 12px;border:1px solid var(--input);border-radius:11px;background:var(--background);color:var(--foreground);font:400 14px var(--font-sans)}.ds-input::placeholder {color:var(--muted-foreground)}.ds-input:focus-visible {outline:2px solid var(--ring);outline-offset:3px}",
+      "refersTo": "input"
+    },
+    {
+      "name": "当前导航",
+      "kind": "nav",
+      "description": "用文字与下划线标记当前页面",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" aria-current=\"page\">客户</a><a href=\"#\">模板</a></nav>",
+      "css": ".ds-nav {display:flex;gap:26px;font:500 13px var(--font-sans)}.ds-nav a {display:inline-flex;align-items:center;min-height:44px;min-width:44px;justify-content:center;color:var(--muted-foreground);text-decoration:none;border-bottom:2px solid transparent}.ds-nav [aria-current] {color:var(--primary);border-color:var(--primary)}.ds-nav a:focus-visible {outline:2px solid var(--ring);outline-offset:3px}"
+    },
+    {
+      "name": "成功标签",
+      "kind": "chip",
+      "description": "状态文字必须说明具体事实",
+      "html": "<span class=\"ds-status\">已订阅</span>",
+      "css": ".ds-status {display:inline-flex;gap:4px;padding:2px 8px;border:1px solid var(--success-border);border-radius:999px;background:var(--success-tint);color:var(--green);font:500 12px var(--font-sans)}",
+      "refersTo": "badge-success"
+    },
+    {
+      "name": "普通内容卡",
+      "kind": "card",
+      "description": "通过边框和内容留白建立分组",
+      "html": "<section class=\"ds-card\"><h2>店铺信息</h2><p>用于邮件页脚落款与发件人默认信息。</p></section>",
+      "css": ".ds-card {padding:20px 24px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--card-foreground)}.ds-card h2 {margin:0 0 8px;font:600 18px/1.5 Fraunces,\"PingFang SC\",serif}.ds-card p {margin:0;color:var(--muted-foreground);font:400 13px/1.7 var(--font-sans)}",
+      "refersTo": "card"
+    },
+    {
+      "name": "注意提示",
+      "kind": "custom",
+      "description": "需要用户注意的持久说明",
+      "html": "<div class=\"ds-notice\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"m10.3 3.9-8.5 14.2A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-2.9L13.7 3.9a2 2 0 0 0-3.4 0Z\"/><path d=\"M12 9v4m0 4h.01\"/></svg><span>请先核对发信配置。</span></div>",
+      "css": ".ds-notice {display:flex;gap:10px;padding:12px 16px;border:1px solid var(--warning-border);border-radius:11px;background:var(--warning-tint);color:var(--warning);font:400 14px/1.7 var(--font-sans)}.ds-notice svg {flex-shrink:0;margin-top:3px}",
+      "refersTo": "notice-warning"
+    }
+  ],
+  "narrative": {
+    "northStar": "安静、可靠的卖家邮局",
+    "overview": "沿用已有的暖灰底、深蓝文字、信封标识和 Fraunces / IBM Plex 字体组合。品牌通过字形、留白和克制的操作层级呈现。工作台以快速识别任务、准确理解状态、放心完成操作为目标；帮助页面以阅读与检索为目标。\n\n本文件由当前实现提取。运行时来源为 `src/app/globals.css`、`src/components/ui/` 和各业务 CSS Module；修改运行时规则时同步更新本文件。前置 YAML 是当前规则的机器可读镜像，不参与运行时计算。具体页面的步骤、权限、完成条件与业务文案仍以原实现为准。",
+    "keyCharacteristics": [
+      "同类页头、查找区域和反馈采用共同语法。",
+      "保留客户数据行、模板网格、活动任务卡的不同密度。",
+      "明暗主题使用语义变量，状态始终附带文字。",
+      "复杂编辑器保留独立滚动、未保存保护和键盘避让。"
+    ],
+    "rules": [
+      {
+        "name": "状态准确",
+        "body": "“服务商已接收”“通道已验证”“已送达”“已订阅”“已确认名单”分别描述不同事实；共享颜色不能替代文字，更不能合并业务状态。",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "先判断语义是否相同，再共享组件或尺寸；新增同类页面直接复用已有页头、工具栏和反馈组件。",
+      "在桌面、手机、明暗主题下同时检查长文本、焦点、空态与失败恢复。",
+      "为专用编辑器、数据行、模板网格与系统页保留有任务依据的差异。",
+      "把源码检查、计算样式、本地截图、浏览器模拟、实体设备和线上验证分开记录。"
+    ],
+    "donts": [
+      "将管理员身份、自定义标签绘成警告或错误状态。",
+      "为统一视觉而改动订阅、去重、名单锁定、发送权限、额度或统计口径。",
+      "将站点样式规则写入实际邮件 HTML、邮件主题或收件人模板。",
+      "覆盖复杂弹窗的滚动、未保存保护、焦点恢复与键盘避让。",
+      "复制局部样式后另造一套常规控件高度，或为一次性排版创建全局 token。"
+    ]
+  }
+}

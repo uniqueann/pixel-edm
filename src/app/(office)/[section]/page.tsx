@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -89,10 +90,10 @@ export default async function Page({
   if (section === "help") {
     return (
       <>
-        <div className="section-heading">
-          <h1>使用帮助</h1>
-          <Badge variant="secondary">文档</Badge>
-        </div>
+        <PageHeader
+          title="使用帮助"
+          meta={<Badge variant="secondary">文档</Badge>}
+        />
         <HelpGuide role={role} />
       </>
     );
@@ -123,17 +124,17 @@ export default async function Page({
     }
     return (
       <>
-        <div className="section-heading">
-          <h1>邮局设置</h1>
-          <Badge variant="secondary">工作区</Badge>
-        </div>
+        <PageHeader
+          title="邮局设置"
+          meta={<Badge variant="secondary">工作区</Badge>}
+        />
         <Suspense fallback={null}>
           <CheckoutSuccessToast />
         </Suspense>
         <SettingsSectionNav showBilling={Boolean(deliveryPlan)} />
         <section id={SETTINGS_SECTION_IDS.store} className="settings-section">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent>
               <h2 className="mb-2">店铺信息</h2>
               <p className="hint">用于邮件页脚落款与发件人默认信息。</p>
               <SettingsForm
@@ -145,7 +146,7 @@ export default async function Page({
             </CardContent>
           </Card>
           <Card className="mt-4" id={SETTINGS_SECTION_IDS.profile}>
-            <CardContent className="pt-6">
+            <CardContent>
               <h2 className="mb-2">我的署名</h2>
               <p className="hint">用于邮件落款，仅影响你本人。</p>
               <MemberProfileForm
@@ -212,7 +213,7 @@ export default async function Page({
           className="settings-section mt-7"
         >
           <Card>
-            <CardContent className="pt-6">
+            <CardContent>
               <h2 className="mb-2">界面外观</h2>
               <p className="hint mb-4">
                 选择适合你的视觉风格，支持浅色、深色或随系统自动切换。
@@ -238,10 +239,9 @@ export default async function Page({
       if (!deliveryPlan?.allows_team_collaboration) {
         return (
           <>
-            <div className="section-heading">
-              <h1>团队成员</h1>
-            </div>
+            <PageHeader title="团队成员" />
             <EmptyState
+              kind="restricted"
               title="多人协作仅在团队版可用"
               description="升级团队版后可邀请成员协同管理、分配角色权限并查看完整操作记录。"
             >
@@ -265,17 +265,15 @@ export default async function Page({
           : null;
       return (
         <>
-          <div className="section-heading">
-            <div>
-              <h1>团队成员</h1>
-              <p className="hint mt-1 mb-0">
-                {team.workspace.type === "team"
-                  ? "邀请同事协作管理客户、模板和活动草稿。"
-                  : "创建第一条邀请后，个人工作区会转换为团队工作区。"}
-              </p>
-            </div>
-            <span className="hint m-0">{team.members.length} 人</span>
-          </div>
+          <PageHeader
+            title="团队成员"
+            meta={`${team.members.length} 人`}
+            description={
+              team.workspace.type === "team"
+                ? "邀请同事协作管理客户、模板和活动草稿。"
+                : "创建第一条邀请后，个人工作区会转换为团队工作区。"
+            }
+          />
           <TeamManager
             initialData={team}
             currentUserId={user.id}
@@ -372,10 +370,10 @@ export default async function Page({
     );
     return (
       <>
-        <div className={`welcome ${styles.welcome}`}>
-          <h1>{workspace.name}</h1>
-          <p>管理客户、设计模板并高效发送营销邮件。</p>
-        </div>
+        <PageHeader
+          title={workspace.name}
+          description="管理客户、设计模板并高效发送营销邮件。"
+        />
         {!hasCampaigns && guide}
         <div className="stat-grid">
           {[
@@ -427,7 +425,7 @@ export default async function Page({
         {hasCampaigns && guide}
         <div className={styles.recent}>
           <Card>
-            <CardContent className="pt-5">
+            <CardContent>
               <div className="section-heading mb-3">
                 <h2>最近活动</h2>
                 <Link
@@ -510,6 +508,7 @@ export default async function Page({
           />
         ) : (
           <EmptyState
+            kind="restricted"
             title={
               role === "admin"
                 ? deliveryPlan === null
@@ -538,10 +537,10 @@ export default async function Page({
   const page = pages[section];
   return (
     <>
-      <div className="section-heading">
-        <h1>{page.title}</h1>
-        <Badge variant="outline">待接入</Badge>
-      </div>
+      <PageHeader
+        title={page.title}
+        meta={<Badge variant="outline">待接入</Badge>}
+      />
       <EmptyState title={page.empty} description={page.description} />
     </>
   );

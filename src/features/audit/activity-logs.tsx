@@ -1,4 +1,7 @@
 "use client";
+import { PageHeader } from "@/components/page-header";
+import { ListToolbar, FilterField } from "@/components/list-toolbar";
+import { EmptyState } from "@/components/empty-state";
 
 import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -63,56 +66,56 @@ export function ActivityLogs({
 
   return (
     <>
-      <div className="section-heading">
-        <h1>操作记录</h1>
-        <span>{data.total} 条</span>
-      </div>
-      <p className="hint">
-        记录工作区内的关键操作动态，展示操作人、操作内容及发生时间。
-        {typeof data.retention_days === "number" && data.retention_days > 0
-          ? ` 当前套餐仅展示近 ${data.retention_days} 天。`
-          : data.retention_days === null
-            ? " 团队版展示完整历史。"
-            : ""}
-      </p>
-      <div className="list-toolbar">
-        <label className="mr-2 text-sm" htmlFor="audit-actor">
-          操作者
-        </label>
-        <select
-          id="audit-actor"
-          className="list-filter max-w-full"
-          value={filters.actor ?? ""}
-          onChange={(event) =>
-            navigate({ actor: event.target.value, page: "1" })
-          }
-        >
-          <option value="">全部操作者</option>
-          {data.actors.map((actor) => (
-            <option key={actor.id} value={actor.id}>
-              {actor.name}
-            </option>
-          ))}
-        </select>
-        <label className="mr-2 text-sm" htmlFor="audit-action">
-          操作类型
-        </label>
-        <select
-          id="audit-action"
-          className="list-filter max-w-full"
-          value={filters.action ?? ""}
-          onChange={(event) =>
-            navigate({ action: event.target.value, page: "1" })
-          }
-        >
-          <option value="">全部操作</option>
-          {Object.entries(activityLabels).map(([action, label]) => (
-            <option key={action} value={action}>
-              {formatActionFilterLabel(action, label)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <PageHeader
+        title="操作记录"
+        meta={`${data.total} 条`}
+        description={
+          <>
+            记录工作区内的关键操作动态，展示操作人、操作内容及发生时间。
+            {typeof data.retention_days === "number" && data.retention_days > 0
+              ? ` 当前套餐仅展示近 ${data.retention_days} 天。`
+              : data.retention_days === null
+                ? " 团队版展示完整历史。"
+                : ""}
+          </>
+        }
+      />
+      <ListToolbar aria-label="筛选操作记录">
+        <FilterField id="audit-actor" label="操作者">
+          <select
+            id="audit-actor"
+            className="list-filter max-w-full"
+            value={filters.actor ?? ""}
+            onChange={(event) =>
+              navigate({ actor: event.target.value, page: "1" })
+            }
+          >
+            <option value="">全部操作者</option>
+            {data.actors.map((actor) => (
+              <option key={actor.id} value={actor.id}>
+                {actor.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField id="audit-action" label="操作类型">
+          <select
+            id="audit-action"
+            className="list-filter max-w-full"
+            value={filters.action ?? ""}
+            onChange={(event) =>
+              navigate({ action: event.target.value, page: "1" })
+            }
+          >
+            <option value="">全部操作</option>
+            {Object.entries(activityLabels).map(([action, label]) => (
+              <option key={action} value={action}>
+                {formatActionFilterLabel(action, label)}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+      </ListToolbar>
       {hasFilters && (
         <div className="active-filters" aria-label="已应用筛选">
           <span>已筛选</span>
@@ -190,7 +193,15 @@ export function ActivityLogs({
           ))}
         </div>
       ) : (
-        <p className="py-10 text-center">暂无匹配的操作记录。</p>
+        <EmptyState
+          kind={hasFilters ? "search" : "empty"}
+          title="暂无匹配的操作记录。"
+          description={
+            hasFilters
+              ? "请调整操作人或操作类型筛选，查看其他记录。"
+              : "完成工作区内的业务操作后，记录会出现在这里。"
+          }
+        />
       )}
       <ListPagination
         page={data.page}

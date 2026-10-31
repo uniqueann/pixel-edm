@@ -1,4 +1,5 @@
 "use client";
+import { Notice } from "@/components/ui/notice";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -59,27 +60,30 @@ export function SettingsForm({
           <Label htmlFor="workspace-name">店铺 / 工作区名称</Label>
           <Input
             id="workspace-name"
+            aria-invalid={Boolean(form.formState.errors.name)}
+            aria-describedby={
+              form.formState.errors.name ? "workspace-name-error" : undefined
+            }
             disabled={!canEdit}
             {...form.register("name")}
           />
-          <p className="field-error">{form.formState.errors.name?.message}</p>
+          <p id="workspace-name-error" className="field-error">
+            {form.formState.errors.name?.message}
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="mailing-address">邮件页脚实体地址</Label>
           {savedAddressProblem && (
-            <div
-              role="alert"
-              className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"
-            >
+            <Notice tone="warning" role="alert">
               {`当前保存的页脚地址无法通过校验：${savedAddressProblem}。修正前，营销邮件页脚仍会原样显示这段文字。`}
               {!canEdit && "请联系工作区管理员修正。"}
-            </div>
+            </Notice>
           )}
           <Input
             id="mailing-address"
             disabled={!canEdit}
             placeholder="例：上海市徐汇区漕溪北路 88 号 12 楼，中国"
-            aria-describedby="mailing-address-help"
+            aria-describedby={`mailing-address-help${form.formState.errors.mailing_address ? " mailing-address-error" : ""}`}
             aria-invalid={Boolean(form.formState.errors.mailing_address)}
             {...form.register("mailing_address")}
           />
@@ -88,7 +92,7 @@ export function SettingsForm({
             “88 Caoxi North Rd, Xuhui, Shanghai,
             China”。不要填写邮箱、电话或“联系方式”这类占位文字。
           </p>
-          <p className="field-error">
+          <p id="mailing-address-error" className="field-error">
             {form.formState.errors.mailing_address?.message}
           </p>
           <div className="rounded-lg border border-border/80 bg-muted/30 px-3 py-2.5 text-xs leading-relaxed">

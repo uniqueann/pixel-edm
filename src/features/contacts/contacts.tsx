@@ -1,4 +1,6 @@
 "use client";
+import { PageHeader } from "@/components/page-header";
+import { ListToolbar, FilterField } from "@/components/list-toolbar";
 import {
   useCallback,
   useEffect,
@@ -279,62 +281,87 @@ export function Contacts({
   }
   return (
     <>
-      <div className="section-heading">
-        <h1>客户名单</h1>
-        <span>{shown.total} 位</span>
-      </div>
-      <div className="list-toolbar">
-        {canEdit && !showInitialEmpty && (
-          <Button
-            disabled={isQuotaExhausted(contactQuota)}
-            onClick={() => open(null)}
+      <PageHeader
+        title="客户名单"
+        meta={`${shown.total} 位`}
+        actions={
+          canEdit && !showInitialEmpty ? (
+            <>
+              <Button
+                disabled={isQuotaExhausted(contactQuota)}
+                onClick={() => open(null)}
+              >
+                添加客户
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/contacts/import">导入名单</Link>
+              </Button>
+            </>
+          ) : undefined
+        }
+      />
+      <ListToolbar role="search" aria-label="查找客户">
+        <FilterField
+          id="contact-search"
+          label="搜索客户"
+          className="filter-field-search"
+        >
+          <Input
+            id="contact-search"
+            aria-label="搜索邮箱或姓名"
+            placeholder="搜索邮箱或姓名"
+            value={q}
+            maxLength={254}
+            onChange={(event) => setQ(event.target.value)}
+          />
+        </FilterField>
+        <FilterField id="contact-status" label="显示范围">
+          <select
+            id="contact-status"
+            aria-label="客户状态"
+            className="list-filter"
+            value={archived ? "archived" : "active"}
+            onChange={(e) => navigate({ status: e.target.value, page: "1" })}
           >
-            添加客户
-          </Button>
-        )}
-        {canEdit && !showInitialEmpty && (
-          <Button asChild variant="outline">
-            <Link href="/contacts/import">导入名单</Link>
-          </Button>
-        )}
-        <select
-          aria-label="客户状态"
-          className="list-filter"
-          value={archived ? "archived" : "active"}
-          onChange={(e) => navigate({ status: e.target.value, page: "1" })}
-        >
-          <option value="active">有效客户</option>
-          <option value="archived">已归档</option>
-        </select>
-        <select
-          aria-label="订阅状态"
-          className="list-filter"
-          value={filters.subscription ?? ""}
-          onChange={(e) =>
-            navigate({ subscription: e.target.value, page: "1" })
-          }
-        >
-          <option value="">全部订阅状态</option>
-          {Object.entries(subscriptionLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="标签筛选"
-          className="list-filter max-w-full"
-          value={filters.tag ?? ""}
-          onChange={(e) => navigate({ tag: e.target.value, page: "1" })}
-        >
-          <option value="">全部标签</option>
-          {shown.tags.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </div>
+            <option value="active">有效客户</option>
+            <option value="archived">已归档</option>
+          </select>
+        </FilterField>
+        <FilterField id="contact-subscription" label="订阅状态">
+          <select
+            id="contact-subscription"
+            aria-label="订阅状态"
+            className="list-filter"
+            value={filters.subscription ?? ""}
+            onChange={(e) =>
+              navigate({ subscription: e.target.value, page: "1" })
+            }
+          >
+            <option value="">全部订阅状态</option>
+            {Object.entries(subscriptionLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField id="contact-filter-tag" label="标签">
+          <select
+            id="contact-filter-tag"
+            aria-label="标签筛选"
+            className="list-filter max-w-full"
+            value={filters.tag ?? ""}
+            onChange={(e) => navigate({ tag: e.target.value, page: "1" })}
+          >
+            <option value="">全部标签</option>
+            {shown.tags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+      </ListToolbar>
       {canEdit && (
         <PlanUsageNote
           label="有效客户（未归档）"
@@ -344,14 +371,6 @@ export function Contacts({
           className="mb-3"
         />
       )}
-      <Input
-        className="list-search"
-        aria-label="搜索邮箱或姓名"
-        placeholder="搜索邮箱或姓名"
-        value={q}
-        maxLength={254}
-        onChange={(e) => setQ(e.target.value)}
-      />
       <div aria-live="polite" className="hint mt-2">
         {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
       </div>
@@ -411,8 +430,10 @@ export function Contacts({
                   <Badge
                     variant={
                       c.subscription_status === "subscribed"
-                        ? "default"
-                        : "secondary"
+                        ? "success"
+                        : c.subscription_status === "unconfirmed"
+                          ? "warning"
+                          : "secondary"
                     }
                   >
                     {subscriptionLabels[c.subscription_status]}
@@ -422,10 +443,7 @@ export function Contacts({
                   {c.tags
                     .filter((t) => Boolean(t.name?.trim()))
                     .map((t) => (
-                      <span
-                        className="rounded-full border border-amber-200/70 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300"
-                        key={t.id}
-                      >
+                      <span className="filter-chip text-xs" key={t.id}>
                         {t.name.trim()}
                       </span>
                     ))}
@@ -476,6 +494,7 @@ export function Contacts({
       ) : (
         <div className="my-4" aria-busy={pending}>
           <EmptyState
+            kind={hasFilters ? "search" : "empty"}
             title={
               hasFilters
                 ? "没有匹配的客户"

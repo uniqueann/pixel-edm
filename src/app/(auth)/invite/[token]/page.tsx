@@ -27,7 +27,6 @@ export default async function Page({
   if (!user)
     return (
       <section className="auth-card">
-        <span className="eyebrow">团队协作邀请</span>
         <h1>接受团队邀请</h1>
         <p className="hint">
           请使用受邀邮箱注册或登录，并完成邮箱验证。完成认证后会回到此页面继续接受邀请。

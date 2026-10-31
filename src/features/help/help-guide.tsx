@@ -3,11 +3,9 @@
 import { useId, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowUp,
   CheckCircle2,
   Clock,
-  Info,
   Mail,
   Rocket,
   Search,
@@ -17,6 +15,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { Notice } from "@/components/ui/notice";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -53,7 +52,12 @@ export function HelpGuide({ role }: { role: string }) {
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
   };
 
   const filteredSections = useMemo(() => {
@@ -90,7 +94,7 @@ export function HelpGuide({ role }: { role: string }) {
   return (
     <div className="help-guide space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
       {/* 顶部角色与权限说明卡片 */}
-      <Card className="border-dashed bg-card/60 backdrop-blur-xs w-full min-w-0 max-w-full overflow-hidden">
+      <Card className="border-dashed bg-card w-full min-w-0 max-w-full overflow-hidden">
         <CardContent className="space-y-2.5 pt-5 pb-5 sm:pt-6 sm:pb-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="m-0 text-sm font-medium">
@@ -146,7 +150,7 @@ export function HelpGuide({ role }: { role: string }) {
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="absolute right-0 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
               aria-label="清空搜索"
             >
               <X className="size-3.5" />
@@ -164,7 +168,7 @@ export function HelpGuide({ role }: { role: string }) {
             <a
               key={item.id}
               href={`#help-${item.id}`}
-              className="shrink-0 rounded-full border border-border/80 bg-card px-3 py-1.5 font-medium text-muted-foreground shadow-2xs transition-colors hover:border-primary/40 hover:bg-muted hover:text-foreground active:scale-95"
+              className="inline-flex min-h-11 min-w-11 shrink-0 items-center rounded-full border border-border/80 bg-card px-3 py-1.5 font-medium text-muted-foreground shadow-2xs transition-colors hover:border-primary/40 hover:bg-muted hover:text-foreground active:scale-95"
             >
               {item.title}
             </a>
@@ -291,28 +295,11 @@ export function HelpGuide({ role }: { role: string }) {
                     ))}
                   </div>
                 ) : null}
-                {section.note ? (
-                  <div className="flex items-start gap-2.5 rounded-xl bg-muted/60 px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed text-foreground/90">
-                    <Info
-                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                    <span>{section.note}</span>
-                  </div>
-                ) : null}
-
-                {/* 安全警示 */}
+                {section.note ? <Notice>{section.note}</Notice> : null}
                 {section.warning ? (
-                  <div
-                    role="alert"
-                    className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
-                  >
-                    <AlertTriangle
-                      className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
-                      aria-hidden="true"
-                    />
-                    <span>{section.warning}</span>
-                  </div>
+                  <Notice tone="warning" role="alert">
+                    {section.warning}
+                  </Notice>
                 ) : null}
 
                 {/* 底部回到目录链接 */}

@@ -1,4 +1,6 @@
 "use client";
+import { PageHeader } from "@/components/page-header";
+import { ListToolbar, FilterField } from "@/components/list-toolbar";
 
 import {
   useCallback,
@@ -293,49 +295,71 @@ export function Templates({
 
   return (
     <>
-      <div className="section-heading">
-        <h1>邮件模板库</h1>
-        <span>{data.total} 套</span>
-      </div>
-      <p className="hint">
-        支持使用起步模板参考样例，或创建自定义模板；主题与正文中的动态变量将在发信时自动替换为对应信息。
-      </p>
-      <div className="list-toolbar">
-        {canEdit && !showInitialEmpty && (
-          <Button
-            disabled={templateQuotaExhausted}
-            onClick={() => openEditor(null)}
+      <PageHeader
+        title="邮件模板库"
+        meta={`${data.total} 套`}
+        description="支持使用起步模板参考样例，或创建自定义模板；主题与正文中的动态变量将在发信时自动替换为对应信息。"
+        actions={
+          canEdit && !showInitialEmpty ? (
+            <>
+              <Button
+                disabled={templateQuotaExhausted}
+                onClick={() => openEditor(null)}
+              >
+                新建模板
+              </Button>
+            </>
+          ) : undefined
+        }
+      />
+      <ListToolbar role="search" aria-label="查找模板">
+        <FilterField
+          id="template-search"
+          label="搜索模板"
+          className="filter-field-search"
+        >
+          <Input
+            id="template-search"
+            aria-label="搜索模板名称或主题"
+            placeholder="搜索模板名称或主题"
+            value={q}
+            maxLength={200}
+            onChange={(event) => setQ(event.target.value)}
+          />
+        </FilterField>
+        <FilterField id="template-status" label="显示范围">
+          <select
+            id="template-status"
+            aria-label="模板状态"
+            className="list-filter"
+            value={archived ? "archived" : "active"}
+            onChange={(event) =>
+              navigate({ status: event.target.value, page: "1" })
+            }
           >
-            新建模板
-          </Button>
-        )}
-        <select
-          aria-label="模板状态"
-          className="list-filter"
-          value={archived ? "archived" : "active"}
-          onChange={(event) =>
-            navigate({ status: event.target.value, page: "1" })
-          }
-        >
-          <option value="active">使用中的模板</option>
-          <option value="archived">已归档模板</option>
-        </select>
-        <select
-          aria-label="模板分类"
-          className="list-filter"
-          value={filters.category ?? ""}
-          onChange={(event) =>
-            navigate({ category: event.target.value, page: "1" })
-          }
-        >
-          <option value="">全部分类</option>
-          {(data.categories ?? []).map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-      </div>
+            <option value="active">使用中的模板</option>
+            <option value="archived">已归档模板</option>
+          </select>
+        </FilterField>
+        <FilterField id="template-filter-category" label="分类">
+          <select
+            id="template-filter-category"
+            aria-label="模板分类"
+            className="list-filter"
+            value={filters.category ?? ""}
+            onChange={(event) =>
+              navigate({ category: event.target.value, page: "1" })
+            }
+          >
+            <option value="">全部分类</option>
+            {(data.categories ?? []).map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+      </ListToolbar>
       {canEdit && (
         <PlanUsageNote
           label="自定义模板（起步模板不占用）"
@@ -345,14 +369,6 @@ export function Templates({
           className="mb-3"
         />
       )}
-      <Input
-        className="list-search"
-        aria-label="搜索模板名称或主题"
-        placeholder="搜索模板名称或主题"
-        value={q}
-        maxLength={200}
-        onChange={(event) => setQ(event.target.value)}
-      />
       {hasFilters && (
         <div className="active-filters" aria-label="已应用筛选">
           <span>已筛选</span>
@@ -397,7 +413,7 @@ export function Templates({
                 </div>
                 <div className="flex w-full flex-wrap items-center justify-end gap-1.5 border-t border-border/60 pt-3">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={() => setPreviewing(template)}
                   >
@@ -416,7 +432,7 @@ export function Templates({
                         </Button>
                       )}
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         disabled={busy || templateQuotaExhausted}
                         title={
@@ -429,7 +445,7 @@ export function Templates({
                         复制模板
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         disabled={busy}
                         onClick={() => archive(template)}
@@ -446,6 +462,7 @@ export function Templates({
       ) : (
         <div className="my-4" aria-busy={pending}>
           <EmptyState
+            kind={hasFilters ? "search" : "empty"}
             title={
               hasFilters
                 ? "没有匹配的模板"

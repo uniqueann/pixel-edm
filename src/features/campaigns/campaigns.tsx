@@ -1,4 +1,6 @@
 "use client";
+import { PageHeader } from "@/components/page-header";
+import { ListToolbar, FilterField } from "@/components/list-toolbar";
 
 import Link from "next/link";
 import {
@@ -151,9 +153,11 @@ async function downloadCampaignRecipientCsv(campaignId: string) {
 function statusVariant(status: CampaignStatus) {
   if (status === "failed" || status === "completed_with_errors")
     return "destructive" as const;
-  if (status === "confirmed" || status === "completed")
-    return "default" as const;
-  if (status === "draft") return "secondary" as const;
+  if (status === "completed") return "success" as const;
+  if (["confirmed", "paused", "needs_review"].includes(status))
+    return "warning" as const;
+  if (["sending", "queued", "draft"].includes(status))
+    return "secondary" as const;
   return "outline" as const;
 }
 
@@ -872,36 +876,39 @@ export function Campaigns({
 
   return (
     <>
-      <header className={styles.pageHeader}>
-        <div className={styles.heading}>
-          <div className={styles.titleLine}>
-            <h1>发信活动</h1>
-            <span className={styles.total}>{campaigns.total} 条</span>
-          </div>
-          <p className={styles.description}>
-            草稿预览按当前最新的客户订阅和退订状态实时计算；确认后将锁定收件名单，管理员可创建正式发送任务。
-          </p>
-        </div>
-        {canEdit && !showInitialEmpty && (
-          <div className={styles.headerActions}>
-            {!editorOptions.templates.length && (
-              <Button asChild variant="outline">
-                <Link href="/templates">前往模板库</Link>
+      <PageHeader
+        title="发信活动"
+        meta={`${campaigns.total} 条`}
+        description="草稿预览按当前最新的客户订阅和退订状态实时计算；确认后将锁定收件名单，管理员可创建正式发送任务。"
+        actions={
+          canEdit && !showInitialEmpty ? (
+            <>
+              {!editorOptions.templates.length && (
+                <Button asChild variant="outline">
+                  <Link href="/templates">前往模板库</Link>
+                </Button>
+              )}
+              <Button
+                disabled={!editorOptions.templates.length}
+                onClick={openNew}
+              >
+                <Plus aria-hidden="true" />
+                新建活动
               </Button>
-            )}
-            <Button
-              disabled={!editorOptions.templates.length}
-              onClick={openNew}
-            >
-              <Plus aria-hidden="true" />
-              新建活动
-            </Button>
-          </div>
-        )}
-      </header>
-      <div className={styles.toolbar} role="search" aria-label="查找发信活动">
-        <div className={styles.searchField}>
-          <Label htmlFor="campaign-search">搜索活动</Label>
+            </>
+          ) : undefined
+        }
+      />
+      <ListToolbar
+        className={styles.toolbar}
+        role="search"
+        aria-label="查找发信活动"
+      >
+        <FilterField
+          id="campaign-search"
+          label="搜索活动"
+          className={styles.searchField}
+        >
           <div className={styles.searchInput}>
             <Search aria-hidden="true" size={17} />
             <Input
@@ -913,9 +920,8 @@ export function Campaigns({
               onChange={(event) => setQ(event.target.value)}
             />
           </div>
-        </div>
-        <div className={styles.filterField}>
-          <Label htmlFor="campaign-archive-filter">显示范围</Label>
+        </FilterField>
+        <FilterField id="campaign-archive-filter" label="显示范围">
           <select
             id="campaign-archive-filter"
             aria-label="活动归档状态"
@@ -928,9 +934,8 @@ export function Campaigns({
             <option value="active">未归档活动</option>
             <option value="archived">已归档活动</option>
           </select>
-        </div>
-        <div className={styles.filterField}>
-          <Label htmlFor="campaign-status-filter">活动状态</Label>
+        </FilterField>
+        <FilterField id="campaign-status-filter" label="活动状态">
           <select
             id="campaign-status-filter"
             aria-label="活动状态"
@@ -947,8 +952,8 @@ export function Campaigns({
               </option>
             ))}
           </select>
-        </div>
-      </div>
+        </FilterField>
+      </ListToolbar>
       {hasFilters && (
         <div
           className={`active-filters ${styles.activeFilters}`}
@@ -1020,7 +1025,6 @@ export function Campaigns({
                 <div className={styles.campaignBadges}>
                   <Badge
                     variant={statusVariant(campaign.status)}
-                    className={styles.campaignStatus}
                     data-status={campaign.status}
                   >
                     {campaignStatusLabels[campaign.status]}
@@ -1251,6 +1255,7 @@ export function Campaigns({
         ))}
         {!campaigns.items.length && (
           <EmptyState
+            kind={hasFilters ? "search" : "empty"}
             title={
               hasFilters
                 ? "没有匹配的活动"

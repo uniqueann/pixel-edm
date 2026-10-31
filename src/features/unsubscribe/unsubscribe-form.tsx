@@ -39,7 +39,6 @@ export function UnsubscribeConfirm({
 
   return (
     <>
-      <p className="eyebrow">邮件偏好 / EMAIL PREFERENCES</p>
       <h1>停止接收营销邮件？</h1>
       <p>
         即将为 {maskedEmail} 退订 {workspaceName} 的后续营销邮件。

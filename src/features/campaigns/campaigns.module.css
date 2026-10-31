@@ -1,99 +1,8 @@
-.pageHeader {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px 24px;
-  margin: 4px 0 24px;
-}
-
-.heading {
-  display: contents;
-}
-
-.titleLine {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.titleLine h1 {
-  margin: 0;
-  font-size: 24px;
-  line-height: 1.4;
-}
-
-.total {
-  color: var(--muted-foreground);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-
-.description {
-  grid-row: 2;
-  grid-column: 1 / -1;
-  max-width: 70ch;
-  margin: 0;
-  color: var(--muted-foreground);
-  font-size: 13px;
-  line-height: 1.8;
-}
-
-.headerActions {
-  display: flex;
-  grid-row: 1;
-  grid-column: 2;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.headerActions button {
-  min-height: 40px;
-}
-
-.headerActions button,
-.campaignActions button,
-.editorFooter button {
-  transition-property: background-color, color, border-color, box-shadow;
-}
-
 .toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 160px 180px;
   align-items: end;
   gap: 16px;
-  padding: 16px 20px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-}
-
-.searchField,
-.filterField {
-  display: grid;
-  min-width: 0;
-  gap: 8px;
-}
-
-.toolbar label {
-  color: var(--muted-foreground);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.toolbar input,
-.toolbar select {
-  width: 100%;
-  min-width: 0;
-  height: 40px;
-  background-color: var(--background);
-  box-shadow: none;
-}
-
-.toolbar input::placeholder {
-  color: var(--muted-foreground);
 }
 
 .searchInput {
@@ -203,43 +112,6 @@
 .category {
   color: var(--muted-foreground);
   font-size: 12px;
-}
-
-.campaignStatus {
-  border: 1px solid var(--border);
-  background: var(--muted);
-  color: var(--foreground);
-}
-
-.campaignStatus[data-status="completed"] {
-  border-color: color-mix(in srgb, var(--green) 20%, var(--border));
-  background: color-mix(in srgb, var(--green) 9%, var(--card));
-  color: var(--green);
-}
-
-.campaignStatus:is(
-  [data-status="confirmed"],
-  [data-status="paused"],
-  [data-status="needs_review"]
-) {
-  border-color: color-mix(in srgb, var(--gold) 30%, var(--border));
-  background: var(--gold-tint);
-  color: color-mix(in srgb, var(--gold) 70%, var(--foreground));
-}
-
-.campaignStatus:is(
-  [data-status="failed"],
-  [data-status="completed_with_errors"]
-) {
-  border-color: color-mix(in srgb, var(--destructive) 25%, var(--border));
-  background: color-mix(in srgb, var(--destructive) 8%, var(--card));
-  color: var(--destructive);
-}
-
-.campaignStatus:is([data-status="sending"], [data-status="queued"]) {
-  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
-  background: var(--secondary);
-  color: var(--secondary-foreground);
 }
 
 .campaignName {
@@ -446,15 +318,6 @@
 }
 
 @media (max-width: 767px) {
-  .pageHeader {
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .headerActions {
-    max-width: 160px;
-  }
-
   .toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px 12px;
@@ -509,7 +372,6 @@
 
   .toolbar input,
   .toolbar select,
-  .headerActions button,
   .activeFilters button,
   .campaignList > :global(.empty) button,
   .campaignActions button,
