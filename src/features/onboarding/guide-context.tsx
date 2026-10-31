@@ -98,20 +98,13 @@ function settingsHashTarget() {
   return document.getElementById(id);
 }
 
-/**
- * 带锚点的设置页在水合后可能被路由滚回顶部。
- * 只在仍停在页面顶端、目标却在首屏之下时补一次滚动，避免锁死用户之后的滚动。
- */
-function revealSettingsAnchor(force = false) {
+/** 把当前设置锚点滚到顶栏和引导条之下。只在进入页面或切换锚点时调用。 */
+function revealSettingsAnchor() {
   measureStickyOffsets();
   const target = settingsHashTarget();
   if (!target) return;
-  const cover =
-    parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
-    0;
-  const top = target.getBoundingClientRect().top;
-  // 目标还在吸顶区下方一大截时补滚。已经对齐或用户继续下滚（top 变小）时不打断。
-  if (force || top > cover + 80) target.scrollIntoView();
+  void getComputedStyle(document.documentElement).scrollPaddingTop;
+  target.scrollIntoView();
 }
 
 export function GuideContext({
@@ -126,45 +119,17 @@ export function GuideContext({
   useLayoutEffect(() => {
     let frame = 0;
     let correcting = false;
-    let stuck = 0;
-    const run = (force: boolean) => {
-      if (correcting) return;
-      const before = window.scrollY;
+    let userTookOver = false;
+    let timer = 0;
+    let stopTimer = 0;
+    const align = () => {
+      if (userTookOver || correcting) return;
       correcting = true;
-      revealSettingsAnchor(force);
+      revealSettingsAnchor();
       correcting = false;
-      if (force || window.scrollY !== before) stuck = 0;
-      else stuck += 1;
     };
-    const schedule = (force: boolean) => {
-      if (!force && stuck > 2) return;
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => run(force));
-    };
-    run(true);
-    schedule(true);
-    void document.fonts?.ready.then(() => schedule(true));
-    // 只有引导条吸顶时才持续把锚点拉回。普通设置锚点若跟着滚动，
-    // 会在点击「发送测试邮件」时把说明文字盖住按钮。
-    const railIsSticky = () =>
-      Boolean(
-        document.querySelector("[data-guide-context][data-sticky='true']"),
-      );
-    const timer = window.setInterval(() => {
-      if (railIsSticky()) revealSettingsAnchor(false);
-    }, 150);
-    const stopTimer = window.setTimeout(
-      () => window.clearInterval(timer),
-      2000,
-    );
-    const { header, rail } = stickyChrome();
-    const observer = new ResizeObserver(() => measureStickyOffsets());
-    if (header) observer.observe(header);
-    if (rail) observer.observe(rail);
-    let pendingId = "";
-    let followUntil = 0;
     const alignTo = (id: string) => {
-      if (correcting) return;
+      if (userTookOver || correcting) return;
       correcting = true;
       measureStickyOffsets();
       const target = document.getElementById(id);
@@ -174,21 +139,39 @@ export function GuideContext({
       }
       correcting = false;
     };
-    const onHashChange = () => schedule(true);
+    // 水合后路由可能把深链拉回顶部。只在仍停在顶端且锚点在首屏外时重试。
+    const mislanded = () => {
+      const target = settingsHashTarget();
+      if (!target) return false;
+      return (
+        window.scrollY < 4 &&
+        target.getBoundingClientRect().top > window.innerHeight * 0.5
+      );
+    };
+    const beginNavigation = (id?: string) => {
+      userTookOver = false;
+      window.clearInterval(timer);
+      window.clearTimeout(stopTimer);
+      const step = (force: boolean) => {
+        if (userTookOver || (!force && !mislanded())) return;
+        if (id) alignTo(id);
+        else align();
+      };
+      step(true);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => step(true));
+      timer = window.setInterval(() => step(false), 150);
+      stopTimer = window.setTimeout(() => window.clearInterval(timer), 2000);
+    };
     const onScroll = () => {
-      if (correcting || !railIsSticky()) return;
-      if (pendingId && performance.now() < followUntil) {
-        const target = document.getElementById(pendingId);
-        const cover =
-          parseFloat(
-            getComputedStyle(document.documentElement).scrollPaddingTop,
-          ) || 0;
-        const top = target?.getBoundingClientRect().top ?? cover;
-        if (Math.abs(top - cover) > 24) alignTo(pendingId);
+      if (correcting) return;
+      const target = settingsHashTarget();
+      const top = target?.getBoundingClientRect().top ?? 0;
+      // 路由把页面拉回顶端、锚点仍在首屏之外，留给上面的初始化重试。
+      if (target && window.scrollY < 4 && top > window.innerHeight * 0.5)
         return;
-      }
-      if (!window.location.hash.startsWith("#settings-")) return;
-      schedule(false);
+      userTookOver = true;
+      window.clearInterval(timer);
     };
     // 同页锚点由路由 pushState 更新，不一定触发 hashchange。
     const onClick = (event: MouseEvent) => {
@@ -199,23 +182,27 @@ export function GuideContext({
         ?.getAttribute("href")
         ?.match(/#(settings-[a-z0-9-]+)/)?.[1];
       if (!id) return;
-      pendingId = id;
-      followUntil = performance.now() + 600;
-      alignTo(id);
-      requestAnimationFrame(() => alignTo(id));
+      beginNavigation(id);
       window.setTimeout(() => alignTo(id), 50);
       window.setTimeout(() => alignTo(id), 200);
     };
-    window.addEventListener("hashchange", onHashChange);
+    const { header, rail } = stickyChrome();
+    const observer = new ResizeObserver(() => measureStickyOffsets());
+    if (header) observer.observe(header);
+    if (rail) observer.observe(rail);
+    const onHashChange = () => beginNavigation();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("hashchange", onHashChange);
     document.addEventListener("click", onClick);
+    beginNavigation();
+    void document.fonts?.ready.then(() => align());
     return () => {
       cancelAnimationFrame(frame);
       window.clearInterval(timer);
       window.clearTimeout(stopTimer);
       observer.disconnect();
-      window.removeEventListener("hashchange", onHashChange);
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("hashchange", onHashChange);
       document.removeEventListener("click", onClick);
     };
   }, [pathname, guide]);

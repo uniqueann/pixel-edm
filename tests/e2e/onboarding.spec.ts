@@ -477,6 +477,33 @@ test("设置页引导深链保持返回清单可见，并露出对应分区", as
   ).toEqual({ sticky: null, position: "static" });
 });
 
+test("引导深链对齐后上滚不会被拉回锚点", async ({ page, request }) => {
+  await scenario(request, { state: "ready" });
+  await login(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/settings?guide=channels#settings-channels");
+  await expectGuideAnchorVisible(page, "settings-channels", "连接并验证主通道");
+  const aligned = await page.evaluate(() => window.scrollY);
+  expect(aligned).toBeGreaterThan(200);
+  await page.evaluate(() => window.scrollBy(0, -480));
+  await page.waitForTimeout(800);
+  const afterGuide = await page.evaluate(() => window.scrollY);
+  expect(afterGuide).toBeLessThan(aligned - 200);
+  await expect(
+    page.getByRole("link", { name: "返回准备清单" }),
+  ).toBeInViewport();
+
+  await page.goto("/settings#settings-channels");
+  await expect(page.locator("#settings-channels")).toBeVisible();
+  await page.waitForTimeout(400);
+  const plainAligned = await page.evaluate(() => window.scrollY);
+  expect(plainAligned).toBeGreaterThan(200);
+  await page.evaluate(() => window.scrollBy(0, -480));
+  await page.waitForTimeout(800);
+  const afterPlain = await page.evaluate(() => window.scrollY);
+  expect(afterPlain).toBeLessThan(plainAligned - 200);
+});
+
 test("总览清单滚过顶栏时不会透出文字", async ({ page, request }) => {
   await scenario(request, { state: "ready" });
   await login(page);
