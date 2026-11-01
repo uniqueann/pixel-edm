@@ -61,12 +61,30 @@ function DialogContent({
   const contentRef = React.useRef<HTMLDivElement>(null);
   const resizeObserverRef = React.useRef<ResizeObserver | null>(null);
 
+  const updateScrollLayout = React.useCallback((content: HTMLDivElement) => {
+    if (!content.querySelector("[data-dialog-scroll-viewport]")) return;
+    const chromeHeight = Array.from(
+      content.querySelectorAll<HTMLElement>("[data-dialog-scroll-chrome]"),
+    ).reduce(
+      (height, element) => height + element.getBoundingClientRect().height,
+      0,
+    );
+    // 标题和操作区过高时，让标题随内容滚动，避免表单被压缩至不可操作。
+    content.toggleAttribute(
+      "data-dialog-reflow",
+      content.clientHeight - chromeHeight < 144,
+    );
+  }, []);
+
   const scrollFocusedIntoView = React.useCallback((content: HTMLDivElement) => {
     const focused = document.activeElement;
     if (!(focused instanceof HTMLElement) || !content.contains(focused)) return;
     const scrollEl =
-      content.querySelector<HTMLElement>("[data-dialog-scroll-body]") ??
-      content;
+      content.querySelector<HTMLElement>(
+        content.hasAttribute("data-dialog-reflow")
+          ? "[data-dialog-scroll-viewport]"
+          : "[data-dialog-scroll-body]",
+      ) ?? content;
     const scrollBox = scrollEl.getBoundingClientRect();
     const focusedBox = focused.getBoundingClientRect();
     // 仅带固定操作栏标记的弹窗需要额外避让，其他弹窗沿用原有边界。
@@ -98,11 +116,12 @@ function DialogContent({
       "--dialog-visual-bottom",
       `${Math.max(0, window.innerHeight - top - height)}px`,
     );
+    updateScrollLayout(content);
 
     window.requestAnimationFrame(() => {
       if (contentRef.current === content) scrollFocusedIntoView(content);
     });
-  }, [scrollFocusedIntoView]);
+  }, [scrollFocusedIntoView, updateScrollLayout]);
 
   const setContentRef = React.useCallback(
     (node: HTMLDivElement | null) => {
@@ -113,15 +132,23 @@ function DialogContent({
         updateViewport();
         if (typeof ResizeObserver !== "undefined") {
           resizeObserverRef.current = new ResizeObserver(() => {
-            if (contentRef.current === node) scrollFocusedIntoView(node);
+            if (contentRef.current === node) {
+              updateScrollLayout(node);
+              scrollFocusedIntoView(node);
+            }
           });
           resizeObserverRef.current.observe(node);
+          node
+            .querySelectorAll("[data-dialog-scroll-chrome]")
+            .forEach((element) => {
+              resizeObserverRef.current?.observe(element);
+            });
         }
       }
       if (typeof ref === "function") ref(node);
       else if (ref) ref.current = node;
     },
-    [ref, scrollFocusedIntoView, updateViewport],
+    [ref, scrollFocusedIntoView, updateScrollLayout, updateViewport],
   );
 
   React.useEffect(() => {

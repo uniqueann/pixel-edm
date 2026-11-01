@@ -464,6 +464,7 @@ button.tab {
   height: var(--control-height);
   min-height: var(--control-height);
   max-width: 100%;
+  overflow: hidden;
   border: 1px solid var(--input);
   border-radius: 9px;
   appearance: none;
@@ -474,6 +475,7 @@ button.tab {
   background-repeat: no-repeat;
   background-size: 14px 14px;
   padding: 0 30px 0 10px;
+  text-overflow: ellipsis;
   color: var(--foreground);
   font-size: 14px;
   line-height: 20px;
