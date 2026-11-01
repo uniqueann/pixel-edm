@@ -258,11 +258,30 @@ async function completeChannelTest(attemptId, status = "accepted") {
     true,
   );
 }
+// 性能夹具只由独立生产构建入口启用，默认功能回归保持原来的数据和时序。
+const performanceFixture = process.env.EDM_PERFORMANCE
+  ? await (
+      await import("./performance/fixture.mjs")
+    ).createPerformanceFixture(db, [
+      { userId: a, workspaceId: wa, size: "normal" },
+      {
+        userId: templateUser,
+        workspaceId: templateWorkspace,
+        size: "boundary",
+      },
+    ])
+  : null;
 const server = createServer(async (req, res) => {
+  performanceFixture?.observe(req, res);
   // Playwright 的 API 请求会复用 keep-alive。Node 默认空闲 5 秒就拆连接，
   // 与下一次 POST（常见于用例 afterEach 重置）撞上时客户端只看到 socket hang up。
   res.setHeader("Connection", "close");
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3100");
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    process.env.EDM_PERFORMANCE
+      ? "http://localhost:3110"
+      : "http://localhost:3100",
+  );
   res.setHeader(
     "Access-Control-Allow-Headers",
     "authorization,apikey,content-type,x-client-info,x-supabase-api-version,accept-profile,content-profile,prefer",
@@ -282,6 +301,11 @@ const server = createServer(async (req, res) => {
     let body = "";
     for await (const chunk of req) body += chunk;
     const input = body ? JSON.parse(body) : {};
+    if (
+      performanceFixture &&
+      (await performanceFixture.handle(url, input, send))
+    )
+      return;
     if (url.pathname === "/health") return send({ ok: true });
     if (url.pathname === "/__fixtures/onboarding") {
       if (req.method === "GET")
