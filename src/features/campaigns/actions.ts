@@ -75,21 +75,27 @@ export async function listCampaigns(input: {
   if (error) throw new Error("活动加载失败，请重试。");
   const result = data as unknown as CampaignList;
   if (!result.items.length) return result;
-  const { data: deliveries, error: deliveryError } = await db.rpc(
-    "get_campaign_delivery_summaries",
-    {
-      payload: {
-        workspace_id: workspace.id,
-        campaign_ids: result.items.map((item) => item.id),
-      },
-    },
-  );
-  if (deliveryError) throw new Error("正式发送进度加载失败，请重试。");
+  // 摘要 RPC 每次最多接受 20 个活动，列表允许每页显示 100 条。
+  const batches = [];
+  for (let offset = 0; offset < result.items.length; offset += 20) {
+    batches.push(
+      db.rpc("get_campaign_delivery_summaries", {
+        payload: {
+          workspace_id: workspace.id,
+          campaign_ids: result.items
+            .slice(offset, offset + 20)
+            .map((item) => item.id),
+        },
+      }),
+    );
+  }
+  const summaries = await Promise.all(batches);
+  if (summaries.some((result) => result.error))
+    throw new Error("正式发送进度加载失败，请重试。");
   const byCampaign = new Map(
-    (deliveries as unknown as CampaignDeliverySummary[]).map((item) => [
-      item.campaign_id,
-      item,
-    ]),
+    summaries
+      .flatMap((result) => result.data as unknown as CampaignDeliverySummary[])
+      .map((item) => [item.campaign_id, item]),
   );
   return {
     ...result,
@@ -133,11 +139,20 @@ export async function getCampaignPreview(input: unknown) {
   try {
     const parsed = campaignReference.parse(input);
     const db = await authorizedWorkspace(parsed.workspace_id, true);
-    const { data, error } = await db.rpc("get_campaign_preview", {
-      payload: parsed,
-    });
+    // 客户端 Server Action 会排队；同一次只读请求内并行读取预览与署名。
+    const [{ data, error }, detail] = await Promise.all([
+      db.rpc("get_campaign_preview", { payload: parsed }),
+      Promise.resolve(db.rpc("get_campaign", { payload: parsed }))
+        .then(({ data, error }) =>
+          error ? null : (data as unknown as CampaignDetail),
+        )
+        .catch(() => null),
+    ]);
     if (error) throw new Error(error.message);
-    return { data: data as unknown as CampaignPreview };
+    return {
+      data: data as unknown as CampaignPreview,
+      senderName: detail?.variables.sender_name ?? "",
+    };
   } catch (error) {
     if (error instanceof z.ZodError)
       return { error: error.issues[0]?.message ?? "活动标识无效。" };

@@ -727,18 +727,12 @@ export function Campaigns({
     setPreviewLoading(true);
     setPreviewError("");
     try {
-      const [result, detail] = await Promise.all([
-        getCampaignPreview({ workspace_id: workspace, id: campaign.id }),
-        getCampaign({ workspace_id: workspace, id: campaign.id }).catch(
-          () => undefined,
-        ),
-      ]);
+      const result = await getCampaignPreview({
+        workspace_id: workspace,
+        id: campaign.id,
+      });
       if (request !== previewRequest.current) return;
-      setPreviewSenderName(
-        detail && "data" in detail && detail.data
-          ? (detail.data.variables.sender_name ?? "")
-          : "",
-      );
+      setPreviewSenderName("data" in result ? result.senderName : "");
       if ("error" in result) {
         setPreview(undefined);
         setPreviewError(result.error ?? "活动预览失败，请重试。");

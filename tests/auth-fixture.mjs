@@ -474,6 +474,15 @@ const server = createServer(async (req, res) => {
           scenarioUser,
           `select edm.save_campaign('${JSON.stringify(payload)}'::jsonb)`,
         );
+        // 分页回归只扩充隔离工作区的草稿，不创建发送任务。
+        const campaignCount = Math.min(100, Number(input.campaignCount) || 1);
+        if (campaignCount > 1)
+          await db.query(
+            `insert into edm.campaigns(workspace_id,name,template_id,audience_type,variables,created_by,updated_by)
+             select $1,'分页活动 '||lpad(n::text,3,'0'),$2,'all','{}'::jsonb,$3,$3
+             from generate_series(1,$4) n`,
+            [workspaceId, templateId, scenarioUser, campaignCount - 1],
+          );
       }
       if (input.archivedTemplates)
         await db.query(
