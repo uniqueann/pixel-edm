@@ -8,7 +8,7 @@ import { environment } from "./environment.mjs";
 
 const phase = process.argv[2] || "before";
 const samples = Number(process.env.EDM_PERF_SAMPLES || 5);
-const directory = path.resolve("test-results/frontend-performance", phase);
+const directory = path.resolve(".impeccable/frontend-performance", phase);
 const baseURL = "http://localhost:3110";
 const fixtureURL = "http://127.0.0.1:54329";
 const children = [];

@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
 import path from "node:path";
 
-const root = path.resolve("test-results/frontend-performance");
+const root = path.resolve(".impeccable/frontend-performance");
 const output = path.resolve("docs/images/frontend-performance");
 const round = (value) => Math.round(value * 100) / 100;
 function distribution(values) {
