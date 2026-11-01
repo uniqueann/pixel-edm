@@ -1,0 +1,95 @@
+{
+  "runtimeSources": {
+    "before": "1d21621009b64de3191432ba0eac7af875670a54bad74083703582500256b035",
+    "after": "fefbe7f8dfbed5988e173da51746cd9e56245eebebf8887fd6318f3e7c400bc4"
+  },
+  "sourceCommits": {
+    "before": "d602f9f4d18d38a3ebd77997180adc118f99463b",
+    "after": "21eb16653d31a32141f0ef78906d5dc247e53716"
+  },
+  "detectorFindings": [],
+  "images": [
+    {
+      "file": "boundary-desktop-editor-light-after.png",
+      "sha256": "4292f94db4b5b06955f2ce6dac00973252852c301cbcf83ced742e23179f8458",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "boundary-desktop-editor-light-before.png",
+      "sha256": "4292f94db4b5b06955f2ce6dac00973252852c301cbcf83ced742e23179f8458",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "complete-boundary-mobile-import-light-after.png",
+      "sha256": "8fe599f0f9243fba79e632f41ca8b51bde17579d3273d0743f93aa1eb7ee0847",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "complete-boundary-mobile-import-light-before.png",
+      "sha256": "8fe599f0f9243fba79e632f41ca8b51bde17579d3273d0743f93aa1eb7ee0847",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "import-count-loading-after.png",
+      "sha256": "8798f0c445fb84371c25d33f9243dbb1b8c38be82cdd540fda9155205aad361e",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "normal-desktop-campaigns-light-after.png",
+      "sha256": "0e3e8eb0a28dea76a064ff61e32dca64ede0a45cb0a8af0bdb6a61f0ddc8f41e",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "normal-desktop-campaigns-light-before.png",
+      "sha256": "0e3e8eb0a28dea76a064ff61e32dca64ede0a45cb0a8af0bdb6a61f0ddc8f41e",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "normal-desktop-editor-dark-after.png",
+      "sha256": "a898b2c18c9533abe4dcde3e4851904fa8a73a4c5eb5c4561ba300895bf54744",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "normal-desktop-editor-dark-before.png",
+      "sha256": "a898b2c18c9533abe4dcde3e4851904fa8a73a4c5eb5c4561ba300895bf54744",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "normal-mobile-editor-dark-after.png",
+      "sha256": "eb8e7dfd356c6b422133a9aa9d3c1072f7598435e271676f0293ff66a53f1295",
+      "source": "本地隔离夹具原始截图，未编辑"
+    },
+    {
+      "file": "normal-mobile-editor-dark-before.png",
+      "sha256": "eb8e7dfd356c6b422133a9aa9d3c1072f7598435e271676f0293ff66a53f1295",
+      "source": "本地隔离夹具原始截图，未编辑"
+    }
+  ],
+  "identicalPairs": [
+    {
+      "before": "boundary-desktop-editor-light-before.png",
+      "after": "boundary-desktop-editor-light-after.png",
+      "identical": true
+    },
+    {
+      "before": "complete-boundary-mobile-import-light-before.png",
+      "after": "complete-boundary-mobile-import-light-after.png",
+      "identical": true
+    },
+    {
+      "before": "normal-desktop-campaigns-light-before.png",
+      "after": "normal-desktop-campaigns-light-after.png",
+      "identical": true
+    },
+    {
+      "before": "normal-desktop-editor-dark-before.png",
+      "after": "normal-desktop-editor-dark-after.png",
+      "identical": true
+    },
+    {
+      "before": "normal-mobile-editor-dark-before.png",
+      "after": "normal-mobile-editor-dark-after.png",
+      "identical": true
+    }
+  ]
+}

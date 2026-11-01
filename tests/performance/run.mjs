@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { chromium, expect } from "@playwright/test";
 import { environment } from "./environment.mjs";
+import { instrumentReactProfile } from "./react-profile.mjs";
 
 const phase = process.argv[2] || "before";
 const samples = Number(process.env.EDM_PERF_SAMPLES || 5);
@@ -147,6 +148,10 @@ async function observedTask(page, cdp, name, act, ready) {
   const t0 = await page.evaluate((name) => {
     performance.mark(`${name}-start`);
     const start = performance.now();
+    if (window.__reactProfileRows) {
+      window.__reactProfileSince = start;
+      window.__reactProfileRows = [];
+    }
     window.__feedbackMs = null;
     let scheduled = false;
     window.__feedbackObserver = new MutationObserver((records) => {
@@ -194,12 +199,16 @@ async function observedTask(page, cdp, name, act, ready) {
       now: performance.now(),
       longtasks: window.__edmPerf.longtasks,
       feedbackMs: window.__feedbackMs,
+      reactProfile: window.__reactProfileRows,
+      reactProfileComponents: window.__reactProfileComponents,
     };
   }, name);
   return {
     name,
     observedMs: end.now - t0,
     feedbackMs: end.feedbackMs,
+    reactProfile: end.reactProfile,
+    reactProfileComponents: end.reactProfileComponents,
     browserRequests: [...page.perfRequests.entries()]
       .filter(([id, value]) => !previousRequests.has(id) && value.end)
       .map(([, value]) => value),
@@ -235,6 +244,8 @@ async function openContext(browser, storageState, device) {
   });
   // 浏览器使用只放行回环地址的代理配置，保留原生 HTTP 缓存。
   await context.addInitScript(instrument);
+  if (process.env.EDM_PERF_REACT_PROFILE)
+    await context.addInitScript(instrumentReactProfile);
   const page = await context.newPage();
   page.setDefaultTimeout(30_000);
   const cdp = await context.newCDPSession(page);
@@ -485,6 +496,7 @@ async function templateTasks(page, cdp, mobile, boundary) {
 }
 async function importTasks(page, cdp, boundary, iteration) {
   const rows = boundary ? 1000 : 20;
+  const csvFlow = Boolean(process.env.EDM_PERF_IMPORT_FILE_FLOW);
   const content =
     "email,name,备注\n" +
     Array.from(
@@ -494,6 +506,7 @@ async function importTasks(page, cdp, boundary, iteration) {
     ).join("\n");
   const tasks = [];
   await page.getByRole("button", { name: "CSV 文件", exact: true }).click();
+  const flowStart = await page.evaluate(() => performance.now());
   tasks.push(
     await observedTask(
       page,
@@ -511,36 +524,68 @@ async function importTasks(page, cdp, boundary, iteration) {
         ).toBeVisible(),
     ),
   );
-  await page.getByRole("button", { name: "粘贴", exact: true }).click();
-  if (process.env.EDM_PERF_EXPERIMENT)
-    await page.locator("#import-text").evaluate((element, variant) => {
-      element.spellcheck = false;
-      if (variant === "nowrap") element.wrap = "off";
-      if (variant === "contain") element.style.contain = "strict";
-    }, process.env.EDM_PERF_EXPERIMENT);
+  if (!csvFlow) {
+    await page.getByRole("button", { name: "粘贴", exact: true }).click();
+    if (process.env.EDM_PERF_EXPERIMENT)
+      await page.locator("#import-text").evaluate((element, variant) => {
+        element.spellcheck = false;
+        if (variant === "nowrap") element.wrap = "off";
+        if (variant === "contain") element.style.contain = "strict";
+      }, process.env.EDM_PERF_EXPERIMENT);
+    tasks.push(
+      await observedTask(
+        page,
+        cdp,
+        "import-text-input",
+        () => page.locator("#import-text").fill(content),
+        () => expect(page.locator("#import-text")).toHaveValue(content),
+      ),
+    );
+  }
   tasks.push(
     await observedTask(
       page,
       cdp,
-      "import-text-input",
-      () => page.locator("#import-text").fill(content),
-      () => expect(page.locator("#import-text")).toHaveValue(content),
-    ),
-  );
-  tasks.push(
-    await observedTask(
-      page,
-      cdp,
-      "import-prepare-result",
+      csvFlow ? "import-prepare-complete" : "import-prepare-result",
       () => page.getByRole("button", { name: "预检名单", exact: true }).click(),
-      () =>
-        expect(
+      async () => {
+        await expect(
           page.getByRole("heading", { name: "确认预检结果", exact: true }),
-        ).toBeVisible(),
+        ).toBeVisible();
+        if (csvFlow)
+          await expect(
+            page
+              .getByText("去重后邮箱数", { exact: true })
+              .locator("..")
+              .locator("dd"),
+          ).toHaveText(String(rows), { timeout: 30000 });
+      },
     ),
   );
   tasks.at(-1).sourceRows = rows;
   tasks.at(-1).sourceBytes = Buffer.byteLength(content);
+  if (csvFlow) {
+    const whole = {
+      name: "import-file-to-final-result",
+      observedMs: await page.evaluate(
+        (start) => performance.now() - start,
+        flowStart,
+      ),
+      feedbackMs: tasks[0].feedbackMs,
+      sourceRows: rows,
+      sourceBytes: Buffer.byteLength(content),
+    };
+    for (const key of [
+      "ScriptDurationMs",
+      "LayoutDurationMs",
+      "RecalcStyleDurationMs",
+      "TaskDurationMs",
+    ])
+      whole[key] = tasks.reduce((sum, task) => sum + task[key], 0);
+    for (const key of ["longtasks", "serverRequests", "browserRequests"])
+      whole[key] = tasks.flatMap((task) => task[key]);
+    tasks.push(whole);
+  }
   return tasks;
 }
 
@@ -548,7 +593,16 @@ let browser;
 const results = [];
 try {
   if (!process.env.EDM_PERF_SKIP_BUILD) {
-    const build = start("npm", ["run", "build"], environment, "build");
+    const build = start(
+      "npm",
+      [
+        "run",
+        "build",
+        ...(process.env.EDM_PERF_REACT_PROFILE ? ["--", "--profile"] : []),
+      ],
+      environment,
+      "build",
+    );
     await new Promise((resolve, reject) =>
       build.once("exit", (code) =>
         code === 0 ? resolve() : reject(new Error("生产构建失败")),
@@ -575,6 +629,8 @@ try {
   });
   const metadata = {
     phase,
+    reactProfilingBuild: Boolean(process.env.EDM_PERF_REACT_PROFILE),
+    importFileFlow: Boolean(process.env.EDM_PERF_IMPORT_FILE_FLOW),
     samples,
     commit: git("rev-parse", "HEAD"),
     runtimeSourceSha256: await sourceFingerprint(),
