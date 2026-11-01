@@ -130,7 +130,10 @@ export function Templates({
   }, [isTemplateEditDirty]);
 
   const revealEditorFocus = useCallback(() => {
-    const scrollArea = editorScrollRef.current;
+    const body = editorScrollRef.current;
+    const scrollArea = body?.closest("[data-dialog-reflow]")
+      ? body.closest<HTMLElement>("[data-dialog-scroll-viewport]")
+      : body;
     const focused = document.activeElement;
     if (!scrollArea || !(focused instanceof HTMLElement)) return;
     if (!scrollArea.contains(focused)) return;
@@ -524,239 +527,247 @@ export function Templates({
             returnFocus.current?.focus();
           }}
         >
-          <DialogHeader className={styles.editorHeader}>
-            <DialogTitle>{editing ? "编辑模板" : "新建模板"}</DialogTitle>
-            <DialogDescription>
-              编辑内容，预览核对后保存到模板库。
-            </DialogDescription>
-          </DialogHeader>
-          <div
-            className={styles.viewSwitch}
-            role="group"
-            aria-label="编辑器视图"
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              aria-pressed={editorView === "edit"}
-              aria-controls="template-editor-form"
-              onClick={() => {
-                setEditorView("edit");
-                editorScrollRef.current?.scrollTo({ top: 0 });
-              }}
+          <div className={styles.editorViewport} data-dialog-scroll-viewport>
+            <DialogHeader
+              className={styles.editorHeader}
+              data-dialog-scroll-chrome
             >
-              编辑内容
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              aria-pressed={editorView === "preview"}
-              aria-controls="template-preview-panel"
-              onClick={() => {
-                setEditorView("preview");
-                editorScrollRef.current?.scrollTo({ top: 0 });
-              }}
+              <DialogTitle>{editing ? "编辑模板" : "新建模板"}</DialogTitle>
+              <DialogDescription>
+                编辑内容，预览核对后保存到模板库。
+              </DialogDescription>
+            </DialogHeader>
+            <div
+              className={styles.viewSwitch}
+              role="group"
+              aria-label="编辑器视图"
+              data-dialog-scroll-chrome
             >
-              预览当前内容
-            </Button>
-          </div>
-          <div
-            ref={setEditorScrollArea}
-            className={styles.editorBody}
-            data-testid="template-editor-scroll"
-            onFocusCapture={() => requestAnimationFrame(revealEditorFocus)}
-          >
-            <form
-              id="template-editor-form"
-              ref={editorFormRef}
-              className={`${styles.editorForm} ${styles.editorPane}`}
-              data-active={editorView === "edit"}
-              aria-label="模板内容"
-              onSubmit={async (event) => {
-                event.preventDefault();
-                setError("");
-                if (validationErrors.length) {
-                  setError(validationErrors[0].message);
-                  return;
-                }
-                setBusy(true);
-                try {
-                  const result = await saveTemplate({
-                    workspace_id: workspace,
-                    id: editing?.id,
-                    expected_version: editing?.version,
-                    name: name.trim(),
-                    category: category.trim(),
-                    subject: subject.trim(),
-                    body,
-                  });
-                  if ("error" in result)
-                    setError(result.error ?? "保存失败，请重试。");
-                  else {
-                    setEditing(undefined);
-                    toast.success("模板已保存");
-                    router.refresh();
-                  }
-                } catch {
-                  setError("保存失败，输入已保留，请重试。");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              <div className={styles.identityFields}>
-                <div className={styles.field}>
-                  <Label htmlFor="template-name">模板名称</Label>
-                  <Input
-                    id="template-name"
-                    required
-                    maxLength={80}
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    onBlur={() => setName((prev) => prev.trim())}
-                  />
-                </div>
-                <div className={styles.field}>
-                  <Label htmlFor="template-category">分类</Label>
-                  <Input
-                    id="template-category"
-                    required
-                    maxLength={50}
-                    value={category}
-                    onChange={(event) => setCategory(event.target.value)}
-                    onBlur={() => setCategory((prev) => prev.trim())}
-                  />
-                  {(data.categories ?? []).length > 0 && (
-                    <details className={styles.categoryChoices}>
-                      <summary>选择已有分类</summary>
-                      <div className={styles.categorySuggestions}>
-                        {(data.categories ?? []).slice(0, 5).map((cat) => (
-                          <button
-                            key={cat}
-                            type="button"
-                            className={styles.categorySuggestion}
-                            onClick={() => setCategory(cat)}
-                          >
-                            {cat}
-                          </button>
-                        ))}
-                      </div>
-                    </details>
-                  )}
-                </div>
-              </div>
-              <div className={styles.field}>
-                <Label htmlFor="template-subject">邮件主题</Label>
-                <Input
-                  ref={subjectRef}
-                  id="template-subject"
-                  required
-                  maxLength={200}
-                  value={subject}
-                  onFocus={() => setActiveField("subject")}
-                  onChange={(event) => setSubject(event.target.value)}
-                  onBlur={() => setSubject((prev) => prev.trim())}
-                />
-              </div>
-              <div className={styles.field}>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="template-body">纯文本正文</Label>
-                  <span className={styles.characterCount}>
-                    {body.length} / 20000 字
-                  </span>
-                </div>
-                <textarea
-                  ref={bodyRef}
-                  id="template-body"
-                  required
-                  maxLength={20000}
-                  className={styles.bodyInput}
-                  value={body}
-                  onFocus={() => setActiveField("body")}
-                  onChange={(event) => setBody(event.target.value)}
-                />
-              </div>
-              <section className={styles.variables} aria-label="模板变量">
-                <h3 className={styles.sectionTitle}>
-                  插入变量到{activeField === "subject" ? "主题" : "正文"}
-                </h3>
-                <p className={styles.help}>
-                  点击变量插入占位符。未知变量会阻止保存。
-                </p>
-                {[
-                  { label: "客户资料 · 按收件人替换", customer: true },
-                  { label: "活动信息 · 创建活动时统一填写", customer: false },
-                ].map((group) => (
-                  <div key={group.label} className={styles.variableGroup}>
-                    <p className={styles.groupLabel}>{group.label}</p>
-                    <div className={styles.variableButtons}>
-                      {templateVariables
-                        .filter(
-                          (variable) =>
-                            group.customer ===
-                            (variable.key === "name" ||
-                              variable.key === "email"),
-                        )
-                        .map((variable) => (
-                          <button
-                            key={variable.key}
-                            type="button"
-                            className={styles.variableButton}
-                            title={`插入 ${variable.key === "sender_name" ? "正文署名" : variable.label}（{{${variable.key}}}）`}
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => insertVariable(variable.key)}
-                          >
-                            <span>
-                              {variable.key === "sender_name"
-                                ? "正文署名"
-                                : variable.label}
-                            </span>
-                            <code>{`{{${variable.key}}}`}</code>
-                          </button>
-                        ))}
-                    </div>
-                  </div>
-                ))}
-                <p className={styles.help}>
-                  正文署名用于邮件文字中的称呼或落款；真实发件人由发信通道配置。
-                </p>
-              </section>
-              {validationErrors.length > 0 && (
-                <div className="field-error" role="alert">
-                  {validationErrors.map((item, index) => (
-                    <p key={`${item.field}-${index}`}>
-                      {item.field === "subject" ? "主题" : "正文"}：
-                      {item.message}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </form>
-            <section
-              id="template-preview-panel"
-              className={`${styles.previewPane} ${styles.editorPane}`}
-              data-active={editorView === "preview"}
-              aria-label="邮件预览"
-            >
-              <h3 className={styles.sectionTitle}>邮件预览</h3>
-              <TemplatePreview
-                subject={subject}
-                body={body}
-                workspaceName={workspaceName}
-                memberName={memberName}
-                mailingAddress={mailingAddress}
-                senderAlias={senderAlias}
-                senderAddress={senderAddress}
-                onSettingsNavigate={(event) => {
-                  event.preventDefault();
-                  requestLeaveTemplateEditor(() => router.push("/settings"));
+              <Button
+                type="button"
+                variant="ghost"
+                aria-pressed={editorView === "edit"}
+                aria-controls="template-editor-form"
+                onClick={() => {
+                  setEditorView("edit");
+                  editorScrollRef.current?.scrollTo({ top: 0 });
                 }}
-              />
-            </section>
+              >
+                编辑内容
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                aria-pressed={editorView === "preview"}
+                aria-controls="template-preview-panel"
+                onClick={() => {
+                  setEditorView("preview");
+                  editorScrollRef.current?.scrollTo({ top: 0 });
+                }}
+              >
+                预览当前内容
+              </Button>
+            </div>
+            <div
+              ref={setEditorScrollArea}
+              className={styles.editorBody}
+              data-testid="template-editor-scroll"
+              data-dialog-scroll-body
+              onFocusCapture={() => requestAnimationFrame(revealEditorFocus)}
+            >
+              <form
+                id="template-editor-form"
+                ref={editorFormRef}
+                className={`${styles.editorForm} ${styles.editorPane}`}
+                data-active={editorView === "edit"}
+                aria-label="模板内容"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  setError("");
+                  if (validationErrors.length) {
+                    setError(validationErrors[0].message);
+                    return;
+                  }
+                  setBusy(true);
+                  try {
+                    const result = await saveTemplate({
+                      workspace_id: workspace,
+                      id: editing?.id,
+                      expected_version: editing?.version,
+                      name: name.trim(),
+                      category: category.trim(),
+                      subject: subject.trim(),
+                      body,
+                    });
+                    if ("error" in result)
+                      setError(result.error ?? "保存失败，请重试。");
+                    else {
+                      setEditing(undefined);
+                      toast.success("模板已保存");
+                      router.refresh();
+                    }
+                  } catch {
+                    setError("保存失败，输入已保留，请重试。");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <div className={styles.identityFields}>
+                  <div className={styles.field}>
+                    <Label htmlFor="template-name">模板名称</Label>
+                    <Input
+                      id="template-name"
+                      required
+                      maxLength={80}
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      onBlur={() => setName((prev) => prev.trim())}
+                    />
+                  </div>
+                  <div className={styles.field}>
+                    <Label htmlFor="template-category">分类</Label>
+                    <Input
+                      id="template-category"
+                      required
+                      maxLength={50}
+                      value={category}
+                      onChange={(event) => setCategory(event.target.value)}
+                      onBlur={() => setCategory((prev) => prev.trim())}
+                    />
+                    {(data.categories ?? []).length > 0 && (
+                      <details className={styles.categoryChoices}>
+                        <summary>选择已有分类</summary>
+                        <div className={styles.categorySuggestions}>
+                          {(data.categories ?? []).slice(0, 5).map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              className={styles.categorySuggestion}
+                              onClick={() => setCategory(cat)}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                </div>
+                <div className={styles.field}>
+                  <Label htmlFor="template-subject">邮件主题</Label>
+                  <Input
+                    ref={subjectRef}
+                    id="template-subject"
+                    required
+                    maxLength={200}
+                    value={subject}
+                    onFocus={() => setActiveField("subject")}
+                    onChange={(event) => setSubject(event.target.value)}
+                    onBlur={() => setSubject((prev) => prev.trim())}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="template-body">纯文本正文</Label>
+                    <span className={styles.characterCount}>
+                      {body.length} / 20000 字
+                    </span>
+                  </div>
+                  <textarea
+                    ref={bodyRef}
+                    id="template-body"
+                    required
+                    maxLength={20000}
+                    className={styles.bodyInput}
+                    value={body}
+                    onFocus={() => setActiveField("body")}
+                    onChange={(event) => setBody(event.target.value)}
+                  />
+                </div>
+                <section className={styles.variables} aria-label="模板变量">
+                  <h3 className={styles.sectionTitle}>
+                    插入变量到{activeField === "subject" ? "主题" : "正文"}
+                  </h3>
+                  <p className={styles.help}>
+                    点击变量插入占位符。未知变量会阻止保存。
+                  </p>
+                  {[
+                    { label: "客户资料 · 按收件人替换", customer: true },
+                    { label: "活动信息 · 创建活动时统一填写", customer: false },
+                  ].map((group) => (
+                    <div key={group.label} className={styles.variableGroup}>
+                      <p className={styles.groupLabel}>{group.label}</p>
+                      <div className={styles.variableButtons}>
+                        {templateVariables
+                          .filter(
+                            (variable) =>
+                              group.customer ===
+                              (variable.key === "name" ||
+                                variable.key === "email"),
+                          )
+                          .map((variable) => (
+                            <button
+                              key={variable.key}
+                              type="button"
+                              className={styles.variableButton}
+                              title={`插入 ${variable.key === "sender_name" ? "正文署名" : variable.label}（{{${variable.key}}}）`}
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => insertVariable(variable.key)}
+                            >
+                              <span>
+                                {variable.key === "sender_name"
+                                  ? "正文署名"
+                                  : variable.label}
+                              </span>
+                              <code>{`{{${variable.key}}}`}</code>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                  <p className={styles.help}>
+                    正文署名用于邮件文字中的称呼或落款；真实发件人由发信通道配置。
+                  </p>
+                </section>
+                {validationErrors.length > 0 && (
+                  <div className="field-error" role="alert">
+                    {validationErrors.map((item, index) => (
+                      <p key={`${item.field}-${index}`}>
+                        {item.field === "subject" ? "主题" : "正文"}：
+                        {item.message}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </form>
+              <section
+                id="template-preview-panel"
+                className={`${styles.previewPane} ${styles.editorPane}`}
+                data-active={editorView === "preview"}
+                aria-label="邮件预览"
+              >
+                <h3 className={styles.sectionTitle}>邮件预览</h3>
+                <TemplatePreview
+                  subject={subject}
+                  body={body}
+                  workspaceName={workspaceName}
+                  memberName={memberName}
+                  mailingAddress={mailingAddress}
+                  senderAlias={senderAlias}
+                  senderAddress={senderAddress}
+                  onSettingsNavigate={(event) => {
+                    event.preventDefault();
+                    requestLeaveTemplateEditor(() => router.push("/settings"));
+                  }}
+                />
+              </section>
+            </div>
           </div>
           <div
             className={styles.editorFooter}
             data-testid="template-editor-footer"
+            data-dialog-scroll-chrome
           >
             <p
               className={styles.saveStatus}

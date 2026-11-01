@@ -42,7 +42,7 @@ export function MemberProfileForm({ displayName }: { displayName: string }) {
         </Notice>
       )}
       <div className="space-y-2">
-        <Label htmlFor="member-display-name">
+        <Label htmlFor="member-display-name" className="block">
           我的对外署名（{"{{sender_name}}"}）
         </Label>
         <Input

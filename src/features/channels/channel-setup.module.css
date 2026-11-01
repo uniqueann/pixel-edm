@@ -1,7 +1,13 @@
 .settings {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   min-width: 0;
+}
+
+.settings [data-slot="badge"] {
+  max-width: 100%;
+  white-space: normal;
 }
 
 .settings :is(button, input:not([type="checkbox"]), [role="combobox"], summary),
@@ -199,6 +205,32 @@
   flex-shrink: 0;
   padding: 24px 56px 16px 24px;
   text-align: left;
+}
+
+.dialogViewport {
+  display: contents;
+}
+
+.dialog[data-dialog-reflow] {
+  padding-top: 52px !important;
+}
+
+.dialog[data-dialog-reflow] > [data-slot="dialog-close"] {
+  top: 4px;
+}
+
+.dialog[data-dialog-reflow] .dialogViewport {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 12px;
+}
+
+.dialog[data-dialog-reflow] .formScroll {
+  overflow: visible;
+  contain: none;
 }
 
 .formScroll {

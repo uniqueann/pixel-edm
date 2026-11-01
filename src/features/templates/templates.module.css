@@ -20,6 +20,31 @@
   text-align: left;
 }
 
+.editorViewport {
+  display: contents;
+}
+
+.editor[data-dialog-reflow] {
+  padding-top: 52px;
+}
+
+.editor[data-dialog-reflow] [data-slot="dialog-close"] {
+  top: 4px;
+}
+
+.editor[data-dialog-reflow] .editorViewport {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 12px;
+}
+
+.editor[data-dialog-reflow] .editorBody {
+  overflow: visible;
+}
+
 .editorHeader [data-slot="dialog-title"] {
   font-size: 20px;
   line-height: 1.4;

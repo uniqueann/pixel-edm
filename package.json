@@ -15,7 +15,8 @@
     "ci:push": "npm run lint && npm run typecheck && npm run format:check && npm test && npm run build",
     "ci:verify": "npm run ci:push && npm run test:e2e",
     "setup:hooks": "sh scripts/setup-git-hooks.sh",
-    "db:types": "node scripts/generate-types.mjs && prettier --write src/lib/supabase/database.types.ts"
+    "db:types": "node scripts/generate-types.mjs && prettier --write src/lib/supabase/database.types.ts",
+    "test:e2e:responsive": "playwright test --config tests/responsive.config.ts"
   },
   "engines": {
     "node": ">=22"

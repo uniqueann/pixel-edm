@@ -123,7 +123,10 @@ export function SettingsForm({
       </form>
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="link" className="mt-3 px-0">
+          <Button
+            variant="link"
+            className="mt-3 h-auto max-w-full whitespace-normal px-0 text-left"
+          >
             为什么需要实体地址？
           </Button>
         </DialogTrigger>
