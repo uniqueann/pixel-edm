@@ -12,9 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +37,7 @@ import {
   type TemplateVariable,
 } from "./model";
 import { TemplatePreview } from "./template-preview";
+import { TemplateGrid } from "./template-grid";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
@@ -201,29 +200,32 @@ export function Templates({
     }
   }, [data.page, filters, router]);
 
-  function openEditor(template: Template | null) {
-    returnFocus.current = document.activeElement as HTMLElement | null;
-    const nextName = template?.name ?? "";
-    const nextCategory = template?.category ?? "自定义";
-    const nextSubject = template?.subject ?? "";
-    const nextBody = template?.body ?? "";
-    setEditing(template);
-    setName(nextName);
-    setCategory(nextCategory);
-    setSubject(nextSubject);
-    setBody(nextBody);
-    setError("");
-    setActiveField("body");
-    setEditorView("edit");
-    setEditBaseline(
-      JSON.stringify({
-        name: nextName,
-        category: nextCategory,
-        subject: nextSubject,
-        body: nextBody,
-      }),
-    );
-  }
+  const openEditor = useCallback(
+    (template: Template | null) => {
+      returnFocus.current = document.activeElement as HTMLElement | null;
+      const nextName = template?.name ?? "";
+      const nextCategory = template?.category ?? "自定义";
+      const nextSubject = template?.subject ?? "";
+      const nextBody = template?.body ?? "";
+      setEditing(template);
+      setName(nextName);
+      setCategory(nextCategory);
+      setSubject(nextSubject);
+      setBody(nextBody);
+      setError("");
+      setActiveField("body");
+      setEditorView("edit");
+      setEditBaseline(
+        JSON.stringify({
+          name: nextName,
+          category: nextCategory,
+          subject: nextSubject,
+          body: nextBody,
+        }),
+      );
+    },
+    [setEditorView],
+  );
 
   function insertVariable(variable: TemplateVariable) {
     const token = `{{${variable}}}`;
@@ -248,53 +250,62 @@ export function Templates({
     });
   }
 
-  async function duplicate(template: Template) {
-    setBusy(true);
-    try {
-      const result = await duplicateTemplate({
-        workspace_id: workspace,
-        id: template.id,
-      });
-      if ("error" in result) toast.error(result.error);
-      else {
-        toast.success("模板副本已创建");
-        router.refresh();
+  const duplicate = useCallback(
+    async (template: Template) => {
+      setBusy(true);
+      try {
+        const result = await duplicateTemplate({
+          workspace_id: workspace,
+          id: template.id,
+        });
+        if ("error" in result) toast.error(result.error);
+        else {
+          toast.success("模板副本已创建");
+          router.refresh();
+        }
+      } catch {
+        toast.error("复制失败，请重试。");
+      } finally {
+        setBusy(false);
       }
-    } catch {
-      toast.error("复制失败，请重试。");
-    } finally {
-      setBusy(false);
-    }
-  }
+    },
+    [router, workspace],
+  );
 
-  async function performArchive(template: Template) {
-    setBusy(true);
-    try {
-      const result = await setTemplateArchived({
-        workspace_id: workspace,
-        id: template.id,
-        expected_version: template.version,
-        archived: !archived,
-      });
-      if ("error" in result) toast.error(result.error);
-      else {
-        toast.success(archived ? "模板已恢复" : "模板已归档");
-        router.refresh();
+  const performArchive = useCallback(
+    async (template: Template) => {
+      setBusy(true);
+      try {
+        const result = await setTemplateArchived({
+          workspace_id: workspace,
+          id: template.id,
+          expected_version: template.version,
+          archived: !archived,
+        });
+        if ("error" in result) toast.error(result.error);
+        else {
+          toast.success(archived ? "模板已恢复" : "模板已归档");
+          router.refresh();
+        }
+      } catch {
+        toast.error("操作失败，请重试。");
+      } finally {
+        setBusy(false);
       }
-    } catch {
-      toast.error("操作失败，请重试。");
-    } finally {
-      setBusy(false);
-    }
-  }
+    },
+    [archived, router, workspace],
+  );
 
-  function archive(template: Template) {
-    if (!archived) {
-      setArchiveConfirm(template);
-      return;
-    }
-    void performArchive(template);
-  }
+  const archive = useCallback(
+    (template: Template) => {
+      if (!archived) {
+        setArchiveConfirm(template);
+        return;
+      }
+      void performArchive(template);
+    },
+    [archived, performArchive, setArchiveConfirm],
+  );
 
   return (
     <>
@@ -393,75 +404,18 @@ export function Templates({
         {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
       </div>
       {data.items.length > 0 ? (
-        <div
-          className="my-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          aria-busy={pending}
-        >
-          {data.items.map((template) => (
-            <Card key={template.id} className="flex flex-col justify-between">
-              <CardContent className="flex flex-1 flex-col justify-between gap-4 pt-5">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                    <Badge variant="secondary">{template.category}</Badge>
-                    {template.default_key && (
-                      <Badge variant="outline">起步模板</Badge>
-                    )}
-                  </div>
-                  <h2 className="break-words line-clamp-1 text-base font-semibold">
-                    {template.name}
-                  </h2>
-                  <p className="hint m-0 break-words line-clamp-2 text-xs">
-                    {template.subject}
-                  </p>
-                </div>
-                <div className="flex w-full flex-wrap items-center justify-end gap-1.5 border-t border-border/60 pt-3">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setPreviewing(template)}
-                  >
-                    预览
-                  </Button>
-                  {canEdit && (
-                    <>
-                      {!archived && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() => openEditor(template)}
-                        >
-                          编辑
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={busy || templateQuotaExhausted}
-                        title={
-                          templateQuotaExhausted
-                            ? "已达套餐自定义模板上限"
-                            : undefined
-                        }
-                        onClick={() => duplicate(template)}
-                      >
-                        复制模板
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={busy}
-                        onClick={() => archive(template)}
-                      >
-                        {archived ? "恢复" : "归档"}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <TemplateGrid
+          items={data.items}
+          pending={pending}
+          busy={busy}
+          canEdit={canEdit}
+          archived={archived}
+          templateQuotaExhausted={templateQuotaExhausted}
+          onPreview={setPreviewing}
+          onEdit={openEditor}
+          onDuplicate={duplicate}
+          onArchive={archive}
+        />
       ) : (
         <div className="my-4" aria-busy={pending}>
           <EmptyState

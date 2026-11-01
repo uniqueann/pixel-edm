@@ -1,0 +1,676 @@
+{
+  "before": {
+    "metadata": {
+      "phase": "before-react-profile",
+      "reactProfilingBuild": true,
+      "importFileFlow": false,
+      "samples": 1,
+      "commit": "d602f9f4d18d38a3ebd77997180adc118f99463b",
+      "runtimeSourceSha256": "1d21621009b64de3191432ba0eac7af875670a54bad74083703582500256b035",
+      "lockfileSha256": "44178a4c414382eb796039fe6a2980bcd999dfc65f88d7582dabbf6c74871df5",
+      "buildId": "GCBWvK-vpIE6e_12zSLEE",
+      "browser": "156.0.8078.76",
+      "system": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "arch": "arm64",
+        "cpu": "Apple M5",
+        "node": "v24.14.1"
+      },
+      "conditions": {
+        "cpuRate": 4,
+        "latencyMs": 40,
+        "downloadBitsPerSecond": 1600000,
+        "uploadBitsPerSecond": 750000,
+        "fixtureDelayMs": 20
+      },
+      "definitions": {
+        "observedMs": "自动化开始操作至结果断言和两帧完成，含驱动及等待开销，不等同于 INP",
+        "inputFrames": "input 捕获至第二个 rAF 回调的观测时长，不等同于 INP",
+        "readyMs": "文档首屏标题、主题水合、字体和两帧后，含150ms观察窗；不是可交互时间标准",
+        "trace": "独立诊断采样；不混入五次指标"
+      },
+      "excludedSamples": []
+    },
+    "samples": [
+      {
+        "size": "boundary",
+        "device": "desktop",
+        "tasks": [
+          {
+            "name": "campaign-editor-first",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 47.5
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 21.6
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 21.2
+              }
+            }
+          },
+          {
+            "name": "campaign-editor-again",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 38.1
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 14.4
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 13.5
+              }
+            }
+          },
+          {
+            "name": "campaign-preview-first",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 41.6
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 13.6
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 12.5
+              }
+            }
+          },
+          {
+            "name": "campaign-preview-again",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 29.4
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 11.8
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 11.7
+              }
+            }
+          },
+          {
+            "name": "campaign-statistics-first",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 39.4
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 11.8
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 10.5
+              }
+            }
+          },
+          {
+            "name": "campaign-statistics-again",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 29.4
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 10.1
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 9.7
+              }
+            }
+          },
+          {
+            "name": "soft-campaigns-to-templates",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "Card": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 5.2
+              },
+              "CardContent": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 4.1
+              },
+              "Templates": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 17.4
+              }
+            }
+          },
+          {
+            "name": "soft-templates-to-campaigns",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 25.3
+              },
+              "Card": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 14.6
+              },
+              "CardContent": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 14
+              },
+              "Templates": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              }
+            }
+          },
+          {
+            "name": "template-editor-first",
+            "components": {
+              "Templates": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 12.8
+              },
+              "Card": {
+                "committedExecutions": 50,
+                "inclusiveDurationMs": 6.3
+              },
+              "CardContent": {
+                "committedExecutions": 50,
+                "inclusiveDurationMs": 4.9
+              },
+              "TemplatePreview": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 11.8
+              }
+            }
+          },
+          {
+            "name": "template-editor-again",
+            "components": {
+              "Templates": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 7.7
+              },
+              "Card": {
+                "committedExecutions": 50,
+                "inclusiveDurationMs": 3.3
+              },
+              "CardContent": {
+                "committedExecutions": 50,
+                "inclusiveDurationMs": 3.3
+              },
+              "TemplatePreview": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 3.9
+              }
+            }
+          },
+          {
+            "name": "template-typing-20",
+            "components": {
+              "Templates": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 182.9
+              },
+              "Card": {
+                "committedExecutions": 1000,
+                "inclusiveDurationMs": 51.7
+              },
+              "CardContent": {
+                "committedExecutions": 1000,
+                "inclusiveDurationMs": 48.8
+              },
+              "TemplatePreview": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 49.5
+              }
+            }
+          },
+          {
+            "name": "template-insert-variable",
+            "components": {
+              "Templates": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 8.3
+              },
+              "Card": {
+                "committedExecutions": 50,
+                "inclusiveDurationMs": 1.8
+              },
+              "CardContent": {
+                "committedExecutions": 50,
+                "inclusiveDurationMs": 1.8
+              },
+              "TemplatePreview": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 2.9
+              }
+            }
+          },
+          {
+            "name": "import-file-read",
+            "components": {
+              "ContactImporter": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 8.5
+              },
+              "Card": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 3.3
+              },
+              "CardContent": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 3.3
+              }
+            }
+          },
+          {
+            "name": "import-text-input",
+            "components": {
+              "ContactImporter": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "Card": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "CardContent": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              }
+            }
+          },
+          {
+            "name": "import-prepare-result",
+            "components": {
+              "ContactImporter": {
+                "committedExecutions": 3,
+                "inclusiveDurationMs": 70.1
+              },
+              "Card": {
+                "committedExecutions": 3,
+                "inclusiveDurationMs": 18.5
+              },
+              "CardContent": {
+                "committedExecutions": 3,
+                "inclusiveDurationMs": 17.1
+              },
+              "ContactImportResults": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 22.4
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "after": {
+    "metadata": {
+      "phase": "after-react-profile",
+      "reactProfilingBuild": true,
+      "importFileFlow": false,
+      "samples": 1,
+      "commit": "21eb16653d31a32141f0ef78906d5dc247e53716",
+      "runtimeSourceSha256": "fefbe7f8dfbed5988e173da51746cd9e56245eebebf8887fd6318f3e7c400bc4",
+      "lockfileSha256": "44178a4c414382eb796039fe6a2980bcd999dfc65f88d7582dabbf6c74871df5",
+      "buildId": "1mvmRkKD3cO-ofa7MTJyf",
+      "browser": "156.0.8078.76",
+      "system": {
+        "platform": "darwin",
+        "release": "27.0.0",
+        "arch": "arm64",
+        "cpu": "Apple M5",
+        "node": "v24.14.1"
+      },
+      "conditions": {
+        "cpuRate": 4,
+        "latencyMs": 40,
+        "downloadBitsPerSecond": 1600000,
+        "uploadBitsPerSecond": 750000,
+        "fixtureDelayMs": 20
+      },
+      "definitions": {
+        "observedMs": "自动化开始操作至结果断言和两帧完成，含驱动及等待开销，不等同于 INP",
+        "inputFrames": "input 捕获至第二个 rAF 回调的观测时长，不等同于 INP",
+        "readyMs": "文档首屏标题、主题水合、字体和两帧后，含150ms观察窗；不是可交互时间标准",
+        "trace": "独立诊断采样；不混入五次指标"
+      },
+      "excludedSamples": []
+    },
+    "samples": [
+      {
+        "size": "boundary",
+        "device": "desktop",
+        "tasks": [
+          {
+            "name": "campaign-editor-first",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 18.5
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 8.9
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 8.9
+              }
+            }
+          },
+          {
+            "name": "campaign-editor-again",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 14.5
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 6.6
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 6.5
+              }
+            }
+          },
+          {
+            "name": "campaign-preview-first",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 17.8
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 5.4
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 5
+              }
+            }
+          },
+          {
+            "name": "campaign-preview-again",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 15.1
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 3.8
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 3.8
+              }
+            }
+          },
+          {
+            "name": "campaign-statistics-first",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 17.6
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 6
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 6
+              }
+            }
+          },
+          {
+            "name": "campaign-statistics-again",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 14.9
+              },
+              "Card": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 5.3
+              },
+              "CardContent": {
+                "committedExecutions": 40,
+                "inclusiveDurationMs": 5.3
+              }
+            }
+          },
+          {
+            "name": "soft-campaigns-to-templates",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "Card": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 2.3
+              },
+              "CardContent": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 2
+              },
+              "Templates": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 7.9
+              },
+              "TemplateGrid": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 2.8
+              }
+            }
+          },
+          {
+            "name": "soft-templates-to-campaigns",
+            "components": {
+              "Campaigns": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 11.3
+              },
+              "Card": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 6.4
+              },
+              "CardContent": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 6.4
+              },
+              "Templates": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "TemplateGrid": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              }
+            }
+          },
+          {
+            "name": "template-editor-first",
+            "components": {
+              "Templates": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 3
+              },
+              "TemplateGrid": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "Card": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "CardContent": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "TemplatePreview": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 6.3
+              }
+            }
+          },
+          {
+            "name": "template-editor-again",
+            "components": {
+              "Templates": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 1.9
+              },
+              "TemplateGrid": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "Card": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "CardContent": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "TemplatePreview": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 2
+              }
+            }
+          },
+          {
+            "name": "template-typing-20",
+            "components": {
+              "Templates": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 73.4
+              },
+              "TemplateGrid": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "Card": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "CardContent": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "TemplatePreview": {
+                "committedExecutions": 20,
+                "inclusiveDurationMs": 26.6
+              }
+            }
+          },
+          {
+            "name": "template-insert-variable",
+            "components": {
+              "Templates": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 2.5
+              },
+              "TemplateGrid": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "Card": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "CardContent": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "TemplatePreview": {
+                "committedExecutions": 1,
+                "inclusiveDurationMs": 0.8
+              }
+            }
+          },
+          {
+            "name": "import-file-read",
+            "components": {
+              "ContactImporter": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 3
+              },
+              "Card": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 2
+              },
+              "CardContent": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 2
+              }
+            }
+          },
+          {
+            "name": "import-text-input",
+            "components": {
+              "ContactImporter": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "Card": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              },
+              "CardContent": {
+                "committedExecutions": 0,
+                "inclusiveDurationMs": 0
+              }
+            }
+          },
+          {
+            "name": "import-prepare-result",
+            "components": {
+              "ContactImporter": {
+                "committedExecutions": 3,
+                "inclusiveDurationMs": 28.7
+              },
+              "Card": {
+                "committedExecutions": 3,
+                "inclusiveDurationMs": 6.3
+              },
+              "CardContent": {
+                "committedExecutions": 3,
+                "inclusiveDurationMs": 6.2
+              },
+              "ContactImportResults": {
+                "committedExecutions": 2,
+                "inclusiveDurationMs": 6.5
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

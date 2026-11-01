@@ -1,0 +1,4511 @@
+{
+  "tests": 15,
+  "passed": 15,
+  "failed": 0,
+  "engines": [
+    {
+      "environment": {
+        "project": "chrome",
+        "browserVersion": "156.0.8078.76",
+        "phase": "test",
+        "fixture": "本地 PGlite 隔离夹具",
+        "zoom": "根字号模拟，非浏览器原生缩放"
+      },
+      "scenarios": 113,
+      "records": [
+        {
+          "name": "dashboard-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "template-390-844-text100-edit",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 491,
+            "scrollHeight": 1135,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-390-844-text100-preview",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 491,
+            "scrollHeight": 1319,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 356,
+            "scrollWidth": 356,
+            "height": 635,
+            "scrollHeight": 635
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 356,
+            "scrollWidth": 356,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 475,
+            "scrollHeight": 1225,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-1440-960-text100-edit",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 1118,
+            "scrollWidth": 1118,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 678,
+            "scrollHeight": 1067,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-1440-960-text100-preview",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 1118,
+            "scrollWidth": 1118,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 678,
+            "scrollHeight": 1067,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 738,
+            "scrollWidth": 738,
+            "height": 511,
+            "scrollHeight": 511
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 718,
+            "scrollWidth": 718,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 627,
+            "scrollHeight": 854,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-320-600-text200-edit",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 538,
+            "scrollHeight": 538
+          },
+          "editor": {
+            "height": 1323,
+            "scrollHeight": 1323,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 319,
+            "scrollHeight": 1623
+          }
+        },
+        {
+          "name": "template-320-600-text200-preview",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 538,
+            "scrollHeight": 538
+          },
+          "editor": {
+            "height": 2379,
+            "scrollHeight": 2379,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 317,
+            "scrollHeight": 2679
+          }
+        },
+        {
+          "name": "contacts-import-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 254,
+            "scrollWidth": 254,
+            "height": 538,
+            "scrollHeight": 1089
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-page-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 254,
+            "scrollWidth": 254,
+            "height": 538,
+            "scrollHeight": 1724
+          },
+          "editor": {
+            "height": 1781,
+            "scrollHeight": 1781,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 255,
+            "scrollHeight": 2435
+          }
+        },
+        {
+          "name": "template-820-360-text100-edit",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 770,
+            "scrollWidth": 770,
+            "height": 322,
+            "scrollHeight": 322
+          },
+          "editor": {
+            "height": 772,
+            "scrollHeight": 772,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 197,
+            "scrollHeight": 948
+          }
+        },
+        {
+          "name": "template-820-360-text100-preview",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 770,
+            "scrollWidth": 770,
+            "height": 322,
+            "scrollHeight": 322
+          },
+          "editor": {
+            "height": 892,
+            "scrollHeight": 892,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 193,
+            "scrollHeight": 1068
+          }
+        },
+        {
+          "name": "contacts-import-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 738,
+            "scrollWidth": 738,
+            "height": 322,
+            "scrollHeight": 511
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 408,
+            "scrollWidth": 408,
+            "height": 322,
+            "scrollHeight": 782
+          },
+          "editor": {
+            "height": 969,
+            "scrollHeight": 969,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 216,
+            "scrollHeight": 1142
+          }
+        },
+        {
+          "name": "template-320-256-text100-edit",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 228,
+            "scrollHeight": 228
+          },
+          "editor": {
+            "height": 1095,
+            "scrollHeight": 1095,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 81,
+            "scrollHeight": 1285
+          }
+        },
+        {
+          "name": "template-320-256-text100-preview",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 228,
+            "scrollHeight": 228
+          },
+          "editor": {
+            "height": 1627,
+            "scrollHeight": 1627,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 77,
+            "scrollHeight": 1817
+          }
+        },
+        {
+          "name": "contacts-import-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 286,
+            "scrollWidth": 286,
+            "height": 228,
+            "scrollHeight": 680
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 286,
+            "scrollWidth": 286,
+            "height": 228,
+            "scrollHeight": 1010
+          },
+          "editor": {
+            "height": 1271,
+            "scrollHeight": 1271,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 93,
+            "scrollHeight": 1462
+          }
+        },
+        {
+          "name": "template-390-844-text200-edit",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 353,
+            "scrollHeight": 1219,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-390-844-text200-preview",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 353,
+            "scrollHeight": 1925,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 324,
+            "scrollWidth": 324,
+            "height": 758,
+            "scrollHeight": 902
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-page-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 324,
+            "scrollWidth": 324,
+            "height": 758,
+            "scrollHeight": 1547
+          },
+          "editor": {
+            "height": 1647,
+            "scrollHeight": 1647,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 555,
+            "scrollHeight": 2170
+          }
+        },
+        {
+          "name": "login",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "register",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "forgot-password",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "reset-password",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "disabled",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "invite-invalid",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "setup",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "unsubscribe-invalid.invalid",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "missing-responsive-page",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        }
+      ]
+    },
+    {
+      "environment": {
+        "project": "firefox",
+        "browserVersion": "155.0",
+        "phase": "test",
+        "fixture": "本地 PGlite 隔离夹具",
+        "zoom": "根字号模拟，非浏览器原生缩放"
+      },
+      "scenarios": 113,
+      "records": [
+        {
+          "name": "dashboard-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "template-390-844-text100-edit",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 491,
+            "scrollHeight": 1135,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-390-844-text100-preview",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 491,
+            "scrollHeight": 1320,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 356,
+            "scrollWidth": 356,
+            "height": 635,
+            "scrollHeight": 635
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 356,
+            "scrollWidth": 356,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 475,
+            "scrollHeight": 1225,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-1440-960-text100-edit",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 1118,
+            "scrollWidth": 1118,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 678,
+            "scrollHeight": 1067,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-1440-960-text100-preview",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 1118,
+            "scrollWidth": 1118,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 678,
+            "scrollHeight": 1067,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 738,
+            "scrollWidth": 738,
+            "height": 511,
+            "scrollHeight": 511
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 718,
+            "scrollWidth": 718,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 627,
+            "scrollHeight": 854,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-320-600-text200-edit",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 538,
+            "scrollHeight": 538
+          },
+          "editor": {
+            "height": 1323,
+            "scrollHeight": 1323,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 317,
+            "scrollHeight": 1623
+          }
+        },
+        {
+          "name": "template-320-600-text200-preview",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 538,
+            "scrollHeight": 538
+          },
+          "editor": {
+            "height": 2380,
+            "scrollHeight": 2380,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 317,
+            "scrollHeight": 2680
+          }
+        },
+        {
+          "name": "contacts-import-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 254,
+            "scrollWidth": 254,
+            "height": 538,
+            "scrollHeight": 1089
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-page-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 254,
+            "scrollWidth": 254,
+            "height": 538,
+            "scrollHeight": 538
+          },
+          "editor": {
+            "height": 1823,
+            "scrollHeight": 1823,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 231,
+            "scrollHeight": 2478
+          }
+        },
+        {
+          "name": "template-820-360-text100-edit",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 770,
+            "scrollWidth": 770,
+            "height": 322,
+            "scrollHeight": 322
+          },
+          "editor": {
+            "height": 772,
+            "scrollHeight": 772,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 193,
+            "scrollHeight": 948
+          }
+        },
+        {
+          "name": "template-820-360-text100-preview",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 770,
+            "scrollWidth": 770,
+            "height": 322,
+            "scrollHeight": 322
+          },
+          "editor": {
+            "height": 892,
+            "scrollHeight": 892,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 193,
+            "scrollHeight": 1068
+          }
+        },
+        {
+          "name": "contacts-import-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 738,
+            "scrollWidth": 738,
+            "height": 322,
+            "scrollHeight": 511
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 408,
+            "scrollWidth": 408,
+            "height": 322,
+            "scrollHeight": 322
+          },
+          "editor": {
+            "height": 969,
+            "scrollHeight": 969,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 185,
+            "scrollHeight": 1142
+          }
+        },
+        {
+          "name": "template-320-256-text100-edit",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 228,
+            "scrollHeight": 228
+          },
+          "editor": {
+            "height": 1095,
+            "scrollHeight": 1095,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 77,
+            "scrollHeight": 1284
+          }
+        },
+        {
+          "name": "template-320-256-text100-preview",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 228,
+            "scrollHeight": 228
+          },
+          "editor": {
+            "height": 1628,
+            "scrollHeight": 1628,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 77,
+            "scrollHeight": 1817
+          }
+        },
+        {
+          "name": "contacts-import-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 286,
+            "scrollWidth": 286,
+            "height": 228,
+            "scrollHeight": 679
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 286,
+            "scrollWidth": 286,
+            "height": 228,
+            "scrollHeight": 228
+          },
+          "editor": {
+            "height": 1271,
+            "scrollHeight": 1271,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 69,
+            "scrollHeight": 1462
+          }
+        },
+        {
+          "name": "template-390-844-text200-edit",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 353,
+            "scrollHeight": 1219,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-390-844-text200-preview",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 353,
+            "scrollHeight": 1926,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 324,
+            "scrollWidth": 324,
+            "height": 758,
+            "scrollHeight": 902
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-page-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 324,
+            "scrollWidth": 324,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 1647,
+            "scrollHeight": 1647,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 525,
+            "scrollHeight": 2171
+          }
+        },
+        {
+          "name": "login",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "register",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "forgot-password",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "reset-password",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "disabled",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "invite-invalid",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "setup",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "unsubscribe-invalid.invalid",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "missing-responsive-page",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        }
+      ]
+    },
+    {
+      "environment": {
+        "project": "webkit",
+        "browserVersion": "26.6",
+        "phase": "test",
+        "fixture": "本地 PGlite 隔离夹具",
+        "zoom": "根字号模拟，非浏览器原生缩放"
+      },
+      "scenarios": 113,
+      "records": [
+        {
+          "name": "dashboard-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-320-light",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-390-light",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-820-light",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-1440-light",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "dashboard-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "contacts-import-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "templates-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "team-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "help-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-320-dark",
+          "width": 320,
+          "height": 960,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-390-dark",
+          "width": 390,
+          "height": 960,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-820-dark",
+          "width": 820,
+          "height": 960,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "logs-1440-dark",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "template-390-844-text100-edit",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 491,
+            "scrollHeight": 1135,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-390-844-text100-preview",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 491,
+            "scrollHeight": 1319,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 356,
+            "scrollWidth": 356,
+            "height": 635,
+            "scrollHeight": 635
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-844-text100",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 356,
+            "scrollWidth": 356,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 475,
+            "scrollHeight": 1225,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-1440-960-text100-edit",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 1118,
+            "scrollWidth": 1118,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 678,
+            "scrollHeight": 1067,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-1440-960-text100-preview",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 1118,
+            "scrollWidth": 1118,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 678,
+            "scrollHeight": 1067,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 738,
+            "scrollWidth": 738,
+            "height": 511,
+            "scrollHeight": 511
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-1440-960-text100",
+          "width": 1440,
+          "height": 960,
+          "scrollWidth": 1440,
+          "overflow": [],
+          "dialog": {
+            "width": 718,
+            "scrollWidth": 718,
+            "height": 862,
+            "scrollHeight": 862
+          },
+          "editor": {
+            "height": 627,
+            "scrollHeight": 854,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-320-600-text200-edit",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 538,
+            "scrollHeight": 538
+          },
+          "editor": {
+            "height": 1323,
+            "scrollHeight": 1323,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 317,
+            "scrollHeight": 1623
+          }
+        },
+        {
+          "name": "template-320-600-text200-preview",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 538,
+            "scrollHeight": 538
+          },
+          "editor": {
+            "height": 2379,
+            "scrollHeight": 2379,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 317,
+            "scrollHeight": 2679
+          }
+        },
+        {
+          "name": "contacts-import-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 254,
+            "scrollWidth": 254,
+            "height": 538,
+            "scrollHeight": 1089
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-page-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-600-text200",
+          "width": 320,
+          "height": 600,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 254,
+            "scrollWidth": 254,
+            "height": 538,
+            "scrollHeight": 1787
+          },
+          "editor": {
+            "height": 1823,
+            "scrollHeight": 1823,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 251,
+            "scrollHeight": 2477
+          }
+        },
+        {
+          "name": "template-820-360-text100-edit",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 770,
+            "scrollWidth": 770,
+            "height": 322,
+            "scrollHeight": 322
+          },
+          "editor": {
+            "height": 772,
+            "scrollHeight": 772,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 193,
+            "scrollHeight": 948
+          }
+        },
+        {
+          "name": "template-820-360-text100-preview",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 770,
+            "scrollWidth": 770,
+            "height": 322,
+            "scrollHeight": 322
+          },
+          "editor": {
+            "height": 892,
+            "scrollHeight": 892,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 193,
+            "scrollHeight": 1068
+          }
+        },
+        {
+          "name": "contacts-import-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 738,
+            "scrollWidth": 738,
+            "height": 322,
+            "scrollHeight": 511
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-820-360-text100",
+          "width": 820,
+          "height": 360,
+          "scrollWidth": 820,
+          "overflow": [],
+          "dialog": {
+            "width": 408,
+            "scrollWidth": 408,
+            "height": 322,
+            "scrollHeight": 830
+          },
+          "editor": {
+            "height": 969,
+            "scrollHeight": 969,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 185,
+            "scrollHeight": 1142
+          }
+        },
+        {
+          "name": "template-320-256-text100-edit",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 228,
+            "scrollHeight": 228
+          },
+          "editor": {
+            "height": 1095,
+            "scrollHeight": 1095,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 79,
+            "scrollHeight": 1285
+          }
+        },
+        {
+          "name": "template-320-256-text100-preview",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 294,
+            "scrollWidth": 294,
+            "height": 228,
+            "scrollHeight": 228
+          },
+          "editor": {
+            "height": 1627,
+            "scrollHeight": 1627,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 77,
+            "scrollHeight": 1817
+          }
+        },
+        {
+          "name": "contacts-import-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 286,
+            "scrollWidth": 286,
+            "height": 228,
+            "scrollHeight": 680
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-320-256-text100",
+          "width": 320,
+          "height": 256,
+          "scrollWidth": 320,
+          "overflow": [],
+          "dialog": {
+            "width": 286,
+            "scrollWidth": 286,
+            "height": 228,
+            "scrollHeight": 1056
+          },
+          "editor": {
+            "height": 1271,
+            "scrollHeight": 1271,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 64,
+            "scrollHeight": 1462
+          }
+        },
+        {
+          "name": "template-390-844-text200-edit",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 353,
+            "scrollHeight": 1219,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "template-390-844-text200-preview",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 364,
+            "scrollWidth": 364,
+            "height": 758,
+            "scrollHeight": 758
+          },
+          "editor": {
+            "height": 353,
+            "scrollHeight": 1925,
+            "overflowY": "auto"
+          },
+          "reflow": false,
+          "viewport": {
+            "height": 0,
+            "scrollHeight": 0
+          }
+        },
+        {
+          "name": "contacts-import-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "campaigns-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 324,
+            "scrollWidth": 324,
+            "height": 758,
+            "scrollHeight": 902
+          },
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-page-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "settings-390-844-text200",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": {
+            "width": 324,
+            "scrollWidth": 324,
+            "height": 758,
+            "scrollHeight": 1583
+          },
+          "editor": {
+            "height": 1647,
+            "scrollHeight": 1647,
+            "overflowY": "visible"
+          },
+          "reflow": true,
+          "viewport": {
+            "height": 535,
+            "scrollHeight": 2170
+          }
+        },
+        {
+          "name": "login",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "register",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "forgot-password",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "reset-password",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "disabled",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "invite-invalid",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "setup",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "unsubscribe-invalid.invalid",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        },
+        {
+          "name": "missing-responsive-page",
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "overflow": [],
+          "dialog": null,
+          "editor": null,
+          "reflow": false,
+          "viewport": null
+        }
+      ]
+    }
+  ],
+  "sourceCommit": "21eb16653d31a32141f0ef78906d5dc247e53716"
+}

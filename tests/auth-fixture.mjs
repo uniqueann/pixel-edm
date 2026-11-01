@@ -258,11 +258,30 @@ async function completeChannelTest(attemptId, status = "accepted") {
     true,
   );
 }
+// 性能夹具只由独立生产构建入口启用，默认功能回归保持原来的数据和时序。
+const performanceFixture = process.env.EDM_PERFORMANCE
+  ? await (
+      await import("./performance/fixture.mjs")
+    ).createPerformanceFixture(db, [
+      { userId: a, workspaceId: wa, size: "normal" },
+      {
+        userId: templateUser,
+        workspaceId: templateWorkspace,
+        size: "boundary",
+      },
+    ])
+  : null;
 const server = createServer(async (req, res) => {
+  performanceFixture?.observe(req, res);
   // Playwright 的 API 请求会复用 keep-alive。Node 默认空闲 5 秒就拆连接，
   // 与下一次 POST（常见于用例 afterEach 重置）撞上时客户端只看到 socket hang up。
   res.setHeader("Connection", "close");
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3100");
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    process.env.EDM_PERFORMANCE
+      ? "http://localhost:3110"
+      : "http://localhost:3100",
+  );
   res.setHeader(
     "Access-Control-Allow-Headers",
     "authorization,apikey,content-type,x-client-info,x-supabase-api-version,accept-profile,content-profile,prefer",
@@ -282,6 +301,11 @@ const server = createServer(async (req, res) => {
     let body = "";
     for await (const chunk of req) body += chunk;
     const input = body ? JSON.parse(body) : {};
+    if (
+      performanceFixture &&
+      (await performanceFixture.handle(url, input, send))
+    )
+      return;
     if (url.pathname === "/health") return send({ ok: true });
     if (url.pathname === "/__fixtures/onboarding") {
       if (req.method === "GET")
@@ -450,6 +474,15 @@ const server = createServer(async (req, res) => {
           scenarioUser,
           `select edm.save_campaign('${JSON.stringify(payload)}'::jsonb)`,
         );
+        // 分页回归只扩充隔离工作区的草稿，不创建发送任务。
+        const campaignCount = Math.min(100, Number(input.campaignCount) || 1);
+        if (campaignCount > 1)
+          await db.query(
+            `insert into edm.campaigns(workspace_id,name,template_id,audience_type,variables,created_by,updated_by)
+             select $1,'分页活动 '||lpad(n::text,3,'0'),$2,'all','{}'::jsonb,$3,$3
+             from generate_series(1,$4) n`,
+            [workspaceId, templateId, scenarioUser, campaignCount - 1],
+          );
       }
       if (input.archivedTemplates)
         await db.query(

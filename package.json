@@ -16,7 +16,9 @@
     "ci:verify": "npm run ci:push && npm run test:e2e",
     "setup:hooks": "sh scripts/setup-git-hooks.sh",
     "db:types": "node scripts/generate-types.mjs && prettier --write src/lib/supabase/database.types.ts",
-    "test:e2e:responsive": "playwright test --config tests/responsive.config.ts"
+    "test:e2e:responsive": "playwright test --config tests/responsive.config.ts",
+    "test:performance": "node tests/performance/run.mjs",
+    "test:performance:compare": "node tests/performance/compare.mjs"
   },
   "engines": {
     "node": ">=22"
