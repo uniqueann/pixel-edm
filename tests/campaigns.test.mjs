@@ -456,4 +456,61 @@ test("P3 活动草稿、工作区权限、归档模板兼容与业务审计", as
       ]);
     },
   );
+
+  await t.test(
+    "page_size 50 与 100 原样返回，摘要 RPC 仍拒绝超过 20 个活动",
+    async () => {
+      for (let index = 1; index <= 25; index += 1) {
+        await rpc("save_campaign", {
+          workspace_id: workspace,
+          name: `分页样本-${String(index).padStart(2, "0")}`,
+          template_id: template,
+          audience_type: "all",
+          variables: {},
+        });
+      }
+      const page50 = await rpc("list_campaigns", {
+        workspace_id: workspace,
+        q: "分页样本",
+        page_size: 50,
+      });
+      assert.equal(page50.total, 25);
+      assert.equal(page50.page, 1);
+      assert.equal(page50.page_size, 50);
+      assert.equal(page50.items.length, 25);
+
+      const page100 = await rpc("list_campaigns", {
+        workspace_id: workspace,
+        q: "分页样本",
+        page_size: 100,
+      });
+      assert.equal(page100.page_size, 100);
+      assert.equal(page100.items.length, 25);
+
+      const secondPage = await rpc("list_campaigns", {
+        workspace_id: workspace,
+        q: "分页样本",
+        page: 2,
+        page_size: 20,
+      });
+      assert.equal(secondPage.page, 2);
+      assert.equal(secondPage.page_size, 20);
+      assert.equal(secondPage.items.length, 5);
+
+      const ids = page100.items.map((item) => item.id);
+      await assert.rejects(
+        rpc("get_campaign_delivery_summaries", {
+          workspace_id: workspace,
+          campaign_ids: ids.slice(0, 21),
+        }),
+        /活动列表参数无效/,
+      );
+      const summaries = await rpc("get_campaign_delivery_summaries", {
+        workspace_id: workspace,
+        campaign_ids: ids.slice(0, 20),
+      });
+      assert.ok(Array.isArray(summaries));
+      assert.ok(summaries.length <= 20);
+    },
+  );
 });

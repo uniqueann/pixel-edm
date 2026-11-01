@@ -443,3 +443,44 @@ test("活动页长名称、响应式筛选、草稿编辑与手机键盘", async
   await expect(editor).toBeHidden();
   await expect(editButton).toBeFocused();
 });
+
+test("活动列表每页 20/50/100 与地址栏、分页控件一致", async ({ page }) => {
+  await login(page);
+  await page.goto("/campaigns");
+  await page.getByRole("button", { name: "新建活动", exact: true }).click();
+  const editor = page.getByRole("dialog");
+  await editor.getByLabel("活动名称").fill("分页条数验收");
+  await editor
+    .getByLabel("邮件模板", { exact: true })
+    .selectOption({ label: "欢迎系列 · 欢迎新客户" });
+  await editor.getByLabel(/发件人/).fill("店主");
+  await editor.getByLabel(/优惠信息/).fill("PAGE-SIZE");
+  await editor.getByRole("button", { name: "保存活动草稿" }).click();
+  await expect(editor).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "分页条数验收", exact: true }),
+  ).toBeVisible();
+
+  const pageSize = page.getByLabel("每页显示条数");
+  await expect(pageSize).toHaveValue("20");
+
+  await pageSize.selectOption("50");
+  await expect(page).toHaveURL(/page_size=50/);
+  await expect(pageSize).toHaveValue("50");
+  await expect(
+    page.getByRole("heading", { name: "分页条数验收", exact: true }),
+  ).toBeVisible();
+
+  await pageSize.selectOption("100");
+  await expect(page).toHaveURL(/page_size=100/);
+  await expect(pageSize).toHaveValue("100");
+
+  await page.goto("/campaigns?page_size=50&page=1");
+  await expect(page.getByLabel("每页显示条数")).toHaveValue("50");
+  await expect(page.getByText("活动加载失败")).toHaveCount(0);
+  await expect(page.getByText("正式发送进度加载失败")).toHaveCount(0);
+
+  await page.getByLabel("每页显示条数").selectOption("20");
+  await expect(page).toHaveURL(/page_size=20/);
+  await expect(page.getByLabel("每页显示条数")).toHaveValue("20");
+});
