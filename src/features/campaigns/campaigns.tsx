@@ -428,23 +428,35 @@ export function Campaigns({
   }, [filters, q, router]);
 
   useEffect(() => {
-    if (filters.page && Number(filters.page) !== campaigns.page) {
-      const params = new URLSearchParams({
-        ...filters,
-        page: String(campaigns.page),
-      });
-      router.replace(`/campaigns?${params}`);
-    }
-  }, [campaigns.page, filters, router]);
+    const pageDiffers = Boolean(
+      filters.page && Number(filters.page) !== campaigns.page,
+    );
+    const sizeDiffers = Boolean(
+      filters.page_size && Number(filters.page_size) !== campaigns.page_size,
+    );
+    if (!pageDiffers && !sizeDiffers) return;
+    const params = new URLSearchParams({
+      ...filters,
+      page: String(campaigns.page),
+      ...(sizeDiffers ? { page_size: String(campaigns.page_size) } : {}),
+    });
+    router.replace(`/campaigns?${params}`);
+  }, [campaigns.page, campaigns.page_size, filters, router]);
+
+  const campaignListQuery = useCallback(
+    () => ({
+      status: filters.status,
+      q: filters.q,
+      campaign_status: filters.campaign_status,
+      page: filters.page,
+      page_size: filters.page_size,
+    }),
+    [filters],
+  );
 
   async function refreshCampaigns() {
     try {
-      const fresh = await listCampaigns({
-        status: filters.status,
-        q: filters.q,
-        campaign_status: filters.campaign_status,
-        page: filters.page,
-      });
+      const fresh = await listCampaigns(campaignListQuery());
       setListOverride(fresh);
     } catch (error) {
       unstable_rethrow(error);
@@ -461,17 +473,14 @@ export function Campaigns({
       return;
     const timer = window.setInterval(() => {
       if (listOverride) {
-        void listCampaigns({
-          status: filters.status,
-          q: filters.q,
-          campaign_status: filters.campaign_status,
-          page: filters.page,
-        }).then((fresh) => setListOverride(fresh));
+        void listCampaigns(campaignListQuery()).then((fresh) =>
+          setListOverride(fresh),
+        );
       }
       router.refresh();
     }, 5000);
     return () => window.clearInterval(timer);
-  }, [campaigns.items, filters, listOverride, router]);
+  }, [campaigns.items, campaignListQuery, listOverride, router]);
 
   async function loadDeliveryTasks(
     campaign: CampaignSummary,

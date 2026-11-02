@@ -17,6 +17,12 @@ import {
   type WorkspaceCampaignStatistics,
   deliveryResultFilters,
 } from "./model";
+import {
+  assembleCampaignListPage,
+  chunkItems,
+  DELIVERY_SUMMARY_BATCH_SIZE,
+  parseCampaignListQuery,
+} from "./list-page";
 
 async function authorizedWorkspace(workspaceId: string, write = false) {
   const context = await getContext();
@@ -56,40 +62,37 @@ export async function listCampaigns(input: {
 }) {
   const { workspace } = await getContext();
   const db = await authorizedWorkspace(workspace.id);
-  const { data, error } = await db.rpc("list_campaigns", {
-    payload: {
-      workspace_id: workspace.id,
-      archived: input.status === "archived",
-      q: (input.q ?? "").slice(0, 200),
-      campaign_status: input.campaign_status ?? "",
-      page: Math.min(
-        1000000,
-        Math.max(1, Number.parseInt(input.page ?? "1") || 1),
-      ),
-      page_size: Math.min(
-        100,
-        Math.max(1, Number.parseInt(input.page_size ?? "20") || 20),
-      ),
+  const query = parseCampaignListQuery(input);
+  const result = await assembleCampaignListPage(
+    query,
+    async (page, pageSize) => {
+      const { data, error } = await db.rpc("list_campaigns", {
+        payload: {
+          workspace_id: workspace.id,
+          archived: input.status === "archived",
+          q: (input.q ?? "").slice(0, 200),
+          campaign_status: input.campaign_status ?? "",
+          page,
+          page_size: pageSize,
+        },
+      });
+      if (error || !data) throw new Error("活动加载失败，请重试。");
+      return data as unknown as CampaignList;
     },
-  });
-  if (error) throw new Error("活动加载失败，请重试。");
-  const result = data as unknown as CampaignList;
+  );
   if (!result.items.length) return result;
-  // 摘要 RPC 每次最多接受 20 个活动，列表允许每页显示 100 条。
-  const batches = [];
-  for (let offset = 0; offset < result.items.length; offset += 20) {
-    batches.push(
+  // 摘要 RPC 每次最多接受 20 个活动。50/100 条一页时按批拉取，避免整页 ID 一次提交。
+  const batches = chunkItems(result.items, DELIVERY_SUMMARY_BATCH_SIZE);
+  const summaries = await Promise.all(
+    batches.map((batch) =>
       db.rpc("get_campaign_delivery_summaries", {
         payload: {
           workspace_id: workspace.id,
-          campaign_ids: result.items
-            .slice(offset, offset + 20)
-            .map((item) => item.id),
+          campaign_ids: batch.map((item) => item.id),
         },
       }),
-    );
-  }
-  const summaries = await Promise.all(batches);
+    ),
+  );
   if (summaries.some((result) => result.error))
     throw new Error("正式发送进度加载失败，请重试。");
   const byCampaign = new Map(
