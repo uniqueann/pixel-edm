@@ -31,6 +31,24 @@ async function login(
 const guide = (page: Page) => page.getByTestId("onboarding-guide");
 const item = (page: Page, key: string) =>
   page.locator(`[data-preparation='${key}']`);
+async function expandGuide(page: Page) {
+  const toggle = guide(page).locator(
+    'button[aria-controls="preparation-content"]',
+  );
+  await expect(toggle).toBeVisible();
+  // 整页刷新后先等服务端标记完成水合，避免首次点击丢失。
+  await expect
+    .poll(
+      async () => {
+        if ((await toggle.getAttribute("aria-expanded")) === "true")
+          return "true";
+        await toggle.click({ timeout: 1000 }).catch(() => {});
+        return toggle.getAttribute("aria-expanded");
+      },
+      { timeout: 8000 },
+    )
+    .toBe("true");
+}
 
 test("自动初始化失败只手动重试，重复进入不创建第二个工作区", async ({
   page,
@@ -204,11 +222,13 @@ test("准备状态随刷新更新，默认署名、归档模板和失效通道�
   await scenario(request, { state: "ready" });
   await page.reload();
   await expect(guide(page)).toContainText("4/4 项基础准备已完成");
+  await expandGuide(page);
   await expect(
     guide(page).getByRole("link", { name: "建议：完善我的署名" }),
   ).toBeVisible();
   await scenario(request, { state: "invalidated" });
   await page.reload();
+  await expandGuide(page);
   await expect(guide(page)).toContainText("3/4 项基础准备已完成");
   await expect(item(page, "channels")).toContainText("待完成");
   await expect(item(page, "channels")).toContainText("重新连接");
@@ -446,6 +466,7 @@ test("设置页引导深链保持返回清单可见，并露出对应分区", as
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 960 });
     await page.goto("/dashboard");
+    await expandGuide(page);
     await guide(page)
       .getByRole("link", { name: "补充邮件页脚实体地址", exact: true })
       .click();
@@ -517,6 +538,7 @@ test("总览清单滚过顶栏时不会透出文字", async ({ page, request }) 
     content: "nextjs-portal { display: none !important; }",
   });
   await expect(guide(page)).toBeVisible();
+  await expandGuide(page);
   for (const theme of ["light", "dark"]) {
     await page.evaluate((value) => {
       document.documentElement.classList.toggle("dark", value === "dark");

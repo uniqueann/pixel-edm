@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Plus } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
@@ -40,6 +41,7 @@ import { mailingAddressProblem } from "@/lib/mailing-address";
 import { isDefaultSenderName } from "@/lib/sender-name";
 import { channelSetupCopy } from "@/features/channels/channel-presentation";
 import { PreparationGuide } from "@/features/onboarding/preparation-guide";
+import { preparationHref } from "@/features/onboarding/links";
 import {
   preparationWritePermission,
   type PreparationFacts,
@@ -325,6 +327,14 @@ export default async function Page({
       primaryChannel.credential_configured,
     );
     const canWrite = preparationWritePermission(role, deliveryPlan);
+    // 页头动作与空态卡头共用同一目标：无模板时先建模板，避免落到无法新建的活动页。
+    const createTarget: "templates" | "campaigns" | null =
+      canWrite === true
+        ? templateSummary?.active_count === 0
+          ? "templates"
+          : "campaigns"
+        : null;
+    const createLabel = createTarget === "templates" ? "创建模板" : "创建活动";
     const facts: PreparationFacts = {
       role,
       canWrite,
@@ -373,6 +383,16 @@ export default async function Page({
         <PageHeader
           title={workspace.name}
           description="管理客户、设计模板并高效发送营销邮件。"
+          actions={
+            createTarget ? (
+              <Button asChild>
+                <Link href={preparationHref(createTarget)}>
+                  <Plus aria-hidden />
+                  {createLabel}
+                </Link>
+              </Button>
+            ) : undefined
+          }
         />
         {!hasCampaigns && guide}
         <div className="stat-grid">
@@ -422,18 +442,26 @@ export default async function Page({
                 ? "活动统计暂时无法读取，请重试核对。"
                 : "打开/点击统计需专业版或团队版。"}
         </p>
-        {hasCampaigns && guide}
         <div className={styles.recent}>
           <Card>
             <CardContent>
               <div className="section-heading mb-3">
                 <h2>最近活动</h2>
-                <Link
-                  href="/campaigns"
-                  className="text-xs underline underline-offset-2"
-                >
-                  查看全部发信活动
-                </Link>
+                {recentCampaigns?.items.length ? (
+                  <Link
+                    href="/campaigns"
+                    className="text-xs underline underline-offset-2"
+                  >
+                    查看全部发信活动
+                  </Link>
+                ) : createTarget ? (
+                  <Link
+                    href={preparationHref(createTarget)}
+                    className="text-xs underline underline-offset-2"
+                  >
+                    {createLabel}
+                  </Link>
+                ) : null}
               </div>
               {recentCampaigns?.items.length ? (
                 <div className="dashboard-campaign-list">
@@ -461,12 +489,17 @@ export default async function Page({
                 <p className="dashboard-success">
                   {recentCampaigns === null
                     ? "最近活动暂时无法读取，请重试核对。"
-                    : "还没有活动，可从准备清单进入活动页创建草稿。"}
+                    : createTarget === "templates"
+                      ? "还没有活动，先准备一套可用模板。"
+                      : canWrite === true
+                        ? "还没有活动，创建第一份草稿后会显示在这里。"
+                        : "还没有活动，管理员或运营创建后会显示在这里。"}
                 </p>
               )}
             </CardContent>
           </Card>
         </div>
+        {hasCampaigns && guide}
         <div className="section-heading">
           <h2>最近动态</h2>
           {canViewLogs && (

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  preparationDefaultExpanded,
   preparationModel,
   preparationPreferenceKey,
 } from "../src/features/onboarding/model.ts";
@@ -110,6 +111,51 @@ test("查看者、席位受限和权限读取失败不会被引向写入操作",
       false,
     );
   }
+});
+
+test("无手动偏好时按进度切换默认展开", () => {
+  assert.equal(preparationDefaultExpanded(preparationModel(facts())), true);
+  assert.equal(
+    preparationDefaultExpanded(preparationModel(facts({ storeReady: true }))),
+    true,
+  );
+  assert.equal(
+    preparationDefaultExpanded(
+      preparationModel(
+        facts({ storeReady: true, channel: { ready: true, detail: "已验证" } }),
+      ),
+    ),
+    false,
+  );
+  assert.equal(
+    preparationDefaultExpanded(
+      preparationModel(
+        facts({
+          storeReady: true,
+          channel: { ready: true, detail: "已验证" },
+          contacts: { active: 2, subscribed: 1 },
+        }),
+      ),
+    ),
+    false,
+  );
+  assert.equal(
+    preparationDefaultExpanded(
+      preparationModel(
+        facts({
+          storeReady: true,
+          channel: { ready: true, detail: "已验证" },
+          contacts: { active: 2, subscribed: 1 },
+          campaigns: 1,
+        }),
+      ),
+    ),
+    false,
+  );
+  assert.equal(
+    preparationDefaultExpanded(preparationModel(facts({ channel: null }))),
+    true,
+  );
 });
 
 test("展示偏好按账号、工作区与角色隔离", () => {

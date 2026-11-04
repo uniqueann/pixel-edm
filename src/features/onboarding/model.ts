@@ -128,6 +128,13 @@ export function preparationModel(facts: PreparationFacts) {
   };
 }
 
+/** 无手动偏好时：前两步或信息待核对时展开；接近完成或已有活动时收起。 */
+export function preparationDefaultExpanded(
+  model: ReturnType<typeof preparationModel>,
+) {
+  return model.unknown || (model.hasCampaigns !== true && model.completed <= 2);
+}
+
 /** 本地仅保存展开偏好；账号、工作区、角色及展示版本分别隔离。 */
 export function preparationPreferenceKey(
   userId: string,
