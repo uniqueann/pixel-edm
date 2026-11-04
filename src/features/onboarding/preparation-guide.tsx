@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { settingsSectionHref } from "@/features/settings/anchors";
 import {
+  preparationDefaultExpanded,
   preparationModel,
   preparationPreferenceKey,
   type PreparationFacts,
@@ -76,7 +77,7 @@ export function PreparationGuide({
   );
   const expanded =
     preference === "expanded" ||
-    (preference !== "collapsed" && model.hasCampaigns !== true);
+    (preference !== "collapsed" && preparationDefaultExpanded(model));
   useEffect(() => {
     const reveal = () => {
       if (location.hash === "#onboarding") savePreference(preferenceKey, true);
@@ -146,7 +147,7 @@ export function PreparationGuide({
                   : facts.role === "viewer"
                     ? "查看进度，与团队一起准备"
                     : model.hasCampaigns
-                      ? "继续核对活动内容与名单"
+                      ? "活动已创建，继续核对内容与名单"
                       : model.foundationReady
                         ? "基础准备已齐，创建第一场活动"
                         : "从你有权限的任务开始"}
@@ -186,25 +187,43 @@ export function PreparationGuide({
                 </Link>
               </Button>
             )}
-            {next && canCreate && (
-              <Link
-                className={styles.textLink}
-                href={preparationHref("campaigns")}
-              >
-                也可以先创建活动草稿
-              </Link>
+            {next && model.hasCampaigns && (
+              <p className={styles.createdNote}>
+                活动已创建，可继续核对内容与名单。
+              </p>
             )}
+            <div className={styles.recommendationLinks}>
+              {next && model.hasCampaigns ? (
+                <Link
+                  className={styles.textLink}
+                  href={preparationHref("campaigns")}
+                >
+                  前往活动核对
+                </Link>
+              ) : next && canCreate ? (
+                <Link
+                  className={styles.textLink}
+                  href={preparationHref("campaigns")}
+                >
+                  也可以先创建活动草稿
+                </Link>
+              ) : null}
+              <Link href="/help#help-onboarding" className={styles.textLink}>
+                <CircleHelp size={16} aria-hidden />
+                首次使用说明
+              </Link>
+            </div>
             <p className={styles.note}>
-              顺序可自由调整。创建草稿、编辑模板和浏览功能无需先完成全部准备；正式发送仍需管理员明确确认。
+              顺序可自由调整；正式发送仍需管理员确认。确认名单会锁定快照，不会立即正式发送。
             </p>
-            <Link href="/help#help-onboarding" className={styles.textLink}>
-              <CircleHelp size={16} aria-hidden />
-              首次使用说明
-            </Link>
           </div>
           <ol className={styles.tasks} aria-label="基础准备项目">
             {model.items.map((item) => (
-              <li key={item.key} data-preparation={item.key}>
+              <li
+                key={item.key}
+                data-preparation={item.key}
+                className={item.status === "done" ? styles.taskDone : undefined}
+              >
                 <div className={styles.taskHeading}>
                   {item.canAct && item.status !== "unknown" ? (
                     <Link
@@ -212,7 +231,11 @@ export function PreparationGuide({
                         item.key,
                         Boolean(facts.contacts?.active),
                       )}
-                      className={styles.taskLink}
+                      className={
+                        item.status === "done"
+                          ? `${styles.taskLink} ${styles.taskLinkDone}`
+                          : styles.taskLink
+                      }
                     >
                       {item.title}
                     </Link>
@@ -232,44 +255,13 @@ export function PreparationGuide({
                         : "待完成"}
                   </span>
                 </div>
-                <p>{item.detail}</p>
+                {item.status !== "done" && <p>{item.detail}</p>}
                 {!item.canAct && item.status !== "done" && (
                   <p className={styles.permission}>{item.restriction}</p>
                 )}
               </li>
             ))}
           </ol>
-        </div>
-        <div className={styles.nextStage}>
-          <div>
-            <h3>
-              {model.hasCampaigns
-                ? "活动已创建，继续预览与确认名单"
-                : "接下来：创建、预览并确认活动名单"}
-            </h3>
-            <p>
-              在活动页选择草稿的“预览”，核对邮件内容、变量与收件人，再确认活动名单。确认名单会锁定快照，不会立即正式发送。
-            </p>
-          </div>
-          <Button asChild variant="outline" className={styles.control}>
-            <Link
-              href={
-                canCreate || model.hasCampaigns || facts.canWrite !== true
-                  ? preparationHref("campaigns")
-                  : preparationHref("templates")
-              }
-            >
-              {model.hasCampaigns
-                ? "前往活动核对"
-                : canCreate
-                  ? "前往创建活动"
-                  : facts.canWrite === true
-                    ? facts.templates === null
-                      ? "查看模板状态"
-                      : "先准备可用模板"
-                    : "查看活动"}
-            </Link>
-          </Button>
         </div>
         {!facts.signatureReady && (
           <div className={styles.signature}>

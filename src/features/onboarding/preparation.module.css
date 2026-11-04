@@ -42,14 +42,12 @@
   padding: 20px;
   min-width: 0;
 }
-.recommendation h3,
-.nextStage h3 {
+.recommendation h3 {
   margin: 0;
   font-size: 18px;
   line-height: 1.5;
 }
 .recommendation p,
-.nextStage p,
 .context p {
   margin: 8px 0 16px;
   line-height: 1.7;
@@ -57,9 +55,23 @@
 }
 .recommendation .note {
   margin-top: 16px;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   font-size: 14px;
   color: var(--muted-foreground);
+}
+.recommendation .createdNote {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+.recommendationLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 16px;
+}
+.recommendationLinks .textLink {
+  width: fit-content;
 }
 .textLink {
   display: inline-flex;
@@ -71,10 +83,6 @@
   text-decoration: underline;
   text-underline-offset: 3px;
   font-size: 14px;
-}
-.recommendation > .textLink {
-  display: flex;
-  width: fit-content;
 }
 .tasks {
   margin: 0;
@@ -93,6 +101,12 @@
   border-bottom: 0;
   padding-bottom: 0;
 }
+.tasks li.taskDone {
+  padding-block: 8px;
+}
+.taskDone .taskHeading {
+  min-height: 32px;
+}
 .taskHeading {
   display: flex;
   align-items: center;
@@ -110,6 +124,21 @@
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+.taskLinkDone {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  text-decoration: none;
+}
+.taskLinkDone:hover {
+  text-decoration: underline;
+}
+/* 触摸设备没有悬停，已完成任务仍保留可回访的链接下划线。 */
+@media (hover: none) {
+  .taskLinkDone {
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+  }
 }
 .tasks strong {
   font-size: 16px;
@@ -137,24 +166,6 @@
 }
 .done {
   color: var(--green);
-}
-.nextStage {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 20px;
-  border-top: 1px solid var(--border);
-}
-.nextStage > div {
-  min-width: 0;
-  flex: 1 1 320px;
-}
-.nextStage p {
-  font-size: 14px;
-  margin-bottom: 0;
-  color: var(--muted-foreground);
 }
 .signature {
   padding: 0 20px 12px;
@@ -225,7 +236,6 @@
 }
 @container office (max-width: 300px) {
   .header,
-  .nextStage,
   .recommendation {
     padding: 12px;
   }
@@ -242,8 +252,7 @@
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
     gap: 28px;
   }
-  .header,
-  .nextStage {
+  .header {
     padding: 24px;
   }
   .body {
@@ -257,8 +266,7 @@
   }
 }
 @media (max-width: 389px) {
-  .header,
-  .nextStage {
+  .header {
     padding: 16px;
   }
   .body {

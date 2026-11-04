@@ -930,9 +930,6 @@ label:has(input[type="radio"]) {
   .identity-meta p {
     max-width: 75px;
   }
-  .tabs {
-    gap: 23px;
-  }
   .tab-collapsible {
     display: none;
   }
@@ -1008,8 +1005,35 @@ label:has(input[type="radio"]) {
   .settings-section-nav a {
     min-height: 44px;
   }
+  /* 主导航在触摸输入下保持 44×44；文字居中，下划线跟随整块点击区。 */
+  .tab {
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 9px;
+    padding-bottom: 0;
+    text-align: center;
+  }
+  .tab:not(.tab-collapsible) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  button.tab.tabs-more {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
 }
 @media (max-width: 640px) {
+  /* 触摸尺寸放大后收掉标签间距，避免窄屏需要横向滚动才能看到「更多」。 */
+  .tabs {
+    gap: 0;
+    padding: 0 12px;
+  }
+  .tabs-scroll-wrap::after {
+    display: none;
+  }
   .filter-field {
     flex-basis: 9rem;
   }
@@ -1018,6 +1042,12 @@ label:has(input[type="radio"]) {
   }
   .page-header-heading {
     flex-basis: 100%;
+  }
+}
+@media (max-width: 340px) {
+  /* 320px 下 6 个主标签 + 更多恰好铺满，不再需要横向滚动。 */
+  .tabs {
+    padding-inline: 6px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
