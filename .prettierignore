@@ -5,3 +5,5 @@ references
 *.md
 supabase/migrations
 .impeccable/
+# 上游 Impeccable skill，保持分发字节，不按本仓库 Prettier 重排。
+.cursor/skills/impeccable
