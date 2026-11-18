@@ -17,6 +17,9 @@ colors:
   warning-tint: "#fff8eb"
   danger: "#b23a2e"
   danger-tint: "#fbeae7"
+  auth-aside: "#1c2b45"
+  auth-aside-foreground: "#f4f6fa"
+  auth-aside-muted: "#b9c4d6"
   dark-background: "#0d121c"
   dark-foreground: "#e6edf7"
   dark-card: "#151c2a"
@@ -28,6 +31,9 @@ colors:
   dark-success: "#34d399"
   dark-warning: "#f1d28c"
   dark-danger: "#fca5a5"
+  dark-auth-aside: "#101a2b"
+  dark-auth-aside-foreground: "#e6edf7"
+  dark-auth-aside-muted: "#9aabc2"
 typography:
   headline:
     fontFamily: 'Fraunces, "PingFang SC", serif'
@@ -64,6 +70,11 @@ typography:
     fontSize: "1.25rem"
     fontWeight: 600
     lineHeight: 1.5
+  brand-display:
+    fontFamily: 'Fraunces, "PingFang SC", serif'
+    fontSize: "1.75rem"
+    fontWeight: 600
+    lineHeight: 1.45
 rounded:
   compact: "9px"
   control: "11px"
@@ -90,6 +101,11 @@ components:
     backgroundColor: "{colors.card}"
     textColor: "{colors.foreground}"
     rounded: "{rounded.card}"
+  auth-frame:
+    backgroundColor: "{colors.card}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.editor}"
+    border: "1px solid {colors.border}"
   badge-success:
     backgroundColor: "{colors.success-tint}"
     textColor: "{colors.success}"
@@ -127,6 +143,10 @@ components:
 
 暖灰承载页面，白色或深蓝灰承载卡片，muted 承载辅助区域。普通卡片边框负责分区；输入边框使用独立的 input 变量，保证字段可识别。次要文字使用 muted-foreground，避免通过任意降低 opacity 表达层级。
 
+### 认证页品牌区
+
+登录、注册、找回与重置等认证页使用深蓝品牌区（`--auth-aside`）承载品牌句和一句简短的产品范围说明。浅色主题为深蓝底暖白字，深色主题使用更深一档的深蓝（`--auth-aside` 的暗色值），避免整页变亮。品牌句 28px（与总览指标同一显示级别），说明使用 `--auth-aside-muted`，对比度不低于正文要求。该品牌区只属于认证外壳，不推广为普通侧栏。
+
 ### 语义状态
 
 | 语义 | 运行时变量 | 用法 |
@@ -157,6 +177,7 @@ components:
 - 列表搜索与筛选的名称通过关联标签保留给辅助技术，视觉上使用搜索提示和当前选项识别用途，不再单独占据一行。普通表单继续显示 label 标签，允许换行，不使用 `leading-none` 压缩中文。
 - 页面标题与长名称允许任意断行；密集数据行可截断，完整内容仍可通过编辑或详情查看。数量使用等宽数字，单位跟随数量。
 - 总览指标保留 Fraunces（28px / 1.4 / 600），与页头旁 13px 的记录计数区分用途。
+- 认证页品牌句使用 28px / 1.45 / 600，表单标题仍使用 headline，说明文字为 13px。
 - 手机及粗指针场景下，输入与选择控件使用 16px，避免输入时的意外放大。
 
 模板编辑器、导入步骤和准备清单可用 20px 区块标题，区分长任务中的主要阶段；卡片中的活动名采用无衬线的紧凑标题。这些是任务层级，不另建页面标题体系。
@@ -166,6 +187,8 @@ components:
 ## Layout
 
 - 工作台最大宽度为 1180px；内容默认边距为上下 24px、左右 20px。外壳保留现有窄屏顶栏和“更多”导航。
+- 认证页使用 `.auth-shell`：桌面为 880px 宽的双栏容器，左侧 340px 品牌区、右侧表单区；窄于 900px 时隐藏品牌区，收为 460px 单卡，品牌与主题切换留在顶部、页脚签名只在该宽度显示。内容不足一屏时垂直居中，超出时从顶部滚动。
+- 认证容器沿用 editor 圆角（20px）与柔和阴影；其内部表单卡不再重复边框、圆角或阴影，避免双层容器。
 - 页面头部使用 `PageHeader`：标题旁放计数或类型，说明紧随标题，主要操作位于右侧；窄屏自然换到下一行。没有操作时不保留空白操作栏。
 - 搜索与筛选使用 `ListToolbar` / `FilterField`：先搜索，再范围和业务筛选。工具栏不加外层卡片、边框或内边距，行间距 8px、列间距 12px，与后续列表相隔 16px；宽屏通常为一行 40px 控件。关联标签使用 `sr-only`，筛选选项与已应用摘要继续呈现当前条件。
 - 640px 以下搜索独占一行，常规筛选以 9rem 为换行参考宽度，保持完整点击区；活动页保留 767px 以下搜索加两列筛选的任务布局。手机控件至少 44px 高，不通过缩小文字或点击区压缩搜索区域。
@@ -179,7 +202,7 @@ components:
 
 ## Elevation & Depth
 
-普通内容卡片以单层边框建立层级，默认不叠加阴影。指标卡保留轻微悬停反馈；认证容器和弹窗保留原有的柔和阴影，表示独立任务或浮层。焦点环表达键盘位置，与卡片阴影职责不同。减少动态效果时关闭共享控件的过渡、骨架闪动和指标位移，状态文字仍正常更新。
+普通内容卡片以单层边框建立层级，默认不叠加阴影。指标卡保留轻微悬停反馈；认证容器和弹窗保留原有的柔和阴影，表示独立任务或浮层。认证双栏容器只在容器上声明一次边框与阴影。焦点环表达键盘位置，与卡片阴影职责不同。减少动态效果时关闭共享控件的过渡、骨架闪动和指标位移，状态文字仍正常更新。认证页不做首屏入场动画，加载与跳转只通过文案、图标和禁用态反馈。
 
 ## Shapes
 

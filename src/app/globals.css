@@ -22,6 +22,10 @@
   --border: #e5e4de;
   --input: #858c99;
   --ring: #1c2b45;
+  /* 认证页品牌区：深蓝信纸与暖白字，保持邮局的安静底色。 */
+  --auth-aside: #1c2b45;
+  --auth-aside-foreground: #f4f6fa;
+  --auth-aside-muted: #b9c4d6;
   --radius: 14px;
   --gold: #a67b25;
   --gold-tint: #f6edd9;
@@ -61,6 +65,9 @@
   --border: #232f44;
   --input: #61718a;
   --ring: #38bdf8;
+  --auth-aside: #101a2b;
+  --auth-aside-foreground: #e6edf7;
+  --auth-aside-muted: #9aabc2;
   --gold: #eab308;
   --gold-tint: #2a2008;
   --green: #34d399;
@@ -794,6 +801,238 @@ label:has(input[type="radio"]) {
   font-size: 11px;
   color: var(--muted-foreground);
   margin-top: 25px;
+}
+
+/* —— 认证外壳：桌面双栏品牌区 + 表单区，窄屏回到单卡 —— */
+.auth-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px;
+}
+.auth-stack {
+  width: 100%;
+  max-width: 880px;
+  /* 内容不足一屏时垂直居中；超高时自然从顶部开始滚动。 */
+  margin-block: auto;
+}
+.auth-masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.auth-frame {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: 0 6px 28px rgba(28, 43, 69, 0.06);
+}
+.dark .auth-frame {
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45);
+}
+.auth-aside {
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 40px 36px 132px;
+  background: var(--auth-aside);
+  color: var(--auth-aside-foreground);
+}
+.auth-aside-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 14px;
+  max-width: 268px;
+}
+.auth-aside-line {
+  margin: 0;
+  font-family: "Fraunces", "PingFang SC", serif;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+.auth-aside-note {
+  margin: 0;
+  color: var(--auth-aside-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.auth-postmark {
+  position: absolute;
+  right: -28px;
+  bottom: 26px;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  border: 1px solid
+    color-mix(in oklab, var(--auth-aside-foreground) 22%, transparent);
+  border-radius: 50%;
+  color: color-mix(in oklab, var(--auth-aside-foreground) 42%, transparent);
+  transform: rotate(-8deg);
+}
+.auth-postmark::before {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  border: 1px solid
+    color-mix(in oklab, var(--auth-aside-foreground) 15%, transparent);
+  border-radius: inherit;
+}
+.auth-panel {
+  display: flex;
+  min-width: 0;
+}
+.auth-frame .auth-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0;
+  padding: 44px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.auth-frame .auth-card > h1 {
+  margin-top: 0;
+}
+.auth-head {
+  margin-bottom: 26px;
+}
+.auth-head h1 {
+  margin: 0 0 8px;
+}
+.auth-head p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+.auth-notice {
+  margin-bottom: 18px;
+}
+.auth-form {
+  display: grid;
+  gap: 16px;
+}
+.auth-field {
+  display: grid;
+  gap: 8px;
+}
+.auth-password {
+  position: relative;
+}
+.auth-password [data-slot="input"] {
+  padding-right: 44px;
+}
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+}
+.auth-password input::-ms-reveal,
+.auth-password input::-ms-clear {
+  display: none;
+}
+/* 自动填充保留主题底色，避免浏览器默认的黄/蓝覆盖。 */
+.auth-frame .auth-card input:-webkit-autofill {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  transition: background-color 9999s ease-out 0s;
+}
+.auth-google-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9px;
+  background: #fff;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 12px;
+  margin-top: 18px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.auth-links-center {
+  justify-content: center;
+}
+.auth-links-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 4px;
+  white-space: nowrap;
+}
+.auth-links a {
+  color: var(--foreground);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.auth-foot {
+  display: none;
+  margin-top: 18px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+@media (max-width: 899px) {
+  .auth-shell {
+    padding: 24px 20px;
+  }
+  .auth-stack {
+    max-width: 460px;
+  }
+  .auth-frame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .auth-aside {
+    display: none;
+  }
+  .auth-frame .auth-card {
+    padding: 26px 24px 28px;
+  }
+  .auth-masthead {
+    margin-bottom: 18px;
+  }
+  .auth-foot {
+    display: block;
+  }
 }
 .unsubscribe-wrap {
   width: 100%;

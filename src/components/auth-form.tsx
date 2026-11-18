@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Notice } from "@/components/ui/notice";
 import { browserClient } from "@/lib/supabase/client";
 import {
   authCallbackUrl,
@@ -29,6 +31,12 @@ const descriptions: Record<Mode, string> = {
   forgot: "输入注册邮箱，我们将向你发送密码重置链接。",
   reset: "请设置你的新密码并妥善保管。",
 };
+const submitLabels: Record<Mode, string> = {
+  login: "登录",
+  register: "注册账号",
+  forgot: "发送重置邮件",
+  reset: "保存新密码",
+};
 export function AuthForm({
   mode,
   nextPath,
@@ -47,6 +55,7 @@ export function AuthForm({
   const [canResendVerification, setCanResendVerification] = useState(false);
   const [resendPending, setResendPending] = useState(false);
   const [oauthPending, setOauthPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const schema = z.object({
     email: mode === "reset" ? z.string() : credentials.shape.email,
     password:
@@ -60,7 +69,8 @@ export function AuthForm({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
-  const busy = form.formState.isSubmitting || oauthPending || resendPending;
+  const submitting = form.formState.isSubmitting;
+  const busy = submitting || oauthPending || resendPending;
   const destination =
     nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
       ? nextPath
@@ -182,21 +192,23 @@ export function AuthForm({
   }
   return (
     <section className="auth-card">
-      <h1>{titles[mode]}</h1>
-      <p className="hint">{descriptions[mode]}</p>
+      <div className="auth-head">
+        <h1>{titles[mode]}</h1>
+        <p>{descriptions[mode]}</p>
+      </div>
       {callbackError && (
-        <p className="field-error mt-3" role="alert">
+        <Notice tone="error" className="auth-notice" role="alert">
           {callbackError}
-        </p>
+        </Notice>
       )}
       {!isConfigured() && (
-        <p className="field-error mt-3" role="alert">
+        <Notice tone="error" className="auth-notice" role="alert">
           系统服务配置异常，请联系管理员。
-        </p>
+        </Notice>
       )}
-      <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
+      <form onSubmit={form.handleSubmit(submit)} className="auth-form">
         {mode !== "reset" && (
-          <div className="space-y-2">
+          <div className="auth-field">
             <Label htmlFor="email">邮箱</Label>
             <Input
               id="email"
@@ -208,46 +220,61 @@ export function AuthForm({
               }
               {...form.register("email")}
             />
-            <p
-              id="email-error"
-              className="field-error"
-              role={form.formState.errors.email ? "alert" : undefined}
-            >
-              {form.formState.errors.email?.message}
-            </p>
+            {form.formState.errors.email && (
+              <p id="email-error" className="field-error" role="alert">
+                {form.formState.errors.email.message}
+              </p>
+            )}
           </div>
         )}
         {mode !== "forgot" && (
-          <div className="space-y-2">
+          <div className="auth-field">
             <Label htmlFor="password">密码</Label>
-            <Input
-              id="password"
-              type="password"
-              aria-invalid={Boolean(form.formState.errors.password)}
-              aria-describedby={
-                form.formState.errors.password ? "password-error" : undefined
-              }
-              autoComplete={
-                mode === "login" ? "current-password" : "new-password"
-              }
-              {...form.register("password")}
-            />
-            <p
-              id="password-error"
-              className="field-error"
-              role={form.formState.errors.password ? "alert" : undefined}
-            >
-              {form.formState.errors.password?.message}
-            </p>
+            <div className="auth-password">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                aria-invalid={Boolean(form.formState.errors.password)}
+                aria-describedby={
+                  form.formState.errors.password ? "password-error" : undefined
+                }
+                autoComplete={
+                  mode === "login" ? "current-password" : "new-password"
+                }
+                {...form.register("password")}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="auth-password-toggle"
+                aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                aria-pressed={showPassword}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setShowPassword((visible) => !visible)}
+              >
+                {showPassword ? (
+                  <EyeOff aria-hidden="true" />
+                ) : (
+                  <Eye aria-hidden="true" />
+                )}
+              </Button>
+            </div>
+            {form.formState.errors.password && (
+              <p id="password-error" className="field-error" role="alert">
+                {form.formState.errors.password.message}
+              </p>
+            )}
           </div>
         )}
         {message && (
-          <p
+          // 认证反馈保持中性：找回密码等提示可能是条件式说明，避免误用成功色。
+          <Notice
+            tone={messageType === "error" ? "error" : "info"}
             role={messageType === "error" ? "alert" : "status"}
-            className={messageType === "error" ? "field-error" : "hint"}
           >
             {message}
-          </p>
+          </Notice>
         )}
         {canResendVerification && (mode === "login" || mode === "register") && (
           <Button
@@ -255,39 +282,98 @@ export function AuthForm({
             variant="outline"
             className="w-full"
             disabled={busy || !isConfigured()}
+            aria-busy={resendPending}
             onClick={resendVerificationEmail}
           >
+            {resendPending && (
+              <Loader2
+                className="animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+            )}
             {resendPending ? "正在发送…" : "重新发送验证邮件"}
           </Button>
         )}
-        <Button className="w-full" disabled={busy || !isConfigured()}>
-          {busy
-            ? "请稍候…"
-            : mode === "login"
-              ? "登录"
-              : mode === "register"
-                ? "注册账号"
-                : mode === "forgot"
-                  ? "发送重置邮件"
-                  : "保存新密码"}
+        <Button
+          className="w-full"
+          disabled={busy || !isConfigured()}
+          aria-busy={submitting}
+        >
+          {submitting && (
+            <Loader2
+              className="animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+          )}
+          {submitting ? "请稍候…" : submitLabels[mode]}
         </Button>
       </form>
       {(mode === "login" || mode === "register") && (
-        <Button
-          className="w-full mt-3"
-          variant="outline"
-          disabled={busy || !isConfigured()}
-          onClick={google}
-        >
-          使用 Google 继续
-        </Button>
+        <>
+          <div className="auth-divider" aria-hidden="true">
+            <span>或</span>
+          </div>
+          <Button
+            type="button"
+            className="w-full"
+            variant="outline"
+            disabled={busy || !isConfigured()}
+            aria-busy={oauthPending}
+            onClick={google}
+          >
+            {oauthPending ? (
+              <Loader2
+                className="animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+            ) : (
+              <span className="auth-google-mark">
+                <GoogleMark />
+              </span>
+            )}
+            {oauthPending ? "正在前往 Google…" : "使用 Google 继续"}
+          </Button>
+        </>
       )}
-      <div className="auth-links">
-        <Link href={`${mode === "login" ? "/register" : "/login"}${nextQuery}`}>
-          {mode === "login" ? "创建账号" : "返回登录"}
-        </Link>
+      <div
+        className={
+          mode === "login" ? "auth-links" : "auth-links auth-links-center"
+        }
+      >
+        <span className="auth-links-group">
+          <span>{mode === "login" ? "还没有账号？" : "已有账号？"}</span>
+          <Link
+            href={`${mode === "login" ? "/register" : "/login"}${nextQuery}`}
+          >
+            {mode === "login" ? "创建账号" : "返回登录"}
+          </Link>
+        </span>
         {mode === "login" && <Link href="/forgot-password">忘记密码？</Link>}
       </div>
     </section>
+  );
+}
+
+/** Google 四色 G 标识，放在白色圆角底上，保证深色主题也能正确显示负空间。 */
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 48 48" width="16" height="16" aria-hidden="true">
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+    </svg>
   );
 }
