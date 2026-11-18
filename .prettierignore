@@ -5,3 +5,4 @@ references
 *.md
 supabase/migrations
 .impeccable/
+output/
