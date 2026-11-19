@@ -310,13 +310,8 @@ html:has([data-guide-context][data-sticky="true"]) {
 .tabs::-webkit-scrollbar {
   display: none;
 }
-.tab-collapsible {
-  display: inline;
-}
 button.tab.tabs-more {
   display: none;
-  flex-shrink: 0;
-  padding-bottom: 12px;
 }
 .guidance-note {
   font-size: 12px;
@@ -333,10 +328,7 @@ button.tab.tabs-more {
 }
 button.tab {
   background: none;
-  border: none;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
   gap: 2px;
   font-family: inherit;
 }
@@ -1169,12 +1161,6 @@ label:has(input[type="radio"]) {
   .identity-meta p {
     max-width: 75px;
   }
-  .tab-collapsible {
-    display: none;
-  }
-  button.tab.tabs-more {
-    display: inline-flex;
-  }
   .dashboard-columns {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1244,31 +1230,27 @@ label:has(input[type="radio"]) {
   .settings-section-nav a {
     min-height: 44px;
   }
-  /* 主导航在触摸输入下保持 44×44；文字居中，下划线跟随整块点击区。 */
-  .tab {
-    min-width: 44px;
-    min-height: 44px;
-    padding-inline: 9px;
-    padding-bottom: 0;
-    text-align: center;
+  .tabs {
+    gap: 8px;
+    padding-top: 0;
   }
-  .tab:not(.tab-collapsible) {
+  /* 所有导航项共享触控尺寸、文字中线和选中下划线。 */
+  .tab {
     display: inline-flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
-  }
-  button.tab.tabs-more {
     min-width: 44px;
     min-height: 44px;
-    padding: 0;
-    justify-content: center;
+    padding: 0 8px;
+  }
+  .tab:focus-visible {
+    outline-offset: -3px;
   }
 }
 @media (max-width: 640px) {
-  /* 触摸尺寸放大后收掉标签间距，避免窄屏需要横向滚动才能看到「更多」。 */
   .tabs {
-    gap: 0;
-    padding: 0 12px;
+    padding-inline: 16px;
   }
   .tabs-scroll-wrap::after {
     display: none;
@@ -1283,8 +1265,30 @@ label:has(input[type="radio"]) {
     flex-basis: 100%;
   }
 }
+@media (max-width: 480px) {
+  .tabs {
+    gap: 0;
+  }
+}
+@media (max-width: 480px) and (orientation: portrait) {
+  .tab {
+    flex-grow: 1;
+  }
+  .tab-collapsible {
+    display: none;
+  }
+  button.tab.tabs-more {
+    display: inline-flex;
+    padding-inline: 0;
+  }
+}
+@media (max-width: 420px) {
+  .tabs {
+    padding-inline: 12px;
+  }
+}
 @media (max-width: 340px) {
-  /* 320px 下 6 个主标签 + 更多恰好铺满，不再需要横向滚动。 */
+  /* 320px 竖屏时为团队版的 7 个点击区各留出 44px。 */
   .tabs {
     padding-inline: 6px;
   }
