@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Suspense, useTransition } from "react";
+import { Suspense, useEffect, useRef, useState, useTransition } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronDown, LogOut } from "lucide-react";
@@ -65,6 +65,8 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
   const router = useRouter();
   const visibleTabs = tabs
@@ -79,6 +81,19 @@ export function AppShell({
   const overflowActive = overflowTabs.some(([slug]) =>
     tabIsActive(pathname, slug),
   );
+
+  useEffect(() => {
+    const trigger = moreTriggerRef.current;
+    if (!moreOpen || !trigger) return;
+
+    // 旋转到横屏时，独立渲染的菜单也要随已隐藏的触发器关闭。
+    const observer = new ResizeObserver(() => {
+      if (trigger.getClientRects().length === 0) setMoreOpen(false);
+    });
+    observer.observe(trigger);
+    return () => observer.disconnect();
+  }, [moreOpen]);
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -175,9 +190,10 @@ export function AppShell({
               </Link>
             ))}
             {overflowTabs.length > 0 && (
-              <DropdownMenu.Root>
+              <DropdownMenu.Root open={moreOpen} onOpenChange={setMoreOpen}>
                 <DropdownMenu.Trigger asChild>
                   <button
+                    ref={moreTriggerRef}
                     type="button"
                     className={`tabs-more tab${overflowActive ? " active" : ""}`}
                     aria-label="更多导航"
@@ -190,6 +206,21 @@ export function AppShell({
                   <DropdownMenu.Content
                     align="end"
                     sideOffset={6}
+                    onCloseAutoFocus={(event) => {
+                      const trigger = moreTriggerRef.current;
+                      if (!trigger || trigger.getClientRects().length > 0)
+                        return;
+                      event.preventDefault();
+                      const nav = trigger.closest("nav");
+                      const inlineLink =
+                        nav?.querySelector<HTMLAnchorElement>(
+                          '.tab-collapsible[aria-current="page"]',
+                        ) ??
+                        nav?.querySelector<HTMLAnchorElement>(
+                          ".tab-collapsible",
+                        );
+                      inlineLink?.focus();
+                    }}
                     className="z-50 min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
                   >
                     {overflowTabs.map(([slug, label]) => (
