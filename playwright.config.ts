@@ -5,6 +5,8 @@ export default defineConfig({
   fullyParallel: false,
   use: {
     baseURL: "http://localhost:3100",
+    // 显式锁定默认浏览器语言为中文，避免 CI（Ubuntu 默认 en-US）触发 Accept-Language 协商影响既有中文 E2E 基线。
+    locale: "zh-CN",
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
     channel: "chrome",

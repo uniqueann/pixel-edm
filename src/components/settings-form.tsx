@@ -3,6 +3,7 @@ import { Notice } from "@/components/ui/notice";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -16,8 +17,10 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { workspaceSettings } from "@/lib/validation";
-import { mailingAddressProblem } from "@/lib/mailing-address";
+import { mailingAddressProblemCode } from "@/lib/mailing-address";
 import { saveWorkspace } from "@/app/actions";
+import { useValidationMessage } from "@/i18n/use-resolvers";
+
 export function SettingsForm({
   name,
   address,
@@ -27,6 +30,9 @@ export function SettingsForm({
   address: string;
   canEdit: boolean;
 }) {
+  const t = useTranslations("settings.store");
+  const translateValidation = useValidationMessage();
+
   const [error, setError] = useState("");
   const form = useForm({
     mode: "onTouched",
@@ -37,10 +43,15 @@ export function SettingsForm({
     control: form.control,
     name: ["name", "mailing_address"],
   });
-  const savedAddressProblem = address.trim()
-    ? mailingAddressProblem(address)
+  const savedAddressProblemCode = address.trim()
+    ? mailingAddressProblemCode(address)
     : null;
-  const previewAddressInvalid = mailingAddressProblem(previewAddress) !== null;
+  const savedAddressProblem = savedAddressProblemCode
+    ? translateValidation(savedAddressProblemCode)
+    : null;
+  const previewAddressInvalid =
+    mailingAddressProblemCode(previewAddress) !== null;
+
   return (
     <>
       <form
@@ -49,15 +60,15 @@ export function SettingsForm({
           setError("");
           try {
             const result = await saveWorkspace(values);
-            if (result.error) setError(result.error);
-            else toast.success("工作区已保存");
+            if (result.error) setError(translateValidation(result.error));
+            else toast.success(t("savedToast"));
           } catch {
-            setError("保存失败，输入已保留，请重试。");
+            setError(t("saveFailed"));
           }
         })}
       >
         <div className="space-y-2">
-          <Label htmlFor="workspace-name">店铺 / 工作区名称</Label>
+          <Label htmlFor="workspace-name">{t("nameLabel")}</Label>
           <Input
             id="workspace-name"
             aria-invalid={Boolean(form.formState.errors.name)}
@@ -68,46 +79,46 @@ export function SettingsForm({
             {...form.register("name")}
           />
           <p id="workspace-name-error" className="field-error">
-            {form.formState.errors.name?.message}
+            {translateValidation(form.formState.errors.name?.message)}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="mailing-address">邮件页脚实体地址</Label>
+          <Label htmlFor="mailing-address">{t("addressLabel")}</Label>
           {savedAddressProblem && (
             <Notice tone="warning" role="alert">
-              {`当前保存的页脚地址无法通过校验：${savedAddressProblem}。修正前，营销邮件页脚仍会原样显示这段文字。`}
-              {!canEdit && "请联系工作区管理员修正。"}
+              {t("savedAddressInvalid", { problem: savedAddressProblem })}
+              {!canEdit && ` ${t("contactAdminToFix")}`}
             </Notice>
           )}
           <Input
             id="mailing-address"
             disabled={!canEdit}
-            placeholder="例：上海市徐汇区漕溪北路 88 号 12 楼，中国"
+            placeholder={t("addressPlaceholder")}
             aria-describedby={`mailing-address-help${form.formState.errors.mailing_address ? " mailing-address-error" : ""}`}
             aria-invalid={Boolean(form.formState.errors.mailing_address)}
             {...form.register("mailing_address")}
           />
           <p id="mailing-address-help" className="hint mb-0">
-            会显示在每一封营销邮件的页脚。请填写收件人可以寄信的真实地址（街道、门牌号、城市、国家），可用中文或英文，如
-            “88 Caoxi North Rd, Xuhui, Shanghai,
-            China”。不要填写邮箱、电话或“联系方式”这类占位文字。
+            {t("addressHelp")}
           </p>
           <p id="mailing-address-error" className="field-error">
-            {form.formState.errors.mailing_address?.message}
+            {translateValidation(
+              form.formState.errors.mailing_address?.message,
+            )}
           </p>
           <div className="rounded-lg border border-border/80 bg-muted/30 px-3 py-2.5 text-xs leading-relaxed">
-            <p className="mb-1 font-medium">页脚预览</p>
+            <p className="mb-1 font-medium">{t("footerPreviewTitle")}</p>
             <div
               data-testid="footer-preview"
               className="font-mono break-words whitespace-pre-wrap text-muted-foreground"
             >
               {"—\n"}
-              {previewName?.trim() || "（店铺 / 工作区名称）"}
+              {previewName?.trim() || t("footerPreviewStorePlaceholder")}
               {"\nContact address / 联系地址: "}
               <span className={previewAddressInvalid ? "text-destructive" : ""}>
-                {previewAddress?.trim() || "（未填写）"}
+                {previewAddress?.trim() || t("footerPreviewAddressPlaceholder")}
               </span>
-              {"\nUnsubscribe / 退订: （发送时自动生成退订链接）"}
+              {`\nUnsubscribe / 退订: ${t("footerPreviewUnsubscribe")}`}
             </div>
           </div>
         </div>
@@ -117,9 +128,9 @@ export function SettingsForm({
           </p>
         )}
         <Button disabled={!canEdit || form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "保存中…" : "保存设置"}
+          {form.formState.isSubmitting ? t("saving") : t("saveButton")}
         </Button>
-        {!canEdit && <p className="hint">仅管理员可以修改工作区设置。</p>}
+        {!canEdit && <p className="hint">{t("adminOnlyHint")}</p>}
       </form>
       <Dialog>
         <DialogTrigger asChild>
@@ -127,16 +138,13 @@ export function SettingsForm({
             variant="link"
             className="mt-3 h-auto max-w-full whitespace-normal px-0 text-left"
           >
-            为什么需要实体地址？
+            {t("whyAddressTrigger")}
           </Button>
         </DialogTrigger>
         <DialogContent placement="bottom" className="bottom-sheet">
           <DialogHeader>
-            <DialogTitle>为什么需要邮件页脚实体地址？</DialogTitle>
-            <DialogDescription>
-              根据国际反垃圾邮件法规（如
-              CAN-SPAM），营销邮件页脚必须包含有效的实体邮寄地址。这里填写的地址会原样附在每一封营销邮件末尾，可以是办公地址、店铺地址或邮政信箱，不能用邮箱、电话或占位文字代替。
-            </DialogDescription>
+            <DialogTitle>{t("whyAddressTitle")}</DialogTitle>
+            <DialogDescription>{t("whyAddressDescription")}</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>

@@ -1,0 +1,87 @@
+{
+  "title": "Team",
+  "metaCount": "{count, plural, one {# member} other {# members}}",
+  "descriptionTeam": "Invite teammates to manage contacts, templates, and campaign drafts together.",
+  "descriptionPersonal": "Creating your first invitation converts this personal workspace into a team workspace.",
+  "restricted": {
+    "title": "Team collaboration requires the Team plan",
+    "description": "Upgrade to the Team plan to invite members, assign roles, and view the full activity log.",
+    "upgradeAction": "Upgrade to Team"
+  },
+  "memberCapNote": "Active members exceed your plan seats. Existing members remain, but Operator write access is paused. An Admin can remove extra members or upgrade the plan to restore access.",
+  "hint": {
+    "admin": "Invitation links stay valid for 7 days; Admins can regenerate or revoke them anytime.",
+    "readOnly": "You can view team members and their current roles."
+  },
+  "roles": {
+    "admin": "Admin",
+    "editor": "Operator",
+    "viewer": "Viewer",
+    "owner": "Owner",
+    "descriptions": {
+      "admin": "Admin: workspace settings, delivery channels, tracking & webhooks, team & billing, formal sends, and activity logs (by plan).",
+      "editor": "Operator: manage contacts and templates, draft/preview/confirm campaigns, export CSV; cannot edit settings/channels, send campaigns, or view logs.",
+      "viewer": "Viewer: read-only access to contacts, templates, campaigns, and delivery stats; cannot edit data/settings, send campaigns, or view logs."
+    }
+  },
+  "members": {
+    "sectionTitle": "Team members ({count})",
+    "currentAccount": "(You)",
+    "roleSelectAria": "Role for {name}",
+    "transferOwnership": "Transfer ownership",
+    "remove": "Remove"
+  },
+  "invitations": {
+    "sectionTitle": "Pending invitations ({count})",
+    "securityHint": "For security, only masked emails are shown. Links cannot be viewed again after closing — regenerate if needed.",
+    "expiresAt": "{role} · Expires {date}",
+    "regenerate": "Regenerate link",
+    "revoke": "Revoke",
+    "empty": "No pending invitations."
+  },
+  "actions": {
+    "inviteMember": "Invite member",
+    "copyLink": "Copy link",
+    "inviteAnother": "Invite another",
+    "generateLink": "Generate invite link",
+    "generating": "Generating…"
+  },
+  "inviteDialog": {
+    "copyTitle": "Copy invitation link",
+    "copyDescription": "This link won't be shown again after closing. Regenerate from Pending invitations if needed.",
+    "createTitle": "Invite team member",
+    "createDescription": "Generate an invite link and assign a workspace role.",
+    "expiryLabel": "💡 Link expiry: ",
+    "expiryHint": "Links expire in 7 days and are shown only once. Share securely via chat or company email.",
+    "emailLabel": "Invitee email",
+    "emailPlaceholder": "colleague@company.com",
+    "roleLabel": "Role"
+  },
+  "confirm": {
+    "removeTitle": "Remove member",
+    "removeDescription": "Remove {name} from this workspace? They will lose access, while historical records remain.",
+    "removeAction": "Remove",
+    "transferTitle": "Transfer workspace ownership",
+    "transferLead": "Transfer workspace ownership to {name}?",
+    "transferDetail": "{name} will become the workspace Owner responsible for billing and plans. You will remain an Admin without Owner-only permissions.",
+    "transferAction": "Transfer ownership",
+    "roleStep1Title": "Change member role",
+    "roleStep2Title": "Confirm role downgrade",
+    "roleStep1Action": "Update role",
+    "roleStep2Action": "Confirm downgrade",
+    "roleStep1Description": "Change {name}'s role from {fromRole} to {toRole}?",
+    "roleStep1AdminWarning": "Downgrading an Admin removes access to team, billing, and formal sending. A second confirmation is required.",
+    "roleStep2Description": "Final confirmation: change {name} from Admin to {toRole}. They will lose team and billing permissions.",
+    "revokeTitle": "Revoke invitation",
+    "revokeDescription": "Revoke this invitation? The previous link will stop working immediately.",
+    "revokeAction": "Revoke invitation"
+  },
+  "toast": {
+    "linkCopied": "Invitation link copied",
+    "roleUpdated": "Member role updated",
+    "memberRemoved": "Member removed",
+    "ownershipTransferred": "Workspace ownership transferred",
+    "invitationCreated": "Invitation created — link is shown once",
+    "invitationRevoked": "Invitation revoked"
+  }
+}

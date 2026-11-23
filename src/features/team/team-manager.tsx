@@ -3,6 +3,7 @@ import { Notice } from "@/components/ui/notice";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,26 +34,14 @@ import {
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   isRoleDemotion,
-  roleNames,
   teamRoles,
   type TeamData,
   type TeamMember,
   type TeamRole,
 } from "./model";
-import { inviteRoleBlurb } from "./role-descriptions";
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Shanghai",
-  }).format(new Date(value));
-}
-
-async function copyText(value: string) {
-  await navigator.clipboard.writeText(value);
-  toast.success("邀请链接已复制");
-}
+import { DEFAULT_LOCALE, normalizeLocale } from "@/i18n/config";
+import { formatBusinessDateTime } from "@/i18n/format";
+import { useErrorMessage } from "@/i18n/use-resolvers";
 
 function MemberRow({
   member,
@@ -69,6 +58,8 @@ function MemberRow({
   pending: boolean;
   onRefresh: () => void;
 }) {
+  const t = useTranslations("team");
+  const resolveError = useErrorMessage();
   const [busy, startTransition] = useTransition();
   const [removeOpen, setRemoveOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
@@ -78,6 +69,8 @@ function MemberRow({
   }>();
   const isSelf = member.user_id === currentUserId;
 
+  const roleLabel = (role: TeamRole) => t(`roles.${role}`);
+
   const applyRole = (nextRole: TeamRole) => {
     startTransition(async () => {
       const result = await changeWorkspaceMemberRole({
@@ -86,9 +79,9 @@ function MemberRow({
         role: nextRole,
         expected_version: member.version,
       });
-      if ("error" in result) toast.error(result.error);
+      if ("error" in result) toast.error(resolveError(result));
       else {
-        toast.success("成员角色已更新");
+        toast.success(t("toast.roleUpdated"));
         onRefresh();
       }
     });
@@ -121,9 +114,9 @@ function MemberRow({
         user_id: member.user_id,
         expected_version: member.version,
       });
-      if ("error" in result) toast.error(result.error);
+      if ("error" in result) toast.error(resolveError(result));
       else {
-        toast.success("成员已移除");
+        toast.success(t("toast.memberRemoved"));
         onRefresh();
       }
     });
@@ -135,9 +128,9 @@ function MemberRow({
         workspace_id: workspaceId,
         new_owner_id: member.user_id,
       });
-      if ("error" in result) toast.error(result.error);
+      if ("error" in result) toast.error(resolveError(result));
       else {
-        toast.success("工作区所有权已转移");
+        toast.success(t("toast.ownershipTransferred"));
         onRefresh();
       }
     });
@@ -147,19 +140,19 @@ function MemberRow({
     roleConfirm &&
     (roleConfirm.step === 2 ? (
       <>
-        最后确认：将 {member.display_name} 从管理员调整为
-        {roleNames[roleConfirm.nextRole]}。对方将失去成员与账单管理权限。
+        {t("confirm.roleStep2Description", {
+          name: member.display_name,
+          toRole: roleLabel(roleConfirm.nextRole),
+        })}
       </>
     ) : (
       <>
-        将 {member.display_name} 的角色从 {roleNames[member.role]} 调整为
-        {roleNames[roleConfirm.nextRole]}？
-        {member.role === "admin" && (
-          <>
-            {" "}
-            管理员降级后可能无法管理成员、账单与正式发送；需再次确认后才会生效。
-          </>
-        )}
+        {t("confirm.roleStep1Description", {
+          name: member.display_name,
+          fromRole: roleLabel(member.role),
+          toRole: roleLabel(roleConfirm.nextRole),
+        })}
+        {member.role === "admin" && <> {t("confirm.roleStep1AdminWarning")}</>}
       </>
     ));
 
@@ -169,11 +162,13 @@ function MemberRow({
       <div className="min-w-[180px] flex-1">
         <p className="font-medium">
           {member.display_name}{" "}
-          {isSelf && <span className="hint">（当前账号）</span>}
+          {isSelf && (
+            <span className="hint">{t("members.currentAccount")}</span>
+          )}
         </p>
         <p className="hint m-0">{member.email}</p>
       </div>
-      {member.is_owner && <span className="role-pill">所有者</span>}
+      {member.is_owner && <span className="role-pill">{t("roles.owner")}</span>}
       {canManage && !member.is_owner ? (
         <Select
           value={member.role}
@@ -181,7 +176,9 @@ function MemberRow({
           onValueChange={changeRole}
         >
           <SelectTrigger
-            aria-label={`${member.display_name}的角色`}
+            aria-label={t("members.roleSelectAria", {
+              name: member.display_name,
+            })}
             className="w-[108px]"
           >
             <SelectValue />
@@ -189,13 +186,13 @@ function MemberRow({
           <SelectContent>
             {teamRoles.map((item) => (
               <SelectItem key={item} value={item}>
-                {roleNames[item]}
+                {roleLabel(item)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       ) : (
-        <span className="role-pill">{roleNames[member.role]}</span>
+        <span className="role-pill">{roleLabel(member.role)}</span>
       )}
       {canManage && !member.is_owner && !isSelf && (
         <div className="flex gap-2">
@@ -206,7 +203,7 @@ function MemberRow({
               disabled={busy || pending}
               onClick={() => setTransferOpen(true)}
             >
-              转移所有权
+              {t("members.transferOwnership")}
             </Button>
           )}
           <Button
@@ -215,7 +212,7 @@ function MemberRow({
             disabled={busy || pending}
             onClick={() => setRemoveOpen(true)}
           >
-            移除
+            {t("members.remove")}
           </Button>
         </div>
       )}
@@ -223,14 +220,11 @@ function MemberRow({
       <ConfirmDialog
         open={removeOpen}
         onOpenChange={setRemoveOpen}
-        title="移除成员"
-        description={
-          <>
-            确定移除 {member.display_name}{" "}
-            吗？对方将无法再访问此工作区，历史业务数据会保留。
-          </>
-        }
-        confirmLabel="移除"
+        title={t("confirm.removeTitle")}
+        description={t("confirm.removeDescription", {
+          name: member.display_name,
+        })}
+        confirmLabel={t("confirm.removeAction")}
         variant="destructive"
         loading={busy}
         onConfirm={remove}
@@ -239,19 +233,18 @@ function MemberRow({
       <ConfirmDialog
         open={transferOpen}
         onOpenChange={setTransferOpen}
-        title="转移工作区所有权"
+        title={t("confirm.transferTitle")}
         description={
           <>
             <p className="m-0">
-              确定将工作区所有权转移给 {member.display_name} 吗？
+              {t("confirm.transferLead", { name: member.display_name })}
             </p>
             <p className="m-0">
-              转移后，{member.display_name}{" "}
-              将成为工作区所有者并负责账单与套餐；你仍会保留管理员身份，但不再拥有所有者专属权限。
+              {t("confirm.transferDetail", { name: member.display_name })}
             </p>
           </>
         }
-        confirmLabel="转移所有权"
+        confirmLabel={t("confirm.transferAction")}
         variant="destructive"
         loading={busy}
         onConfirm={transfer}
@@ -262,9 +255,17 @@ function MemberRow({
         onOpenChange={(open) => {
           if (!open) setRoleConfirm(undefined);
         }}
-        title={roleConfirm?.step === 2 ? "再次确认角色降级" : "调整成员角色"}
+        title={
+          roleConfirm?.step === 2
+            ? t("confirm.roleStep2Title")
+            : t("confirm.roleStep1Title")
+        }
         description={roleConfirmDescription ?? ""}
-        confirmLabel={roleConfirm?.step === 2 ? "确认降级" : "更新角色"}
+        confirmLabel={
+          roleConfirm?.step === 2
+            ? t("confirm.roleStep2Action")
+            : t("confirm.roleStep1Action")
+        }
         variant="destructive"
         loading={busy}
         onConfirm={confirmRoleChange}
@@ -284,6 +285,10 @@ export function TeamManager({
   canManage: boolean;
   memberCapNote?: string | null;
 }) {
+  const t = useTranslations("team");
+  const tCommon = useTranslations("common");
+  const locale = normalizeLocale(useLocale()) ?? DEFAULT_LOCALE;
+  const resolveError = useErrorMessage();
   const data = initialData;
   const router = useRouter();
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -294,6 +299,12 @@ export function TeamManager({
   const [revokeId, setRevokeId] = useState<string>();
   const [busy, startTransition] = useTransition();
   const refresh = () => router.refresh();
+
+  const copyText = async (value: string) => {
+    await navigator.clipboard.writeText(value);
+    toast.success(t("toast.linkCopied"));
+  };
+
   const submitInvite = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
@@ -305,12 +316,12 @@ export function TeamManager({
         role: inviteRole,
       });
       if ("error" in result) {
-        toast.error(result.error);
+        toast.error(resolveError(result));
         return;
       }
       setInviteUrl(result.inviteUrl);
       setEmail("");
-      toast.success("邀请已创建，链接只显示一次");
+      toast.success(t("toast.invitationCreated"));
     });
   };
   const resend = (id: string) => {
@@ -319,7 +330,7 @@ export function TeamManager({
         workspace_id: data.workspace.id,
         id,
       });
-      if ("error" in result) toast.error(result.error);
+      if ("error" in result) toast.error(resolveError(result));
       else {
         setInviteUrl(result.inviteUrl);
         setLinkOpen(true);
@@ -333,9 +344,9 @@ export function TeamManager({
         workspace_id: data.workspace.id,
         id,
       });
-      if ("error" in result) toast.error(result.error);
+      if ("error" in result) toast.error(resolveError(result));
       else {
-        toast.success("邀请已撤销");
+        toast.success(t("toast.invitationRevoked"));
         refresh();
       }
     });
@@ -350,17 +361,17 @@ export function TeamManager({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="hint m-0">
-            {canManage
-              ? "邀请链接有效 7 天；管理员可随时重发或撤销。"
-              : "你可以查看团队成员和当前角色。"}
+            {canManage ? t("hint.admin") : t("hint.readOnly")}
           </p>
         </div>
         {canManage && (
-          <Button onClick={() => setInviteOpen(true)}>邀请成员</Button>
+          <Button onClick={() => setInviteOpen(true)}>
+            {t("actions.inviteMember")}
+          </Button>
         )}
       </div>
       <section>
-        <h2>团队成员（{data.members.length}）</h2>
+        <h2>{t("members.sectionTitle", { count: data.members.length })}</h2>
         <div className="mt-2 rounded-xl border bg-card px-5">
           {data.members.map((member) => (
             <MemberRow
@@ -379,11 +390,11 @@ export function TeamManager({
         <section>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
             <h2 className="shrink-0">
-              待处理邀请（{data.invitations.length}）
+              {t("invitations.sectionTitle", {
+                count: data.invitations.length,
+              })}
             </h2>
-            <span className="hint m-0">
-              为保障安全，仅显示部分邮箱字符；邀请链接关闭后不可再次查看，失效请重新生成。
-            </span>
+            <span className="hint m-0">{t("invitations.securityHint")}</span>
           </div>
           <div className="mt-2 rounded-xl border bg-card px-5">
             {data.invitations.length ? (
@@ -395,8 +406,13 @@ export function TeamManager({
                   <div className="min-w-[180px] flex-1">
                     <p className="font-medium">{invitation.email_hint}</p>
                     <p className="hint m-0">
-                      {roleNames[invitation.role]} · 过期于{" "}
-                      {formatDate(invitation.expires_at)}
+                      {t("invitations.expiresAt", {
+                        role: t(`roles.${invitation.role}`),
+                        date: formatBusinessDateTime(
+                          invitation.expires_at,
+                          locale,
+                        ),
+                      })}
                     </p>
                   </div>
                   <Button
@@ -405,7 +421,7 @@ export function TeamManager({
                     disabled={busy}
                     onClick={() => resend(invitation.id)}
                   >
-                    重新生成链接
+                    {t("invitations.regenerate")}
                   </Button>
                   <Button
                     variant="outline"
@@ -413,12 +429,12 @@ export function TeamManager({
                     disabled={busy}
                     onClick={() => setRevokeId(invitation.id)}
                   >
-                    撤销
+                    {t("invitations.revoke")}
                   </Button>
                 </div>
               ))
             ) : (
-              <p className="hint py-4 m-0">暂无待处理邀请。</p>
+              <p className="hint py-4 m-0">{t("invitations.empty")}</p>
             )}
           </div>
         </section>
@@ -441,9 +457,9 @@ export function TeamManager({
           {inviteUrl ? (
             <>
               <DialogHeader>
-                <DialogTitle>复制邀请链接</DialogTitle>
+                <DialogTitle>{t("inviteDialog.copyTitle")}</DialogTitle>
                 <DialogDescription>
-                  关闭后不能再次查看此链接；需要新链接时请在待处理邀请中重发。
+                  {t("inviteDialog.copyDescription")}
                 </DialogDescription>
               </DialogHeader>
               <div className="rounded-md border bg-muted p-3 text-xs break-all">
@@ -461,34 +477,35 @@ export function TeamManager({
                   }}
                   className="w-full sm:w-auto"
                 >
-                  继续邀请下一位
+                  {t("actions.inviteAnother")}
                 </Button>
                 <Button
                   onClick={() => copyText(inviteUrl)}
                   className="w-full sm:w-auto"
                 >
-                  复制链接
+                  {t("actions.copyLink")}
                 </Button>
               </div>
             </>
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle>邀请团队成员</DialogTitle>
+                <DialogTitle>{t("inviteDialog.createTitle")}</DialogTitle>
                 <DialogDescription>
-                  生成受邀链接并分配成员角色与管理权限。
+                  {t("inviteDialog.createDescription")}
                 </DialogDescription>
               </DialogHeader>
               <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-xs leading-relaxed text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  💡 链接时效：
+                  {t("inviteDialog.expiryLabel")}
                 </span>
-                邀请链接有效 7
-                天且生成后仅展示一次，可通过即时通讯或企业邮件安全分享。
+                {t("inviteDialog.expiryHint")}
               </div>
               <form onSubmit={submitInvite} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="team-invite-email">受邀邮箱</Label>
+                  <Label htmlFor="team-invite-email">
+                    {t("inviteDialog.emailLabel")}
+                  </Label>
                   <Input
                     id="team-invite-email"
                     type="email"
@@ -497,7 +514,7 @@ export function TeamManager({
                     autoCorrect="off"
                     spellCheck={false}
                     autoComplete="email"
-                    placeholder="colleague@company.com"
+                    placeholder={t("inviteDialog.emailPlaceholder")}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     onBlur={() => setEmail((prev) => prev.trim().toLowerCase())}
@@ -505,7 +522,9 @@ export function TeamManager({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="team-invite-role">加入角色</Label>
+                  <Label htmlFor="team-invite-role">
+                    {t("inviteDialog.roleLabel")}
+                  </Label>
                   <select
                     id="team-invite-role"
                     className="list-filter w-full"
@@ -516,12 +535,12 @@ export function TeamManager({
                   >
                     {teamRoles.map((item) => (
                       <option key={item} value={item}>
-                        {roleNames[item]}
+                        {t(`roles.${item}`)}
                       </option>
                     ))}
                   </select>
                   <p className="hint m-0 text-xs">
-                    {inviteRoleBlurb(inviteRole)}
+                    {t(`roles.descriptions.${inviteRole}`)}
                   </p>
                 </div>
                 <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
@@ -535,14 +554,14 @@ export function TeamManager({
                     }}
                     className="w-full sm:w-auto"
                   >
-                    取消
+                    {tCommon("actions.cancel")}
                   </Button>
                   <Button
                     type="submit"
                     disabled={busy || !email.trim()}
                     className="w-full sm:w-auto"
                   >
-                    {busy ? "生成中…" : "生成邀请链接"}
+                    {busy ? t("actions.generating") : t("actions.generateLink")}
                   </Button>
                 </div>
               </form>
@@ -564,9 +583,9 @@ export function TeamManager({
           className="bottom-sheet max-h-[85vh] overflow-y-auto"
         >
           <DialogHeader>
-            <DialogTitle>复制邀请链接</DialogTitle>
+            <DialogTitle>{t("inviteDialog.copyTitle")}</DialogTitle>
             <DialogDescription>
-              关闭后不能再次查看此链接；需要新链接时请在待处理邀请中重发。
+              {t("inviteDialog.copyDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-md border bg-muted p-3 text-xs break-all">
@@ -577,7 +596,7 @@ export function TeamManager({
               onClick={() => copyText(inviteUrl)}
               className="w-full sm:w-auto"
             >
-              复制链接
+              {t("actions.copyLink")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -588,9 +607,9 @@ export function TeamManager({
         onOpenChange={(open) => {
           if (!open) setRevokeId(undefined);
         }}
-        title="撤销邀请"
-        description="确定撤销这条邀请吗？旧链接会立即失效。"
-        confirmLabel="撤销邀请"
+        title={t("confirm.revokeTitle")}
+        description={t("confirm.revokeDescription")}
+        confirmLabel={t("confirm.revokeAction")}
         variant="destructive"
         loading={busy}
         onConfirm={() => {

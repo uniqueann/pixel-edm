@@ -1,0 +1,84 @@
+{
+  "brand": "卖家邮局",
+  "meta": {
+    "titleDefault": "卖家邮局",
+    "titleTemplate": "%s · 卖家邮局",
+    "description": "为每一次客户联络，准备一封好邮件。"
+  },
+  "skipToContent": "跳到内容",
+  "topbarAriaLabel": "账号与工作区",
+  "workspaceSelectAriaLabel": "当前工作区",
+  "workspaceSwitchFailed": "工作区切换失败，请重试。",
+  "workspaceBadge": {
+    "personal": "个人工作区",
+    "team": "团队工作区",
+    "plan": {
+      "free": "免费版",
+      "pro": "专业版",
+      "team": "团队版"
+    },
+    "teamMembers": "{plan} · {count} 人"
+  },
+  "nav": {
+    "ariaLabel": "邮局导航",
+    "dashboard": "总览",
+    "contacts": "客户",
+    "templates": "模板",
+    "campaigns": "活动",
+    "logs": "日志",
+    "team": "团队",
+    "settings": "设置",
+    "help": "帮助",
+    "more": "更多",
+    "moreAriaLabel": "更多导航"
+  },
+  "roles": {
+    "admin": "管理员",
+    "editor": "运营",
+    "viewer": "查看者"
+  },
+  "signOutAriaLabel": "退出当前账号",
+  "footerTagline": "卖家邮局 · 独立站与外贸邮件营销",
+  "notFound": {
+    "title": "没有找到这个页面",
+    "backToApp": "返回邮局"
+  },
+  "error": {
+    "title": "邮局暂时没有连接上",
+    "description": "请稍后重试。如果问题持续，请检查账号状态和数据库连接。",
+    "retry": "重新尝试",
+    "backToLogin": "返回登录"
+  },
+  "guide": {
+    "ariaLabel": "首次使用引导",
+    "adminOnlyDetail": "此项需管理员处理。你可以返回清单，查看当前角色可完成的准备。",
+    "backToChecklist": "返回准备清单",
+    "tasks": {
+      "store": {
+        "title": "准备发件身份",
+        "detail": "保存店铺信息与真实页脚地址后，继续连接主发信通道。我的署名是建议项。",
+        "nextLabel": "继续配置通道"
+      },
+      "channels": {
+        "title": "连接并验证主通道",
+        "detail": "先保存配置，再由管理员发送测试邮件。服务商接收不等于送达、进入收件箱或已读。",
+        "nextLabel": "继续准备客户"
+      },
+      "contacts": {
+        "title": "准备已订阅客户",
+        "detail": "核对导入结果与订阅授权。添加或导入成功不代表客户已订阅，也不代表必然进入活动名单。",
+        "nextLabel": "继续准备模板"
+      },
+      "templates": {
+        "title": "准备邮件内容",
+        "detail": "可编辑预置模板，预览核对后保存；活动中仍需核对本次变量和客户名单。",
+        "nextLabel": "继续创建活动"
+      },
+      "campaigns": {
+        "title": "创建并核对第一场活动",
+        "detail": "新建草稿 → 预览邮件与收件人 → 确认活动名单。正式发送仍由管理员按原流程明确确认。",
+        "nextLabel": "查看活动"
+      }
+    }
+  }
+}

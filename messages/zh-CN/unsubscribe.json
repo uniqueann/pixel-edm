@@ -1,0 +1,35 @@
+{
+  "metaTitle": "邮件退订",
+  "switcher": {
+    "ariaLabel": "切换退订页语言",
+    "zh": "中文",
+    "en": "English"
+  },
+  "invalid": {
+    "title": "链接无效",
+    "body": "这条退订链接无效或已被停用，请直接联系邮件发件人。"
+  },
+  "unavailable": {
+    "title": "暂时无法处理",
+    "body": "服务暂时不可用，请稍后重新打开此页面。"
+  },
+  "alreadySuppressed": {
+    "title": "已经退订",
+    "body": "{email} 已不会再收到来自 {workspace} 的营销邮件。"
+  },
+  "confirm": {
+    "title": "停止接收营销邮件？",
+    "body": "即将为 {email} 退订 {workspace} 的后续营销邮件。",
+    "submit": "确认退订",
+    "submitting": "正在处理…"
+  },
+  "completed": {
+    "title": "退订完成",
+    "body": "{email} 已不会再收到来自 {workspace} 的营销邮件。"
+  },
+  "errors": {
+    "invalid": "退订链接无效。",
+    "unavailable": "暂时无法处理，请稍后重试。"
+  },
+  "footer": "卖家邮局 · 尊重每一次客户联络"
+}

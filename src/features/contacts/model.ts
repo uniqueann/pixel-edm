@@ -5,18 +5,27 @@ export const contactInput = z
     workspace_id: z.string().uuid(),
     id: z.string().uuid().optional(),
     expected_version: z.number().int().positive().optional(),
-    email: z.string().trim().toLowerCase().email("请输入有效邮箱").max(254),
-    name: z.string().trim().max(100, "姓名最多 100 字"),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("validation.emailInvalid")
+      .max(254),
+    name: z.string().trim().max(100, "validation.contactNameTooLong"),
     tags: z
-      .array(z.string().trim().min(1).max(30, "标签最多 30 字"))
-      .max(20, "每位客户最多 20 个标签"),
+      .array(z.string().trim().min(1).max(30, "validation.contactTagTooLong"))
+      .max(20, "validation.contactTagsTooMany"),
     consent_declared: z.boolean().optional(),
     consent_source: z
       .string()
       .trim()
-      .max(100, "同意来源最多 100 字")
+      .max(100, "validation.consentSourceTooLong")
       .optional(),
-    consent_note: z.string().trim().max(500, "授权说明最多 500 字").optional(),
+    consent_note: z
+      .string()
+      .trim()
+      .max(500, "validation.consentNoteTooLong")
+      .optional(),
     consent_at: z.string().datetime().optional(),
   })
   .refine(
@@ -24,7 +33,7 @@ export const contactInput = z
       !value.consent_declared ||
       (Boolean(value.consent_source) && Boolean(value.consent_note)),
     {
-      message: "声明订阅同意时必须填写同意来源和授权说明",
+      message: "validation.consentRequired",
       path: ["consent_note"],
     },
   );

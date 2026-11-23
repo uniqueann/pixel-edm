@@ -1,5 +1,9 @@
-/** 将 Supabase Auth 错误码映射为面向用户的中文文案。 */
+export type AuthErrorKey =
+  "invalidCredentials" | "emailNotConfirmed" | "rateLimited" | "unknown";
+
+/** 将 Supabase Auth 错误码映射为结构化错误 key 与默认中文文案。 */
 export function mapAuthError(error: unknown): {
+  errorKey: AuthErrorKey;
   message: string;
   canResendVerification: boolean;
 } {
@@ -14,21 +18,25 @@ export function mapAuthError(error: unknown): {
   switch (code) {
     case "invalid_credentials":
       return {
+        errorKey: "invalidCredentials",
         message: "邮箱或密码不正确，请检查后重试。",
         canResendVerification: false,
       };
     case "email_not_confirmed":
       return {
+        errorKey: "emailNotConfirmed",
         message: "邮箱尚未验证，请先完成验证后再登录。",
         canResendVerification: true,
       };
     case "over_request_rate_limit":
       return {
+        errorKey: "rateLimited",
         message: "操作过于频繁，请稍后再试。",
         canResendVerification: false,
       };
     default:
       return {
+        errorKey: "unknown",
         message: "操作未完成，请检查输入或稍后重试。",
         canResendVerification: false,
       };

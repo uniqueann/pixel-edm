@@ -1,15 +1,22 @@
 import DodoPayments from "dodopayments";
 import type { EdmBilledPlan } from "./metadata";
 
+function billingConfigError(message: string) {
+  return Object.assign(new Error(message), {
+    code: "errors.billing.configMissing",
+    expose: false,
+  });
+}
+
 export function getDodoApiKey() {
   const key = process.env.DODO_PAYMENTS_API_KEY?.trim();
-  if (!key) throw new Error("DODO_PAYMENTS_API_KEY 未配置。");
+  if (!key) throw billingConfigError("DODO_PAYMENTS_API_KEY 未配置。");
   return key;
 }
 
 export function getDodoWebhookKey() {
   const key = process.env.DODO_PAYMENTS_WEBHOOK_KEY?.trim();
-  if (!key) throw new Error("DODO_PAYMENTS_WEBHOOK_KEY 未配置。");
+  if (!key) throw billingConfigError("DODO_PAYMENTS_WEBHOOK_KEY 未配置。");
   return key;
 }
 
@@ -26,7 +33,7 @@ export function getDodoEdmProductId(
         ? "DODO_EDM_PRO_YEARLY_PRODUCT_ID"
         : "DODO_EDM_PRO_MONTHLY_PRODUCT_ID";
   const id = process.env[envKey]?.trim();
-  if (!id) throw new Error(`${envKey} 未配置。`);
+  if (!id) throw billingConfigError(`${envKey} 未配置。`);
   return id;
 }
 

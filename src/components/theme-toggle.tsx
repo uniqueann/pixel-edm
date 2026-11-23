@@ -2,14 +2,15 @@
 
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import { DropdownMenu } from "radix-ui";
 import { Sun, Moon, Laptop, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const themes = [
-  { value: "light", label: "浅色模式", icon: Sun },
-  { value: "dark", label: "深色模式", icon: Moon },
-  { value: "system", label: "跟随系统", icon: Laptop },
+  { value: "light", labelKey: "light", icon: Sun },
+  { value: "dark", labelKey: "dark", icon: Moon },
+  { value: "system", labelKey: "system", icon: Laptop },
 ] as const;
 
 const emptySubscribe = () => () => {};
@@ -27,6 +28,7 @@ function useIsMounted() {
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const t = useTranslations("common.theme");
   const mounted = useIsMounted();
 
   // 未挂载时展示占位，避免服务端水合闪烁
@@ -35,7 +37,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       <Button
         variant="ghost"
         size="icon"
-        aria-label="切换主题"
+        aria-label={t("toggleAriaLabel")}
         className={`size-8 rounded-lg text-muted-foreground ${className ?? ""}`}
         disabled
       >
@@ -54,7 +56,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         <Button
           variant="ghost"
           size="icon"
-          aria-label="切换主题"
+          aria-label={t("toggleAriaLabel")}
           className={`size-8 rounded-lg text-muted-foreground hover:text-foreground ${className ?? ""}`}
         >
           <ActiveIcon className="size-4" />
@@ -66,7 +68,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           sideOffset={8}
           className="z-50 min-w-36 overflow-hidden rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95"
         >
-          {themes.map(({ value, label, icon: Icon }) => {
+          {themes.map(({ value, labelKey, icon: Icon }) => {
             const isSelected = theme === value;
             return (
               <DropdownMenu.Item
@@ -76,7 +78,7 @@ export function ThemeToggle({ className }: { className?: string }) {
               >
                 <span className="flex items-center gap-2">
                   <Icon className="size-3.5" />
-                  <span>{label}</span>
+                  <span>{t(labelKey)}</span>
                 </span>
                 {isSelected && <Check className="size-3.5 text-primary" />}
               </DropdownMenu.Item>
@@ -93,15 +95,16 @@ export function ThemeToggle({ className }: { className?: string }) {
  */
 export function ThemeSegmented() {
   const { theme, setTheme } = useTheme();
+  const t = useTranslations("common.theme");
   const mounted = useIsMounted();
 
   return (
     <div
       className="flex flex-wrap gap-2"
       role="radiogroup"
-      aria-label="外观主题"
+      aria-label={t("label")}
     >
-      {themes.map(({ value, label, icon: Icon }) => {
+      {themes.map(({ value, labelKey, icon: Icon }) => {
         const isSelected = mounted && theme === value;
         return (
           <button
@@ -117,7 +120,7 @@ export function ThemeSegmented() {
             }`}
           >
             <Icon className="size-4" aria-hidden />
-            <span>{label}</span>
+            <span>{t(labelKey)}</span>
           </button>
         );
       })}

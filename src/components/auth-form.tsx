@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,25 +19,11 @@ import {
 } from "@/lib/supabase/config";
 import { credentials } from "@/lib/validation";
 import { mapAuthError } from "@/lib/auth-errors";
+import { syncMemberLocale } from "@/i18n/actions";
+import { useValidationMessage } from "@/i18n/use-resolvers";
+
 type Mode = "login" | "register" | "forgot" | "reset";
-const titles: Record<Mode, string> = {
-  login: "欢迎回到邮局",
-  register: "开启你的卖家邮局",
-  forgot: "找回密码",
-  reset: "设置新密码",
-};
-const descriptions: Record<Mode, string> = {
-  login: "登录你的账号，管理客户并发送邮件。",
-  register: "创建你的工作区账号，开启客户邮件营销。",
-  forgot: "输入注册邮箱，我们将向你发送密码重置链接。",
-  reset: "请设置你的新密码并妥善保管。",
-};
-const submitLabels: Record<Mode, string> = {
-  login: "登录",
-  register: "注册账号",
-  forgot: "发送重置邮件",
-  reset: "保存新密码",
-};
+
 export function AuthForm({
   mode,
   nextPath,
@@ -48,6 +35,9 @@ export function AuthForm({
   callbackError?: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("auth");
+  const translateValidation = useValidationMessage();
+
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"hint" | "error" | "success">(
     "hint",
@@ -62,7 +52,7 @@ export function AuthForm({
       mode === "forgot"
         ? z.string()
         : mode === "login"
-          ? z.string().min(1, "请输入密码")
+          ? z.string().min(1, "validation.passwordRequired")
           : credentials.shape.password,
   });
   const form = useForm({
@@ -79,10 +69,11 @@ export function AuthForm({
     nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
       ? `?next=${encodeURIComponent(nextPath)}`
       : "";
+
   async function resendVerificationEmail() {
     const email = form.getValues("email")?.trim();
     if (!email) {
-      setMessage("请先填写注册邮箱，再重新发送验证邮件。");
+      setMessage(t("notices.enterEmailBeforeResend"));
       setMessageType("error");
       return;
     }
@@ -96,12 +87,12 @@ export function AuthForm({
         options: { emailRedirectTo: authCallbackUrl(destination) },
       });
       if (error) throw error;
-      setMessage("验证邮件已重新发送，请在当前浏览器打开邮件中的链接。");
+      setMessage(t("notices.verificationResent"));
       setMessageType("success");
       setCanResendVerification(false);
     } catch (err) {
       const mapped = mapAuthError(err);
-      setMessage(mapped.message);
+      setMessage(t(`errors.${mapped.errorKey}`));
       setMessageType("error");
     } finally {
       setResendPending(false);
@@ -119,16 +110,14 @@ export function AuthForm({
           redirectTo: passwordRecoveryRedirectUrl(),
         });
         if (error) throw error;
-        setMessage(
-          "如果该邮箱已注册，你将收到密码重置邮件，请在当前浏览器打开。",
-        );
+        setMessage(t("notices.resetEmailSent"));
         setMessageType("success");
       } else if (mode === "reset") {
         const {
           data: { user },
         } = await db.auth.getUser();
         if (!user) {
-          setMessage("重置链接已失效，请重新申请。");
+          setMessage(t("notices.resetLinkExpired"));
           setMessageType("error");
           return;
         }
@@ -148,12 +137,11 @@ export function AuthForm({
         });
         if (error) throw error;
         if (data.session) {
+          await syncMemberLocale();
           router.replace(destination);
           router.refresh();
         } else {
-          setMessage(
-            "请检查邮箱中的验证邮件，并在当前浏览器完成验证。已有账号可直接登录。",
-          );
+          setMessage(t("notices.checkVerificationEmail"));
           setMessageType("success");
         }
       } else {
@@ -162,16 +150,18 @@ export function AuthForm({
           password: values.password!,
         });
         if (error) throw error;
+        await syncMemberLocale();
         router.replace(destination);
         router.refresh();
       }
     } catch (err) {
       const mapped = mapAuthError(err);
-      setMessage(mapped.message);
+      setMessage(t(`errors.${mapped.errorKey}`));
       setMessageType("error");
       setCanResendVerification(mapped.canResendVerification);
     }
   }
+
   async function google() {
     setOauthPending(true);
     setMessage("");
@@ -185,16 +175,17 @@ export function AuthForm({
       });
       if (error) throw error;
     } catch {
-      setMessage("Google 登录暂时不可用，请使用邮箱登录。");
+      setMessage(t("notices.googleUnavailable"));
       setMessageType("error");
       setOauthPending(false);
     }
   }
+
   return (
     <section className="auth-card">
       <div className="auth-head">
-        <h1>{titles[mode]}</h1>
-        <p>{descriptions[mode]}</p>
+        <h1>{t(`modes.${mode}.title`)}</h1>
+        <p>{t(`modes.${mode}.description`)}</p>
       </div>
       {callbackError && (
         <Notice tone="error" className="auth-notice" role="alert">
@@ -203,13 +194,13 @@ export function AuthForm({
       )}
       {!isConfigured() && (
         <Notice tone="error" className="auth-notice" role="alert">
-          系统服务配置异常，请联系管理员。
+          {t("serviceUnconfigured")}
         </Notice>
       )}
       <form onSubmit={form.handleSubmit(submit)} className="auth-form">
         {mode !== "reset" && (
           <div className="auth-field">
-            <Label htmlFor="email">邮箱</Label>
+            <Label htmlFor="email">{t("fields.email")}</Label>
             <Input
               id="email"
               type="email"
@@ -222,14 +213,14 @@ export function AuthForm({
             />
             {form.formState.errors.email && (
               <p id="email-error" className="field-error" role="alert">
-                {form.formState.errors.email.message}
+                {translateValidation(form.formState.errors.email.message)}
               </p>
             )}
           </div>
         )}
         {mode !== "forgot" && (
           <div className="auth-field">
-            <Label htmlFor="password">密码</Label>
+            <Label htmlFor="password">{t("fields.password")}</Label>
             <div className="auth-password">
               <Input
                 id="password"
@@ -248,7 +239,11 @@ export function AuthForm({
                 variant="ghost"
                 size="icon-sm"
                 className="auth-password-toggle"
-                aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                aria-label={
+                  showPassword
+                    ? t("fields.hidePassword")
+                    : t("fields.showPassword")
+                }
                 aria-pressed={showPassword}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => setShowPassword((visible) => !visible)}
@@ -262,7 +257,7 @@ export function AuthForm({
             </div>
             {form.formState.errors.password && (
               <p id="password-error" className="field-error" role="alert">
-                {form.formState.errors.password.message}
+                {translateValidation(form.formState.errors.password.message)}
               </p>
             )}
           </div>
@@ -291,7 +286,9 @@ export function AuthForm({
                 aria-hidden="true"
               />
             )}
-            {resendPending ? "正在发送…" : "重新发送验证邮件"}
+            {resendPending
+              ? t("actions.resendingVerification")
+              : t("actions.resendVerification")}
           </Button>
         )}
         <Button
@@ -305,13 +302,13 @@ export function AuthForm({
               aria-hidden="true"
             />
           )}
-          {submitting ? "请稍候…" : submitLabels[mode]}
+          {submitting ? t("actions.submitting") : t(`modes.${mode}.submit`)}
         </Button>
       </form>
       {(mode === "login" || mode === "register") && (
         <>
           <div className="auth-divider" aria-hidden="true">
-            <span>或</span>
+            <span>{t("actions.or")}</span>
           </div>
           <Button
             type="button"
@@ -331,7 +328,9 @@ export function AuthForm({
                 <GoogleMark />
               </span>
             )}
-            {oauthPending ? "正在前往 Google…" : "使用 Google 继续"}
+            {oauthPending
+              ? t("actions.redirectingGoogle")
+              : t("actions.continueWithGoogle")}
           </Button>
         </>
       )}
@@ -341,14 +340,22 @@ export function AuthForm({
         }
       >
         <span className="auth-links-group">
-          <span>{mode === "login" ? "还没有账号？" : "已有账号？"}</span>
+          <span>
+            {mode === "login"
+              ? t("actions.noAccountPrompt")
+              : t("actions.hasAccountPrompt")}
+          </span>
           <Link
             href={`${mode === "login" ? "/register" : "/login"}${nextQuery}`}
           >
-            {mode === "login" ? "创建账号" : "返回登录"}
+            {mode === "login"
+              ? t("actions.createAccount")
+              : t("actions.backToLogin")}
           </Link>
         </span>
-        {mode === "login" && <Link href="/forgot-password">忘记密码？</Link>}
+        {mode === "login" && (
+          <Link href="/forgot-password">{t("actions.forgotPassword")}</Link>
+        )}
       </div>
     </section>
   );

@@ -48,6 +48,111 @@ export const activityLabels: Record<string, string> = {
   "workspace.converted_to_team": "升级为团队工作区",
 };
 
+export type ActivityFilterGroup =
+  "contact" | "template" | "campaign" | "channel" | "team" | "other";
+
+export type ActivityFilterMeta = {
+  action: string;
+  group: ActivityFilterGroup;
+  groupLabel: string | null;
+  shortLabel: string;
+  label: string;
+};
+
+const activityShortLabels: Record<string, string> = {
+  "contact.created": "添加",
+  "contact.updated": "编辑",
+  "contact.archived": "归档",
+  "contact.restored": "恢复",
+  "contact.unsubscribed": "退订",
+  "contact.unsubscribed_public": "通过退订链接退订",
+  "template.created": "新建",
+  "template.updated": "编辑",
+  "template.duplicated": "复制",
+  "template.archived": "归档",
+  "template.restored": "恢复",
+  "template.defaults_initialized": "初始化默认",
+  "campaign.created": "新建草稿",
+  "campaign.updated": "编辑草稿",
+  "campaign.archived": "归档",
+  "campaign.restored": "恢复",
+  "campaign.confirmed": "确认名单",
+  "campaign.csv_exported": "导出 CSV",
+  "campaign.duplicated": "复制草稿",
+  "campaign.delivery_started": "开始正式发送",
+  "campaign.delivery_completed": "正式发送完成",
+  "campaign.delivery_paused": "暂停正式发送",
+  "campaign.delivery_resumed": "继续正式发送",
+  "campaign.delivery_aborted": "放弃剩余发送",
+  "campaign.delivery_unknown_resolved": "核对未知发送结果",
+  "delivery_channel.configured": "连接",
+  "delivery_channel.updated": "更新",
+  "delivery_channel.credentials_rotated": "更换密钥",
+  "delivery_channel.disconnected": "断开",
+  "delivery_channel.primary_set": "设为主",
+  "delivery_channel.test_started": "开始测试",
+  "delivery_channel.test_accepted": "测试已接收",
+  "delivery_channel.test_failed": "测试失败",
+  "delivery_channel.test_unknown": "测试结果未知",
+};
+
+/** 返回结构化的筛选分组与短标签，避免在展示层靠截取中文词缀拼接。 */
+export function activityFilterMeta(action: string): ActivityFilterMeta {
+  const label = activityLabel(action);
+  if (action.startsWith("template.")) {
+    return {
+      action,
+      group: "template",
+      groupLabel: "模板",
+      shortLabel: activityShortLabels[action] ?? label,
+      label,
+    };
+  }
+  if (action.startsWith("contact.")) {
+    return {
+      action,
+      group: "contact",
+      groupLabel: "客户",
+      shortLabel: activityShortLabels[action] ?? label,
+      label,
+    };
+  }
+  if (action.startsWith("campaign.")) {
+    return {
+      action,
+      group: "campaign",
+      groupLabel: "活动",
+      shortLabel: activityShortLabels[action] ?? label,
+      label,
+    };
+  }
+  if (action.startsWith("delivery_channel.")) {
+    return {
+      action,
+      group: "channel",
+      groupLabel: "通道",
+      shortLabel: activityShortLabels[action] ?? label,
+      label,
+    };
+  }
+  if (action.startsWith("team.") || action.startsWith("workspace.")) {
+    return {
+      action,
+      group: "team",
+      groupLabel: null,
+      shortLabel: label,
+      label,
+    };
+  }
+  return {
+    action,
+    group: "other",
+    groupLabel: null,
+    shortLabel: label,
+    label,
+  };
+}
+
 /** 已知操作显示中文标题；未登记的 key 不把原始标识直接给用户。 */
 export function activityLabel(action: string) {
   const known = activityLabels[action];

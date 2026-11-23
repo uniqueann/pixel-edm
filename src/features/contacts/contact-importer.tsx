@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,14 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LocalDate } from "@/components/local-date";
 import type { ContactImportDetail, ContactImportHistory } from "./import-model";
-import {
-  formatImportTimestamp,
-  importJobStatusLabels,
-} from "./import-presentation";
 import { ContactImportResults } from "./contact-import-results";
 import { downloadImportCsv, useContactImport } from "./use-contact-import";
 import styles from "./contact-importer.module.css";
+
+const KNOWN_JOB_STATUSES = new Set([
+  "completed",
+  "prepared",
+  "processing",
+  "failed",
+]);
 
 export function ContactImporter(props: {
   workspace: string;
@@ -28,6 +33,7 @@ export function ContactImporter(props: {
   initialError?: string;
   selectedId?: string;
 }) {
+  const t = useTranslations("contacts.import");
   const {
     activity,
     busy,
@@ -70,7 +76,7 @@ export function ContactImporter(props: {
     warnings,
   } = useContactImport(props);
   const stage = !job ? 0 : job.job.status === "prepared" ? 1 : 2;
-  const stages = ["提供名单与授权", "预检与确认", "处理与结果"];
+  const stages = [t("stages.provide"), t("stages.preview"), t("stages.result")];
 
   function fieldError(id: string) {
     return fieldErrors[id] ? (
@@ -96,29 +102,29 @@ export function ContactImporter(props: {
             href="/contacts"
             aria-disabled={busy || undefined}
           >
-            <ArrowLeft aria-hidden="true" /> 返回客户名单
+            <ArrowLeft aria-hidden="true" /> {t("backToContacts")}
           </Link>
-          <h1>导入客户名单</h1>
+          <h1>{t("title")}</h1>
         </div>
         <Button
           variant="outline"
           disabled={busy}
           onClick={() =>
-            downloadImportCsv("pixel-edm-客户导入模板.csv", [
+            downloadImportCsv(t("templateFilename"), [
               [
-                "邮箱",
-                "姓名",
-                "标签",
-                "订阅状态",
-                "同意来源",
-                "授权说明",
-                "同意时间",
+                t("templateHeaders.email"),
+                t("templateHeaders.name"),
+                t("templateHeaders.tags"),
+                t("templateHeaders.subscriptionStatus"),
+                t("templateHeaders.consentSource"),
+                t("templateHeaders.consentNote"),
+                t("templateHeaders.consentAt"),
               ],
               [
                 "customer@example.com",
-                "示例客户",
-                "VIP|老客",
-                "未确认",
+                t("templateSample.name"),
+                t("templateSample.tags"),
+                t("templateSample.status"),
                 "",
                 "",
                 "",
@@ -126,11 +132,11 @@ export function ContactImporter(props: {
             ])
           }
         >
-          <Download aria-hidden="true" /> 下载模板
+          <Download aria-hidden="true" /> {t("downloadTemplate")}
         </Button>
       </header>
 
-      <ol className={styles.steps} aria-label="导入步骤">
+      <ol className={styles.steps} aria-label={t("stepsAria")}>
         {stages.map((label, index) => (
           <li
             key={label}
@@ -155,28 +161,24 @@ export function ContactImporter(props: {
           <div>
             <strong>
               {failure.operation === "file"
-                ? "文件未读取"
+                ? t("failure.file")
                 : failure.operation === "process"
-                  ? "导入请求未完成"
+                  ? t("failure.process")
                   : failure.operation === "load"
-                    ? "结果未加载"
+                    ? t("failure.load")
                     : failure.operation === "report"
-                      ? "报告未下载"
-                      : "预检未完成"}
+                      ? t("failure.report")
+                      : t("failure.prepare")}
             </strong>
             <p>{failure.message}</p>
-            <p>
-              {job
-                ? "原任务已保留。重试会先核对任务进度，请勿重复上传。"
-                : "当前输入已保留，可以修改后重试。"}
-            </p>
+            <p>{job ? t("failure.keepJob") : t("failure.keepInput")}</p>
           </div>
           <Button variant="outline" disabled={busy} onClick={retry}>
             {failure.operation === "file"
-              ? "重新选择文件"
+              ? t("failure.reselectFile")
               : failure.operation === "process"
-                ? "重试原任务"
-                : "重试"}
+                ? t("failure.retryJob")
+                : t("failure.retry")}
           </Button>
         </div>
       )}
@@ -184,10 +186,8 @@ export function ContactImporter(props: {
       {!job && (
         <Card className={styles.surface}>
           <CardHeader className={styles.sectionHeader}>
-            <h2>提供名单</h2>
-            <p className={styles.description}>
-              每次最多 1000 行、2 MiB。预检不会写入客户资料。
-            </p>
+            <h2>{t("form.sectionTitle")}</h2>
+            <p className={styles.description}>{t("form.sectionDescription")}</p>
           </CardHeader>
           <CardContent>
             <form
@@ -198,18 +198,18 @@ export function ContactImporter(props: {
               }}
             >
               <fieldset disabled={busy} className={styles.inputLayout}>
-                <legend className="sr-only">名单内容及授权信息</legend>
+                <legend className="sr-only">{t("form.legend")}</legend>
                 <section
                   className={styles.sourceSection}
                   aria-labelledby="source-heading"
                 >
                   <h3 id="source-heading" className="sr-only">
-                    名单输入区
+                    {t("form.sourceHeading")}
                   </h3>
                   <div
                     className={styles.sourceSwitch}
                     role="group"
-                    aria-label="名单提供方式"
+                    aria-label={t("form.sourceSwitchAria")}
                   >
                     <Button
                       type="button"
@@ -217,7 +217,7 @@ export function ContactImporter(props: {
                       variant={sourceType === "paste" ? "default" : "outline"}
                       onClick={() => setSourceType("paste")}
                     >
-                      粘贴
+                      {t("form.pasteTab")}
                     </Button>
                     <Button
                       type="button"
@@ -225,12 +225,15 @@ export function ContactImporter(props: {
                       variant={sourceType === "csv" ? "default" : "outline"}
                       onClick={() => setSourceType("csv")}
                     >
-                      CSV 文件
+                      {t("form.csvTab")}
                     </Button>
                   </div>
                   <div className={styles.field}>
                     <Label htmlFor="import-name">
-                      名单来源名称 <span className={styles.required}>必填</span>
+                      {t("form.sourceNameLabel")}{" "}
+                      <span className={styles.required}>
+                        {t("form.required")}
+                      </span>
                     </Label>
                     <Input
                       id="import-name"
@@ -246,15 +249,16 @@ export function ContactImporter(props: {
                   {sourceType === "paste" ? (
                     <div className={styles.field}>
                       <Label htmlFor="import-text">
-                        名单内容 <span className={styles.required}>必填</span>
+                        {t("form.textLabel")}{" "}
+                        <span className={styles.required}>
+                          {t("form.required")}
+                        </span>
                       </Label>
                       <textarea
                         id="import-text"
                         required
                         className={styles.textarea}
-                        placeholder={
-                          "邮箱,姓名,标签\ncustomer@example.com,张三,VIP|老客"
-                        }
+                        placeholder={t("form.textPlaceholder")}
                         value={text}
                         aria-invalid={Boolean(fieldErrors["import-text"])}
                         aria-describedby={describedBy(
@@ -264,20 +268,22 @@ export function ContactImporter(props: {
                         onChange={(event) => setText(event.target.value)}
                       />
                       <p id="import-text-hint" className={styles.hint}>
-                        可粘贴逗号或制表符表格；无表头时按“邮箱、姓名、标签”三列读取。
+                        {t("form.textHint")}
                       </p>
                       {fieldError("import-text")}
                     </div>
                   ) : (
                     <div className={styles.field}>
                       <Label htmlFor="import-file">
-                        选择 CSV 文件{" "}
-                        <span className={styles.required}>必填</span>
+                        {t("form.fileLabel")}{" "}
+                        <span className={styles.required}>
+                          {t("form.required")}
+                        </span>
                       </Label>
                       <Input
                         ref={fileRef}
                         id="import-file"
-                        aria-label="选择 CSV 文件"
+                        aria-label={t("form.fileLabel")}
                         type="file"
                         accept=".csv,text/csv"
                         aria-describedby={describedBy(
@@ -291,8 +297,7 @@ export function ContactImporter(props: {
                         }}
                       />
                       <p id="import-file-hint" className={styles.hint}>
-                        UTF-8 编码，须有“邮箱”或 email 表头；每次最多 1000 行、2
-                        MiB。
+                        {t("form.fileHint")}
                       </p>
                       <p
                         id="import-file-status"
@@ -300,15 +305,17 @@ export function ContactImporter(props: {
                         role="status"
                       >
                         {activity === "file"
-                          ? "正在读取文件，请稍候…"
+                          ? t("form.fileReading")
                           : fileName
-                            ? `已读取：${fileName}`
+                            ? t("form.fileLoaded", { name: fileName })
                             : text
-                              ? "已保留粘贴内容；选择文件后会替换。"
-                              : "尚未选择文件。"}
+                              ? t("form.fileKeepPaste")
+                              : t("form.fileEmpty")}
                       </p>
                       {fieldError("import-text")}
-                      <Label htmlFor="import-delimiter">分隔符</Label>
+                      <Label htmlFor="import-delimiter">
+                        {t("form.delimiterLabel")}
+                      </Label>
                       <select
                         id="import-delimiter"
                         className="list-filter"
@@ -317,9 +324,9 @@ export function ContactImporter(props: {
                           setDelimiter(event.target.value as "" | "," | "\t")
                         }
                       >
-                        <option value="">自动识别</option>
-                        <option value=",">逗号</option>
-                        <option value="\t">制表符</option>
+                        <option value="">{t("form.delimiterAuto")}</option>
+                        <option value=",">{t("form.delimiterComma")}</option>
+                        <option value="\t">{t("form.delimiterTab")}</option>
                       </select>
                     </div>
                   )}
@@ -330,11 +337,10 @@ export function ContactImporter(props: {
                   aria-labelledby="consent-heading"
                 >
                   <h3 id="consent-heading">
-                    <ShieldCheck aria-hidden="true" /> 授权与订阅状态
+                    <ShieldCheck aria-hidden="true" />{" "}
+                    {t("form.consentHeading")}
                   </h3>
-                  <p className={styles.hint}>
-                    导入名单不等于获得发信资格。未确认客户不能发信，已有退订、投诉、硬退信及归档保护不会自动解除。
-                  </p>
+                  <p className={styles.hint}>{t("form.consentLead")}</p>
                   <label className={styles.consentCheck}>
                     <input
                       type="checkbox"
@@ -343,12 +349,9 @@ export function ContactImporter(props: {
                         setConsentDeclared(event.target.checked)
                       }
                     />
-                    <span>我确认名单中的客户已明确同意接收商业邮件</span>
+                    <span>{t("form.consentCheckbox")}</span>
                   </label>
-                  <p className={styles.hint}>
-                    此声明设置未填写订阅状态的记录；CSV
-                    逐行状态优先。不声明且未填写状态的新客户以“未确认”导入。
-                  </p>
+                  <p className={styles.hint}>{t("form.consentCheckboxHint")}</p>
                   {(consentDeclared ||
                     consentSource ||
                     consentNote ||
@@ -356,21 +359,23 @@ export function ContactImporter(props: {
                     <div className={styles.consentFields}>
                       {!consentDeclared && (
                         <p className={styles.hint}>
-                          已取消批量声明。填写过的授权信息仍会随名单提交，可在下方修改或清空；不会仅凭这些信息将未确认客户设为已订阅。
+                          {t("form.consentUncheckedHint")}
                         </p>
                       )}
                       <div className={styles.field}>
                         <Label htmlFor="consent-source">
-                          同意来源{" "}
+                          {t("form.consentSourceLabel")}{" "}
                           <span className={styles.required}>
-                            {consentDeclared ? "必填" : "选填"}
+                            {consentDeclared
+                              ? t("form.required")
+                              : t("form.optional")}
                           </span>
                         </Label>
                         <Input
                           id="consent-source"
                           required={consentDeclared}
                           maxLength={100}
-                          placeholder="例如：会员注册页主动勾选"
+                          placeholder={t("form.consentSourcePlaceholder")}
                           value={consentSource}
                           aria-invalid={Boolean(fieldErrors["consent-source"])}
                           aria-describedby={describedBy("consent-source")}
@@ -382,7 +387,10 @@ export function ContactImporter(props: {
                       </div>
                       <div className={styles.field}>
                         <Label htmlFor="consent-at">
-                          同意时间 <span className={styles.required}>选填</span>
+                          {t("form.consentAtLabel")}{" "}
+                          <span className={styles.required}>
+                            {t("form.optional")}
+                          </span>
                         </Label>
                         <Input
                           id="consent-at"
@@ -396,15 +404,17 @@ export function ContactImporter(props: {
                           onChange={(event) => setConsentAt(event.target.value)}
                         />
                         <p id="consent-at-hint" className={styles.hint}>
-                          按当前设备时区填写，不能晚于现在。
+                          {t("form.consentAtHint")}
                         </p>
                         {fieldError("consent-at")}
                       </div>
                       <div className={styles.field}>
                         <Label htmlFor="consent-note">
-                          授权说明{" "}
+                          {t("form.consentNoteLabel")}{" "}
                           <span className={styles.required}>
-                            {consentDeclared ? "必填" : "选填"}
+                            {consentDeclared
+                              ? t("form.required")
+                              : t("form.optional")}
                           </span>
                         </Label>
                         <textarea
@@ -412,7 +422,7 @@ export function ContactImporter(props: {
                           className={styles.noteInput}
                           required={consentDeclared}
                           maxLength={500}
-                          placeholder="例如：客户主动勾选接收促销邮件，记录可在会员后台核对"
+                          placeholder={t("form.consentNotePlaceholder")}
                           value={consentNote}
                           aria-invalid={Boolean(fieldErrors["consent-note"])}
                           aria-describedby={describedBy("consent-note")}
@@ -425,29 +435,24 @@ export function ContactImporter(props: {
                     </div>
                   )}
                   <details className={styles.help}>
-                    <summary>CSV 逐行授权如何填写？</summary>
-                    <p>
-                      “订阅状态”列可填写未确认、已订阅、已退订、硬退信、已投诉。已订阅记录必须提供同意来源及授权说明。
-                    </p>
-                    <p>
-                      CSV
-                      包含“同意来源”“授权说明”或“同意时间”列时，各列逐行值优先；其中空值不会由批量信息补齐。未提供这些列时才使用批量信息。
-                    </p>
+                    <summary>{t("form.csvHelpSummary")}</summary>
+                    <p>{t("form.csvHelpLine1")}</p>
+                    <p>{t("form.csvHelpLine2")}</p>
                   </details>
                 </section>
               </fieldset>
               <div className={styles.formActions}>
                 <p className={styles.hint}>
-                  {busy
-                    ? "正在处理当前请求，请完成后再切换名单。"
-                    : "下一步查看新增、更新、保护及错误记录，再决定是否导入。"}
+                  {busy ? t("form.busyHint") : t("form.nextHint")}
                 </p>
                 <Button
                   type="submit"
                   disabled={busy || failure?.operation === "file"}
                 >
                   <FileUp aria-hidden="true" />{" "}
-                  {activity === "prepare" ? "正在预检…" : "预检名单"}
+                  {activity === "prepare"
+                    ? t("form.preparing")
+                    : t("form.prepareButton")}
                 </Button>
               </div>
             </form>
@@ -485,15 +490,11 @@ export function ContactImporter(props: {
         aria-labelledby="import-history-heading"
       >
         <div className={styles.historyHeading}>
-          <h2 id="import-history-heading">最近导入</h2>
-          <p className={styles.hint}>
-            保留最近 10 次，可继续原任务或查看结果。
-          </p>
+          <h2 id="import-history-heading">{t("history.title")}</h2>
+          <p className={styles.hint}>{t("history.description")}</p>
         </div>
         {!recent.length ? (
-          <p className={styles.hint}>
-            暂无导入记录。完成预检后，任务会出现在这里。
-          </p>
+          <p className={styles.hint}>{t("history.empty")}</p>
         ) : (
           <ul>
             {recent.map((item) => (
@@ -508,26 +509,35 @@ export function ContactImporter(props: {
                   <span className={styles.historyName}>
                     {item.source_name}
                     <span className={styles.hint}>
-                      {formatImportTimestamp(item.created_at)} ·{" "}
-                      {item.source_type === "csv" ? "CSV 文件" : "粘贴名单"}
+                      <LocalDate value={item.created_at} /> ·{" "}
+                      {item.source_type === "csv"
+                        ? t("history.typeCsv")
+                        : t("history.typePaste")}
                     </span>
                   </span>
                   <span className={styles.historyState}>
                     <strong>
                       {job?.job.id === item.id && activity === "process"
-                        ? "处理中"
-                        : importJobStatusLabels[item.status]}
+                        ? t("history.processingNow")
+                        : KNOWN_JOB_STATUSES.has(item.status)
+                          ? t(`jobStatus.${item.status as "completed"}`)
+                          : item.status}
                     </strong>
                     <span>
                       {item.status === "prepared"
-                        ? `${item.total_groups} 条待确认`
-                        : `${item.processed_groups}/${item.total_groups} 条（含错误与跳过）`}{" "}
+                        ? t("history.pendingConfirmCount", {
+                            count: item.total_groups,
+                          })
+                        : t("history.processedCount", {
+                            processed: item.processed_groups,
+                            total: item.total_groups,
+                          })}{" "}
                       ·{" "}
                       {item.status === "processing"
-                        ? "继续原任务"
+                        ? t("history.actionContinue")
                         : item.status === "prepared"
-                          ? "查看预检"
-                          : "查看结果"}
+                          ? t("history.actionPreview")
+                          : t("history.actionResult")}
                     </span>
                   </span>
                   <ArrowRight aria-hidden="true" />

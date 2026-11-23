@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { settingsSectionHref } from "@/features/settings/anchors";
 import { isQuotaExhausted, quotaUsageText, type PlanQuota } from "./plan-usage";
 
@@ -16,24 +19,31 @@ export function PlanUsageNote({
   className?: string;
   testId?: string;
 }) {
+  const t = useTranslations("common.planUsage");
+  const locale = useLocale();
   const usage = quotaUsageText(quota);
   if (!usage) return null;
   const exhausted = isQuotaExhausted(quota);
+  const colon = locale === "en" ? ": " : "：";
+  const period = locale === "en" ? ". " : "。";
   return (
     <p
       className={`${exhausted ? "field-error" : "hint"} ${className}`.trim()}
       data-testid={testId}
       role={exhausted ? "status" : undefined}
     >
-      {label}：{usage}
+      {label}
+      {colon}
+      {usage}
       {exhausted && (
         <>
-          。{exhaustedText}{" "}
+          {period}
+          {exhaustedText}{" "}
           <Link
             href={settingsSectionHref("billing")}
             className="underline underline-offset-2"
           >
-            查看套餐
+            {t("viewPlan")}
           </Link>
         </>
       )}

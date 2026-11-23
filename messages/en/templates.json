@@ -1,0 +1,159 @@
+{
+  "title": "Email Templates",
+  "metaCount": "{count, plural, one {# template} other {# templates}}",
+  "description": "Start from built-in starter templates or create your own. Dynamic variables in the subject and body are filled in automatically when sending.",
+  "newTemplate": "New template",
+  "search": {
+    "toolbarAria": "Search templates",
+    "label": "Search",
+    "placeholder": "Search template name or subject",
+    "statusLabel": "View",
+    "statusAria": "Template status",
+    "statusActive": "Active templates",
+    "statusArchived": "Archived templates",
+    "categoryLabel": "Category",
+    "categoryAria": "Template category",
+    "allCategories": "All categories"
+  },
+  "quota": {
+    "label": "Custom templates (starter templates excluded)",
+    "exhausted": "You've reached your custom template limit. Archive unused templates or upgrade your plan.",
+    "duplicateDisabledTitle": "Custom template limit reached"
+  },
+  "filters": {
+    "ariaLabel": "Active filters",
+    "applied": "Filtered",
+    "queryChip": "Search: {query}",
+    "categoryChip": "Category: {category}",
+    "clear": "Clear filters"
+  },
+  "status": {
+    "loading": "Loading…",
+    "readOnly": "You have read-only access."
+  },
+  "empty": {
+    "searchTitle": "No matching templates",
+    "searchDescription": "Adjust your search terms or clear filters to see all templates.",
+    "archivedTitle": "No archived templates",
+    "archivedDescription": "Archived templates stay here and can be restored anytime.",
+    "initialTitle": "No templates yet",
+    "initialDescription": "Create an email template or customize a starter template in the editor."
+  },
+  "card": {
+    "starterBadge": "Starter",
+    "preview": "Preview",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "archive": "Archive",
+    "restore": "Restore"
+  },
+  "editor": {
+    "editTitle": "Edit template",
+    "createTitle": "New template",
+    "description": "Edit your content, check the preview, then save to your library.",
+    "viewSwitchAria": "Editor view",
+    "editTab": "Edit content",
+    "previewTab": "Preview",
+    "formAria": "Template content",
+    "nameLabel": "Template name",
+    "categoryLabel": "Category",
+    "existingCategories": "Choose existing category",
+    "subjectLabel": "Subject",
+    "bodyLabel": "Plain-text body",
+    "charCount": "{count} / 20,000 chars",
+    "variablesAria": "Template variables",
+    "insertToSubject": "Insert variable into subject",
+    "insertToBody": "Insert variable into body",
+    "variablesHelp": "Click a variable to insert its placeholder. Unknown variables block saving.",
+    "groupCustomer": "Contact fields · replaced per recipient",
+    "groupCampaign": "Campaign fields · filled once per campaign",
+    "insertVariableTitle": "Insert {label} ('{{'{key}'}}')",
+    "senderNameHelp": "Sign-off name is used inside the email text. The actual From header comes from your delivery channel.",
+    "fieldSubject": "Subject",
+    "fieldBody": "Body",
+    "fieldError": "{field}: {message}",
+    "previewSectionTitle": "Email preview",
+    "statusInvalid": "Fix invalid template variables before saving",
+    "statusSaving": "Saving template…",
+    "statusDirty": "Unsaved changes",
+    "statusClean": "Saves template content only",
+    "saveButton": "Save template",
+    "savingButton": "Saving…",
+    "saveFailed": "Save failed. Please try again.",
+    "saveFailedKeepInput": "Save failed. Your input was preserved — please try again."
+  },
+  "variables": {
+    "name": "Contact name",
+    "email": "Contact email",
+    "store_name": "Store name",
+    "sender_name": "Sign-off name",
+    "discount": "Discount",
+    "product": "Product",
+    "order_number": "Order number"
+  },
+  "preview": {
+    "dialogFallbackTitle": "Template preview",
+    "dialogDescription": "Review the subject, body, and system-appended footer.",
+    "sampleNote": "Sample values are for preview only and won't be saved to the template.",
+    "sampleControlsSummary": "Adjust sample values · {count, plural, one {# variable used} other {# variables used}}",
+    "nameFallbackHelp": "If contact name is blank, the part before @ in their email is used.",
+    "noVariablesUsed": "No variables are used in the current subject or body.",
+    "unusedSamplesSummary": "Unused sample values ({count})",
+    "missingPrefix": "Missing sample values: {fields}",
+    "missingSeparator": ", ",
+    "missingToken": "[Missing: {key}]",
+    "fillMissingAction": "Fill sample values",
+    "subjectLabel": "Subject",
+    "subjectEmpty": "Enter a subject to preview it here",
+    "bodyLabel": "Plain-text body (with system footer)",
+    "bodyEmpty": "Enter a body to preview it here.",
+    "defaultSenderPrefix": "Your sign-off name is still the default. Set a real sign-off name to auto-fill previews and campaigns. ",
+    "defaultSenderLink": "Set sign-off name",
+    "defaultSenderSuffix": ".",
+    "copyButton": "Copy full preview",
+    "copyFromPrefix": "From: {from}",
+    "copySubjectPrefix": "Subject: {subject}",
+    "copySuccess": "Full preview copied",
+    "copyFailed": "Copy failed. Check browser clipboard permissions."
+  },
+  "archiveConfirm": {
+    "title": "Archive template",
+    "description": "Archive \"{name}\"? You can restore it anytime from Archived templates.",
+    "confirm": "Archive"
+  },
+  "toast": {
+    "duplicated": "Template duplicated",
+    "duplicateFailed": "Duplicate failed. Please try again.",
+    "restored": "Template restored",
+    "archived": "Template archived",
+    "actionFailed": "Action failed. Please try again.",
+    "saved": "Template saved"
+  },
+  "defaults": {
+    "customCategory": "Custom",
+    "welcome": {
+      "name": "Welcome New Customers",
+      "category": "Welcome Series"
+    },
+    "abandoned_cart": {
+      "name": "Abandoned Cart Recovery",
+      "category": "Abandoned Cart"
+    },
+    "promotion": {
+      "name": "Promotional Sale",
+      "category": "Promotions"
+    },
+    "shipping": {
+      "name": "Shipping Notification",
+      "category": "Shipping"
+    },
+    "winback": {
+      "name": "Win-back Reminder",
+      "category": "Win-back"
+    },
+    "review_request": {
+      "name": "Review Request",
+      "category": "Reviews"
+    }
+  }
+}

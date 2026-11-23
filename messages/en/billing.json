@@ -1,0 +1,122 @@
+{
+  "title": "Plan & usage",
+  "currentPlan": "Current plan: {plan}",
+  "plans": {
+    "free": "Free",
+    "pro": "Pro",
+    "team": "Team",
+    "fallback": "this plan"
+  },
+  "metrics": {
+    "contacts": "Active contacts",
+    "customTemplates": "Custom templates",
+    "unlimited": "Unlimited",
+    "confirmedCampaigns": "Confirmed campaigns this month",
+    "maxRecipients": "Max recipients per campaign",
+    "recipientsValue": "{count}",
+    "teamSeats": "Team seats",
+    "collaboration": "Collaboration",
+    "personalOnly": "Single user (Personal)",
+    "dailySends": "Emails sent today",
+    "dailySendsValue": "{used} / {max}"
+  },
+  "quotaResetNote": "Daily send quota resets at 00:00 Beijing time (UTC+8).",
+  "teamUpgradeHint": " Upgrade to Team for multi-user collaboration.",
+  "subscriptionSummary": "Subscription: {provider} · {status}",
+  "periodEnd": " · Renews through {date}",
+  "cancelAtPeriodEnd": " · Scheduled not to renew",
+  "cancelScheduledNote": "Your plan stays active until the end of the current period, then moves to Free without losing contacts or members.",
+  "subscriptionStatus": {
+    "none": "No subscription",
+    "inactive": "Inactive",
+    "active": "Active",
+    "trialing": "Trialing",
+    "past_due": "Past due",
+    "canceled": "Canceled",
+    "unpaid": "Unpaid",
+    "incomplete": "Incomplete"
+  },
+  "nudges": {
+    "contactsRemaining": "{count, plural, one {# active contact slot} other {# active contact slots}} left. Existing contacts are kept once full.",
+    "seatsRemaining": "{count, plural, one {# team seat} other {# team seats}} left. Add-on seats are not available yet.",
+    "memberCapLocked": "Active members exceed your plan seat limit. Members remain listed, but editor actions are paused until an admin removes extra members or upgrades."
+  },
+  "adminOnlyUpgrade": "Only workspace admins can upgrade the plan.",
+  "upgradePro": "Upgrade to Pro",
+  "upgradeTeam": "Upgrade to Team",
+  "buyTeam": "Get Team",
+  "teamSkuUnavailable": "Online checkout for Team is not enabled yet. Contact support or an admin to upgrade.",
+  "manageSubscriptionHint": "To update renewal, change payment method, or request a refund, use the \"Manage subscription\" link in your payment receipt email.",
+  "cancelRenewalConfirm": "Cancel auto-renewal? You can keep using your plan through the end of the current period, then revert to Free without losing data.",
+  "cancelRenewalButton": "Cancel renewal",
+  "proToTeamHint": "If you already subscribe to Pro, cancel the Pro renewal via your payment receipt after upgrading to Team to avoid duplicate charges.",
+  "checkout": {
+    "dialogTitle": "Subscribe to {plan} · {price}",
+    "perMonth": "{price}/mo",
+    "perYear": "{price}/yr",
+    "cycleMonthly": "Monthly",
+    "cycleYearly": "Yearly",
+    "descriptionTeam": "Team ({cycle}): Up to 25,000 active contacts, 20 seats, full activity logs, and team invitations—plus Pro sending limits and open/click analytics.",
+    "descriptionPro": "Pro ({cycle}): Up to 5,000 active contacts, unlimited custom templates and campaign confirmations, open/click analytics, and 7-day activity logs for one user.",
+    "thirdPartyPaymentNote": "Payments are processed securely by a third-party provider; card details are never stored here.",
+    "billingCycle": "Billing cycle",
+    "monthlyButton": "Monthly {price}",
+    "yearlyButton": "Yearly {price}",
+    "intervalChangedNotice": "Billing cycle changed. Please verify the discount code again.",
+    "verifyBeforeCheckout": "Please click Verify to confirm your discount code first.",
+    "paymentMethods": "Payment method",
+    "primaryCheckout": "Subscribe & pay",
+    "primaryHint": "Card / Alipay / WeChat Pay",
+    "altCheckout": "Other payment methods",
+    "altHint": "Card / Apple Pay / Google Pay / Local cards",
+    "discountAppliedSubline": "Discount applied",
+    "discountExcludedSubline": "Discount not eligible here",
+    "proCancelReminder": "After Team activates, cancel your existing Pro auto-renewal from your Pro receipt email to avoid double billing.",
+    "renewalFootnote": "Subscriptions renew automatically each cycle. Canceling returns the workspace to Free at period end. Use \"Manage subscription\" in your receipt email to manage billing or refunds.",
+    "haveDiscountCode": "Have a discount code?",
+    "applyDiscountCode": "Apply discount code",
+    "discountPlaceholder": "Enter discount code (e.g. SAVE20)",
+    "verifyDiscount": "Verify"
+  },
+  "toasts": {
+    "cancelScheduledTitle": "Renewal canceled",
+    "cancelScheduledDescription": "Your plan remains active until the end of the current period, then moves to Free without data loss.",
+    "successTitle": "Checkout complete",
+    "successWithPlan": "{plan} may take a few seconds to activate. Refresh Settings if quotas have not updated.",
+    "successGeneric": "Your subscription may take a few seconds to activate. Refresh or check Settings shortly.",
+    "errors": {
+      "missing_product": {
+        "title": "Unable to start checkout",
+        "description": "Checkout is not ready right now. Please try again later or contact support."
+      },
+      "discount": {
+        "title": "Invalid discount code",
+        "description": "The discount code is invalid or cannot be used for this plan. Check the code or continue without one."
+      },
+      "auth": {
+        "title": "Sign in required",
+        "description": "Sign in to continue checkout or manage your subscription."
+      },
+      "forbidden": {
+        "title": "Permission denied",
+        "description": "Only workspace admins can upgrade plans or cancel renewals."
+      },
+      "plan": {
+        "title": "Plan changed",
+        "description": "This workspace is no longer eligible to purchase {plan}. Refresh Settings and try again."
+      },
+      "provider": {
+        "title": "Payment provider unavailable",
+        "description": "Please try again shortly, or use \"Manage subscription\" in your receipt email."
+      },
+      "config": {
+        "title": "Action unavailable",
+        "description": "Please try again later or ask an admin to check billing configuration."
+      },
+      "default": {
+        "title": "Checkout incomplete",
+        "description": "Please try again later or ask an admin to check payment settings."
+      }
+    }
+  }
+}

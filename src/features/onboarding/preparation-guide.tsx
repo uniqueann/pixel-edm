@@ -3,6 +3,7 @@
 import { useEffect, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowRight,
   Check,
@@ -17,6 +18,7 @@ import {
   preparationModel,
   preparationPreferenceKey,
   type PreparationFacts,
+  type PreparationTask,
 } from "./model";
 import { preparationHref } from "./links";
 import styles from "./preparation.module.css";
@@ -62,6 +64,7 @@ export function PreparationGuide({
   workspaceId: string;
   otherDataUnavailable?: boolean;
 }) {
+  const t = useTranslations("dashboard.preparation");
   const model = preparationModel(facts);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -86,14 +89,79 @@ export function PreparationGuide({
     window.addEventListener("hashchange", reveal);
     return () => window.removeEventListener("hashchange", reveal);
   }, [preferenceKey]);
+
+  const roleRestriction =
+    facts.role === "viewer"
+      ? t("restrictions.viewer")
+      : facts.canWrite === null
+        ? t("restrictions.unknown")
+        : t("restrictions.seatExceeded");
+
+  const localizedItemCopy = (key: PreparationTask) => {
+    switch (key) {
+      case "store":
+        return {
+          title: t("items.store.title"),
+          detail: facts.storeReady
+            ? t("items.store.done")
+            : t("items.store.todo"),
+          action: t("items.store.action"),
+          restriction: t("restrictions.storeAdminOnly"),
+        };
+      case "channels":
+        return {
+          title: t("items.channels.title"),
+          detail: facts.channel?.detail ?? t("items.channels.unknown"),
+          action: t("items.channels.action"),
+          restriction: t("restrictions.channelAdminOnly"),
+        };
+      case "contacts":
+        return {
+          title: t("items.contacts.title"),
+          detail:
+            facts.contacts === null
+              ? t("items.contacts.unknown")
+              : facts.contacts.subscribed > 0
+                ? t("items.contacts.done", {
+                    count: facts.contacts.subscribed,
+                  })
+                : facts.contacts.active > 0
+                  ? t("items.contacts.activeOnly", {
+                      count: facts.contacts.active,
+                    })
+                  : t("items.contacts.empty"),
+          action: facts.contacts?.active
+            ? t("items.contacts.actionCheck")
+            : t("items.contacts.actionImport"),
+          restriction: roleRestriction,
+        };
+      case "templates":
+        return {
+          title: t("items.templates.title"),
+          detail:
+            facts.templates === null
+              ? t("items.templates.unknown")
+              : facts.templates > 0
+                ? t("items.templates.done", { count: facts.templates })
+                : t("items.templates.empty"),
+          action: facts.templates
+            ? t("items.templates.actionView")
+            : t("items.templates.actionCreate"),
+          restriction: roleRestriction,
+        };
+    }
+  };
+
   const next = model.recommended;
+  const nextCopy = next ? localizedItemCopy(next.key) : null;
   const canCreate =
     facts.canWrite === true && facts.templates !== null && facts.templates > 0;
   const summary = model.unknown
-    ? `${model.completed}/4 项基础准备已完成，部分信息待核对`
+    ? t("summaryUnknown", { completed: model.completed })
     : model.foundationReady
-      ? "4/4 项基础准备已完成"
-      : `${model.completed}/4 项基础准备已完成`;
+      ? t("summaryDone")
+      : t("summaryProgress", { completed: model.completed });
+
   return (
     <section
       id="onboarding"
@@ -104,10 +172,10 @@ export function PreparationGuide({
       <div className={styles.header}>
         <div>
           <h2 id="preparation-heading">
-            {model.hasCampaigns ? "工作区准备清单" : "准备你的第一场活动"}
+            {model.hasCampaigns ? t("headingExisting") : t("headingFirst")}
           </h2>
           <p role="status" aria-live="polite">
-            {pending ? "正在重新核对准备信息…" : summary}
+            {pending ? t("rechecking") : summary}
           </p>
         </div>
         <Button
@@ -117,22 +185,20 @@ export function PreparationGuide({
           aria-controls="preparation-content"
           onClick={() => savePreference(preferenceKey, !expanded)}
         >
-          {expanded ? "收起清单" : "查看准备清单"}
+          {expanded ? t("collapse") : t("expand")}
           {expanded ? <ChevronUp aria-hidden /> : <ChevronDown aria-hidden />}
         </Button>
       </div>
       {(model.unknown || otherDataUnavailable) && (
         <div className={styles.error}>
-          <p>
-            部分总览信息暂时无法读取，保留为待核对。你可以继续浏览现有功能。
-          </p>
+          <p>{t("partialError")}</p>
           <Button
             variant="outline"
             className={styles.control}
             disabled={pending}
             onClick={() => startTransition(() => router.refresh())}
           >
-            {pending ? "正在核对…" : "重试读取"}
+            {pending ? t("retrying") : t("retry")}
           </Button>
         </div>
       )}
@@ -140,30 +206,30 @@ export function PreparationGuide({
         <div className={styles.body}>
           <div className={styles.recommendation}>
             <h3>
-              {next
-                ? `建议先${next.action}`
+              {nextCopy
+                ? t("recommendedPrefix", { action: nextCopy.action })
                 : model.unknown
-                  ? "先核对当前准备情况"
+                  ? t("recUnknownTitle")
                   : facts.role === "viewer"
-                    ? "查看进度，与团队一起准备"
+                    ? t("recViewerTitle")
                     : model.hasCampaigns
-                      ? "活动已创建，继续核对内容与名单"
+                      ? t("recHasCampaignsTitle")
                       : model.foundationReady
-                        ? "基础准备已齐，创建第一场活动"
-                        : "从你有权限的任务开始"}
+                        ? t("recReadyTitle")
+                        : t("recRoleStartTitle")}
             </h3>
             <p>
-              {next
-                ? next.detail
+              {nextCopy
+                ? nextCopy.detail
                 : model.unknown
-                  ? "无法确认的项目不会计为完成。重试后会按最新数据更新清单。"
+                  ? t("recUnknownDetail")
                   : facts.role === "viewer"
-                    ? "你可以查看客户、模板和活动；需要修改时，请联系管理员或运营。"
+                    ? t("recViewerDetail")
                     : model.foundationReady
-                      ? "接下来到活动页预览邮件并确认名单。基础准备完成不代表某场活动必然可发送。"
-                      : "店铺信息和发信通道由管理员处理。你仍可查看内容，或按已有权限准备草稿。"}
+                      ? t("recReadyDetail")
+                      : t("recRoleStartDetail")}
             </p>
-            {next ? (
+            {next && nextCopy ? (
               <Button asChild className={styles.control}>
                 <Link
                   href={preparationHref(
@@ -171,7 +237,7 @@ export function PreparationGuide({
                     Boolean(facts.contacts?.active),
                   )}
                 >
-                  {next.action}
+                  {nextCopy.action}
                   <ArrowRight aria-hidden />
                 </Link>
               </Button>
@@ -179,18 +245,16 @@ export function PreparationGuide({
               <Button asChild variant="outline" className={styles.control}>
                 <Link href={preparationHref("campaigns")}>
                   {model.hasCampaigns
-                    ? "前往活动核对"
+                    ? t("goReviewCampaigns")
                     : canCreate
-                      ? "前往创建活动"
-                      : "查看发信活动"}
+                      ? t("goCreateCampaign")
+                      : t("viewCampaigns")}
                   <ArrowRight aria-hidden />
                 </Link>
               </Button>
             )}
             {next && model.hasCampaigns && (
-              <p className={styles.createdNote}>
-                活动已创建，可继续核对内容与名单。
-              </p>
+              <p className={styles.createdNote}>{t("createdNote")}</p>
             )}
             <div className={styles.recommendationLinks}>
               {next && model.hasCampaigns ? (
@@ -198,69 +262,74 @@ export function PreparationGuide({
                   className={styles.textLink}
                   href={preparationHref("campaigns")}
                 >
-                  前往活动核对
+                  {t("goReviewCampaigns")}
                 </Link>
               ) : next && canCreate ? (
                 <Link
                   className={styles.textLink}
                   href={preparationHref("campaigns")}
                 >
-                  也可以先创建活动草稿
+                  {t("draftFirst")}
                 </Link>
               ) : null}
               <Link href="/help#help-onboarding" className={styles.textLink}>
                 <CircleHelp size={16} aria-hidden />
-                首次使用说明
+                {t("onboardingHelp")}
               </Link>
             </div>
-            <p className={styles.note}>
-              顺序可自由调整；正式发送仍需管理员确认。确认名单会锁定快照，不会立即正式发送。
-            </p>
+            <p className={styles.note}>{t("safetyNote")}</p>
           </div>
-          <ol className={styles.tasks} aria-label="基础准备项目">
-            {model.items.map((item) => (
-              <li
-                key={item.key}
-                data-preparation={item.key}
-                className={item.status === "done" ? styles.taskDone : undefined}
-              >
-                <div className={styles.taskHeading}>
-                  {item.canAct && item.status !== "unknown" ? (
-                    <Link
-                      href={preparationHref(
-                        item.key,
-                        Boolean(facts.contacts?.active),
-                      )}
+          <ol className={styles.tasks} aria-label={t("tasksAriaLabel")}>
+            {model.items.map((item) => {
+              const copy = localizedItemCopy(item.key);
+              return (
+                <li
+                  key={item.key}
+                  data-preparation={item.key}
+                  className={
+                    item.status === "done" ? styles.taskDone : undefined
+                  }
+                >
+                  <div className={styles.taskHeading}>
+                    {item.canAct && item.status !== "unknown" ? (
+                      <Link
+                        href={preparationHref(
+                          item.key,
+                          Boolean(facts.contacts?.active),
+                        )}
+                        className={
+                          item.status === "done"
+                            ? `${styles.taskLink} ${styles.taskLinkDone}`
+                            : styles.taskLink
+                        }
+                      >
+                        {copy.title}
+                      </Link>
+                    ) : (
+                      <strong>{copy.title}</strong>
+                    )}
+                    <span
                       className={
-                        item.status === "done"
-                          ? `${styles.taskLink} ${styles.taskLinkDone}`
-                          : styles.taskLink
+                        item.status === "done" ? styles.done : styles.state
                       }
                     >
-                      {item.title}
-                    </Link>
-                  ) : (
-                    <strong>{item.title}</strong>
+                      {item.status === "done" && (
+                        <Check size={14} aria-hidden />
+                      )}
+                      {item.status === "done"
+                        ? t("statusDone")
+                        : item.status === "unknown"
+                          ? t("statusUnknown")
+                          : t("statusTodo")}
+                    </span>
+                  </div>
+                  {item.status !== "done" && <p>{copy.detail}</p>}
+                  {!item.canAct && item.status !== "done" && (
+                    <p className={styles.permission}>{copy.restriction}</p>
                   )}
-                  <span
-                    className={
-                      item.status === "done" ? styles.done : styles.state
-                    }
-                  >
-                    {item.status === "done" && <Check size={14} aria-hidden />}
-                    {item.status === "done"
-                      ? "已完成"
-                      : item.status === "unknown"
-                        ? "待核对"
-                        : "待完成"}
-                  </span>
-                </div>
-                {item.status !== "done" && <p>{item.detail}</p>}
-                {!item.canAct && item.status !== "done" && (
-                  <p className={styles.permission}>{item.restriction}</p>
-                )}
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ol>
         </div>
         {!facts.signatureReady && (
@@ -269,9 +338,9 @@ export function PreparationGuide({
               href={settingsSectionHref("profile")}
               className={styles.textLink}
             >
-              建议：完善我的署名
+              {t("signatureRecommend")}
             </Link>
-            <span>用于邮件落款，不计入基础准备。</span>
+            <span>{t("signatureHint")}</span>
           </div>
         )}
       </div>

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { getContext, workspaceCookie } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/supabase/config";
+import { AppError, mapTeamActionError } from "@/lib/errors";
 import {
   inviteWrongAccountMessage,
   teamRoles,
@@ -42,37 +43,14 @@ function pickInvitationResult(data: unknown) {
 }
 
 function actionError(error: unknown, fallback = "团队操作失败，请重试。") {
-  const message = error instanceof Error ? error.message : "";
-  const safeMessages = [
-    "工作区已切换",
-    "只有管理员",
-    "该邮箱已是工作区成员",
-    "该邮箱已有待处理邀请",
-    "邮箱格式无效",
-    "邀请已过期",
-    "该邀请已无法",
-    "邀请不存在",
-    "成员不存在",
-    "成员已被修改",
-    "所有者必须",
-    "不能移除工作区所有者",
-    "工作区至少保留一名管理员",
-    "新的所有者必须",
-    "只有当前所有者",
-    "新的所有者",
-  ];
-  return {
-    error: safeMessages.some((item) => message.startsWith(item))
-      ? message
-      : fallback,
-  };
+  return mapTeamActionError(error, fallback);
 }
 
 async function currentAdmin(workspaceIdValue: string) {
   const context = await getContext();
   if (context.workspace.id !== workspaceIdValue)
-    throw new Error("工作区已切换，请刷新后重试。");
-  if (context.role !== "admin") throw new Error("只有管理员可以管理团队。");
+    throw new AppError("errors.common.workspaceSwitched");
+  if (context.role !== "admin") throw new AppError("errors.team.adminOnly");
   return { context, db: await serverClient() };
 }
 

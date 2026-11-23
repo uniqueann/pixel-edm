@@ -3,12 +3,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, useTransition } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ChevronDown, LogOut } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { Brand } from "./brand";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { LocaleToggle } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
 import {
   Select,
@@ -19,23 +21,20 @@ import {
 } from "./ui/select";
 import { signOut, switchWorkspace } from "@/app/actions";
 import { GuideContext } from "@/features/onboarding/guide-context";
-const tabs = [
-  ["dashboard", "总览"],
-  ["contacts", "客户"],
-  ["templates", "模板"],
-  ["campaigns", "活动"],
-  ["team", "团队"],
-  ["logs", "日志"],
-  ["settings", "设置"],
-  ["help", "帮助"],
-];
-const roleNames: Record<string, string> = {
-  admin: "管理员",
-  editor: "运营",
-  viewer: "查看者",
-};
+const tabSlugs = [
+  "dashboard",
+  "contacts",
+  "templates",
+  "campaigns",
+  "team",
+  "logs",
+  "settings",
+  "help",
+] as const;
+type NavSlug = (typeof tabSlugs)[number];
+type RoleKey = "admin" | "editor" | "viewer";
 /** 窄屏收入「更多」菜单的低频导航项 */
-const overflowTabSlugs = new Set(["logs", "help"]);
+const overflowTabSlugs = new Set<string>(["logs", "help"]);
 
 function tabIsActive(pathname: string, slug: string) {
   return pathname === `/${slug}` || pathname.startsWith(`/${slug}/`);
@@ -69,9 +68,15 @@ export function AppShell({
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
   const router = useRouter();
-  const visibleTabs = tabs
-    .filter(([slug]) => slug !== "team" || showTeamNav)
-    .filter(([slug]) => slug !== "logs" || (role === "admin" && showLogsNav));
+  const t = useTranslations("shell");
+  const visibleTabs: [NavSlug, string][] = tabSlugs
+    .filter((slug) => slug !== "team" || showTeamNav)
+    .filter((slug) => slug !== "logs" || (role === "admin" && showLogsNav))
+    .map((slug) => [slug, t(`nav.${slug}`)]);
+  const roleLabel =
+    role === "admin" || role === "editor" || role === "viewer"
+      ? t(`roles.${role as RoleKey}`)
+      : role;
   const primaryTabs = visibleTabs.filter(
     ([slug]) => !overflowTabSlugs.has(slug),
   );
@@ -97,10 +102,13 @@ export function AppShell({
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
-        跳到内容
+        {t("skipToContent")}
       </a>
       <div className="app-sticky-header">
-        <header className="topbar unified-header" aria-label="账号与工作区">
+        <header
+          className="topbar unified-header"
+          aria-label={t("topbarAriaLabel")}
+        >
           <div className="topbar-brand">
             <Brand />
           </div>
@@ -118,13 +126,13 @@ export function AppShell({
                     queryClient.clear();
                     router.refresh();
                   } catch {
-                    toast.error("工作区切换失败，请重试。");
+                    toast.error(t("workspaceSwitchFailed"));
                   }
                 })
               }
             >
               <SelectTrigger
-                aria-label="当前工作区"
+                aria-label={t("workspaceSelectAriaLabel")}
                 className="workspace-select"
                 size="sm"
               >
@@ -151,12 +159,13 @@ export function AppShell({
               <span className="avatar">{name.slice(0, 2)}</span>
               <div className="identity-meta min-w-0">
                 <p className="truncate text-sm font-medium">{name}</p>
-                <span className="role-pill">{roleNames[role]}</span>
+                <span className="role-pill">{roleLabel}</span>
               </div>
             </div>
           </div>
 
-          <div className="topbar-theme">
+          <div className="topbar-theme gap-1">
+            <LocaleToggle />
             <ThemeToggle />
           </div>
 
@@ -167,14 +176,18 @@ export function AppShell({
                 await signOut();
               }}
             >
-              <Button variant="ghost" size="icon" aria-label="退出当前账号">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("signOutAriaLabel")}
+              >
                 <LogOut size={16} />
               </Button>
             </form>
           </div>
         </header>
         <div className="tabs-scroll-wrap">
-          <nav className="tabs" aria-label="邮局导航">
+          <nav className="tabs" aria-label={t("nav.ariaLabel")}>
             {[...primaryTabs, ...overflowTabs].map(([slug, label]) => (
               <Link
                 key={slug}
@@ -196,9 +209,9 @@ export function AppShell({
                     ref={moreTriggerRef}
                     type="button"
                     className={`tabs-more tab${overflowActive ? " active" : ""}`}
-                    aria-label="更多导航"
+                    aria-label={t("nav.moreAriaLabel")}
                   >
-                    更多
+                    {t("nav.more")}
                     <ChevronDown size={14} aria-hidden />
                   </button>
                 </DropdownMenu.Trigger>
@@ -253,7 +266,7 @@ export function AppShell({
         </Suspense>
         {children}
       </main>
-      <footer className="app-footer">卖家邮局 · 独立站与外贸邮件营销</footer>
+      <footer className="app-footer">{t("footerTagline")}</footer>
     </div>
   );
 }

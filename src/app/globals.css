@@ -223,10 +223,13 @@ html:has([data-guide-context][data-sticky="true"]) {
 .topbar-workspace {
   display: flex;
   align-items: center;
+  flex: 0 1 auto;
   min-width: 0;
 }
 .workspace-select {
+  width: 100%;
   max-width: 160px;
+  min-width: 0;
   font-size: 12px;
   height: 32px;
 }
@@ -234,6 +237,7 @@ html:has([data-guide-context][data-sticky="true"]) {
   display: flex;
   align-items: center;
   margin-right: auto;
+  flex-shrink: 0;
 }
 .workspace-badge {
   font-size: 11px;
@@ -244,7 +248,8 @@ html:has([data-guide-context][data-sticky="true"]) {
 .topbar-identity {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .identity-who {
   display: flex;
@@ -1105,6 +1110,18 @@ label:has(input[type="radio"]) {
 .skip-link:focus {
   top: 10px;
 }
+@media (max-width: 780px) {
+  .topbar {
+    gap: 8px;
+    padding-inline: 16px;
+  }
+  .topbar-workspace .workspace-select {
+    max-width: 124px;
+  }
+  .identity-meta p {
+    max-width: 84px;
+  }
+}
 @media (max-width: 640px) {
   :root {
     --app-header-height: 9.5rem;
@@ -1318,7 +1335,14 @@ label:has(input[type="radio"]) {
     grid-template-columns: minmax(0, 1fr);
   }
   .topbar {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand theme"
+      "badge signout"
+      "workspace identity";
+  }
+  .topbar-signout {
+    justify-self: end;
   }
   .topbar .brand-mark,
   .topbar-identity .avatar {

@@ -12,6 +12,7 @@ import {
 import { flushSync } from "react-dom";
 import { unstable_rethrow, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ import {
   unsubscribeContact,
 } from "./actions";
 import type { Contact, ContactList } from "./model";
-import { subscriptionLabels } from "./import-model";
+import { subscriptionStatuses, type SubscriptionStatus } from "./import-model";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
@@ -42,16 +43,19 @@ import {
   isQuotaExhausted,
   type PlanQuota,
 } from "@/features/workspace/plan-usage";
+import { DEFAULT_LOCALE, normalizeLocale, type AppLocale } from "@/i18n/config";
+import { formatBusinessDateTime } from "@/i18n/format";
+import { useErrorMessage, useValidationMessage } from "@/i18n/use-resolvers";
 
-function formatConsentTimestamp(value: string | null) {
-  if (!value) return "未记录";
+function formatConsentTimestamp(
+  value: string | null,
+  locale: AppLocale,
+  emptyLabel: string,
+) {
+  if (!value) return emptyLabel;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Shanghai",
-  }).format(date);
+  return formatBusinessDateTime(date, locale);
 }
 
 export function Contacts({
@@ -67,6 +71,11 @@ export function Contacts({
   data: ContactList;
   filters: Record<string, string>;
 }) {
+  const t = useTranslations("contacts");
+  const tCommon = useTranslations("common");
+  const locale = normalizeLocale(useLocale()) ?? DEFAULT_LOCALE;
+  const resolveValidation = useValidationMessage();
+  const resolveError = useErrorMessage();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [listOverride, setListOverride] = useState<ContactList | null>(null);
@@ -89,6 +98,7 @@ export function Contacts({
   const [editing, setEditing] = useState<Contact | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -104,6 +114,26 @@ export function Contacts({
     !editing || editing.subscription_status === "unconfirmed";
   const hasFilters = Boolean(filters.q || filters.tag || filters.subscription);
   const showInitialEmpty = !shown.items.length && !hasFilters && !archived;
+
+  const subscriptionLabel = (status: string) =>
+    subscriptionStatuses.includes(status as SubscriptionStatus)
+      ? t(`subscription.${status as SubscriptionStatus}`)
+      : status;
+
+  const resolveActionFailure = (result: {
+    error?: string;
+    errorCode?: string;
+    errorPayload?: {
+      code: string;
+      params?: Record<string, string | number>;
+      message?: string;
+    };
+  }) => {
+    if (result.errorCode?.startsWith("validation.")) {
+      return resolveValidation(result.errorCode, result.error);
+    }
+    return resolveError(result);
+  };
 
   const contactEditSnapshot = useMemo(
     () =>
@@ -121,7 +151,10 @@ export function Contacts({
   const isContactEditDirty =
     editing !== undefined && contactEditSnapshot !== editBaseline;
 
-  const closeContactEditor = useCallback(() => setEditing(undefined), []);
+  const closeContactEditor = useCallback(
+    () => setEditing(undefined),
+    [setEditing],
+  );
   const {
     handleOpenChange: handleContactEditorOpenChange,
     editDialogContentProps: contactEditDialogContentProps,
@@ -194,7 +227,7 @@ export function Contacts({
     returnFocus.current = document.activeElement as HTMLElement | null;
     const nextEmail = c?.email ?? "";
     const nextName = c?.name ?? "";
-    const nextTags = c?.tags.map((t) => t.name) ?? [];
+    const nextTags = c?.tags.map((item) => item.name) ?? [];
     setEditing(c);
     setEmail(nextEmail);
     setName(nextName);
@@ -205,6 +238,7 @@ export function Contacts({
     setConsentNote("");
     setConsentAt("");
     setError("");
+    setErrorCode("");
     setEditBaseline(
       contactSnapshotFromValues({
         email: nextEmail,
@@ -231,16 +265,18 @@ export function Contacts({
     let hasError = false;
     for (const item of incoming) {
       if (item.length > 30) {
-        setError("单个标签最多 30 字。");
+        setError(t("editor.tagTooLong"));
         hasError = true;
         break;
       }
       if (nextTags.length >= 20) {
-        setError("每位客户最多 20 个标签。");
+        setError(t("editor.tagsLimitReached"));
         hasError = true;
         break;
       }
-      if (!nextTags.some((t) => t.toLowerCase() === item.toLowerCase())) {
+      if (
+        !nextTags.some((value) => value.toLowerCase() === item.toLowerCase())
+      ) {
         nextTags.push(item);
       }
     }
@@ -259,14 +295,14 @@ export function Contacts({
         expected_version: c.version,
         archived: !archived,
       });
-      if (result.error) toast.error(result.error);
+      if (result.error) toast.error(resolveActionFailure(result));
       else {
-        toast.success(archived ? "客户已恢复" : "客户已归档");
+        toast.success(archived ? t("toast.restored") : t("toast.archived"));
         await refreshContacts();
       }
     } catch (error) {
       unstable_rethrow(error);
-      toast.error("操作失败，请重试。");
+      toast.error(t("toast.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -282,8 +318,8 @@ export function Contacts({
   return (
     <>
       <PageHeader
-        title="客户名单"
-        meta={`${shown.total} 位`}
+        title={t("title")}
+        meta={t("metaCount", { count: shown.total })}
         actions={
           canEdit && !showInitialEmpty ? (
             <>
@@ -291,72 +327,75 @@ export function Contacts({
                 disabled={isQuotaExhausted(contactQuota)}
                 onClick={() => open(null)}
               >
-                添加客户
+                {t("actions.addContact")}
               </Button>
               <Button asChild variant="outline">
-                <Link href="/contacts/import">导入名单</Link>
+                <Link href="/contacts/import">{t("actions.importList")}</Link>
               </Button>
             </>
           ) : undefined
         }
       />
-      <ListToolbar role="search" aria-label="查找客户">
+      <ListToolbar role="search" aria-label={t("toolbar.ariaLabel")}>
         <FilterField
           id="contact-search"
-          label="搜索客户"
+          label={t("toolbar.searchLabel")}
           className="filter-field-search"
         >
           <Input
             id="contact-search"
-            aria-label="搜索邮箱或姓名"
-            placeholder="搜索邮箱或姓名"
+            aria-label={t("toolbar.searchPlaceholder")}
+            placeholder={t("toolbar.searchPlaceholder")}
             value={q}
             maxLength={254}
             onChange={(event) => setQ(event.target.value)}
           />
         </FilterField>
-        <FilterField id="contact-status" label="显示范围">
+        <FilterField id="contact-status" label={t("toolbar.statusLabel")}>
           <select
             id="contact-status"
-            aria-label="客户状态"
+            aria-label={t("toolbar.statusAria")}
             className="list-filter"
             value={archived ? "archived" : "active"}
             onChange={(e) => navigate({ status: e.target.value, page: "1" })}
           >
-            <option value="active">有效客户</option>
-            <option value="archived">已归档</option>
+            <option value="active">{t("toolbar.statusActive")}</option>
+            <option value="archived">{t("toolbar.statusArchived")}</option>
           </select>
         </FilterField>
-        <FilterField id="contact-subscription" label="订阅状态">
+        <FilterField
+          id="contact-subscription"
+          label={t("toolbar.subscriptionLabel")}
+        >
           <select
             id="contact-subscription"
-            aria-label="订阅状态"
+            aria-label={t("toolbar.subscriptionLabel")}
             className="list-filter"
             value={filters.subscription ?? ""}
             onChange={(e) =>
               navigate({ subscription: e.target.value, page: "1" })
             }
           >
-            <option value="">全部订阅状态</option>
-            {Object.entries(subscriptionLabels).map(([value, label]) => (
+            <option value="">{t("toolbar.allSubscriptions")}</option>
+            {subscriptionStatuses.map((value) => (
               <option key={value} value={value}>
-                {label}
+                {t(`subscription.${value}`)}
               </option>
             ))}
           </select>
         </FilterField>
-        <FilterField id="contact-filter-tag" label="标签">
+        <FilterField id="contact-filter-tag" label={t("toolbar.tagLabel")}>
           <select
             id="contact-filter-tag"
-            aria-label="标签筛选"
+            aria-label={t("toolbar.tagAria")}
             className="list-filter max-w-full"
             value={filters.tag ?? ""}
             onChange={(e) => navigate({ tag: e.target.value, page: "1" })}
           >
-            <option value="">全部标签</option>
-            {shown.tags.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
+            <option value="">{t("toolbar.allTags")}</option>
+            {shown.tags.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
               </option>
             ))}
           </select>
@@ -364,32 +403,36 @@ export function Contacts({
       </ListToolbar>
       {canEdit && (
         <PlanUsageNote
-          label="有效客户（未归档）"
+          label={t("quota.label")}
           quota={contactQuota}
-          exhaustedText="无法再添加或导入新客户，可归档不再联系的客户或升级套餐"
+          exhaustedText={t("quota.exhausted")}
           testId="contact-quota"
           className="mb-3"
         />
       )}
       <div aria-live="polite" className="hint mt-2">
-        {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
+        {pending ? t("status.loading") : !canEdit ? t("status.readOnly") : ""}
       </div>
       {hasFilters && (
-        <div className="active-filters" aria-label="已应用筛选">
-          <span>已筛选</span>
-          {filters.q && <span className="filter-chip">搜索：{filters.q}</span>}
+        <div className="active-filters" aria-label={t("filters.ariaLabel")}>
+          <span>{t("filters.applied")}</span>
+          {filters.q && (
+            <span className="filter-chip">
+              {t("filters.queryChip", { query: filters.q })}
+            </span>
+          )}
           {filters.subscription && (
             <span className="filter-chip">
-              {subscriptionLabels[
-                filters.subscription as keyof typeof subscriptionLabels
-              ] ?? filters.subscription}
+              {subscriptionLabel(filters.subscription)}
             </span>
           )}
           {filters.tag && (
             <span className="filter-chip">
-              标签：
-              {shown.tags.find((item) => item.id === filters.tag)?.name ??
-                "已选标签"}
+              {t("filters.tagChip", {
+                tag:
+                  shown.tags.find((item) => item.id === filters.tag)?.name ??
+                  t("filters.selectedTagFallback"),
+              })}
             </span>
           )}
           <Button
@@ -400,17 +443,17 @@ export function Contacts({
               navigate({ q: "", tag: "", subscription: "", page: "1" })
             }
           >
-            清空筛选
+            {t("filters.clear")}
           </Button>
         </div>
       )}
       {shown.items.length > 0 ? (
         <div className="my-4 space-y-2 md:space-y-1.5" aria-busy={pending}>
           <div className="hidden border-b border-border/80 px-4 py-2 text-xs font-medium text-muted-foreground md:grid md:grid-cols-12 md:gap-3">
-            <div className="col-span-4">客户邮箱 / 姓名</div>
-            <div className="col-span-2">订阅状态</div>
-            <div className="col-span-3">标签</div>
-            <div className="col-span-3 text-right">操作</div>
+            <div className="col-span-4">{t("table.emailAndName")}</div>
+            <div className="col-span-2">{t("table.subscription")}</div>
+            <div className="col-span-3">{t("table.tags")}</div>
+            <div className="col-span-3 text-right">{t("table.actions")}</div>
           </div>
           {shown.items.map((c) => (
             <Card
@@ -423,7 +466,7 @@ export function Contacts({
                     {c.email}
                   </p>
                   <p className="hint m-0 truncate text-xs">
-                    {c.name || "未填写姓名"}
+                    {c.name || t("table.unnamed")}
                   </p>
                 </div>
                 <div className="flex items-center md:col-span-2">
@@ -436,15 +479,15 @@ export function Contacts({
                           : "secondary"
                     }
                   >
-                    {subscriptionLabels[c.subscription_status]}
+                    {subscriptionLabel(c.subscription_status)}
                   </Badge>
                 </div>
                 <div className="flex min-w-0 flex-wrap items-center gap-1 md:col-span-3">
                   {c.tags
-                    .filter((t) => Boolean(t.name?.trim()))
-                    .map((t) => (
-                      <span className="filter-chip text-xs" key={t.id}>
-                        {t.name.trim()}
+                    .filter((item) => Boolean(item.name?.trim()))
+                    .map((item) => (
+                      <span className="filter-chip text-xs" key={item.id}>
+                        {item.name.trim()}
                       </span>
                     ))}
                 </div>
@@ -458,7 +501,7 @@ export function Contacts({
                           disabled={busy}
                           onClick={() => open(c)}
                         >
-                          编辑
+                          {t("actions.edit")}
                         </Button>
                         {!(
                           ["unsubscribed", "bounced", "complained"] as string[]
@@ -472,7 +515,7 @@ export function Contacts({
                               setUnsubscribeReason("");
                             }}
                           >
-                            退订
+                            {t("actions.unsubscribe")}
                           </Button>
                         )}
                       </>
@@ -483,7 +526,7 @@ export function Contacts({
                       disabled={busy}
                       onClick={() => archive(c)}
                     >
-                      {archived ? "恢复" : "归档"}
+                      {archived ? t("actions.restore") : t("actions.archive")}
                     </Button>
                   </div>
                 )}
@@ -497,17 +540,17 @@ export function Contacts({
             kind={hasFilters ? "search" : "empty"}
             title={
               hasFilters
-                ? "没有匹配的客户"
+                ? t("empty.searchTitle")
                 : archived
-                  ? "暂无已归档客户"
-                  : "名单还是空的"
+                  ? t("empty.archivedTitle")
+                  : t("empty.initialTitle")
             }
             description={
               hasFilters
-                ? "请调整搜索或筛选条件，或清空筛选查看全部客户。"
+                ? t("empty.searchDescription")
                 : archived
-                  ? "归档的客户会保留在这里，可随时恢复。"
-                  : "导入 CSV 或手动添加第一位客户，开始维护订阅名单。"
+                  ? t("empty.archivedDescription")
+                  : t("empty.initialDescription")
             }
           >
             {hasFilters ? (
@@ -523,7 +566,7 @@ export function Contacts({
                   })
                 }
               >
-                清空筛选
+                {t("filters.clear")}
               </Button>
             ) : (
               canEdit &&
@@ -533,10 +576,12 @@ export function Contacts({
                     disabled={isQuotaExhausted(contactQuota)}
                     onClick={() => open(null)}
                   >
-                    添加客户
+                    {t("actions.addContact")}
                   </Button>
                   <Button asChild variant="outline">
-                    <Link href="/contacts/import">导入名单</Link>
+                    <Link href="/contacts/import">
+                      {t("actions.importList")}
+                    </Link>
                   </Button>
                 </div>
               )
@@ -568,31 +613,37 @@ export function Contacts({
           }}
         >
           <DialogHeader>
-            <DialogTitle>{editing ? "编辑客户" : "添加客户"}</DialogTitle>
-            <DialogDescription>
-              维护客户邮箱、姓名与分类标签。
-            </DialogDescription>
+            <DialogTitle>
+              {editing ? t("editor.editTitle") : t("editor.createTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("editor.description")}</DialogDescription>
           </DialogHeader>
           {editing ? (
             <section
               className="contact-subscription-summary"
-              aria-label="订阅与同意留痕"
+              aria-label={t("editor.consentSummaryAria")}
             >
               <dl>
                 <div>
-                  <dt>订阅状态</dt>
-                  <dd>{subscriptionLabels[editing.subscription_status]}</dd>
+                  <dt>{t("editor.subscriptionLabel")}</dt>
+                  <dd>{subscriptionLabel(editing.subscription_status)}</dd>
                 </div>
                 <div>
-                  <dt>同意来源</dt>
+                  <dt>{t("editor.consentSourceLabel")}</dt>
                   <dd>{editing.consent_source?.trim() || "—"}</dd>
                 </div>
                 <div>
-                  <dt>同意时间</dt>
-                  <dd>{formatConsentTimestamp(editing.consent_at)}</dd>
+                  <dt>{t("editor.consentAtLabel")}</dt>
+                  <dd>
+                    {formatConsentTimestamp(
+                      editing.consent_at,
+                      locale,
+                      t("editor.consentAtEmpty"),
+                    )}
+                  </dd>
                 </div>
                 <div>
-                  <dt>授权说明</dt>
+                  <dt>{t("editor.consentNoteLabel")}</dt>
                   <dd>{editing.consent_note?.trim() || "—"}</dd>
                 </div>
               </dl>
@@ -600,9 +651,9 @@ export function Contacts({
           ) : (
             <div className="rounded-lg border border-border/80 bg-muted/40 p-2.5 text-sm leading-relaxed text-muted-foreground">
               <span className="font-medium text-foreground">
-                💡 订阅合规提示：
+                {t("editor.complianceTitle")}
               </span>
-              未声明已获得同意的客户为「未确认」，不能用于发送活动，以保障发信信誉。
+              {t("editor.complianceBody")}
             </div>
           )}
           <form
@@ -611,6 +662,7 @@ export function Contacts({
               e.preventDefault();
               setBusy(true);
               setError("");
+              setErrorCode("");
               try {
                 const all = [...tags];
                 if (tag.trim()) {
@@ -619,7 +671,9 @@ export function Contacts({
                     if (
                       item.length <= 30 &&
                       all.length < 20 &&
-                      !all.some((t) => t.toLowerCase() === item.toLowerCase())
+                      !all.some(
+                        (value) => value.toLowerCase() === item.toLowerCase(),
+                      )
                     ) {
                       all.push(item);
                     }
@@ -643,21 +697,24 @@ export function Contacts({
                       }
                     : {}),
                 });
-                if (result.error) setError(result.error);
-                else {
-                  toast.success("客户已保存");
+                if (result.error) {
+                  setError(resolveActionFailure(result));
+                  setErrorCode(result.errorCode ?? "");
+                } else {
+                  toast.success(t("toast.saved"));
                   flushSync(() => setEditing(undefined));
                   await refreshContacts();
                 }
               } catch (error) {
                 unstable_rethrow(error);
-                setError("保存失败，输入已保留，请重试。");
+                setError(t("editor.saveFailedKeepInput"));
+                setErrorCode("errors.common.saveFailed");
               } finally {
                 setBusy(false);
               }
             }}
           >
-            <Label htmlFor="contact-email">邮箱</Label>
+            <Label htmlFor="contact-email">{t("editor.emailLabel")}</Label>
             <Input
               id="contact-email"
               type="email"
@@ -672,7 +729,7 @@ export function Contacts({
               onChange={(e) => setEmail(e.target.value)}
               onBlur={() => setEmail((prev) => prev.trim())}
             />
-            <Label htmlFor="contact-name">姓名（选填）</Label>
+            <Label htmlFor="contact-name">{t("editor.nameLabel")}</Label>
             <Input
               id="contact-name"
               maxLength={100}
@@ -682,9 +739,9 @@ export function Contacts({
               onBlur={() => setName((prev) => prev.trim())}
             />
             <div className="flex items-center justify-between">
-              <Label htmlFor="contact-tag">标签</Label>
+              <Label htmlFor="contact-tag">{t("editor.tagsLabel")}</Label>
               <span className="text-xs text-muted-foreground">
-                已添加 {tags.length}/20
+                {t("editor.tagsCounter", { count: tags.length })}
               </span>
             </div>
             <div className="flex gap-2">
@@ -706,31 +763,34 @@ export function Contacts({
                     addTag();
                   }
                 }}
-                placeholder="输入标签（支持逗号或回车快速添加）"
+                placeholder={t("editor.tagPlaceholder")}
               />
               <Button type="button" variant="outline" onClick={() => addTag()}>
-                添加标签
+                {t("editor.addTagButton")}
               </Button>
             </div>
             <datalist id="contact-tag-options">
-              {shown.tags.map((t) => (
-                <option key={t.id} value={t.name} />
+              {shown.tags.map((item) => (
+                <option key={item.id} value={item.name} />
               ))}
             </datalist>
             {shown.tags.filter(
               (st) =>
-                !tags.some((t) => t.toLowerCase() === st.name.toLowerCase()),
+                !tags.some(
+                  (value) => value.toLowerCase() === st.name.toLowerCase(),
+                ),
             ).length > 0 &&
               tags.length < 20 && (
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs">
                   <span className="text-muted-foreground">
-                    快捷添加已有标签：
+                    {t("editor.quickAddTags")}
                   </span>
                   {shown.tags
                     .filter(
                       (st) =>
                         !tags.some(
-                          (t) => t.toLowerCase() === st.name.toLowerCase(),
+                          (value) =>
+                            value.toLowerCase() === st.name.toLowerCase(),
                         ),
                     )
                     .slice(0, 6)
@@ -749,17 +809,17 @@ export function Contacts({
             {tags.length > 0 && (
               <div
                 className="flex flex-wrap gap-1.5 pt-0.5"
-                aria-label="已选标签列表"
+                aria-label={t("editor.selectedTagsAria")}
               >
-                {tags.map((t) => (
+                {tags.map((item) => (
                   <button
-                    key={t}
+                    key={item}
                     type="button"
                     className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900 transition hover:bg-amber-100 hover:text-amber-950 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50 active:scale-95"
-                    aria-label={`移除标签 ${t}`}
-                    onClick={() => setTags(tags.filter((v) => v !== t))}
+                    aria-label={t("editor.removeTagAria", { tag: item })}
+                    onClick={() => setTags(tags.filter((v) => v !== item))}
                   >
-                    <span>{t}</span>
+                    <span>{item}</span>
                     <span
                       aria-hidden="true"
                       className="font-bold text-amber-700/80 dark:text-amber-400"
@@ -779,27 +839,27 @@ export function Contacts({
                     checked={consentDeclared}
                     onChange={(e) => setConsentDeclared(e.target.checked)}
                   />
-                  我确认该客户已明确同意接收商业邮件
+                  {t("editor.consentCheckbox")}
                 </label>
-                <p className="hint mt-2">
-                  勾选后客户将变为「已订阅」并可用于发送，来源与说明会作为订阅证据留痕。不勾选则保持「未确认」。
-                </p>
+                <p className="hint mt-2">{t("editor.consentCheckboxHint")}</p>
                 {consentDeclared && (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
-                      <Label htmlFor="contact-consent-source">同意来源</Label>
+                      <Label htmlFor="contact-consent-source">
+                        {t("editor.consentSourceLabel")}
+                      </Label>
                       <Input
                         id="contact-consent-source"
                         required
                         maxLength={100}
-                        placeholder="例如：独立站结账勾选、展会名片"
+                        placeholder={t("editor.consentSourcePlaceholder")}
                         value={consentSource}
                         onChange={(e) => setConsentSource(e.target.value)}
                       />
                     </div>
                     <div>
                       <Label htmlFor="contact-consent-at">
-                        同意时间（选填）
+                        {t("editor.consentAtOptional")}
                       </Label>
                       <Input
                         id="contact-consent-at"
@@ -809,12 +869,14 @@ export function Contacts({
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <Label htmlFor="contact-consent-note">授权说明</Label>
+                      <Label htmlFor="contact-consent-note">
+                        {t("editor.consentNoteLabel")}
+                      </Label>
                       <Input
                         id="contact-consent-note"
                         required
                         maxLength={500}
-                        placeholder="例如：客户在结账页主动勾选接收促销邮件"
+                        placeholder={t("editor.consentNotePlaceholder")}
                         value={consentNote}
                         onChange={(e) => setConsentNote(e.target.value)}
                       />
@@ -836,13 +898,13 @@ export function Contacts({
                 onClick={requestCloseContactEditor}
                 className="w-full sm:w-auto"
               >
-                取消
+                {tCommon("actions.cancel")}
               </Button>
               <Button disabled={busy} className="w-full sm:w-auto">
-                {busy ? "保存中…" : "保存客户"}
+                {busy ? t("editor.savingButton") : t("editor.saveButton")}
               </Button>
             </div>
-            {error.includes("重新加载") && (
+            {errorCode === "errors.db.versionConflict" && (
               <Button
                 type="button"
                 variant="outline"
@@ -851,7 +913,7 @@ export function Contacts({
                   router.refresh();
                 }}
               >
-                重新加载
+                {tCommon("actions.reload")}
               </Button>
             )}
           </form>
@@ -865,9 +927,9 @@ export function Contacts({
       >
         <DialogContent placement="bottom" className="bottom-sheet">
           <DialogHeader>
-            <DialogTitle>确认手动退订</DialogTitle>
+            <DialogTitle>{t("unsubscribeDialog.title")}</DialogTitle>
             <DialogDescription>
-              手动退订后，系统将把该邮箱加入防打扰名单，后续重新导入名单也不会向其发信。
+              {t("unsubscribeDialog.description")}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -884,35 +946,40 @@ export function Contacts({
                   reason: unsubscribeReason,
                 });
                 if (result.error) {
-                  toast.error(result.error);
+                  toast.error(resolveActionFailure(result));
                   return;
                 }
-                toast.success("客户已成功退订");
+                toast.success(t("toast.unsubscribed"));
                 await refreshContacts();
                 flushSync(() => setUnsubscribing(undefined));
               } catch (error) {
                 unstable_rethrow(error);
-                toast.error("退订失败，请检查网络后重试。");
+                toast.error(t("toast.unsubscribeFailed"));
               } finally {
                 setBusy(false);
               }
             }}
           >
-            <Label htmlFor="unsubscribe-reason">退订原因</Label>
+            <Label htmlFor="unsubscribe-reason">
+              {t("unsubscribeDialog.reasonLabel")}
+            </Label>
             <Input
               id="unsubscribe-reason"
               required
               maxLength={500}
-              placeholder="如：客户要求退订、邮箱失效等"
+              placeholder={t("unsubscribeDialog.reasonPlaceholder")}
               value={unsubscribeReason}
               onChange={(event) => setUnsubscribeReason(event.target.value)}
             />
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="hint self-center">快捷填入：</span>
-              {["客户主动要求退订", "邮箱地址失效", "业务合作终止"].map(
-                (quickReason) => (
+              <span className="hint self-center">
+                {t("unsubscribeDialog.quickFill")}
+              </span>
+              {(["requested", "invalidEmail", "ended"] as const).map((key) => {
+                const quickReason = t(`unsubscribeDialog.quickReasons.${key}`);
+                return (
                   <Button
-                    key={quickReason}
+                    key={key}
                     type="button"
                     variant="outline"
                     size="sm"
@@ -921,8 +988,8 @@ export function Contacts({
                   >
                     {quickReason}
                   </Button>
-                ),
-              )}
+                );
+              })}
             </div>
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
               <Button
@@ -932,13 +999,15 @@ export function Contacts({
                 className="w-full sm:w-auto"
                 onClick={() => setUnsubscribing(undefined)}
               >
-                取消
+                {tCommon("actions.cancel")}
               </Button>
               <Button
                 disabled={busy || !unsubscribeReason.trim()}
                 className="w-full sm:w-auto"
               >
-                {busy ? "处理中…" : "确认退订"}
+                {busy
+                  ? t("unsubscribeDialog.processing")
+                  : t("unsubscribeDialog.confirm")}
               </Button>
             </div>
           </form>
@@ -952,11 +1021,11 @@ export function Contacts({
         onOpenChange={(open) => {
           if (!open) setArchiveConfirm(undefined);
         }}
-        title="归档客户"
-        description={
-          <>归档 {archiveConfirm?.email}？之后可以在已归档列表恢复。</>
-        }
-        confirmLabel="归档"
+        title={t("archiveConfirm.title")}
+        description={t("archiveConfirm.description", {
+          email: archiveConfirm?.email ?? "",
+        })}
+        confirmLabel={t("archiveConfirm.confirm")}
         variant="destructive"
         onConfirm={() => {
           const contact = archiveConfirm;

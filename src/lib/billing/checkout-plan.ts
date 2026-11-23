@@ -14,11 +14,15 @@ export function normalizeWorkspacePlan(
 export function assertCheckoutTargetAllowed(
   currentPlan: WorkspacePlan,
   targetPlan: EdmBilledPlan,
-): { ok: true } | { ok: false; error: string } {
+): { ok: true } | { ok: false; error: string; errorCode: string } {
   if (targetPlan === "pro") {
     if (currentPlan !== "free") {
       return {
         ok: false,
+        errorCode:
+          currentPlan === "team"
+            ? "errors.billing.alreadyTeamNoPro"
+            : "errors.billing.proFromFreeOnly",
         error:
           currentPlan === "team"
             ? "当前已是团队版，无需购买专业版。"
@@ -29,7 +33,11 @@ export function assertCheckoutTargetAllowed(
   }
 
   if (currentPlan === "team") {
-    return { ok: false, error: "当前已是团队版。" };
+    return {
+      ok: false,
+      errorCode: "errors.billing.alreadyTeam",
+      error: "当前已是团队版。",
+    };
   }
 
   return { ok: true };

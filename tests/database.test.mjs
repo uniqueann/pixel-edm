@@ -173,6 +173,94 @@ test("EDM 迁移、用户初始化、工作区权限与 AIGC 隔离", async (t) 
         wb,
       );
     });
+    await t.test(
+      "成员语言偏好与自定义署名标志位：仅允许通过 RPC 保存 locale，触发器同步署名标志",
+      async () => {
+        const before = (
+          await asUser(
+            db,
+            b,
+            "select locale, display_name, display_name_customized from edm.members",
+          )
+        ).rows[0];
+        assert.equal(before.locale, null);
+        assert.equal(before.display_name, "店主");
+        assert.equal(before.display_name_customized, false);
+
+        // 不可直接 UPDATE locale 或 display_name_customized
+        await assert.rejects(
+          asUser(db, b, "update edm.members set locale='en'"),
+          /permission denied/,
+        );
+        await assert.rejects(
+          asUser(db, b, "update edm.members set display_name_customized=true"),
+          /permission denied/,
+        );
+
+        // 修改真实署名时触发器自动把 display_name_customized 置为 true
+        const renamed = (
+          await asUser(
+            db,
+            b,
+            "update edm.members set display_name='Anna Chen' returning display_name, display_name_customized",
+          )
+        ).rows[0];
+        assert.equal(renamed.display_name, "Anna Chen");
+        assert.equal(renamed.display_name_customized, true);
+
+        // 通过安全 RPC 保存合法 locale，非法语言码被拒绝
+        const saved = (
+          await asUser(
+            db,
+            b,
+            `select edm.set_member_locale('{"locale":"en"}'::jsonb) as res`,
+          )
+        ).rows[0].res;
+        assert.deepEqual(saved, { locale: "en" });
+        assert.equal(
+          (await asUser(db, b, "select locale from edm.members")).rows[0]
+            .locale,
+          "en",
+        );
+
+        await assert.rejects(
+          asUser(
+            db,
+            b,
+            `select edm.set_member_locale('{"locale":"fr"}'::jsonb)`,
+          ),
+          /不支持的语言选项/,
+        );
+
+        // 停用账号、匿名与 aigc_api 不能调用 set_member_locale
+        await assert.rejects(
+          asUser(
+            db,
+            a,
+            `select edm.set_member_locale('{"locale":"en"}'::jsonb)`,
+          ),
+          /当前账号不可用/,
+        );
+        await assert.rejects(
+          asUser(
+            db,
+            null,
+            `select edm.set_member_locale('{"locale":"en"}'::jsonb)`,
+            "anon",
+          ),
+          /permission denied/,
+        );
+        await assert.rejects(
+          asUser(
+            db,
+            c,
+            `select edm.set_member_locale('{"locale":"en"}'::jsonb)`,
+            "aigc_api",
+          ),
+          /permission denied/,
+        );
+      },
+    );
   } finally {
     await db.close();
   }

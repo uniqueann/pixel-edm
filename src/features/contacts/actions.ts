@@ -3,6 +3,8 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
+import { buildActionError, mapDatabaseError } from "@/lib/errors";
+import { resolveValidationMessage } from "@/lib/validation-messages";
 import { contactInput, type ContactList } from "./model";
 export async function listContacts(input: {
   q?: string;
@@ -52,28 +54,29 @@ async function mutate(input: unknown, archive: boolean) {
       })
     : contactInput;
   const parsed = schema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return buildActionError(
+      parsed.error.issues[0].message,
+      resolveValidationMessage(parsed.error.issues[0].message),
+    );
   const { workspace, role } = await getContext();
   if (workspace.id !== parsed.data.workspace_id)
-    return { error: "工作区已切换，请刷新后重试。" };
+    return buildActionError("errors.common.workspaceSwitched");
   if (!["admin", "editor"].includes(role))
-    return { error: "没有客户管理权限。" };
+    return buildActionError("errors.contacts.permissionDenied");
   const db = await serverClient();
   const { error } = await db.rpc(archive ? "archive_contact" : "save_contact", {
     payload: parsed.data,
   });
-  if (error)
-    return {
-      error:
-        error.code === "23505"
-          ? "该邮箱已存在；如已归档，请到已归档列表恢复。"
-          : error.code === "P0001"
-            ? error.message
-            : "保存失败，请确认权限后重试。",
-    };
+  if (error) {
+    const mapped = mapDatabaseError(error, "errors.common.saveFailed", {
+      uniqueViolationCode: "errors.contacts.duplicateEmail",
+    });
+    return buildActionError(mapped.code, mapped.message, mapped.params);
+  }
   revalidatePath("/contacts");
   revalidatePath("/dashboard");
-  return { success: true };
+  return { success: true as const, error: undefined, errorCode: undefined };
 }
 export async function saveContact(input: unknown) {
   return mutate(input, false);
@@ -87,23 +90,31 @@ export async function unsubscribeContact(input: unknown) {
     workspace_id: z.string().uuid(),
     id: z.string().uuid(),
     expected_version: z.number().int().positive(),
-    reason: z.string().trim().min(1, "请填写退订原因").max(500),
+    reason: z
+      .string()
+      .trim()
+      .min(1, "validation.unsubscribeReasonRequired")
+      .max(500),
   });
   const parsed = schema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return buildActionError(
+      parsed.error.issues[0].message,
+      resolveValidationMessage(parsed.error.issues[0].message),
+    );
   const { workspace, role } = await getContext();
   if (workspace.id !== parsed.data.workspace_id)
-    return { error: "工作区已切换，请刷新后重试。" };
+    return buildActionError("errors.common.workspaceSwitched");
   if (!["admin", "editor"].includes(role))
-    return { error: "没有客户管理权限。" };
+    return buildActionError("errors.contacts.permissionDenied");
   const db = await serverClient();
   const { error } = await db.rpc("unsubscribe_contact", {
     payload: parsed.data,
   });
-  if (error)
-    return {
-      error: error.code === "P0001" ? error.message : "退订失败，请重试。",
-    };
+  if (error) {
+    const mapped = mapDatabaseError(error, "errors.contacts.unsubscribeFailed");
+    return buildActionError(mapped.code, mapped.message, mapped.params);
+  }
   revalidatePath("/contacts");
-  return { success: true };
+  return { success: true as const, error: undefined, errorCode: undefined };
 }

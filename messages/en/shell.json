@@ -1,0 +1,84 @@
+{
+  "brand": "Pixel EDM",
+  "meta": {
+    "titleDefault": "Pixel EDM",
+    "titleTemplate": "%s · Pixel EDM",
+    "description": "Craft thoughtful emails for every customer relationship."
+  },
+  "skipToContent": "Skip to content",
+  "topbarAriaLabel": "Account and workspace",
+  "workspaceSelectAriaLabel": "Current workspace",
+  "workspaceSwitchFailed": "Failed to switch workspace. Please try again.",
+  "workspaceBadge": {
+    "personal": "Personal",
+    "team": "Team",
+    "plan": {
+      "free": "Free",
+      "pro": "Pro",
+      "team": "Team"
+    },
+    "teamMembers": "{plan} · {count, plural, one {# member} other {# members}}"
+  },
+  "nav": {
+    "ariaLabel": "Primary navigation",
+    "dashboard": "Overview",
+    "contacts": "Contacts",
+    "templates": "Templates",
+    "campaigns": "Campaigns",
+    "logs": "Logs",
+    "team": "Team",
+    "settings": "Settings",
+    "help": "Help",
+    "more": "More",
+    "moreAriaLabel": "More navigation"
+  },
+  "roles": {
+    "admin": "Admin",
+    "editor": "Editor",
+    "viewer": "Viewer"
+  },
+  "signOutAriaLabel": "Sign out",
+  "footerTagline": "Pixel EDM · Email marketing for DTC & export stores",
+  "notFound": {
+    "title": "Page not found",
+    "backToApp": "Back to Pixel EDM"
+  },
+  "error": {
+    "title": "Unable to reach Pixel EDM",
+    "description": "Please try again shortly. If the issue persists, check your account status and database connection.",
+    "retry": "Try again",
+    "backToLogin": "Back to sign in"
+  },
+  "guide": {
+    "ariaLabel": "Getting started guide",
+    "adminOnlyDetail": "This step requires an admin. Return to the checklist to see tasks available for your role.",
+    "backToChecklist": "Back to checklist",
+    "tasks": {
+      "store": {
+        "title": "Set up sender details",
+        "detail": "Save your store name and physical footer address, then connect a primary sending channel. Sign-off name is recommended.",
+        "nextLabel": "Continue to channels"
+      },
+      "channels": {
+        "title": "Connect & verify primary channel",
+        "detail": "Save your channel settings, then ask an admin to send a test email. Provider acceptance does not guarantee inbox placement or reads.",
+        "nextLabel": "Continue to contacts"
+      },
+      "contacts": {
+        "title": "Prepare subscribed contacts",
+        "detail": "Review import results and consent records. Adding or importing a contact does not automatically mark them as subscribed.",
+        "nextLabel": "Continue to templates"
+      },
+      "templates": {
+        "title": "Prepare email content",
+        "detail": "Customize a starter template, preview it, and save. You will still verify variables and recipients inside each campaign.",
+        "nextLabel": "Continue to campaigns"
+      },
+      "campaigns": {
+        "title": "Create & review first campaign",
+        "detail": "Create a draft → preview emails & recipients → confirm the audience. Formal sending still requires explicit admin confirmation.",
+        "nextLabel": "View campaigns"
+      }
+    }
+  }
+}

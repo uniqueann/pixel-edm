@@ -10,10 +10,13 @@ import { normalizeCheckoutDiscountCode } from "@/lib/billing/discount-code";
 import {
   assessDodoDiscount,
   configBlockedDiscountCheck,
+  isBillingConfigMissingError,
   missingDiscountCheck,
+  retryDiscountCheck,
   summarizeDiscountChannels,
   type DiscountChannelCheck,
 } from "@/lib/billing/discount-availability";
+import { getAppErrorCode } from "@/lib/errors";
 import {
   normalizeCheckoutInterval,
   normalizeCheckoutPlan,
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
   const ctx = await requireEdmBillingCheckout(workspaceId);
   if (!ctx.ok) {
     return NextResponse.json(
-      { ok: false, error: ctx.error },
+      { ok: false, error: ctx.error, errorCode: ctx.errorCode },
       { status: ctx.status },
     );
   }
@@ -52,7 +55,7 @@ export async function POST(request: Request) {
   const planCheck = validateCheckoutPlanForWorkspace(ctx.workspacePlan, plan);
   if (!planCheck.ok) {
     return NextResponse.json(
-      { ok: false, error: planCheck.error },
+      { ok: false, error: planCheck.error, errorCode: planCheck.errorCode },
       { status: 400 },
     );
   }
@@ -67,13 +70,18 @@ export async function POST(request: Request) {
       {
         ok: false,
         error: error instanceof Error ? error.message : "折扣代码无效。",
+        errorCode: getAppErrorCode(error) ?? "errors.billing.discountInvalid",
       },
       { status: 400 },
     );
   }
   if (!code) {
     return NextResponse.json(
-      { ok: false, error: "请输入折扣代码。" },
+      {
+        ok: false,
+        error: "请输入折扣代码。",
+        errorCode: "errors.billing.discountRequired",
+      },
       { status: 400 },
     );
   }
@@ -92,6 +100,8 @@ export async function POST(request: Request) {
     code,
     available: summary.available,
     message: summary.message,
+    messageCode: summary.messageCode,
+    ...(summary.messageParams ? { messageParams: summary.messageParams } : {}),
     creem: summary.creem,
     dodo: summary.dodo,
   });
@@ -119,14 +129,13 @@ async function checkDodoDiscount(
       productId,
     );
   } catch (error) {
+    if (isBillingConfigMissingError(error)) {
+      return configBlockedDiscountCheck(error);
+    }
     const detail = error instanceof Error ? error.message : "";
-    if (/未配置/.test(detail)) return configBlockedDiscountCheck(detail);
     if (/doesn.?t exist|not found|404/i.test(detail))
       return missingDiscountCheck();
-    return {
-      available: false,
-      message: "暂时无法验证这个折扣代码，请稍后重试。",
-    };
+    return retryDiscountCheck();
   }
 }
 
@@ -171,18 +180,15 @@ async function checkCreemDiscount(
         hadDiscountCode: true,
       });
       if (failure.reason === "discount") return missingDiscountCheck();
-      return {
-        available: false,
-        message: "暂时无法验证这个折扣代码，请稍后重试。",
-      };
+      return retryDiscountCheck();
     }
     // 创建结账的响应没有 discount 字段；成功即表示 Creem 接受了该代码。
     return {
       available: true,
+      messageCode: "errors.billing.discountCreemAccepted",
       message: "这个折扣代码可用，最终优惠以结账页为准。",
     };
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "";
-    return configBlockedDiscountCheck(detail);
+    return configBlockedDiscountCheck(error);
   }
 }

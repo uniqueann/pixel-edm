@@ -35,10 +35,9 @@ export function importRowExplanation(row: ContactImportRow) {
   return "";
 }
 
-export function formatImportTimestamp(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
+export function formatImportTimestamp(value: string, locale = "zh-CN") {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "Asia/Shanghai",
   }).format(new Date(value));
 }

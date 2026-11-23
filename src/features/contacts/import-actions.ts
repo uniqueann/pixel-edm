@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
+import { resolveValidationMessage } from "@/lib/validation-messages";
 import {
   importRequestSchema,
   normalizeImportRows,
@@ -24,7 +25,11 @@ function actionError(error: unknown) {
   if (error instanceof z.ZodError) {
     const first = error.issues[0];
     return {
-      error: first?.message ?? "数据格式不正确，请检查后重试。",
+      error: resolveValidationMessage(
+        first?.message,
+        undefined,
+        "数据格式不正确，请检查后重试。",
+      ),
     };
   }
   return {

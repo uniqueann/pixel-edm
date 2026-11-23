@@ -1,9 +1,12 @@
 import Link from "next/link";
-export default function Page() {
+import { getTranslations } from "next-intl/server";
+
+export default async function Page() {
+  const t = await getTranslations("shell.notFound");
   return (
     <main className="auth-wrap">
-      <h1>没有找到这个页面</h1>
-      <Link href="/dashboard">返回邮局</Link>
+      <h1>{t("title")}</h1>
+      <Link href="/dashboard">{t("backToApp")}</Link>
     </main>
   );
 }

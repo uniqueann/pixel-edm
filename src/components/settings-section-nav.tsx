@@ -1,23 +1,32 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { SETTINGS_SECTION_IDS } from "@/features/settings/anchors";
 
-const sections: { id: string; label: string }[] = [
-  { id: SETTINGS_SECTION_IDS.store, label: "店铺信息" },
-  { id: SETTINGS_SECTION_IDS.channels, label: "发信通道" },
-  { id: SETTINGS_SECTION_IDS.billing, label: "套餐" },
-  { id: SETTINGS_SECTION_IDS.appearance, label: "外观" },
+const sections: {
+  id: string;
+  labelKey: "store" | "channels" | "billing" | "appearance";
+}[] = [
+  { id: SETTINGS_SECTION_IDS.store, labelKey: "store" },
+  { id: SETTINGS_SECTION_IDS.channels, labelKey: "channels" },
+  { id: SETTINGS_SECTION_IDS.billing, labelKey: "billing" },
+  { id: SETTINGS_SECTION_IDS.appearance, labelKey: "appearance" },
 ];
 
 /** 设置页顶部分段锚点导航。 */
-export function SettingsSectionNav({ showBilling }: { showBilling: boolean }) {
+export async function SettingsSectionNav({
+  showBilling,
+}: {
+  showBilling: boolean;
+}) {
+  const t = await getTranslations("settings.sectionNav");
   const items = showBilling
     ? sections
     : sections.filter((item) => item.id !== SETTINGS_SECTION_IDS.billing);
   return (
-    <nav className="settings-section-nav" aria-label="设置分区">
+    <nav className="settings-section-nav" aria-label={t("ariaLabel")}>
       {items.map((item) => (
         <Link key={item.id} href={`#${item.id}`}>
-          {item.label}
+          {t(item.labelKey)}
         </Link>
       ))}
     </nav>

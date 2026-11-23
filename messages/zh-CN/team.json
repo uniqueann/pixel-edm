@@ -1,0 +1,87 @@
+{
+  "title": "团队成员",
+  "metaCount": "{count} 人",
+  "descriptionTeam": "邀请同事协作管理客户、模板和活动草稿。",
+  "descriptionPersonal": "创建第一条邀请后，个人工作区会转换为团队工作区。",
+  "restricted": {
+    "title": "多人协作仅在团队版可用",
+    "description": "升级团队版后可邀请成员协同管理、分配角色权限并查看完整操作记录。",
+    "upgradeAction": "前往升级团队版"
+  },
+  "memberCapNote": "当前活跃成员数已超出套餐席位。成员仍会保留，但运营人员的操作权限已暂停。管理员可移除多余成员或升级套餐以恢复。",
+  "hint": {
+    "admin": "邀请链接有效 7 天；管理员可随时重发或撤销。",
+    "readOnly": "你可以查看团队成员和当前角色。"
+  },
+  "roles": {
+    "admin": "管理员",
+    "editor": "运营",
+    "viewer": "只读",
+    "owner": "所有者",
+    "descriptions": {
+      "admin": "管理员：工作区设置、发信通道、行为追踪与 Webhook、团队成员与套餐、正式发送、操作记录（视套餐）。",
+      "editor": "运营：客户与模板管理、活动草稿/预览/确认名单、导出 CSV；不可改工作区设置、发信通道、正式发送或查看操作记录。",
+      "viewer": "只读：只读查看客户、模板、活动与投递统计；不可修改数据或设置，也不能开始正式发送或查看操作记录。"
+    }
+  },
+  "members": {
+    "sectionTitle": "团队成员（{count}）",
+    "currentAccount": "（当前账号）",
+    "roleSelectAria": "{name}的角色",
+    "transferOwnership": "转移所有权",
+    "remove": "移除"
+  },
+  "invitations": {
+    "sectionTitle": "待处理邀请（{count}）",
+    "securityHint": "为保障安全，仅显示部分邮箱字符；邀请链接关闭后不可再次查看，失效请重新生成。",
+    "expiresAt": "{role} · 过期于 {date}",
+    "regenerate": "重新生成链接",
+    "revoke": "撤销",
+    "empty": "暂无待处理邀请。"
+  },
+  "actions": {
+    "inviteMember": "邀请成员",
+    "copyLink": "复制链接",
+    "inviteAnother": "继续邀请下一位",
+    "generateLink": "生成邀请链接",
+    "generating": "生成中…"
+  },
+  "inviteDialog": {
+    "copyTitle": "复制邀请链接",
+    "copyDescription": "关闭后不能再次查看此链接；需要新链接时请在待处理邀请中重发。",
+    "createTitle": "邀请团队成员",
+    "createDescription": "生成受邀链接并分配成员角色与管理权限。",
+    "expiryLabel": "💡 链接时效：",
+    "expiryHint": "邀请链接有效 7 天且生成后仅展示一次，可通过即时通讯或企业邮件安全分享。",
+    "emailLabel": "受邀邮箱",
+    "emailPlaceholder": "colleague@company.com",
+    "roleLabel": "加入角色"
+  },
+  "confirm": {
+    "removeTitle": "移除成员",
+    "removeDescription": "确定移除 {name} 吗？对方将无法再访问此工作区，历史业务数据会保留。",
+    "removeAction": "移除",
+    "transferTitle": "转移工作区所有权",
+    "transferLead": "确定将工作区所有权转移给 {name} 吗？",
+    "transferDetail": "转移后，{name} 将成为工作区所有者并负责账单与套餐；你仍会保留管理员身份，但不再拥有所有者专属权限。",
+    "transferAction": "转移所有权",
+    "roleStep1Title": "调整成员角色",
+    "roleStep2Title": "再次确认角色降级",
+    "roleStep1Action": "更新角色",
+    "roleStep2Action": "确认降级",
+    "roleStep1Description": "将 {name} 的角色从 {fromRole} 调整为{toRole}？",
+    "roleStep1AdminWarning": "管理员降级后可能无法管理成员、账单与正式发送；需再次确认后才会生效。",
+    "roleStep2Description": "最后确认：将 {name} 从管理员调整为{toRole}。对方将失去成员与账单管理权限。",
+    "revokeTitle": "撤销邀请",
+    "revokeDescription": "确定撤销这条邀请吗？旧链接会立即失效。",
+    "revokeAction": "撤销邀请"
+  },
+  "toast": {
+    "linkCopied": "邀请链接已复制",
+    "roleUpdated": "成员角色已更新",
+    "memberRemoved": "成员已移除",
+    "ownershipTransferred": "工作区所有权已转移",
+    "invitationCreated": "邀请已创建，链接只显示一次",
+    "invitationRevoked": "邀请已撤销"
+  }
+}

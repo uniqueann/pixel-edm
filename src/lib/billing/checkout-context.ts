@@ -29,7 +29,12 @@ export async function requireEdmBillingCheckout(
     data: { user },
   } = await db.auth.getUser();
   if (!user) {
-    return { ok: false as const, status: 401, error: "请先登录。" };
+    return {
+      ok: false as const,
+      status: 401,
+      errorCode: "errors.billing.unauthenticated",
+      error: "请先登录。",
+    };
   }
 
   const { data: workspaces, error: wsError } = await db
@@ -37,7 +42,12 @@ export async function requireEdmBillingCheckout(
     .select("id, bootstrap_owner_id")
     .order("created_at");
   if (wsError || !workspaces?.length) {
-    return { ok: false as const, status: 400, error: "没有可用的工作区。" };
+    return {
+      ok: false as const,
+      status: 400,
+      errorCode: "errors.billing.noWorkspace",
+      error: "没有可用的工作区。",
+    };
   }
 
   const resolved = await resolveWorkspaceId(user.id, workspaces);
@@ -46,7 +56,12 @@ export async function requireEdmBillingCheckout(
       ? formWorkspaceId
       : resolved;
   if (!workspaceId) {
-    return { ok: false as const, status: 400, error: "请先选择工作区。" };
+    return {
+      ok: false as const,
+      status: 400,
+      errorCode: "errors.billing.workspaceRequired",
+      error: "请先选择工作区。",
+    };
   }
 
   const { data: membership, error } = await db
@@ -58,10 +73,20 @@ export async function requireEdmBillingCheckout(
     .maybeSingle();
 
   if (error || !membership) {
-    return { ok: false as const, status: 403, error: "无法访问该工作区。" };
+    return {
+      ok: false as const,
+      status: 403,
+      errorCode: "errors.billing.workspaceForbidden",
+      error: "无法访问该工作区。",
+    };
   }
   if (membership.role !== "admin") {
-    return { ok: false as const, status: 403, error: "仅管理员可升级套餐。" };
+    return {
+      ok: false as const,
+      status: 403,
+      errorCode: "errors.billing.adminOnly",
+      error: "仅管理员可升级套餐。",
+    };
   }
 
   const { data: workspace, error: planError } = await db
@@ -70,7 +95,12 @@ export async function requireEdmBillingCheckout(
     .eq("id", workspaceId)
     .maybeSingle();
   if (planError || !workspace) {
-    return { ok: false as const, status: 400, error: "工作区不存在。" };
+    return {
+      ok: false as const,
+      status: 400,
+      errorCode: "errors.billing.workspaceNotFound",
+      error: "工作区不存在。",
+    };
   }
   const workspacePlan = normalizeWorkspacePlan(workspace.plan);
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useId, useMemo, useRef, useState, type ComponentProps } from "react";
 import { ChevronDown, Copy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,19 +14,28 @@ import {
   formatOutboundFromLine,
   outboundFooterPlainText,
 } from "@/components/email-outbound-preview";
-import { isDefaultSenderName, senderNameDefault } from "@/lib/sender-name";
+import {
+  isMemberSenderNameCustomized,
+  senderNameDefault,
+} from "@/lib/sender-name";
 import {
   renderTemplate,
   templateVariables,
   type TemplateValues,
+  type TemplateVariable,
 } from "./model";
 import styles from "./templates.module.css";
+
+const KNOWN_VARIABLE_KEYS = new Set<string>(
+  templateVariables.map((variable) => variable.key),
+);
 
 export function TemplatePreview({
   subject,
   body,
   workspaceName,
   memberName,
+  memberDisplayNameCustomized,
   mailingAddress,
   senderAlias,
   senderAddress,
@@ -35,11 +45,13 @@ export function TemplatePreview({
   body: string;
   workspaceName: string;
   memberName: string;
+  memberDisplayNameCustomized?: boolean;
   mailingAddress: string;
   senderAlias: string;
   senderAddress: string;
   onSettingsNavigate?: ComponentProps<typeof Link>["onNavigate"];
 }) {
+  const t = useTranslations("templates");
   const [values, setValues] = useState<TemplateValues>({
     name: "Anna",
     email: "anna@example.com",
@@ -50,8 +62,11 @@ export function TemplatePreview({
     order_number: "#1001",
   });
   const rendered = useMemo(
-    () => renderTemplate(subject, body, values),
-    [subject, body, values],
+    () =>
+      renderTemplate(subject, body, values, (key) =>
+        t("preview.missingToken", { key }),
+      ),
+    [subject, body, values, t],
   );
   const previewId = useId();
   const sampleControlsRef = useRef<HTMLDetailsElement>(null);
@@ -71,6 +86,10 @@ export function TemplatePreview({
   const otherVariables = templateVariables.filter(
     (variable) => !primaryVariables.includes(variable),
   );
+  const variableLabel = (key: string) =>
+    KNOWN_VARIABLE_KEYS.has(key)
+      ? t(`variables.${key as TemplateVariable}`)
+      : key;
 
   function sampleFields(
     variables: readonly (typeof templateVariables)[number][],
@@ -80,7 +99,7 @@ export function TemplatePreview({
         {variables.map((variable) => (
           <div key={variable.key} className={styles.field}>
             <Label htmlFor={`${previewId}-${variable.key}`}>
-              {variable.key === "sender_name" ? "正文署名" : variable.label}
+              {variableLabel(variable.key)}
               <code>{`{{${variable.key}}}`}</code>
             </Label>
             <Input
@@ -109,15 +128,27 @@ export function TemplatePreview({
       workspaceName,
       mailingAddress,
     });
+    const fromPrefix = fromLine
+      ? `${t("preview.copyFromPrefix", { from: fromLine })}\n\n`
+      : "";
+    const subjectLine = t("preview.copySubjectPrefix", {
+      subject: rendered.subject,
+    });
     try {
       await navigator.clipboard.writeText(
-        `${fromLine ? `发件人：${fromLine}\n\n` : ""}主题：${rendered.subject}\n\n${bodyWithFooter}`,
+        `${fromPrefix}${subjectLine}\n\n${bodyWithFooter}`,
       );
-      toast.success("完整预览已复制");
+      toast.success(t("preview.copySuccess"));
     } catch {
-      toast.error("复制失败，请检查浏览器剪贴板权限。");
+      toast.error(t("preview.copyFailed"));
     }
   }
+
+  const showDefaultSenderHint =
+    !isMemberSenderNameCustomized({
+      display_name: memberName,
+      display_name_customized: memberDisplayNameCustomized,
+    }) && usedKeys.has("sender_name");
 
   return (
     <div className={styles.preview}>
@@ -126,18 +157,22 @@ export function TemplatePreview({
         className={styles.previewNote}
         role="note"
       >
-        示例值仅用于本次预览，不会保存到模板。
+        {t("preview.sampleNote")}
       </p>
       <details ref={sampleControlsRef} className={styles.sampleControls}>
         <summary>
-          <span>调整预览示例值 · 模板使用 {usedVariables.length} 项</span>
+          <span>
+            {t("preview.sampleControlsSummary", {
+              count: usedVariables.length,
+            })}
+          </span>
           <ChevronDown size={16} aria-hidden="true" />
         </summary>
         <div className={styles.sampleGroups}>
           {primaryVariables.length ? (
             [
-              { label: "客户资料 · 按收件人替换", customer: true },
-              { label: "活动信息 · 创建活动时统一填写", customer: false },
+              { label: t("editor.groupCustomer"), customer: true },
+              { label: t("editor.groupCampaign"), customer: false },
             ].map((group) => {
               const fields = primaryVariables.filter(
                 (variable) =>
@@ -150,18 +185,22 @@ export function TemplatePreview({
                   {sampleFields(fields)}
                   {group.customer && usedKeys.has("name") && (
                     <p className={styles.help}>
-                      客户姓名留空时，使用邮箱中 @ 前的内容。
+                      {t("preview.nameFallbackHelp")}
                     </p>
                   )}
                 </div>
               ) : null;
             })
           ) : (
-            <p className={styles.help}>当前主题和正文未使用变量。</p>
+            <p className={styles.help}>{t("preview.noVariablesUsed")}</p>
           )}
           {otherVariables.length > 0 && (
             <details className={styles.otherSamples}>
-              <summary>未使用的示例值（{otherVariables.length} 项）</summary>
+              <summary>
+                {t("preview.unusedSamplesSummary", {
+                  count: otherVariables.length,
+                })}
+              </summary>
               {sampleFields(otherVariables)}
             </details>
           )}
@@ -170,15 +209,11 @@ export function TemplatePreview({
       {rendered.missing.length > 0 && (
         <div className={styles.previewValidation} role="alert">
           <p>
-            预览待补充：
-            {rendered.missing
-              .map((key) =>
-                key === "sender_name"
-                  ? "正文署名"
-                  : (templateVariables.find((variable) => variable.key === key)
-                      ?.label ?? key),
-              )
-              .join("、")}
+            {t("preview.missingPrefix", {
+              fields: rendered.missing
+                .map((key) => variableLabel(key))
+                .join(t("preview.missingSeparator")),
+            })}
           </p>
           <Button
             type="button"
@@ -192,7 +227,7 @@ export function TemplatePreview({
                 ?.focus();
             }}
           >
-            补充示例值
+            {t("preview.fillMissingAction")}
           </Button>
         </div>
       )}
@@ -203,14 +238,14 @@ export function TemplatePreview({
           onSettingsNavigate={onSettingsNavigate}
           className="mb-4"
         />
-        <p className={styles.mailLabel}>邮件主题</p>
+        <p className={styles.mailLabel}>{t("preview.subjectLabel")}</p>
         <p className={styles.mailSubject}>
-          {rendered.subject || "填写主题后在此预览"}
+          {rendered.subject || t("preview.subjectEmpty")}
         </p>
         <div className="my-4 border-t" />
-        <p className={styles.mailLabel}>纯文本正文（含系统页脚）</p>
+        <p className={styles.mailLabel}>{t("preview.bodyLabel")}</p>
         <pre className={styles.mailBody}>
-          {rendered.body || "填写正文后在此预览。"}
+          {rendered.body || t("preview.bodyEmpty")}
         </pre>
         <EmailOutboundFooterPreview
           workspaceName={workspaceName}
@@ -218,17 +253,17 @@ export function TemplatePreview({
           onSettingsNavigate={onSettingsNavigate}
         />
       </div>
-      {isDefaultSenderName(memberName) && usedKeys.has("sender_name") && (
+      {showDefaultSenderHint && (
         <p className={styles.previewNote} role="note">
-          对外署名仍是默认的“店主”。设置真实署名后，新建预览和活动可自动预填。
+          {t("preview.defaultSenderPrefix")}
           <Link
             href="/settings"
             onNavigate={onSettingsNavigate}
             className="underline underline-offset-2"
           >
-            前往设置真实署名
+            {t("preview.defaultSenderLink")}
           </Link>
-          。
+          {t("preview.defaultSenderSuffix")}
         </p>
       )}
       <Button
@@ -239,7 +274,7 @@ export function TemplatePreview({
         onClick={copyPreview}
       >
         <Copy size={16} aria-hidden="true" />
-        复制完整预览
+        {t("preview.copyButton")}
       </Button>
     </div>
   );

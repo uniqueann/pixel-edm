@@ -1,0 +1,57 @@
+{
+  "pageTitle": "Settings",
+  "workspaceBadge": "Workspace",
+  "sectionNav": {
+    "ariaLabel": "Settings sections",
+    "store": "Store",
+    "channels": "Channels",
+    "billing": "Plan",
+    "appearance": "Appearance"
+  },
+  "store": {
+    "title": "Store details",
+    "description": "Used for email footers and default sender details.",
+    "nameLabel": "Store / Workspace name",
+    "addressLabel": "Physical mailing address",
+    "addressPlaceholder": "e.g. 88 Caoxi North Rd, Xuhui, Shanghai, China",
+    "addressHelp": "Shown in the footer of every marketing email. Enter a real postal address where recipients can reach you (street, number, city, country). Do not enter an email, phone number, or placeholder text.",
+    "savedAddressInvalid": "The saved footer address failed validation: {problem}. Until fixed, marketing email footers will still show it as-is.",
+    "contactAdminToFix": "Contact a workspace admin to fix it.",
+    "footerPreviewTitle": "Footer preview",
+    "footerPreviewStorePlaceholder": "(Store / Workspace name)",
+    "footerPreviewAddressPlaceholder": "(Not set)",
+    "footerPreviewUnsubscribe": "(Auto-generated unsubscribe link when sent)",
+    "saveButton": "Save settings",
+    "saving": "Saving…",
+    "savedToast": "Workspace saved",
+    "saveFailed": "Failed to save. Your input is kept—please try again.",
+    "adminOnlyHint": "Only admins can update workspace settings.",
+    "whyAddressTrigger": "Why is a physical address required?",
+    "whyAddressTitle": "Why is a physical mailing address required?",
+    "whyAddressDescription": "Anti-spam regulations (such as CAN-SPAM) require marketing emails to include a valid physical postal address in the footer. This address appears at the bottom of every marketing email and can be an office, store, or P.O. box—not an email address, phone number, or placeholder."
+  },
+  "profile": {
+    "title": "My sign-off name",
+    "description": "Used as your email sign-off; applies only to you.",
+    "defaultWarning": "You are still using the default placeholder name. Recipients will see it in your email sign-off—please enter your real name or brand.",
+    "label": "Sign-off name ('{{sender_name}}')",
+    "placeholder": "e.g. Anna Chen or Canvas Studio Team",
+    "help": "Used as the email sign-off ('{{sender_name}}' in templates) and shown in the team list and activity logs. Use a name or brand your contacts recognize. Applies to newly created or edited campaigns without changing existing ones.",
+    "saveButton": "Save sign-off name",
+    "saving": "Saving…",
+    "savedToast": "Sign-off name saved",
+    "saveFailed": "Failed to save. Your input is kept—please try again."
+  },
+  "channels": {
+    "title": "Sending channels",
+    "descriptionPrefix": "Configure your email providers and primary channel, then send a test email to verify delivery. For first-time setup, see the",
+    "directmailGuide": "DirectMail setup guide",
+    "descriptionSuffix": "."
+  },
+  "appearance": {
+    "title": "Appearance",
+    "description": "Choose your preferred visual style: light, dark, or match your system.",
+    "languageTitle": "Language",
+    "languageDescription": "Switch the interface language for your account. Your email content and contacts remain unchanged."
+  }
+}
