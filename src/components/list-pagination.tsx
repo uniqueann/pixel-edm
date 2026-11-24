@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
@@ -17,6 +20,7 @@ export function ListPagination({
   onPageChange: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
 }) {
+  const t = useTranslations("common.pagination");
   if (total === 0) return null;
 
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -25,7 +29,7 @@ export function ListPagination({
 
   return (
     <nav
-      aria-label="列表分页"
+      aria-label={t("ariaLabel")}
       className="list-pagination"
       data-busy={pending ? "true" : undefined}
     >
@@ -35,18 +39,18 @@ export function ListPagination({
         disabled={pending || page <= 1}
         onClick={() => onPageChange(page - 1)}
       >
-        上一页
+        {t("previous")}
       </Button>
       <div className="list-pagination-summary flex flex-wrap items-center justify-center gap-2 text-center">
         <span>
-          第 {firstItem}–{lastItem} 条，共 {total} 条
+          {t("summary", { first: firstItem, last: lastItem, total })}
           <span className="list-pagination-pages">
-            （{page} / {pageCount}）
+            {t("pages", { page, pageCount })}
           </span>
         </span>
         {onPageSizeChange && (
           <select
-            aria-label="每页显示条数"
+            aria-label={t("pageSizeAriaLabel")}
             className="list-filter list-filter-compact text-xs"
             value={pageSize}
             disabled={pending}
@@ -54,7 +58,7 @@ export function ListPagination({
           >
             {PAGE_SIZE_OPTIONS.map((size) => (
               <option key={size} value={size}>
-                {size} 条/页
+                {t("perPage", { size })}
               </option>
             ))}
           </select>
@@ -66,7 +70,7 @@ export function ListPagination({
         disabled={pending || page >= pageCount}
         onClick={() => onPageChange(page + 1)}
       >
-        下一页
+        {t("next")}
       </Button>
     </nav>
   );

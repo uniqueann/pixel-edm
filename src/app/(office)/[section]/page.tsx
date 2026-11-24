@@ -3,7 +3,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Plus } from "lucide-react";
 import { notFound } from "next/navigation";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { getContext } from "@/lib/workspace";
+import { ROOT_CLIENT_NAMESPACES } from "@/i18n/config";
+import { pickMessages } from "@/i18n/messages";
 import { serverClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/empty-state";
 import { SettingsForm } from "@/components/settings-form";
@@ -37,8 +41,10 @@ import { CheckoutSuccessToast } from "@/features/workspace/checkout-toast";
 import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
 import { edmCheckoutAvailability } from "@/lib/billing/edm-product-config";
 import { ThemeSegmented } from "@/components/theme-toggle";
+import { LocaleSegmented } from "@/components/locale-switcher";
 import { mailingAddressProblem } from "@/lib/mailing-address";
-import { isDefaultSenderName } from "@/lib/sender-name";
+import { isMemberSenderNameCustomized } from "@/lib/sender-name";
+import { LocalDate } from "@/components/local-date";
 import { channelSetupCopy } from "@/features/channels/channel-presentation";
 import { PreparationGuide } from "@/features/onboarding/preparation-guide";
 import { preparationHref } from "@/features/onboarding/links";
@@ -124,11 +130,24 @@ export default async function Page({
         }),
       );
     }
+    const [locale, messages, tSettings] = await Promise.all([
+      getLocale(),
+      getMessages(),
+      getTranslations("settings"),
+    ]);
+    const settingsClientMessages = pickMessages(messages, [
+      ...ROOT_CLIENT_NAMESPACES,
+      "settings",
+      "billing",
+      "channels",
+    ]);
     return (
-      <>
+      <NextIntlClientProvider locale={locale} messages={settingsClientMessages}>
         <PageHeader
-          title="邮局设置"
-          meta={<Badge variant="secondary">工作区</Badge>}
+          title={tSettings("pageTitle")}
+          meta={
+            <Badge variant="secondary">{tSettings("workspaceBadge")}</Badge>
+          }
         />
         <Suspense fallback={null}>
           <CheckoutSuccessToast />
@@ -137,8 +156,8 @@ export default async function Page({
         <section id={SETTINGS_SECTION_IDS.store} className="settings-section">
           <Card>
             <CardContent>
-              <h2 className="mb-2">店铺信息</h2>
-              <p className="hint">用于邮件页脚落款与发件人默认信息。</p>
+              <h2 className="mb-2">{tSettings("store.title")}</h2>
+              <p className="hint">{tSettings("store.description")}</p>
               <SettingsForm
                 key={workspace.id}
                 name={workspace.name}
@@ -149,11 +168,12 @@ export default async function Page({
           </Card>
           <Card className="mt-4" id={SETTINGS_SECTION_IDS.profile}>
             <CardContent>
-              <h2 className="mb-2">我的署名</h2>
-              <p className="hint">用于邮件落款，仅影响你本人。</p>
+              <h2 className="mb-2">{tSettings("profile.title")}</h2>
+              <p className="hint">{tSettings("profile.description")}</p>
               <MemberProfileForm
-                key={member.display_name}
+                key={`${member.display_name}:${member.display_name_customized}`}
                 displayName={member.display_name}
+                displayNameCustomized={member.display_name_customized}
               />
             </CardContent>
           </Card>
@@ -163,16 +183,16 @@ export default async function Page({
           className="settings-section mt-7 space-y-3"
         >
           <div>
-            <h2>发信通道</h2>
+            <h2>{tSettings("channels.title")}</h2>
             <p className="hint mt-2 mb-0">
-              为工作区配置发信服务商与主通道，保存后可发送测试邮件验证连通性。首次开通请参考{" "}
+              {tSettings("channels.descriptionPrefix")}{" "}
               <Link
                 href="/help#help-directmail-setup"
                 className="inline-flex min-h-11 items-center underline underline-offset-2"
               >
-                DirectMail 图文教程
+                {tSettings("channels.directmailGuide")}
               </Link>
-              。
+              {tSettings("channels.descriptionSuffix")}
             </p>
           </div>
           <ChannelSettings
@@ -193,7 +213,7 @@ export default async function Page({
               Boolean(workspace.mailing_address.trim()) &&
               !mailingAddressProblem(workspace.mailing_address)
             }
-            signatureReady={!isDefaultSenderName(member.display_name)}
+            signatureReady={isMemberSenderNameCustomized(member)}
           />
         </section>
         {deliveryPlan && (
@@ -215,16 +235,27 @@ export default async function Page({
           className="settings-section mt-7"
         >
           <Card>
-            <CardContent>
-              <h2 className="mb-2">界面外观</h2>
-              <p className="hint mb-4">
-                选择适合你的视觉风格，支持浅色、深色或随系统自动切换。
-              </p>
-              <ThemeSegmented />
+            <CardContent className="space-y-6">
+              <div>
+                <h2 className="mb-2">{tSettings("appearance.title")}</h2>
+                <p className="hint mb-4">
+                  {tSettings("appearance.description")}
+                </p>
+                <ThemeSegmented />
+              </div>
+              <div className="border-t border-border/70 pt-5">
+                <h3 className="mb-2 text-base font-semibold">
+                  {tSettings("appearance.languageTitle")}
+                </h3>
+                <p className="hint mb-4">
+                  {tSettings("appearance.languageDescription")}
+                </p>
+                <LocaleSegmented />
+              </div>
             </CardContent>
           </Card>
         </section>
-      </>
+      </NextIntlClientProvider>
     );
   }
   if (section === "dashboard" || section === "team") {
@@ -238,42 +269,50 @@ export default async function Page({
       throw new Error("成员信息加载失败，请重试。");
     const deliveryPlan = await getWorkspaceDeliveryPlan(workspace.id);
     if (section === "team") {
+      const tTeam = await getTranslations("team");
       if (!deliveryPlan?.allows_team_collaboration) {
         return (
           <>
-            <PageHeader title="团队成员" />
+            <PageHeader title={tTeam("title")} />
             <EmptyState
               kind="restricted"
-              title="多人协作仅在团队版可用"
-              description="升级团队版后可邀请成员协同管理、分配角色权限并查看完整操作记录。"
+              title={tTeam("restricted.title")}
+              description={tTeam("restricted.description")}
             >
               {role === "admin" && (
                 <Button asChild>
-                  <Link href="/settings">前往升级团队版</Link>
+                  <Link href="/settings">
+                    {tTeam("restricted.upgradeAction")}
+                  </Link>
                 </Button>
               )}
             </EmptyState>
           </>
         );
       }
-      const [team, teamDeliveryPlan] = await Promise.all([
+      const [team, teamDeliveryPlan, locale, messages] = await Promise.all([
         listTeam(workspace.id),
         getWorkspaceDeliveryPlan(workspace.id),
+        getLocale(),
+        getMessages(),
       ]);
       const memberCapNote =
         teamDeliveryPlan &&
         teamDeliveryPlan.active_members > teamDeliveryPlan.max_active_members
-          ? "当前活跃成员数已超出套餐席位。成员仍会保留，但运营人员的操作权限已暂停。管理员可移除多余成员或升级套餐以恢复。"
+          ? tTeam("memberCapNote")
           : null;
       return (
-        <>
+        <NextIntlClientProvider
+          locale={locale}
+          messages={pickMessages(messages, [...ROOT_CLIENT_NAMESPACES, "team"])}
+        >
           <PageHeader
-            title="团队成员"
-            meta={`${team.members.length} 人`}
+            title={tTeam("title")}
+            meta={tTeam("metaCount", { count: team.members.length })}
             description={
               team.workspace.type === "team"
-                ? "邀请同事协作管理客户、模板和活动草稿。"
-                : "创建第一条邀请后，个人工作区会转换为团队工作区。"
+                ? tTeam("descriptionTeam")
+                : tTeam("descriptionPersonal")
             }
           />
           <TeamManager
@@ -282,7 +321,7 @@ export default async function Page({
             canManage={role === "admin"}
             memberCapNote={memberCapNote}
           />
-        </>
+        </NextIntlClientProvider>
       );
     }
     const canViewLogs =
@@ -334,14 +373,32 @@ export default async function Page({
           ? "templates"
           : "campaigns"
         : null;
-    const createLabel = createTarget === "templates" ? "创建模板" : "创建活动";
+    const [locale, messages, tDash, tAudit] = await Promise.all([
+      getLocale(),
+      getMessages(),
+      getTranslations("dashboard"),
+      getTranslations("audit"),
+    ]);
+    const dashboardClientMessages = pickMessages(messages, [
+      ...ROOT_CLIENT_NAMESPACES,
+      "dashboard",
+    ]);
+    const auditActionText = (action: string) => {
+      const key = `actions.${action.replaceAll(".", "_")}`;
+      if (tAudit.has(key as never)) return tAudit(key as never);
+      return activityLabel(action);
+    };
+    const createLabel =
+      createTarget === "templates"
+        ? tDash("createTemplate")
+        : tDash("createCampaign");
     const facts: PreparationFacts = {
       role,
       canWrite,
       storeReady:
         Boolean(workspace.mailing_address.trim()) &&
         !mailingAddressProblem(workspace.mailing_address),
-      signatureReady: !isDefaultSenderName(member.display_name),
+      signatureReady: isMemberSenderNameCustomized(member),
       channel:
         channelSummaries === null
           ? null
@@ -350,7 +407,7 @@ export default async function Page({
               detail: primaryChannel
                 ? channelSetupCopy(primaryChannel).detail
                 : channelSummaries.length
-                  ? "已有通道，请选择并验证主发信通道。"
+                  ? tDash("channelSelectPrimary")
                   : channelSetupCopy(null).detail,
             },
       contacts:
@@ -379,10 +436,13 @@ export default async function Page({
       />
     );
     return (
-      <>
+      <NextIntlClientProvider
+        locale={locale}
+        messages={dashboardClientMessages}
+      >
         <PageHeader
           title={workspace.name}
-          description="管理客户、设计模板并高效发送营销邮件。"
+          description={tDash("description")}
           actions={
             createTarget ? (
               <Button asChild>
@@ -398,24 +458,24 @@ export default async function Page({
         <div className="stat-grid">
           {[
             {
-              label: "客户数",
+              label: tDash("stats.contacts"),
               value: contactSummary ? String(contactSummary.active_count) : "—",
               href: "/contacts",
             },
             {
-              label: "模板数",
+              label: tDash("stats.templates"),
               value: templateSummary
                 ? String(templateSummary.active_count)
                 : "—",
               href: "/templates",
             },
             {
-              label: "工作区成员",
+              label: tDash("stats.members"),
               value: error ? "—" : String(members?.length ?? 0),
               href: "/team",
             },
             {
-              label: "近 30 天打开率",
+              label: tDash("stats.openRate"),
               value: weightedOpenRate,
               href: "/campaigns",
             },
@@ -431,28 +491,34 @@ export default async function Page({
           ))}
         </div>
         <p className="hint">
-          客户数与模板数仅包含未归档记录；其中未归档的已订阅客户{" "}
-          {subscribedSummary ? `${subscribedSummary.total} 位` : "数量待核对"}
-          。活动名单仍会排除退订与防打扰地址。
+          {tDash("summaryPrefix")}
+          {subscribedSummary
+            ? tDash("subscribedCount", { count: subscribedSummary.total })
+            : tDash("subscribedUnknown")}
+          {tDash("summaryMiddle")}
           {statsAvailable && campaignStatistics
-            ? `打开率按近 30 天启用追踪活动的已送达收件人加权计算（${campaignStatistics.opened} / ${campaignStatistics.delivered}，共 ${campaignStatistics.tracked_campaigns} 个活动）。`
+            ? tDash("openRateFormula", {
+                opened: campaignStatistics.opened,
+                delivered: campaignStatistics.delivered,
+                tracked: campaignStatistics.tracked_campaigns,
+              })
             : deliveryPlan === null
-              ? "套餐与统计权限暂时无法读取，请重试核对。"
+              ? tDash("planUnavailable")
               : statsAvailable
-                ? "活动统计暂时无法读取，请重试核对。"
-                : "打开/点击统计需专业版或团队版。"}
+                ? tDash("statsUnavailable")
+                : tDash("statsPaidOnly")}
         </p>
         <div className={styles.recent}>
           <Card>
             <CardContent>
               <div className="section-heading mb-3">
-                <h2>最近活动</h2>
+                <h2>{tDash("recentCampaigns.title")}</h2>
                 {recentCampaigns?.items.length ? (
                   <Link
                     href="/campaigns"
                     className="text-xs underline underline-offset-2"
                   >
-                    查看全部发信活动
+                    {tDash("recentCampaigns.viewAll")}
                   </Link>
                 ) : createTarget ? (
                   <Link
@@ -476,11 +542,15 @@ export default async function Page({
                           {campaign.name}
                         </strong>
                         <span className="hint m-0">
-                          {campaign.recipient_count ?? 0} 位收件人
+                          {tDash("recentCampaigns.recipients", {
+                            count: campaign.recipient_count ?? 0,
+                          })}
                         </span>
                       </span>
                       <Badge variant="outline">
-                        {campaignStatusLabels[campaign.status]}
+                        {tDash.has(`campaignStatus.${campaign.status}` as never)
+                          ? tDash(`campaignStatus.${campaign.status}` as never)
+                          : campaignStatusLabels[campaign.status]}
                       </Badge>
                     </Link>
                   ))}
@@ -488,12 +558,12 @@ export default async function Page({
               ) : (
                 <p className="dashboard-success">
                   {recentCampaigns === null
-                    ? "最近活动暂时无法读取，请重试核对。"
+                    ? tDash("recentCampaigns.unavailable")
                     : createTarget === "templates"
-                      ? "还没有活动，先准备一套可用模板。"
+                      ? tDash("recentCampaigns.emptyNeedTemplate")
                       : canWrite === true
-                        ? "还没有活动，创建第一份草稿后会显示在这里。"
-                        : "还没有活动，管理员或运营创建后会显示在这里。"}
+                        ? tDash("recentCampaigns.emptyCanWrite")
+                        : tDash("recentCampaigns.emptyReadOnly")}
                 </p>
               )}
             </CardContent>
@@ -501,10 +571,10 @@ export default async function Page({
         </div>
         {hasCampaigns && guide}
         <div className="section-heading">
-          <h2>最近动态</h2>
+          <h2>{tDash("recentActivity.title")}</h2>
           {canViewLogs && (
             <Link href="/logs" className="text-xs underline underline-offset-2">
-              查看全部操作记录
+              {tDash("recentActivity.viewAll")}
             </Link>
           )}
         </div>
@@ -516,16 +586,11 @@ export default async function Page({
                   <span className="avatar">{item.actor_name.slice(0, 2)}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate">
-                      {activityLabel(item.action)}
+                      {auditActionText(item.action)}
                       {item.target_label ? ` · ${item.target_label}` : ""}
                     </p>
                     <p className="hint m-0">
-                      {item.actor_name} ·{" "}
-                      {new Intl.DateTimeFormat("zh-CN", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                        timeZone: "Asia/Shanghai",
-                      }).format(new Date(item.created_at))}
+                      {item.actor_name} · <LocalDate value={item.created_at} />
                     </p>
                   </div>
                 </div>
@@ -533,11 +598,11 @@ export default async function Page({
             </CardContent>
           </Card>
         ) : canViewLogs && activityResult.status === "rejected" ? (
-          <p className="hint">最近动态暂时无法读取，其他准备操作仍可继续。</p>
+          <p className="hint">{tDash("recentActivity.unavailable")}</p>
         ) : canViewLogs ? (
           <EmptyState
-            title="还没有操作记录"
-            description="完成客户、导入、模板或活动操作后，记录会出现在这里。"
+            title={tDash("recentActivity.emptyTitle")}
+            description={tDash("recentActivity.emptyDescription")}
           />
         ) : (
           <EmptyState
@@ -545,26 +610,26 @@ export default async function Page({
             title={
               role === "admin"
                 ? deliveryPlan === null
-                  ? "套餐信息待核对"
-                  : "当前套餐不含操作日志"
-                : "动态仅管理员可见"
+                  ? tDash("recentActivity.planCheckTitle")
+                  : tDash("recentActivity.noLogsTitle")
+                : tDash("recentActivity.adminOnlyTitle")
             }
             description={
               role === "admin"
                 ? deliveryPlan === null
-                  ? "请重试读取，暂时无法确认日志权限。"
-                  : "升级套餐后可在总览和日志页查看业务审计。"
-                : "管理员可以在总览和日志页查看业务审计。"
+                  ? tDash("recentActivity.planCheckDescription")
+                  : tDash("recentActivity.noLogsDescription")
+                : tDash("recentActivity.adminOnlyDescription")
             }
           >
             {role === "admin" && (
               <Button asChild variant="outline">
-                <Link href="/settings">查看套餐详情</Link>
+                <Link href="/settings">{tDash("recentActivity.viewPlan")}</Link>
               </Button>
             )}
           </EmptyState>
         )}
-      </>
+      </NextIntlClientProvider>
     );
   }
   const page = pages[section];

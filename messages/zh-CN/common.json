@@ -1,0 +1,125 @@
+{
+  "actions": {
+    "save": "保存",
+    "saving": "保存中…",
+    "cancel": "取消",
+    "confirm": "确认",
+    "processing": "处理中…",
+    "close": "关闭",
+    "retry": "重试",
+    "reload": "重新加载",
+    "loading": "加载中…"
+  },
+  "pagination": {
+    "ariaLabel": "列表分页",
+    "previous": "上一页",
+    "next": "下一页",
+    "summary": "第 {first}–{last} 条，共 {total} 条",
+    "pages": "（{page} / {pageCount}）",
+    "pageSizeAriaLabel": "每页显示条数",
+    "perPage": "{size} 条/页"
+  },
+  "planUsage": {
+    "viewPlan": "查看套餐"
+  },
+  "unsavedDialog": {
+    "leaveTitle": "离开并放弃未保存的更改？",
+    "closeTitle": "放弃未保存的更改？",
+    "leaveDescription": "离开后，当前编辑内容将不会保存。可以继续编辑并先保存。",
+    "closeDescription": "关闭后，当前编辑内容将不会保存。",
+    "leaveConfirm": "放弃并离开",
+    "closeConfirm": "放弃更改",
+    "continueEditing": "继续编辑"
+  },
+  "outboundPreview": {
+    "fromLabel": "发件人（收件人邮箱客户端显示的 From）",
+    "missingBoth": "尚未配置主发信通道的发件人名称与发件地址。",
+    "missingAddress": "主通道尚未填写发件地址。",
+    "missingAlias": "主通道尚未填写发件人显示名称。",
+    "goToChannels": "前往发信通道",
+    "footerTitle": "系统追加的邮件页脚",
+    "workspacePlaceholder": "（店铺 / 工作区名称）",
+    "addressEmpty": "（未填写）",
+    "goToStoreSettings": "前往店铺信息",
+    "unsubscribeTitle": "预览占位，发送时会替换为真实退订链接"
+  },
+  "providerErrors": {
+    "technicalDetails": "技术详情（排障）",
+    "technicalInfoPrefix": "技术信息：{detail}",
+    "authentication": {
+      "message": "访问密钥或 API 鉴权失败",
+      "hint": "请核对 AccessKey / Secret、SendGrid API Key 等凭据是否准确且未过期。"
+    },
+    "configuration": {
+      "message": "发信通道配置有误",
+      "hint": "请核对发件地址、域名验证、区域/数据中心与服务商控制台设置是否一致。"
+    },
+    "rate_limit": {
+      "message": "发送配额或频率已达上限",
+      "hint": "请稍后再试，或在服务商控制台提升配额、降低发送频率。"
+    },
+    "temporary": {
+      "message": "发信服务商暂时不可用",
+      "hint": "多为短暂故障，请稍后重试；若持续失败请查看服务商状态页。"
+    },
+    "permanent": {
+      "message": "邮件被收件方或服务商永久拒收",
+      "hint": "请核对收件地址、内容与发信域名信誉；必要时在服务商控制台查看退信原因。"
+    },
+    "unknown": {
+      "message": "发送失败，原因待确认",
+      "hint": "请展开下方技术详情，或在发信服务商控制台查询回执与日志。"
+    },
+    "providerUnsupported": {
+      "message": "当前发信通道类型暂不支持发送",
+      "hint": "请在设置中更换已支持的通道，或联系管理员升级配置。"
+    },
+    "channelConfigChanged": {
+      "message": "测试期间通道配置已变更",
+      "hint": "请确认当前表单已保存后，重新发起测试发送。"
+    },
+    "taskNotMatched": {
+      "message": "未能匹配到对应的发送任务",
+      "hint": "多为回执延迟或任务已归档，请刷新发送明细后重试。"
+    },
+    "senderNotVerified": {
+      "message": "发件地址或域名尚未通过验证",
+      "hint": "请在发信服务商控制台完成域名或发件人验证后再试。"
+    },
+    "regionMismatch": {
+      "message": "通道区域或服务端点配置不符",
+      "hint": "请确认 DirectMail 区域、Amazon SES 区域或 SendGrid 数据中心与控制台一致。"
+    },
+    "credentialDecrypt": {
+      "message": "服务器暂无法解密通道凭据",
+      "hint": "请联系管理员检查凭据加密密钥（CREDENTIAL_KEYRING）配置。"
+    },
+    "network": {
+      "message": "连接发信服务商时网络异常",
+      "hint": "请稍后重试；若持续失败，请检查服务器出站网络或防火墙策略。"
+    },
+    "serviceUnavailable": {
+      "message": "发信服务商暂时不可用",
+      "hint": "请稍后重试；若持续失败请查看服务商状态页或工单。"
+    },
+    "unrecognized": {
+      "message": "发送失败，服务商返回未识别的错误",
+      "hint": "请展开技术详情查看原始错误码，或在服务商控制台查询对应回执。"
+    }
+  },
+  "language": {
+    "label": "界面语言",
+    "switchAriaLabel": "切换界面语言",
+    "zhCN": "简体中文",
+    "en": "English",
+    "saved": "界面语言已更新",
+    "saveFailed": "语言切换失败，请重试。"
+  },
+  "theme": {
+    "label": "外观主题",
+    "toggleAriaLabel": "切换主题",
+    "light": "浅色模式",
+    "dark": "深色模式",
+    "system": "跟随系统"
+  }
+}

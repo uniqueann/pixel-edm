@@ -6,6 +6,12 @@ import { z } from "zod";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
 import { supabaseConfig } from "@/lib/supabase/config";
+import {
+  AppError,
+  buildActionError,
+  mapChannelActionError,
+} from "@/lib/errors";
+import { resolveValidationMessage } from "@/lib/validation-messages";
 import { credentialStorageReady, sealProviderCredentials } from "./credentials";
 import {
   createDeliveryChannelInput,
@@ -28,37 +34,20 @@ function deliveryWebhookFunction(provider: string) {
 async function adminWorkspace(workspaceId: string) {
   const context = await getContext();
   if (context.workspace.id !== workspaceId)
-    throw new Error("工作区已切换，请刷新后重试。");
-  if (context.role !== "admin") throw new Error("只有管理员可以配置发信通道。");
+    throw new AppError("errors.common.workspaceSwitched");
+  if (context.role !== "admin") throw new AppError("errors.channels.adminOnly");
   return serverClient();
 }
 
 function actionError(error: unknown) {
-  if (error instanceof z.ZodError)
-    return { error: error.issues[0]?.message ?? "发信通道配置无效。" };
-  const message = error instanceof Error ? error.message : "操作失败，请重试。";
-  const safeMessages = [
-    "工作区已切换",
-    "只有管理员",
-    "发信通道已被修改",
-    "重新连接必须",
-    "首次连接必须",
-    "服务器尚未配置",
-    "测试发送过于频繁",
-    "登录邮箱尚未验证",
-    "Webhook 配置已变化",
-    "行为追踪",
-    "阿里云标签",
-    "该发信服务商",
-    "SNS Topic",
-    "SES 配置集",
-    "已断开的发信通道",
-  ];
-  return {
-    error: safeMessages.some((prefix) => message.startsWith(prefix))
-      ? message
-      : "发信通道保存失败，请检查配置后重试。",
-  };
+  if (error instanceof z.ZodError) {
+    const issue = error.issues[0];
+    return buildActionError(
+      issue?.message || "errors.channels.invalidConfig",
+      resolveValidationMessage(issue?.message, undefined, "发信通道配置无效。"),
+    );
+  }
+  return mapChannelActionError(error);
 }
 
 function normalizeChannel(

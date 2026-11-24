@@ -1,0 +1,159 @@
+{
+  "title": "邮件模板库",
+  "metaCount": "{count} 套",
+  "description": "支持使用起步模板参考样例，或创建自定义模板；主题与正文中的动态变量将在发信时自动替换为对应信息。",
+  "newTemplate": "新建模板",
+  "search": {
+    "toolbarAria": "查找模板",
+    "label": "搜索模板",
+    "placeholder": "搜索模板名称或主题",
+    "statusLabel": "显示范围",
+    "statusAria": "模板状态",
+    "statusActive": "使用中的模板",
+    "statusArchived": "已归档模板",
+    "categoryLabel": "分类",
+    "categoryAria": "模板分类",
+    "allCategories": "全部分类"
+  },
+  "quota": {
+    "label": "自定义模板（起步模板不占用）",
+    "exhausted": "无法再新建或复制模板，可归档不用的模板或升级套餐",
+    "duplicateDisabledTitle": "已达套餐自定义模板上限"
+  },
+  "filters": {
+    "ariaLabel": "已应用筛选",
+    "applied": "已筛选",
+    "queryChip": "搜索：{query}",
+    "categoryChip": "分类：{category}",
+    "clear": "清空筛选"
+  },
+  "status": {
+    "loading": "正在加载…",
+    "readOnly": "当前为只读权限。"
+  },
+  "empty": {
+    "searchTitle": "没有匹配的模板",
+    "searchDescription": "请调整搜索条件，或清空筛选查看全部模板。",
+    "archivedTitle": "暂无已归档模板",
+    "archivedDescription": "归档的模板会保留在这里，可随时恢复。",
+    "initialTitle": "还没有模板",
+    "initialDescription": "新建一套邮件模板，或在编辑器中参考起步样例。"
+  },
+  "card": {
+    "starterBadge": "起步模板",
+    "preview": "预览",
+    "edit": "编辑",
+    "duplicate": "复制模板",
+    "archive": "归档",
+    "restore": "恢复"
+  },
+  "editor": {
+    "editTitle": "编辑模板",
+    "createTitle": "新建模板",
+    "description": "编辑内容，预览核对后保存到模板库。",
+    "viewSwitchAria": "编辑器视图",
+    "editTab": "编辑内容",
+    "previewTab": "预览当前内容",
+    "formAria": "模板内容",
+    "nameLabel": "模板名称",
+    "categoryLabel": "分类",
+    "existingCategories": "选择已有分类",
+    "subjectLabel": "邮件主题",
+    "bodyLabel": "纯文本正文",
+    "charCount": "{count} / 20000 字",
+    "variablesAria": "模板变量",
+    "insertToSubject": "插入变量到主题",
+    "insertToBody": "插入变量到正文",
+    "variablesHelp": "点击变量插入占位符。未知变量会阻止保存。",
+    "groupCustomer": "客户资料 · 按收件人替换",
+    "groupCampaign": "活动信息 · 创建活动时统一填写",
+    "insertVariableTitle": "插入 {label}（'{{'{key}'}}'）",
+    "senderNameHelp": "正文署名用于邮件文字中的称呼或落款；真实发件人由发信通道配置。",
+    "fieldSubject": "主题",
+    "fieldBody": "正文",
+    "fieldError": "{field}：{message}",
+    "previewSectionTitle": "邮件预览",
+    "statusInvalid": "模板变量有误，请在编辑内容中修正",
+    "statusSaving": "正在保存模板…",
+    "statusDirty": "有未保存的更改",
+    "statusClean": "仅保存模板内容",
+    "saveButton": "保存模板",
+    "savingButton": "保存中…",
+    "saveFailed": "保存失败，请重试。",
+    "saveFailedKeepInput": "保存失败，输入已保留，请重试。"
+  },
+  "variables": {
+    "name": "客户姓名",
+    "email": "客户邮箱",
+    "store_name": "店铺名称",
+    "sender_name": "正文署名",
+    "discount": "优惠信息",
+    "product": "商品名称",
+    "order_number": "订单号"
+  },
+  "preview": {
+    "dialogFallbackTitle": "模板预览",
+    "dialogDescription": "核对邮件主题、正文与系统追加的页脚。",
+    "sampleNote": "示例值仅用于本次预览，不会保存到模板。",
+    "sampleControlsSummary": "调整预览示例值 · 模板使用 {count} 项",
+    "nameFallbackHelp": "客户姓名留空时，使用邮箱中 @ 前的内容。",
+    "noVariablesUsed": "当前主题和正文未使用变量。",
+    "unusedSamplesSummary": "未使用的示例值（{count} 项）",
+    "missingPrefix": "预览待补充：{fields}",
+    "missingSeparator": "、",
+    "missingToken": "【缺少：{key}】",
+    "fillMissingAction": "补充示例值",
+    "subjectLabel": "邮件主题",
+    "subjectEmpty": "填写主题后在此预览",
+    "bodyLabel": "纯文本正文（含系统页脚）",
+    "bodyEmpty": "填写正文后在此预览。",
+    "defaultSenderPrefix": "对外署名仍是默认的“店主”。设置真实署名后，新建预览和活动可自动预填。",
+    "defaultSenderLink": "前往设置真实署名",
+    "defaultSenderSuffix": "。",
+    "copyButton": "复制完整预览",
+    "copyFromPrefix": "发件人：{from}",
+    "copySubjectPrefix": "主题：{subject}",
+    "copySuccess": "完整预览已复制",
+    "copyFailed": "复制失败，请检查浏览器剪贴板权限。"
+  },
+  "archiveConfirm": {
+    "title": "归档模板",
+    "description": "归档「{name}」？之后可以在已归档列表恢复。",
+    "confirm": "归档"
+  },
+  "toast": {
+    "duplicated": "模板副本已创建",
+    "duplicateFailed": "复制失败，请重试。",
+    "restored": "模板已恢复",
+    "archived": "模板已归档",
+    "actionFailed": "操作失败，请重试。",
+    "saved": "模板已保存"
+  },
+  "defaults": {
+    "customCategory": "自定义",
+    "welcome": {
+      "name": "欢迎新客户",
+      "category": "欢迎系列"
+    },
+    "abandoned_cart": {
+      "name": "弃购挽回",
+      "category": "弃购挽回"
+    },
+    "promotion": {
+      "name": "促销活动",
+      "category": "促销活动"
+    },
+    "shipping": {
+      "name": "物流通知",
+      "category": "物流通知"
+    },
+    "winback": {
+      "name": "复购唤醒",
+      "category": "复购唤醒"
+    },
+    "review_request": {
+      "name": "评价邀请",
+      "category": "评价邀请"
+    }
+  }
+}

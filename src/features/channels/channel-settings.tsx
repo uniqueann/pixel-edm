@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,9 @@ import type { DeliveryChannel, DeliveryTestAttempt } from "./model";
 import { mergeProviderRecord, type DeliveryChannelSummary } from "./registry";
 import { saveDeliveryChannel } from "./actions";
 import { settingsSectionHref } from "@/features/settings/anchors";
+import { DEFAULT_LOCALE, normalizeLocale } from "@/i18n/config";
+import { compareLocalized } from "@/i18n/format";
+import { useErrorMessage } from "@/i18n/use-resolvers";
 import {
   useChannelOperation,
   type ChannelOperation,
@@ -44,6 +48,9 @@ export function ChannelSettings({
   storeReady: boolean;
   signatureReady: boolean;
 }) {
+  const t = useTranslations("channels");
+  const locale = normalizeLocale(useLocale()) ?? DEFAULT_LOCALE;
+  const resolveError = useErrorMessage();
   const router = useRouter();
   const operation = useChannelOperation();
   const addOperation = useRef<ChannelOperation | null>(null);
@@ -168,32 +175,40 @@ export function ChannelSettings({
 
   const orderedChannels = [...channels].sort((left, right) => {
     if (left.is_primary !== right.is_primary) return left.is_primary ? -1 : 1;
-    return left.display_name.localeCompare(right.display_name, "zh-CN");
+    return compareLocalized(
+      t(`providers.${left.provider}.name`),
+      t(`providers.${right.provider}.name`),
+      locale,
+    );
   });
 
   const nextStep = (
     <section className={styles.continuation} data-channel-next-step>
-      <h3>主通道已验证，继续完成发信准备</h3>
-      <p className={styles.supporting}>
-        测试仅验证通道。正式发送仍会检查发件身份、页脚地址、客户订阅、名单与套餐额度。
-      </p>
+      <h3>{t("nextStep.title")}</h3>
+      <p className={styles.supporting}>{t("nextStep.description")}</p>
       <div className={styles.actions}>
         {!storeReady && (
           <Button asChild variant="outline">
-            <Link href={settingsSectionHref("store")}>补充页脚联系地址</Link>
+            <Link href={settingsSectionHref("store")}>
+              {t("nextStep.completeAddress")}
+            </Link>
           </Button>
         )}
         {!signatureReady && (
           <Button asChild variant="outline">
-            <Link href={settingsSectionHref("profile")}>设置正文署名</Link>
+            <Link href={settingsSectionHref("profile")}>
+              {t("nextStep.setSignature")}
+            </Link>
           </Button>
         )}
         <Button asChild>
-          <Link href="/dashboard#onboarding">返回总览核对准备</Link>
+          <Link href="/dashboard#onboarding">
+            {t("nextStep.backToDashboard")}
+          </Link>
         </Button>
         {storeReady && (
           <Button asChild variant="outline">
-            <Link href="/campaigns">前往创建活动</Link>
+            <Link href="/campaigns">{t("nextStep.goToCampaigns")}</Link>
           </Button>
         )}
       </div>
@@ -204,44 +219,35 @@ export function ChannelSettings({
     <div className={styles.settings} data-channel-settings>
       {channels.length === 0 && (
         <div className={styles.intro}>
-          <h3>连接你的第一个发信通道</h3>
-          <p className={styles.supporting}>
-            准备好以下三项，保存后即可向当前管理员邮箱发送测试。
-          </p>
+          <h3>{t("intro.title")}</h3>
+          <p className={styles.supporting}>{t("intro.subtitle")}</p>
           <ul className={styles.preparation}>
             <li>
-              <strong>发件身份</strong>
-              <span>
-                已在服务商控制台验证的发件地址与域名，以及收件人看到的发件人名称。
-              </span>
+              <strong>{t("intro.senderTitle")}</strong>
+              <span>{t("intro.senderBody")}</span>
             </li>
             <li>
-              <strong>服务区域</strong>
-              <span>发件身份所在的区域，须与服务商控制台一致。</span>
+              <strong>{t("intro.regionTitle")}</strong>
+              <span>{t("intro.regionBody")}</span>
             </li>
             <li>
-              <strong>访问凭据</strong>
-              <span>
-                具有发信权限的专用 AccessKey 或 API Key，请在服务商控制台获取。
-              </span>
+              <strong>{t("intro.credentialTitle")}</strong>
+              <span>{t("intro.credentialBody")}</span>
             </li>
           </ul>
-          <p className={styles.supporting}>
-            发件人名称用于邮箱列表；正文落款在“我的署名”设置，页脚联系地址在“店铺信息”设置。
-          </p>
+          <p className={styles.supporting}>{t("intro.footnote")}</p>
         </div>
       )}
       {!canEdit && (
         <p className={styles.supporting} role="status">
-          当前为只读权限。请由工作区管理员连接、更新并测试发信通道。
+          {t("readOnlyNotice")}
         </p>
       )}
       {canEdit && !canStoreCredentials && (
         <div role="alert" className={styles.result}>
-          <strong>暂时无法保存通道凭据</strong>
+          <strong>{t("credentialKeyringUnavailableTitle")}</strong>
           <p className={styles.supporting}>
-            服务器的凭据加密能力尚未就绪。请联系部署管理员检查 EDM
-            凭据加密密钥；配置恢复后再连接或更新通道。
+            {t("credentialKeyringUnavailableBody")}
           </p>
         </div>
       )}
@@ -314,7 +320,9 @@ export function ChannelSettings({
               }}
             >
               <Plus aria-hidden="true" />
-              添加 {provider.display_name}
+              {t("addProviderButton", {
+                provider: t(`providers.${provider.provider}.addLabel`),
+              })}
             </Button>
           ))}
         </div>
@@ -322,11 +330,13 @@ export function ChannelSettings({
 
       {disabledProviders.length > 0 && (
         <div className="rounded-xl border border-dashed p-4">
-          <p className="text-sm font-medium">即将支持</p>
+          <p className="text-sm font-medium">{t("comingSoon")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {disabledProviders.map((provider) => (
               <Badge key={provider.provider} variant="secondary">
-                {provider.display_name}（尚未开放）
+                {t("comingSoonItem", {
+                  provider: t(`providers.${provider.provider}.name`),
+                })}
               </Badge>
             ))}
           </div>
@@ -362,16 +372,16 @@ export function ChannelSettings({
               const result = await saveDeliveryChannel(values);
               if (!request.isCurrent()) return;
               if ("error" in result) {
-                setAddError(result.error);
+                setAddError(resolveError(result));
                 return;
               }
               updateDetail(result.data, addProvider.provider);
               closeAdd();
-              toast.success("配置已保存，下一步发送测试邮件");
+              toast.success(t("toast.savedNeedTest"));
               refreshList();
             } catch {
               if (request.isCurrent())
-                setAddError("保存请求未完成，请核对网络与通道状态后重试。");
+                setAddError(t("toast.saveRequestIncomplete"));
             }
           }}
         />

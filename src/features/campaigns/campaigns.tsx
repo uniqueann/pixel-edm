@@ -13,6 +13,7 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { unstable_rethrow, useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Archive,
   ArchiveRestore,
@@ -56,9 +57,12 @@ import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { PlanUsageNote } from "@/features/workspace/plan-usage-note";
 import {
   isQuotaExhausted,
-  nextQuotaSlotText,
   type PlanUsage,
 } from "@/features/workspace/plan-usage";
+import {
+  localizeTemplateCategory,
+  localizeTemplateNameByValue,
+} from "@/features/templates/localization";
 import {
   evaluateSendReadiness,
   type SendReadinessContext,
@@ -79,7 +83,6 @@ import {
   startCampaignDelivery,
 } from "./actions";
 import {
-  campaignStatusLabels,
   campaignVariableFields,
   campaignVariableKeysFromTemplate,
   deliveryResultFilters,
@@ -97,16 +100,38 @@ import {
   type DeliveryResultFilter,
 } from "./model";
 import styles from "./campaigns.module.css";
+import { DEFAULT_LOCALE, normalizeLocale } from "@/i18n/config";
+import { formatBusinessDateTime, formatNumber } from "@/i18n/format";
+import { useErrorMessage } from "@/i18n/use-resolvers";
 
 type SelectableTemplate = CampaignEditorTemplate & { archived: boolean };
 
-function formattedDate(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Shanghai",
-  }).format(new Date(value));
-}
+const ALL_CAMPAIGN_STATUSES: readonly CampaignStatus[] = [
+  "draft",
+  "confirmed",
+  "queued",
+  "sending",
+  "paused",
+  "needs_review",
+  "completed",
+  "completed_with_errors",
+  "failed",
+];
+
+const KNOWN_DELIVERY_STATUSES = new Set([
+  "awaiting_receipt",
+  "delivered",
+  "delivery_failed",
+  "hard_bounced",
+]);
+
+const KNOWN_FEEDBACK_STATUSES = new Set(["none", "unsubscribed", "complained"]);
+
+const KNOWN_CHANNEL_PROVIDERS = new Set([
+  "aliyun_directmail",
+  "amazon_ses",
+  "sendgrid",
+]);
 
 function exportFilenameFromDisposition(
   header: string | null,
@@ -125,13 +150,16 @@ function exportFilenameFromDisposition(
   return plainMatch?.[1] ?? fallback;
 }
 
-async function downloadCampaignRecipientCsv(campaignId: string) {
+async function downloadCampaignRecipientCsv(
+  campaignId: string,
+  fallbackError: string,
+) {
   const response = await fetch(`/campaigns/${campaignId}/export`, {
     credentials: "same-origin",
   });
   if (!response.ok) {
     const message = (await response.text()).trim();
-    toast.error(message || "无法导出收件明细，请稍后重试。");
+    toast.error(message || fallbackError);
     return;
   }
   const blob = await response.blob();
@@ -161,36 +189,6 @@ function statusVariant(status: CampaignStatus) {
   return "outline" as const;
 }
 
-const deliveryResultLabels: Record<DeliveryResultFilter, string> = {
-  pending: "待发送",
-  processing: "处理中",
-  accepted: "已受理",
-  failed: "发送失败",
-  skipped: "已跳过",
-  unknown: "结果未知",
-  awaiting_receipt: "等待回执",
-  delivered: "已送达",
-  delivery_failed: "投递失败",
-  hard_bounced: "硬退信",
-  unsubscribed: "已退订",
-  complained: "已投诉",
-  opened: "已打开",
-  clicked: "已点击",
-};
-
-const deliveryStatusLabels: Record<string, string> = {
-  awaiting_receipt: "等待回执",
-  delivered: "已送达",
-  delivery_failed: "投递失败",
-  hard_bounced: "硬退信",
-};
-
-const feedbackStatusLabels: Record<string, string> = {
-  none: "无反馈",
-  unsubscribed: "已退订",
-  complained: "已投诉",
-};
-
 function rateValue(numerator: number, denominator: number) {
   return denominator > 0 ? Math.round((numerator / denominator) * 100) : null;
 }
@@ -205,11 +203,13 @@ function MetricBar({
   value,
   total,
   unavailable = false,
+  unavailableLabel,
 }: {
   label: string;
   value: number;
   total: number;
   unavailable?: boolean;
+  unavailableLabel: string;
 }) {
   const percentage = rateValue(value, total);
   return (
@@ -217,7 +217,9 @@ function MetricBar({
       <div className="mb-1 flex items-center justify-between gap-3 text-xs">
         <span className="text-muted-foreground">{label}</span>
         <span className="font-medium">
-          {unavailable ? "未启用" : `${value} · ${rateLabel(value, total)}`}
+          {unavailable
+            ? unavailableLabel
+            : `${value} · ${rateLabel(value, total)}`}
         </span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted">
@@ -263,8 +265,21 @@ export function Campaigns({
   filters: Record<string, string>;
   initialExportError?: string | null;
 }) {
+  const t = useTranslations("campaigns");
+  const tTemplates = useTranslations("templates");
+  const tChannels = useTranslations("channels");
+  const tCommon = useTranslations("common");
+  const locale = normalizeLocale(useLocale()) ?? DEFAULT_LOCALE;
+  const resolveError = useErrorMessage();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+
+  const formattedDate = (value: string) =>
+    formatBusinessDateTime(value, locale);
+  const statusLabel = (status: string) =>
+    ALL_CAMPAIGN_STATUSES.includes(status as CampaignStatus)
+      ? t(`statuses.${status as CampaignStatus}`)
+      : status;
 
   useEffect(() => {
     if (!initialExportError) return;
@@ -368,7 +383,10 @@ export function Campaigns({
   const isCampaignEditDirty =
     editing !== undefined && campaignEditSnapshot !== editBaseline;
 
-  const closeCampaignEditor = useCallback(() => setEditing(undefined), []);
+  const closeCampaignEditor = useCallback(
+    () => setEditing(undefined),
+    [setEditing],
+  );
   const {
     handleOpenChange: handleCampaignEditorOpenChange,
     editDialogContentProps: campaignEditDialogContentProps,
@@ -498,10 +516,10 @@ export function Campaigns({
         page,
       });
       if ("error" in result)
-        setDeliveryError(result.error ?? "发送明细加载失败。");
+        setDeliveryError(resolveError(result) || t("toast.tasksLoadFailed"));
       else setTaskList(result.data);
     } catch {
-      setDeliveryError("发送明细加载失败，请重试。");
+      setDeliveryError(t("toast.tasksLoadFailed"));
     } finally {
       setTaskLoading(false);
     }
@@ -530,7 +548,9 @@ export function Campaigns({
         run_id: deliveryDetails.delivery.id,
       });
       if ("error" in statisticsResult) {
-        setDeliveryError(statisticsResult.error ?? "活动统计加载失败。");
+        setDeliveryError(
+          resolveError(statisticsResult) || t("toast.statsLoadFailed"),
+        );
         return;
       }
       setDeliveryStatistics(statisticsResult.data);
@@ -538,7 +558,7 @@ export function Campaigns({
         await loadDeliveryTasks(deliveryDetails, taskStatus, taskPage);
       router.refresh();
     } catch {
-      setDeliveryError("活动统计加载失败，请重试。");
+      setDeliveryError(t("toast.statsLoadFailed"));
     } finally {
       setTaskLoading(false);
     }
@@ -581,16 +601,18 @@ export function Campaigns({
               confirmation_name: confirmationName,
             });
       if ("error" in result) {
-        setDeliveryError(result.error ?? "操作失败，请重试。");
+        setDeliveryError(resolveError(result) || t("toast.actionFailed"));
         return;
       }
       setDeliveryConfirmation(undefined);
       toast.success(
-        mode === "start" ? "正式发送任务已创建" : "已放弃剩余待发送任务",
+        mode === "start"
+          ? t("toast.deliveryStarted")
+          : t("toast.deliveryAborted"),
       );
       router.refresh();
     } catch {
-      setDeliveryError("操作失败，请重试。");
+      setDeliveryError(t("toast.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -607,13 +629,15 @@ export function Campaigns({
         expected_version: campaign.delivery.version,
         paused,
       });
-      if ("error" in result) toast.error(result.error);
+      if ("error" in result) toast.error(resolveError(result));
       else {
-        toast.success(paused ? "正式发送已暂停" : "正式发送已继续");
+        toast.success(
+          paused ? t("toast.deliveryPaused") : t("toast.deliveryResumed"),
+        );
         router.refresh();
       }
     } catch {
-      toast.error("操作失败，请重试。");
+      toast.error(t("toast.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -634,10 +658,10 @@ export function Campaigns({
         note: resolutionNotes[taskId] ?? "",
       });
       if ("error" in result) {
-        setDeliveryError(result.error ?? "人工核对失败。");
+        setDeliveryError(resolveError(result) || t("toast.resolveFailed"));
         return;
       }
-      toast.success("未知发送结果已核对");
+      toast.success(t("toast.unknownResolved"));
       await loadDeliveryTasks(deliveryDetails, taskStatus, taskPage);
       if (deliveryDetails.delivery) {
         const statisticsResult = await getCampaignDeliveryStatistics({
@@ -649,7 +673,7 @@ export function Campaigns({
       }
       router.refresh();
     } catch {
-      setDeliveryError("人工核对失败，请重试。");
+      setDeliveryError(t("toast.resolveFailed"));
     } finally {
       setBusy(false);
     }
@@ -699,7 +723,7 @@ export function Campaigns({
         id: campaign.id,
       });
       if ("error" in result) {
-        toast.error(result.error ?? "活动加载失败，请重试。");
+        toast.error(resolveError(result) || t("toast.campaignLoadFailed"));
         return;
       }
       const detail = result.data;
@@ -725,7 +749,7 @@ export function Campaigns({
         }),
       );
     } catch {
-      toast.error("活动加载失败，请重试。");
+      toast.error(t("toast.campaignLoadFailed"));
     } finally {
       setLoadingCampaignId(undefined);
     }
@@ -744,14 +768,14 @@ export function Campaigns({
       setPreviewSenderName("data" in result ? result.senderName : "");
       if ("error" in result) {
         setPreview(undefined);
-        setPreviewError(result.error ?? "活动预览失败，请重试。");
+        setPreviewError(resolveError(result) || t("toast.previewFailed"));
       } else {
         setPreview(result.data);
       }
     } catch {
       if (request === previewRequest.current) {
         setPreview(undefined);
-        setPreviewError("活动预览失败，请重试。");
+        setPreviewError(t("toast.previewFailed"));
       }
     } finally {
       if (request === previewRequest.current) setPreviewLoading(false);
@@ -776,14 +800,14 @@ export function Campaigns({
         expected_version: campaign.version,
         archived: !archived,
       });
-      if ("error" in result) toast.error(result.error);
+      if ("error" in result) toast.error(resolveError(result));
       else {
-        toast.success(archived ? "活动已恢复" : "活动已归档");
+        toast.success(archived ? t("toast.restored") : t("toast.archived"));
         await refreshCampaigns();
       }
     } catch (error) {
       unstable_rethrow(error);
-      toast.error("操作失败，请重试。");
+      toast.error(t("toast.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -808,18 +832,18 @@ export function Campaigns({
         expected_template_version: preview.template.version,
       });
       if ("error" in result) {
-        setPreviewError(result.error ?? "活动确认失败，请重新预览。");
+        setPreviewError(resolveError(result) || t("toast.confirmFailed"));
         return;
       }
       previewRequest.current += 1;
       setPreviewing(undefined);
       setPreview(undefined);
       toast.success(
-        `活动已确认，已锁定 ${result.data.recipient_count} 位收件人`,
+        t("toast.confirmed", { count: result.data.recipient_count }),
       );
       router.refresh();
     } catch {
-      setPreviewError("活动确认失败，请重新预览后重试。");
+      setPreviewError(t("toast.confirmFailed"));
     } finally {
       setBusy(false);
     }
@@ -838,16 +862,17 @@ export function Campaigns({
         template_id: replacementTemplateId || undefined,
       });
       if ("error" in result) {
-        setDuplicateError(result.error ?? "活动复制失败，请重试。");
-        if (!campaign.template_archived) toast.error(result.error);
+        const message = resolveError(result) || t("toast.duplicateFailed");
+        setDuplicateError(message);
+        if (!campaign.template_archived) toast.error(message);
         return;
       }
       setDuplicateSource(undefined);
       setDuplicateTemplateId("");
-      toast.success("已复制为新的活动草稿");
+      toast.success(t("toast.duplicated"));
       router.refresh();
     } catch {
-      setDuplicateError("活动复制失败，请重试。");
+      setDuplicateError(t("toast.duplicateFailed"));
     } finally {
       setBusy(false);
     }
@@ -866,29 +891,91 @@ export function Campaigns({
 
   const activeStatistics =
     deliveryStatistics ?? deliveryDetails?.delivery?.statistics;
-  const confirmQuotaExhausted = isQuotaExhausted(
-    planUsage?.confirmedCampaignsThisMonth,
-  );
+  const confirmQuota = planUsage?.confirmedCampaignsThisMonth ?? null;
+  const confirmQuotaExhausted = isQuotaExhausted(confirmQuota);
+  const nextConfirmSlot =
+    confirmQuota && confirmQuota.max !== null
+      ? {
+          next: Math.min(confirmQuota.used + 1, confirmQuota.max),
+          max: confirmQuota.max,
+        }
+      : null;
+
   const startReadiness =
     deliveryConfirmation?.mode === "start" && sendReadiness
       ? evaluateSendReadiness(
           sendReadiness,
           deliveryConfirmation.campaign.recipient_count ?? 0,
+          {
+            channelName: (channel) =>
+              channel.provider && KNOWN_CHANNEL_PROVIDERS.has(channel.provider)
+                ? tChannels(
+                    `providers.${channel.provider as "aliyun_directmail"}.name`,
+                  )
+                : channel.display_name,
+            channelLabel: t("readiness.channelLabel"),
+            channelMissing: t("readiness.channelMissing"),
+            channelVerified: (channelName) =>
+              t("readiness.channelVerified", { name: channelName }),
+            channelMissingCredential: (channelName) =>
+              t("readiness.channelMissingCredential", { name: channelName }),
+            channelNotVerified: (channelName, status) =>
+              t("readiness.channelNotVerified", { name: channelName, status }),
+            channelStatusLabel: (status) => {
+              if (status === "incomplete")
+                return t("readiness.channelStatusIncomplete");
+              if (status === "configured")
+                return t("readiness.channelStatusConfigured");
+              if (status === "error") return t("readiness.channelStatusError");
+              if (status === "disconnected")
+                return t("readiness.channelStatusDisconnected");
+              return t("readiness.channelStatusDefault");
+            },
+            goToChannels: t("readiness.goToChannels"),
+            senderLabel: t("readiness.senderLabel"),
+            senderMissing: t("readiness.senderMissing"),
+            footerLabel: t("readiness.footerLabel"),
+            footerMissing: t("readiness.footerMissing"),
+            goToStore: t("readiness.goToStore"),
+            quotaLabel: t("readiness.quotaLabel"),
+            quotaOk: (used, limit, remaining, reset) =>
+              t("readiness.quotaOk", { used, limit, remaining, reset }),
+            quotaInsufficient: (used, limit, remaining, needed, reset) =>
+              t("readiness.quotaInsufficient", {
+                used,
+                limit,
+                remaining,
+                needed,
+                reset,
+              }),
+            quotaUnavailable: t("readiness.quotaUnavailable"),
+            quotaResetNote: (timezone) =>
+              timezone === "Asia/Shanghai"
+                ? t("readiness.quotaResetBeijing")
+                : t("readiness.quotaResetNextDay"),
+            viewPlan: t("readiness.viewPlan"),
+            recipientsLabel: t("readiness.recipientsLabel"),
+            recipientsEmpty: t("readiness.recipientsEmpty"),
+            recipientsOk: (count, max) =>
+              t("readiness.recipientsOk", { count, max }),
+            recipientsExceeded: (count, max) =>
+              t("readiness.recipientsExceeded", { count, max }),
+          },
         )
       : null;
 
   return (
     <>
       <PageHeader
-        title="发信活动"
-        meta={`${campaigns.total} 条`}
-        description="草稿预览按当前最新的客户订阅和退订状态实时计算；确认后将锁定收件名单，管理员可创建正式发送任务。"
+        title={t("title")}
+        meta={t("metaCount", { count: campaigns.total })}
+        description={t("description")}
         actions={
           canEdit && !showInitialEmpty ? (
             <>
               {!editorOptions.templates.length && (
                 <Button asChild variant="outline">
-                  <Link href="/templates">前往模板库</Link>
+                  <Link href="/templates">{t("actions.goToTemplates")}</Link>
                 </Button>
               )}
               <Button
@@ -896,7 +983,7 @@ export function Campaigns({
                 onClick={openNew}
               >
                 <Plus aria-hidden="true" />
-                新建活动
+                {t("actions.newCampaign")}
               </Button>
             </>
           ) : undefined
@@ -905,53 +992,59 @@ export function Campaigns({
       <ListToolbar
         className={styles.toolbar}
         role="search"
-        aria-label="查找发信活动"
+        aria-label={t("toolbar.ariaLabel")}
       >
         <FilterField
           id="campaign-search"
-          label="搜索活动"
+          label={t("toolbar.searchLabel")}
           className={styles.searchField}
         >
           <div className={styles.searchInput}>
             <Search aria-hidden="true" size={17} />
             <Input
               id="campaign-search"
-              aria-label="搜索活动名称"
-              placeholder="搜索活动名称"
+              aria-label={t("toolbar.searchPlaceholder")}
+              placeholder={t("toolbar.searchPlaceholder")}
               value={q}
               maxLength={200}
               onChange={(event) => setQ(event.target.value)}
             />
           </div>
         </FilterField>
-        <FilterField id="campaign-archive-filter" label="显示范围">
+        <FilterField
+          id="campaign-archive-filter"
+          label={t("toolbar.archiveLabel")}
+        >
           <select
             id="campaign-archive-filter"
-            aria-label="活动归档状态"
+            aria-label={t("toolbar.archiveAria")}
             className="list-filter"
             value={archived ? "archived" : "active"}
             onChange={(event) =>
               navigate({ status: event.target.value, page: "1" })
             }
           >
-            <option value="active">未归档活动</option>
-            <option value="archived">已归档活动</option>
+            <option value="active">{t("toolbar.archiveActive")}</option>
+            <option value="archived">{t("toolbar.archiveArchived")}</option>
           </select>
         </FilterField>
-        <FilterField id="campaign-status-filter" label="活动状态">
+        <FilterField
+          id="campaign-status-filter"
+          label={t("toolbar.statusLabel")}
+        >
           <select
             id="campaign-status-filter"
-            aria-label="活动状态"
+            aria-label={t("toolbar.statusLabel")}
             className="list-filter"
             value={filters.campaign_status ?? ""}
             onChange={(event) =>
               navigate({ campaign_status: event.target.value, page: "1" })
             }
           >
-            <option value="">全部活动状态</option>
-            {Object.entries(campaignStatusLabels).map(([status, label]) => (
+            <option value="">{t("toolbar.allStatuses")}</option>
+            {ALL_CAMPAIGN_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {label}
+                {t(`statuses.${status}`)}
               </option>
             ))}
           </select>
@@ -960,16 +1053,19 @@ export function Campaigns({
       {hasFilters && (
         <div
           className={`active-filters ${styles.activeFilters}`}
-          aria-label="已应用筛选"
+          aria-label={t("filters.ariaLabel")}
         >
-          <span>已筛选</span>
-          {filters.q && <span className="filter-chip">搜索：{filters.q}</span>}
+          <span>{t("filters.applied")}</span>
+          {filters.q && (
+            <span className="filter-chip">
+              {t("filters.queryChip", { query: filters.q })}
+            </span>
+          )}
           {filters.campaign_status && (
             <span className="filter-chip">
-              状态：
-              {campaignStatusLabels[
-                filters.campaign_status as CampaignStatus
-              ] ?? filters.campaign_status}
+              {t("filters.statusChip", {
+                status: statusLabel(filters.campaign_status),
+              })}
             </span>
           )}
           <Button
@@ -978,13 +1074,13 @@ export function Campaigns({
             size="sm"
             onClick={() => navigate({ q: "", campaign_status: "", page: "1" })}
           >
-            清空筛选
+            {t("filters.clear")}
           </Button>
         </div>
       )}
       {canEdit && !editorOptions.templates.length && (
         <p className="guidance-note" role="status">
-          新建活动前，需要至少一套使用中的模板。
+          {t("notices.needActiveTemplate")}
         </p>
       )}
       <div className={styles.usageNotes}>
@@ -992,28 +1088,34 @@ export function Campaigns({
           <p className={styles.sendLimits} data-testid="campaign-send-limits">
             <Send aria-hidden="true" size={14} />
             <span>
-              当前套餐单个活动最多发送{" "}
-              {maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人
               {sendReadiness?.quota
-                ? `；今日已用 ${sendReadiness.quota.usage_today.toLocaleString("zh-CN")} / ${sendReadiness.quota.daily_send_quota.toLocaleString("zh-CN")} 封`
-                : ""}
-              。
+                ? t("notices.sendLimitsWithQuota", {
+                    max: formatNumber(maxRecipientsPerCampaign, locale),
+                    used: formatNumber(sendReadiness.quota.usage_today, locale),
+                    daily: formatNumber(
+                      sendReadiness.quota.daily_send_quota,
+                      locale,
+                    ),
+                  })
+                : t("notices.sendLimitsBase", {
+                    max: formatNumber(maxRecipientsPerCampaign, locale),
+                  })}
             </span>
           </p>
         )}
         {canEdit && (
           <PlanUsageNote
-            label="本月已确认活动名单"
-            quota={planUsage?.confirmedCampaignsThisMonth}
-            exhaustedText="本月无法再确认新的活动名单"
+            label={t("notices.confirmQuotaLabel")}
+            quota={confirmQuota}
+            exhaustedText={t("notices.confirmQuotaExhausted")}
             testId="campaign-confirm-quota"
             className={styles.confirmQuota}
           />
         )}
-        {!canEdit && <p className={styles.readOnly}>当前为只读权限。</p>}
+        {!canEdit && <p className={styles.readOnly}>{t("notices.readOnly")}</p>}
       </div>
       <div role="status" className="sr-only">
-        {pending ? "正在加载…" : ""}
+        {pending ? t("notices.loading") : ""}
       </div>
 
       <div className={styles.campaignList} aria-busy={pending}>
@@ -1030,28 +1132,41 @@ export function Campaigns({
                     variant={statusVariant(campaign.status)}
                     data-status={campaign.status}
                   >
-                    {campaignStatusLabels[campaign.status]}
+                    {t(`statuses.${campaign.status}`)}
                   </Badge>
                   <span className={styles.category}>
-                    {campaign.template_category}
+                    {localizeTemplateCategory(
+                      campaign.template_category,
+                      tTemplates,
+                    )}
                   </span>
                   {campaign.template_archived && (
-                    <Badge variant="destructive">模板已归档</Badge>
+                    <Badge variant="destructive">
+                      {t("card.templateArchivedBadge")}
+                    </Badge>
                   )}
                 </div>
                 <h2 className={styles.campaignName}>{campaign.name}</h2>
                 <div className={styles.campaignMeta}>
                   <p>
                     <FileText aria-hidden="true" size={14} />
-                    <span>模板：{campaign.template_name}</span>
+                    <span>
+                      {t("card.templateLabel", {
+                        name: localizeTemplateNameByValue(
+                          campaign.template_name,
+                          tTemplates,
+                        ),
+                      })}
+                    </span>
                   </p>
                   <p>
                     <Users aria-hidden="true" size={14} />
                     <span>
-                      受众：
                       {campaign.audience_type === "all"
-                        ? "全部已订阅客户"
-                        : `标签 · ${campaign.tag_name ?? "标签不可用"}`}
+                        ? t("card.audienceAll")
+                        : t("card.audienceTag", {
+                            tag: campaign.tag_name ?? t("card.tagUnavailable"),
+                          })}
                     </span>
                   </p>
                 </div>
@@ -1066,54 +1181,71 @@ export function Campaigns({
                 <div className={styles.deliverySummary}>
                   <p className="m-0 font-medium">
                     {campaign.delivery
-                      ? `已受理 ${campaign.delivery.counts.accepted} / ${campaign.delivery.recipient_count}`
-                      : `已锁定 ${campaign.recipient_count ?? 0} 位收件人`}
+                      ? t("card.acceptedSummary", {
+                          accepted: campaign.delivery.counts.accepted,
+                          total: campaign.delivery.recipient_count,
+                        })
+                      : t("card.lockedSummary", {
+                          count: campaign.recipient_count ?? 0,
+                        })}
                   </p>
                   {campaign.delivery && (
                     <div className={styles.deliveryMetrics}>
                       <MetricBar
-                        label="送达率"
+                        label={t("card.metricDeliveryRate")}
                         value={campaign.delivery.statistics.counts.delivered}
                         total={campaign.delivery.statistics.counts.accepted}
+                        unavailableLabel={t("card.metricUnavailable")}
                       />
                       <MetricBar
-                        label="打开率"
+                        label={t("card.metricOpenRate")}
                         value={campaign.delivery.statistics.counts.opened}
                         total={campaign.delivery.statistics.counts.delivered}
                         unavailable={
                           !campaign.delivery.statistics.tracking_enabled
                         }
+                        unavailableLabel={t("card.metricUnavailable")}
                       />
                       <MetricBar
-                        label="点击率"
+                        label={t("card.metricClickRate")}
                         value={campaign.delivery.statistics.counts.clicked}
                         total={campaign.delivery.statistics.counts.delivered}
                         unavailable={
                           !campaign.delivery.statistics.tracking_enabled
                         }
+                        unavailableLabel={t("card.metricUnavailable")}
                       />
                       <p className={styles.receiptSummary}>
-                        等待回执{" "}
-                        {campaign.delivery.statistics.counts.awaiting_receipt} ·
-                        投递失败{" "}
-                        {campaign.delivery.statistics.counts.delivery_failed} ·
-                        硬退信{" "}
-                        {campaign.delivery.statistics.counts.hard_bounced} ·
-                        已退订{" "}
-                        {campaign.delivery.statistics.counts.unsubscribed}
+                        {t("card.receiptSummary", {
+                          awaiting:
+                            campaign.delivery.statistics.counts
+                              .awaiting_receipt,
+                          failed:
+                            campaign.delivery.statistics.counts.delivery_failed,
+                          bounced:
+                            campaign.delivery.statistics.counts.hard_bounced,
+                          unsubscribed:
+                            campaign.delivery.statistics.counts.unsubscribed,
+                        })}
                       </p>
                     </div>
                   )}
                   <p className={styles.deliveryDate}>
                     {campaign.delivery?.completed_at
-                      ? `完成于 ${formattedDate(campaign.delivery.completed_at)}`
+                      ? t("card.completedAt", {
+                          date: formattedDate(campaign.delivery.completed_at),
+                        })
                       : campaign.confirmed_at
                         ? formattedDate(campaign.confirmed_at)
-                        : "确认时间不可用"}
+                        : t("card.confirmTimeUnavailable")}
                   </p>
                   <p className={styles.deliveryDate}>
-                    {campaign.confirmed_by_name ?? "工作区成员"} · 模板版本{" "}
-                    {campaign.snapshot_template_version ?? "-"}
+                    {t("card.confirmedByMeta", {
+                      name:
+                        campaign.confirmed_by_name ??
+                        t("card.workspaceMemberFallback"),
+                      version: campaign.snapshot_template_version ?? "-",
+                    })}
                   </p>
                 </div>
               )}
@@ -1125,7 +1257,9 @@ export function Campaigns({
                       onClick={() => openDeliveryDetails(campaign)}
                     >
                       <BarChart3 aria-hidden="true" />
-                      {canSend ? "统计与明细" : "查看统计"}
+                      {canSend
+                        ? t("actions.statsAndDetails")
+                        : t("actions.viewStats")}
                     </Button>
                     {canSend &&
                       ["queued", "sending", "paused"].includes(
@@ -1137,8 +1271,8 @@ export function Campaigns({
                           onClick={() => void toggleDeliveryPaused(campaign)}
                         >
                           {campaign.status === "paused"
-                            ? "继续发送"
-                            : "暂停发送"}
+                            ? t("actions.resumeSend")
+                            : t("actions.pauseSend")}
                         </Button>
                       )}
                     {canSend && campaign.status === "paused" && (
@@ -1149,7 +1283,7 @@ export function Campaigns({
                           openDeliveryConfirmation(campaign, "abort")
                         }
                       >
-                        放弃剩余
+                        {t("actions.abortRemaining")}
                       </Button>
                     )}
                   </>
@@ -1171,7 +1305,7 @@ export function Campaigns({
                             onClick={() => openPreview(campaign)}
                           >
                             <Eye aria-hidden="true" />
-                            预览
+                            {t("actions.preview")}
                           </Button>
                           <Button
                             variant="outline"
@@ -1180,8 +1314,8 @@ export function Campaigns({
                           >
                             <Pencil aria-hidden="true" />
                             {loadingCampaignId === campaign.id
-                              ? "加载中…"
-                              : "编辑"}
+                              ? tCommon("actions.loading")
+                              : t("actions.edit")}
                           </Button>
                         </>
                       )}
@@ -1204,7 +1338,12 @@ export function Campaigns({
                                 title={
                                   (campaign.recipient_count ?? 0) >
                                   maxRecipientsPerCampaign
-                                    ? `当前套餐单个活动最多 ${maxRecipientsPerCampaign.toLocaleString("zh-CN")} 位收件人`
+                                    ? t("notices.sendMaxRecipientsTitle", {
+                                        max: formatNumber(
+                                          maxRecipientsPerCampaign,
+                                          locale,
+                                        ),
+                                      })
                                     : undefined
                                 }
                                 onClick={() =>
@@ -1212,18 +1351,21 @@ export function Campaigns({
                                 }
                               >
                                 <Send aria-hidden="true" />
-                                正式发送
+                                {t("actions.sendFormal")}
                               </Button>
                             )}
                           <Button
                             type="button"
                             variant="outline"
                             onClick={() =>
-                              void downloadCampaignRecipientCsv(campaign.id)
+                              void downloadCampaignRecipientCsv(
+                                campaign.id,
+                                t("toast.exportFailed"),
+                              )
                             }
                           >
                             <Download aria-hidden="true" />
-                            导出收件明细 CSV
+                            {t("actions.exportCsv")}
                           </Button>
                           <Button
                             variant="outline"
@@ -1231,7 +1373,7 @@ export function Campaigns({
                             onClick={() => openDuplicate(campaign)}
                           >
                             <Copy aria-hidden="true" />
-                            复制为草稿
+                            {t("actions.duplicateDraft")}
                           </Button>
                         </>
                       )}
@@ -1247,7 +1389,9 @@ export function Campaigns({
                           ) : (
                             <Archive aria-hidden="true" />
                           )}
-                          {archived ? "恢复" : "归档"}
+                          {archived
+                            ? t("actions.restore")
+                            : t("actions.archive")}
                         </Button>
                       )}
                     </>
@@ -1261,21 +1405,21 @@ export function Campaigns({
             kind={hasFilters ? "search" : "empty"}
             title={
               hasFilters
-                ? "没有匹配的活动"
+                ? t("empty.searchTitle")
                 : archived
-                  ? "暂无已归档活动"
+                  ? t("empty.archivedTitle")
                   : canEdit
-                    ? "还没有活动"
-                    : "当前工作区还没有活动"
+                    ? t("empty.initialEditorTitle")
+                    : t("empty.initialViewerTitle")
             }
             description={
               hasFilters
-                ? "请调整搜索或筛选条件，或清空筛选查看全部活动。"
+                ? t("empty.searchDescription")
                 : archived
-                  ? "归档的活动会保留在这里，可随时恢复。"
+                  ? t("empty.archivedDescription")
                   : canEdit
-                    ? "创建第一份草稿，选择模板并圈定收件人后预览发送。"
-                    : "管理员或运营创建活动后，你会在这里看到记录。"
+                    ? t("empty.initialEditorDescription")
+                    : t("empty.initialViewerDescription")
             }
           >
             {hasFilters ? (
@@ -1286,7 +1430,7 @@ export function Campaigns({
                   navigate({ q: "", campaign_status: "", page: "1" })
                 }
               >
-                清空筛选
+                {t("filters.clear")}
               </Button>
             ) : (
               canEdit &&
@@ -1297,11 +1441,13 @@ export function Campaigns({
                     onClick={openNew}
                   >
                     <Plus aria-hidden="true" />
-                    新建活动
+                    {t("actions.newCampaign")}
                   </Button>
                   {!editorOptions.templates.length && (
                     <Button asChild variant="outline">
-                      <Link href="/templates">前往模板库</Link>
+                      <Link href="/templates">
+                        {t("actions.goToTemplates")}
+                      </Link>
                     </Button>
                   )}
                 </div>
@@ -1343,15 +1489,15 @@ export function Campaigns({
           }}
         >
           <DialogHeader>
-            <DialogTitle>{preview?.campaign.name ?? "活动预览"}</DialogTitle>
-            <DialogDescription>
-              每次都按最新客户、标签、订阅状态与退订拦截计算；这里只展示前三封，不保存收件人数。
-            </DialogDescription>
+            <DialogTitle>
+              {preview?.campaign.name ?? t("preview.fallbackTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("preview.description")}</DialogDescription>
           </DialogHeader>
 
           {previewLoading && (
             <p className="py-8 text-center" role="status">
-              正在计算可发送客户和预览内容…
+              {t("preview.calculating")}
             </p>
           )}
           {previewError && (
@@ -1363,34 +1509,36 @@ export function Campaigns({
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="rounded-lg border bg-card p-3">
-                  <p className="hint m-0">目标客户</p>
+                  <p className="hint m-0">{t("preview.metricAudience")}</p>
                   <p className="text-xl font-semibold">
                     {preview.recipients.audience_count}
                   </p>
                 </div>
                 <div className="rounded-lg border bg-card p-3">
-                  <p className="hint m-0">可发送</p>
+                  <p className="hint m-0">{t("preview.metricEligible")}</p>
                   <p className="text-xl font-semibold">
                     {preview.recipients.eligible_count}
                   </p>
                 </div>
                 <div className="col-span-2 rounded-lg border bg-card p-3 sm:col-span-1">
-                  <p className="hint m-0">已排除</p>
+                  <p className="hint m-0">{t("preview.metricExcluded")}</p>
                   <p className="text-xl font-semibold">
                     {preview.recipients.excluded_count}
                   </p>
                 </div>
               </div>
               <p className="hint m-0">
-                排除明细：已归档 {preview.recipients.excluded.archived} 位 ·
-                未订阅 {preview.recipients.excluded.not_subscribed} 位 ·
-                已退订/黑名单 {preview.recipients.excluded.suppressed} 位
+                {t("preview.excludedBreakdown", {
+                  archived: preview.recipients.excluded.archived,
+                  notSubscribed: preview.recipients.excluded.not_subscribed,
+                  suppressed: preview.recipients.excluded.suppressed,
+                })}
               </p>
 
               {preview.validation.valid &&
                 isDefaultSenderName(previewSenderName) && (
                   <p className="field-error" role="alert">
-                    落款署名仍是系统默认的“店主”，客户会在邮件结尾看到它。请点击“编辑活动”改成真实姓名或品牌名后再确认。
+                    {t("preview.defaultSenderWarning")}
                   </p>
                 )}
 
@@ -1403,9 +1551,11 @@ export function Campaigns({
               {preview.validation.valid &&
                 preview.recipients.eligible_count === 0 && (
                   <div className="rounded-lg border border-dashed p-6 text-center">
-                    <p className="font-medium">当前没有可发送客户</p>
+                    <p className="font-medium">
+                      {t("preview.noEligibleTitle")}
+                    </p>
                     <p className="hint m-0">
-                      请检查活动标签、客户订阅状态以及退订/黑名单记录。
+                      {t("preview.noEligibleDescription")}
                     </p>
                   </div>
                 )}
@@ -1414,9 +1564,9 @@ export function Campaigns({
                 preview.recipients.eligible_count >
                   maxRecipientsPerCampaign && (
                   <p className="field-error" role="alert">
-                    当前套餐单个活动最多确认{" "}
-                    {maxRecipientsPerCampaign.toLocaleString("zh-CN")}{" "}
-                    位收件人，请拆分标签后重试。
+                    {t("preview.exceedsMaxRecipients", {
+                      max: formatNumber(maxRecipientsPerCampaign, locale),
+                    })}
                   </p>
                 )}
 
@@ -1425,10 +1575,14 @@ export function Campaigns({
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3 className="text-sm font-medium">
-                        前 {preview.recipients.sample.length} 封邮件
+                        {t("preview.sampleHeading", {
+                          count: preview.recipients.sample.length,
+                        })}
                       </h3>
                       <span className="hint">
-                        模板版本 {preview.template.version}
+                        {t("preview.templateVersion", {
+                          version: preview.template.version,
+                        })}
                       </span>
                     </div>
                     <EmailOutboundFromPreview
@@ -1442,13 +1596,18 @@ export function Campaigns({
                         key={item.contact_id}
                       >
                         <p className="mb-1 break-words font-medium">
-                          第 {index + 1} 封 · {item.name}
+                          {t("preview.sampleItemTitle", {
+                            index: index + 1,
+                            name: item.name,
+                          })}
                         </p>
                         <p className="hint m-0 break-all">
-                          收件人：{item.email}
+                          {t("preview.sampleRecipient", { email: item.email })}
                         </p>
                         <p className="mt-3 break-words font-medium">
-                          主题：{item.subject}
+                          {t("preview.sampleSubject", {
+                            subject: item.subject,
+                          })}
                         </p>
                         <pre className="mt-3 whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm leading-7">
                           {item.body}
@@ -1463,7 +1622,9 @@ export function Campaigns({
                 )}
 
               <p className="hint m-0">
-                计算时间：{formattedDate(preview.calculated_at)}
+                {t("preview.calculatedAt", {
+                  date: formattedDate(preview.calculated_at),
+                })}
               </p>
             </div>
           )}
@@ -1471,9 +1632,9 @@ export function Campaigns({
           {preview?.validation.valid &&
             preview.recipients.eligible_count > 0 && (
               <PlanUsageNote
-                label="本月已确认活动名单"
-                quota={planUsage?.confirmedCampaignsThisMonth}
-                exhaustedText="确认名单会占用每月额度，本月已无法确认"
+                label={t("notices.confirmQuotaLabel")}
+                quota={confirmQuota}
+                exhaustedText={t("preview.confirmQuotaExhausted")}
                 testId="preview-confirm-quota"
                 className="mb-3"
               />
@@ -1488,7 +1649,7 @@ export function Campaigns({
                   disabled={busy || previewLoading || confirmQuotaExhausted}
                   onClick={() => setConfirmPreviewOpen(true)}
                 >
-                  {busy ? "确认中…" : "确认活动名单"}
+                  {busy ? t("preview.confirming") : t("preview.confirmAction")}
                 </Button>
               )}
             <Button
@@ -1497,7 +1658,9 @@ export function Campaigns({
               disabled={previewLoading || !previewing}
               onClick={() => previewing && void loadPreview(previewing)}
             >
-              {previewLoading ? "计算中…" : "重新计算"}
+              {previewLoading
+                ? t("preview.recalculating")
+                : t("preview.recalculate")}
             </Button>
             {previewing &&
               (previewError ||
@@ -1515,14 +1678,16 @@ export function Campaigns({
                     void openEditor(campaign, true);
                   }}
                 >
-                  编辑活动
+                  {t("preview.editCampaign")}
                 </Button>
               )}
             {preview?.validation.blockers.some(
               (blocker) => blocker.code === "template_archived",
             ) && (
               <Button asChild type="button" variant="outline">
-                <Link href="/templates?status=archived">前往模板库</Link>
+                <Link href="/templates?status=archived">
+                  {t("actions.goToTemplates")}
+                </Link>
               </Button>
             )}
           </div>
@@ -1544,15 +1709,15 @@ export function Campaigns({
           }}
         >
           <DialogHeader>
-            <DialogTitle>复制为活动草稿</DialogTitle>
-            <DialogDescription>
-              原模板已归档，请选择一套使用中的模板。受众规则和活动变量会从确认快照复制。
-            </DialogDescription>
+            <DialogTitle>{t("duplicate.title")}</DialogTitle>
+            <DialogDescription>{t("duplicate.description")}</DialogDescription>
           </DialogHeader>
           {editorOptions.templates.length ? (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="duplicate-campaign-template">邮件模板</Label>
+                <Label htmlFor="duplicate-campaign-template">
+                  {t("duplicate.templateLabel")}
+                </Label>
                 <select
                   id="duplicate-campaign-template"
                   className="list-filter w-full"
@@ -1561,10 +1726,11 @@ export function Campaigns({
                     setDuplicateTemplateId(event.target.value)
                   }
                 >
-                  <option value="">请选择模板</option>
+                  <option value="">{t("duplicate.selectPlaceholder")}</option>
                   {editorOptions.templates.map((template) => (
                     <option key={template.id} value={template.id}>
-                      {template.category} · {template.name}
+                      {localizeTemplateCategory(template.category, tTemplates)}{" "}
+                      · {localizeTemplateNameByValue(template.name, tTemplates)}
                     </option>
                   ))}
                 </select>
@@ -1582,14 +1748,14 @@ export function Campaigns({
                   void duplicateCampaign(duplicateSource, duplicateTemplateId)
                 }
               >
-                {busy ? "复制中…" : "创建活动草稿"}
+                {busy ? t("duplicate.duplicating") : t("duplicate.createDraft")}
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="field-error">当前没有使用中的模板。</p>
+              <p className="field-error">{t("duplicate.noActiveTemplates")}</p>
               <Button asChild variant="outline">
-                <Link href="/templates">前往模板库</Link>
+                <Link href="/templates">{t("actions.goToTemplates")}</Link>
               </Button>
             </div>
           )}
@@ -1613,13 +1779,15 @@ export function Campaigns({
           <DialogHeader>
             <DialogTitle>
               {deliveryConfirmation?.mode === "start"
-                ? "确认正式发送"
-                : "确认放弃剩余任务"}
+                ? t("deliveryConfirm.startTitle")
+                : t("deliveryConfirm.abortTitle")}
             </DialogTitle>
             <DialogDescription>
               {deliveryConfirmation?.mode === "start"
-                ? `将向名单中的 ${deliveryConfirmation.campaign.recipient_count ?? 0} 位客户发送邮件。邮件发送后需等待各收件服务商投递结果。`
-                : "只会跳过尚未开始的收件人；已受理、处理中及待人工核对的记录会保留。"}
+                ? t("deliveryConfirm.startDescription", {
+                    count: deliveryConfirmation.campaign.recipient_count ?? 0,
+                  })
+                : t("deliveryConfirm.abortDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1629,7 +1797,7 @@ export function Campaigns({
                   id="send-readiness-title"
                   className="mb-2 text-sm font-medium"
                 >
-                  发送前检查
+                  {t("deliveryConfirm.readinessTitle")}
                 </h3>
                 <ul
                   className="m-0 list-none space-y-2 rounded-lg border bg-muted/30 p-3 text-sm"
@@ -1656,9 +1824,11 @@ export function Campaigns({
                       <span className="min-w-0 break-words">
                         <span className="font-medium">{item.label}</span>
                         <span className="sr-only">
-                          {item.ok ? "：通过" : "：未通过"}
+                          {item.ok
+                            ? t("deliveryConfirm.readinessPassedSr")
+                            : t("deliveryConfirm.readinessFailedSr")}
                         </span>
-                        ：
+                        {t("deliveryConfirm.readinessSeparator")}
                         <span
                           className={
                             item.ok
@@ -1685,7 +1855,7 @@ export function Campaigns({
                 </ul>
                 {!startReadiness.ready && (
                   <p className="field-error mt-2" role="alert">
-                    以上检查未全部通过，暂时无法创建正式发送任务。
+                    {t("deliveryConfirm.readinessBlocked")}
                   </p>
                 )}
               </section>
@@ -1693,7 +1863,9 @@ export function Campaigns({
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <Label htmlFor="delivery-confirmation-name">
-                  输入完整活动名称“{deliveryConfirmation?.campaign.name}”确认
+                  {t("deliveryConfirm.confirmNameLabel", {
+                    name: deliveryConfirmation?.campaign.name ?? "",
+                  })}
                 </Label>
               </div>
               <Input
@@ -1724,10 +1896,10 @@ export function Campaigns({
               onClick={() => void submitDeliveryConfirmation()}
             >
               {busy
-                ? "处理中…"
+                ? t("deliveryConfirm.processing")
                 : deliveryConfirmation?.mode === "start"
-                  ? "创建正式发送任务"
-                  : "放弃剩余待发送任务"}
+                  ? t("deliveryConfirm.startAction")
+                  : t("deliveryConfirm.abortAction")}
             </Button>
           </div>
         </DialogContent>
@@ -1752,18 +1924,25 @@ export function Campaigns({
           }}
         >
           <DialogHeader>
-            <DialogTitle>{deliveryDetails?.name ?? "活动统计"}</DialogTitle>
+            <DialogTitle>
+              {deliveryDetails?.name ?? t("deliveryDetails.fallbackTitle")}
+            </DialogTitle>
             <DialogDescription>
-              送达率按已受理计算；打开、点击、退订与投诉率按已送达计算，且按收件人去重。
+              {t("deliveryDetails.description")}
             </DialogDescription>
           </DialogHeader>
           {activeStatistics && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { label: "已受理", value: activeStatistics.counts.accepted },
                   {
-                    label: "已送达",
+                    key: "accepted",
+                    label: t("deliveryDetails.statAccepted"),
+                    value: activeStatistics.counts.accepted,
+                  },
+                  {
+                    key: "delivered",
+                    label: t("deliveryDetails.statDelivered"),
                     value: activeStatistics.counts.delivered,
                     rate: rateLabel(
                       activeStatistics.counts.delivered,
@@ -1771,19 +1950,23 @@ export function Campaigns({
                     ),
                   },
                   {
-                    label: "等待回执",
+                    key: "awaiting",
+                    label: t("deliveryDetails.statAwaiting"),
                     value: activeStatistics.counts.awaiting_receipt,
                   },
                   {
-                    label: "投递失败",
+                    key: "delivery_failed",
+                    label: t("deliveryDetails.statDeliveryFailed"),
                     value: activeStatistics.counts.delivery_failed,
                   },
                   {
-                    label: "硬退信",
+                    key: "hard_bounced",
+                    label: t("deliveryDetails.statHardBounced"),
                     value: activeStatistics.counts.hard_bounced,
                   },
                   {
-                    label: "已退订",
+                    key: "unsubscribed",
+                    label: t("deliveryDetails.statUnsubscribed"),
                     value: activeStatistics.counts.unsubscribed,
                     rate: rateLabel(
                       activeStatistics.counts.unsubscribed,
@@ -1791,7 +1974,8 @@ export function Campaigns({
                     ),
                   },
                   {
-                    label: "已投诉",
+                    key: "complained",
+                    label: t("deliveryDetails.statComplained"),
                     value: activeStatistics.counts.complained,
                     rate: rateLabel(
                       activeStatistics.counts.complained,
@@ -1799,11 +1983,12 @@ export function Campaigns({
                     ),
                   },
                   {
-                    label: "发送失败",
+                    key: "send_failed",
+                    label: t("deliveryDetails.statSendFailed"),
                     value: activeStatistics.counts.send_failed,
                   },
-                ].map(({ label, value, rate }) => (
-                  <div className="rounded-lg border bg-card p-3" key={label}>
+                ].map(({ key, label, value, rate }) => (
+                  <div className="rounded-lg border bg-card p-3" key={key}>
                     <p className="hint m-0">{label}</p>
                     <p className="text-xl font-semibold">
                       {value}
@@ -1818,32 +2003,39 @@ export function Campaigns({
               </div>
               <div className="grid gap-3 rounded-lg border p-4 sm:grid-cols-3">
                 <MetricBar
-                  label="送达率"
+                  label={t("card.metricDeliveryRate")}
                   value={activeStatistics.counts.delivered}
                   total={activeStatistics.counts.accepted}
+                  unavailableLabel={t("card.metricUnavailable")}
                 />
                 <MetricBar
-                  label="打开率"
+                  label={t("card.metricOpenRate")}
                   value={activeStatistics.counts.opened}
                   total={activeStatistics.counts.delivered}
                   unavailable={!activeStatistics.tracking_enabled}
+                  unavailableLabel={t("card.metricUnavailable")}
                 />
                 <MetricBar
-                  label="点击率"
+                  label={t("card.metricClickRate")}
                   value={activeStatistics.counts.clicked}
                   total={activeStatistics.counts.delivered}
                   unavailable={!activeStatistics.tracking_enabled}
+                  unavailableLabel={t("card.metricUnavailable")}
                 />
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="hint m-0">
-                  行为追踪：
+                  {t("deliveryDetails.trackingPrefix")}
                   {activeStatistics.tracking_enabled
-                    ? `已启用 · ${activeStatistics.tracking_tag_name}`
-                    : "未启用"}
+                    ? t("deliveryDetails.trackingEnabledWithTag", {
+                        tag: activeStatistics.tracking_tag_name ?? "",
+                      })
+                    : t("deliveryDetails.trackingDisabled")}
                   {activeStatistics.last_event_at
-                    ? ` · 最后回执 ${formattedDate(activeStatistics.last_event_at)}`
-                    : " · 尚无回执"}
+                    ? t("deliveryDetails.lastReceiptAt", {
+                        date: formattedDate(activeStatistics.last_event_at),
+                      })
+                    : t("deliveryDetails.noReceiptYet")}
                 </p>
                 <Button
                   type="button"
@@ -1852,17 +2044,21 @@ export function Campaigns({
                   disabled={taskLoading}
                   onClick={() => void refreshDeliveryDetails()}
                 >
-                  {taskLoading ? "刷新中…" : "刷新统计"}
+                  {taskLoading
+                    ? t("deliveryDetails.refreshing")
+                    : t("deliveryDetails.refreshStats")}
                 </Button>
               </div>
             </div>
           )}
           {!canSend && (
-            <p className="hint m-0">逐收件人发送明细仅工作区管理员可见。</p>
+            <p className="hint m-0">{t("deliveryDetails.adminOnlyTasks")}</p>
           )}
           {canSend && (
             <div className="flex flex-wrap items-center gap-2">
-              <Label htmlFor="delivery-task-status">结果筛选</Label>
+              <Label htmlFor="delivery-task-status">
+                {t("deliveryDetails.resultFilterLabel")}
+              </Label>
               <select
                 id="delivery-task-status"
                 className="list-filter"
@@ -1875,14 +2071,16 @@ export function Campaigns({
                     void loadDeliveryTasks(deliveryDetails, value, 1);
                 }}
               >
-                <option value="">全部</option>
+                <option value="">{t("deliveryDetails.resultFilterAll")}</option>
                 {deliveryResultFilters.map((filter) => (
                   <option key={filter} value={filter}>
-                    {deliveryResultLabels[filter]}
+                    {t(`deliveryResults.${filter}`)}
                   </option>
                 ))}
               </select>
-              {taskLoading && <span className="hint">加载中…</span>}
+              {taskLoading && (
+                <span className="hint">{tCommon("actions.loading")}</span>
+              )}
             </div>
           )}
           {deliveryError && (
@@ -1908,19 +2106,38 @@ export function Campaigns({
                           : "outline"
                       }
                     >
-                      {deliveryResultLabels[task.status]} · {task.attempt_count}{" "}
-                      次
+                      {t("deliveryDetails.attemptBadge", {
+                        status: t(`deliveryResults.${task.status}`),
+                        count: task.attempt_count,
+                      })}
                     </Badge>
                   </div>
                   <p className="hint mt-2 mb-0">
-                    回执：{deliveryStatusLabels[task.delivery_status] ?? "尚无"}{" "}
-                    · 反馈：
-                    {feedbackStatusLabels[task.feedback_status] ?? "尚无"}
+                    {t("deliveryDetails.taskMeta", {
+                      delivery: KNOWN_DELIVERY_STATUSES.has(
+                        task.delivery_status,
+                      )
+                        ? t(
+                            `deliveryStatuses.${task.delivery_status as "delivered"}`,
+                          )
+                        : t("deliveryStatuses.none"),
+                      feedback: KNOWN_FEEDBACK_STATUSES.has(
+                        task.feedback_status,
+                      )
+                        ? t(
+                            `feedbackStatuses.${task.feedback_status as "none"}`,
+                          )
+                        : t("feedbackStatuses.empty"),
+                    })}
                     {task.first_opened_at
-                      ? ` · 首次打开 ${formattedDate(task.first_opened_at)}`
+                      ? t("deliveryDetails.firstOpened", {
+                          date: formattedDate(task.first_opened_at),
+                        })
                       : ""}
                     {task.first_clicked_at
-                      ? ` · 首次点击 ${formattedDate(task.first_clicked_at)}`
+                      ? t("deliveryDetails.firstClicked", {
+                          date: formattedDate(task.first_clicked_at),
+                        })
                       : ""}
                   </p>
                   {(task.error_category || task.error_code) && (
@@ -1933,13 +2150,15 @@ export function Campaigns({
                   {task.status === "unknown" && (
                     <div className="mt-3 space-y-2">
                       <Label htmlFor={`resolution-note-${task.id}`}>
-                        核对说明（10–500 字）
+                        {t("deliveryDetails.resolutionNoteLabel")}
                       </Label>
                       <textarea
                         id={`resolution-note-${task.id}`}
                         className="min-h-20 w-full rounded-md border bg-card px-3 py-2"
                         maxLength={500}
-                        placeholder="例如：在发信服务商控制台查询回执已成功投递，手工核准入库"
+                        placeholder={t(
+                          "deliveryDetails.resolutionNotePlaceholder",
+                        )}
                         value={resolutionNotes[task.id] ?? ""}
                         onChange={(event) =>
                           setResolutionNotes({
@@ -1959,7 +2178,7 @@ export function Campaigns({
                             void resolveUnknown(task.id, "accepted")
                           }
                         >
-                          标记为已送达
+                          {t("deliveryDetails.markDelivered")}
                         </Button>
                         <Button
                           size="sm"
@@ -1970,7 +2189,7 @@ export function Campaigns({
                           }
                           onClick={() => void resolveUnknown(task.id, "failed")}
                         >
-                          标记为发送失败
+                          {t("deliveryDetails.markFailed")}
                         </Button>
                       </div>
                     </div>
@@ -1979,7 +2198,7 @@ export function Campaigns({
               ))}
               {!taskLoading && taskList && !taskList.items.length && (
                 <p className="py-6 text-center hint">
-                  当前筛选下没有发送记录。
+                  {t("deliveryDetails.noMatchingTasks")}
                 </p>
               )}
             </div>
@@ -1996,7 +2215,7 @@ export function Campaigns({
                     void loadDeliveryTasks(deliveryDetails, taskStatus, page);
                 }}
               >
-                上一页
+                {tCommon("pagination.previous")}
               </Button>
               <span>
                 {taskPage} / {Math.ceil(taskList.total / taskList.page_size)}
@@ -2013,7 +2232,7 @@ export function Campaigns({
                     void loadDeliveryTasks(deliveryDetails, taskStatus, page);
                 }}
               >
-                下一页
+                {tCommon("pagination.next")}
               </Button>
             </div>
           )}
@@ -2034,16 +2253,18 @@ export function Campaigns({
           }}
         >
           <DialogHeader className={styles.editorHeader}>
-            <DialogTitle>{editing ? "编辑活动草稿" : "新建活动"}</DialogTitle>
-            <DialogDescription>
-              配置活动名称、关联模板与目标受众。
-            </DialogDescription>
+            <DialogTitle>
+              {editing ? t("editor.editTitle") : t("editor.createTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("editor.description")}</DialogDescription>
           </DialogHeader>
           <div className={styles.draftNote}>
             <Info aria-hidden="true" size={16} />
             <p>
-              <span className="font-medium text-foreground">草稿规则：</span>
-              活动变量允许暂留空，受众去重与黑名单将在预览发送阶段实时计算。
+              <span className="font-medium text-foreground">
+                {t("editor.draftRuleTitle")}
+              </span>
+              {t("editor.draftRuleBody")}
             </p>
           </div>
           <form
@@ -2063,45 +2284,46 @@ export function Campaigns({
                   tag_id: audienceType === "tag" ? tagId : null,
                   variables,
                 });
-                const message =
+                const hasError =
                   result &&
                   typeof result === "object" &&
                   "error" in result &&
-                  typeof result.error === "string"
-                    ? result.error
-                    : "";
-                if (message) {
-                  setError(message);
+                  typeof result.error === "string" &&
+                  result.error.length > 0;
+                if (hasError) {
+                  setError(resolveError(result));
                 } else {
-                  toast.success("活动草稿已保存");
+                  toast.success(t("toast.draftSaved"));
                   flushSync(() => setEditing(undefined));
                   await refreshCampaigns();
                 }
               } catch (error) {
                 unstable_rethrow(error);
-                setError("保存失败，输入已保留，请重试。");
+                setError(t("editor.saveFailedKeepInput"));
               } finally {
                 setBusy(false);
               }
             }}
           >
             <fieldset className={styles.editorSection}>
-              <legend>活动信息</legend>
+              <legend>{t("editor.sectionInfo")}</legend>
               <div className={styles.editorFields}>
                 <div className={styles.fullWidthField}>
-                  <Label htmlFor="campaign-name">活动名称</Label>
+                  <Label htmlFor="campaign-name">{t("editor.nameLabel")}</Label>
                   <Input
                     id="campaign-name"
                     required
                     maxLength={100}
-                    placeholder="如：九月客户问候"
+                    placeholder={t("editor.namePlaceholder")}
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     onBlur={() => setName((prev) => prev.trim())}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="campaign-template">邮件模板</Label>
+                  <Label htmlFor="campaign-template">
+                    {t("editor.templateLabel")}
+                  </Label>
                   <select
                     id="campaign-template"
                     required
@@ -2118,11 +2340,18 @@ export function Campaigns({
                       );
                     }}
                   >
-                    <option value="">请选择模板</option>
+                    <option value="">{t("editor.templatePlaceholder")}</option>
                     {templateChoices.map((template) => (
                       <option key={template.id} value={template.id}>
-                        {template.category} · {template.name}
-                        {template.archived ? "（已归档，仅保留当前引用）" : ""}
+                        {localizeTemplateCategory(
+                          template.category,
+                          tTemplates,
+                        )}{" "}
+                        ·{" "}
+                        {localizeTemplateNameByValue(template.name, tTemplates)}
+                        {template.archived
+                          ? t("editor.templateArchivedSuffix")
+                          : ""}
                       </option>
                     ))}
                   </select>
@@ -2132,11 +2361,13 @@ export function Campaigns({
                     className={`field-error ${styles.fullWidthField}`}
                     role="status"
                   >
-                    当前模板已归档。可以保留这项引用并编辑草稿，但预览或导出前需要恢复模板或改选使用中的模板。
+                    {t("editor.archivedTemplateWarning")}
                   </p>
                 )}
                 <div>
-                  <Label htmlFor="campaign-audience">发送对象</Label>
+                  <Label htmlFor="campaign-audience">
+                    {t("editor.audienceLabel")}
+                  </Label>
                   <select
                     id="campaign-audience"
                     className="list-filter w-full"
@@ -2147,18 +2378,18 @@ export function Campaigns({
                       if (value === "all") setTagId("");
                     }}
                   >
-                    <option value="all">全部已订阅客户</option>
+                    <option value="all">{t("editor.audienceAll")}</option>
                     <option value="tag" disabled={!editorOptions.tags.length}>
-                      按标签选择
+                      {t("editor.audienceTag")}
                     </option>
                   </select>
                   {!editorOptions.tags.length && (
-                    <p className="hint m-0">当前没有可选标签。</p>
+                    <p className="hint m-0">{t("editor.noTagsHint")}</p>
                   )}
                 </div>
                 {audienceType === "tag" && (
                   <div className={styles.fullWidthField}>
-                    <Label htmlFor="campaign-tag">客户标签</Label>
+                    <Label htmlFor="campaign-tag">{t("editor.tagLabel")}</Label>
                     <select
                       id="campaign-tag"
                       required
@@ -2166,7 +2397,7 @@ export function Campaigns({
                       value={tagId}
                       onChange={(event) => setTagId(event.target.value)}
                     >
-                      <option value="">请选择标签</option>
+                      <option value="">{t("editor.tagPlaceholder")}</option>
                       {editorOptions.tags.map((tag) => (
                         <option key={tag.id} value={tag.id}>
                           {tag.name}
@@ -2179,9 +2410,9 @@ export function Campaigns({
             </fieldset>
             {selectedVariableKeys.length > 0 && (
               <fieldset className={styles.editorSection}>
-                <legend>模板活动变量</legend>
+                <legend>{t("editor.sectionVariables")}</legend>
                 <p className={styles.sectionHint}>
-                  客户姓名和邮箱会在后续按收件人替换；以下内容对本次活动统一生效。
+                  {t("editor.variablesHint")}
                 </p>
                 <div className={styles.editorFields}>
                   {campaignVariableFields
@@ -2189,7 +2420,7 @@ export function Campaigns({
                     .map((field) => (
                       <div key={field.key}>
                         <Label htmlFor={`campaign-variable-${field.key}`}>
-                          {field.label}
+                          {t(`variables.${field.key}`)}
                           <code
                             className={styles.variableKey}
                           >{`{{${field.key}}}`}</code>
@@ -2222,17 +2453,17 @@ export function Campaigns({
                               role="alert"
                             >
                               {isDefaultSenderName(variables.sender_name)
-                                ? "“店主”是系统默认称呼，不适合作为落款发给客户。请改成真实姓名或品牌名，或"
-                                : "发件人不能为空，请填写真实署名，或"}
+                                ? t("editor.defaultSenderPrefix")
+                                : t("editor.emptySenderPrefix")}
                               <Link
                                 href="/settings"
                                 className="underline underline-offset-2"
                               >
                                 {isDefaultSenderName(variables.sender_name)
-                                  ? "前往设置真实署名"
-                                  : "前往设置保存常用署名"}
+                                  ? t("editor.defaultSenderLink")
+                                  : t("editor.emptySenderLink")}
                               </Link>
-                              。
+                              {t("editor.senderHintSuffix")}
                             </p>
                           )}
                       </div>
@@ -2252,7 +2483,7 @@ export function Campaigns({
                 disabled={busy}
                 onClick={requestCloseCampaignEditor}
               >
-                取消
+                {tCommon("actions.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -2260,7 +2491,7 @@ export function Campaigns({
                   busy || !templateId || (audienceType === "tag" && !tagId)
                 }
               >
-                {busy ? "保存中…" : "保存活动草稿"}
+                {busy ? t("editor.saving") : t("editor.saveButton")}
               </Button>
             </div>
           </form>
@@ -2272,23 +2503,23 @@ export function Campaigns({
       <ConfirmDialog
         open={confirmPreviewOpen}
         onOpenChange={setConfirmPreviewOpen}
-        title="确认活动名单"
+        title={t("confirmDialog.title")}
         description={
           <>
             <p className="m-0">
-              将确认「{preview?.campaign.name ?? previewing?.name}
-              」，锁定 {preview?.recipients.eligible_count ?? 0}{" "}
-              位收件人名单。确认后不可撤回，活动草稿也无法再编辑。
+              {t("confirmDialog.description", {
+                name: preview?.campaign.name ?? previewing?.name ?? "",
+                count: preview?.recipients.eligible_count ?? 0,
+              })}
             </p>
-            {nextQuotaSlotText(planUsage?.confirmedCampaignsThisMonth) && (
+            {nextConfirmSlot && (
               <p className="m-0 font-medium text-foreground">
-                {nextQuotaSlotText(planUsage?.confirmedCampaignsThisMonth)}
-                确认额度。
+                {t("confirmDialog.nextQuotaSlot", nextConfirmSlot)}
               </p>
             )}
           </>
         }
-        confirmLabel="确认并锁定名单"
+        confirmLabel={t("confirmDialog.confirmButton")}
         variant="destructive"
         loading={busy}
         onConfirm={() => void runConfirmPreview()}
@@ -2299,11 +2530,11 @@ export function Campaigns({
         onOpenChange={(open) => {
           if (!open) setArchiveConfirm(undefined);
         }}
-        title="归档活动"
-        description={
-          <>归档「{archiveConfirm?.name}」？之后可以在已归档列表恢复。</>
-        }
-        confirmLabel="归档"
+        title={t("archiveConfirm.title")}
+        description={t("archiveConfirm.description", {
+          name: archiveConfirm?.name ?? "",
+        })}
+        confirmLabel={t("archiveConfirm.confirmButton")}
         variant="destructive"
         onConfirm={() => {
           const campaign = archiveConfirm;

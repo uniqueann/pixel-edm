@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import type { ComponentProps } from "react";
+import { useTranslations } from "next-intl";
 import { formatOutboundFromLine } from "@/lib/email-outbound-preview";
-import { mailingAddressProblem } from "@/lib/mailing-address";
+import { mailingAddressProblemCode } from "@/lib/mailing-address";
+import { useValidationMessage } from "@/i18n/use-resolvers";
 import { cn } from "@/lib/utils";
 
 export {
@@ -20,30 +24,29 @@ export function EmailOutboundFromPreview({
   className?: string;
   onSettingsNavigate?: ComponentProps<typeof Link>["onNavigate"];
 }) {
+  const t = useTranslations("common.outboundPreview");
   const fromLine = formatOutboundFromLine(senderAlias, senderAddress);
   const missingAlias = !(senderAlias ?? "").trim();
   const missingAddress = !(senderAddress ?? "").trim();
 
   return (
     <div className={cn("text-sm", className)}>
-      <p className="mb-1 text-xs text-muted-foreground">
-        发件人（收件人邮箱客户端显示的 From）
-      </p>
+      <p className="mb-1 text-xs text-muted-foreground">{t("fromLabel")}</p>
       {fromLine ? (
         <p className="break-all font-medium">{fromLine}</p>
       ) : (
         <p className="text-destructive" role="note">
           {missingAlias && missingAddress
-            ? "尚未配置主发信通道的发件人名称与发件地址。"
+            ? t("missingBoth")
             : missingAddress
-              ? "主通道尚未填写发件地址。"
-              : "主通道尚未填写发件人显示名称。"}
+              ? t("missingAddress")
+              : t("missingAlias")}
           <Link
             href="/settings"
             onNavigate={onSettingsNavigate}
             className="ml-1 underline underline-offset-2"
           >
-            前往发信通道
+            {t("goToChannels")}
           </Link>
         </p>
       )}
@@ -62,10 +65,15 @@ export function EmailOutboundFooterPreview({
   className?: string;
   onSettingsNavigate?: ComponentProps<typeof Link>["onNavigate"];
 }) {
-  const name = workspaceName.trim() || "（店铺 / 工作区名称）";
+  const t = useTranslations("common.outboundPreview");
+  const resolveValidation = useValidationMessage();
+  const name = workspaceName.trim() || t("workspacePlaceholder");
   const address = mailingAddress.trim();
-  const addressProblem = mailingAddressProblem(mailingAddress);
-  const addressDisplay = address || "（未填写）";
+  const addressProblemKey = mailingAddressProblemCode(mailingAddress);
+  const addressProblem = addressProblemKey
+    ? resolveValidation(addressProblemKey)
+    : null;
+  const addressDisplay = address || t("addressEmpty");
 
   return (
     <div
@@ -76,7 +84,7 @@ export function EmailOutboundFooterPreview({
       data-testid="email-outbound-footer-preview"
     >
       <p className="mb-2 text-xs font-medium text-foreground">
-        系统追加的邮件页脚
+        {t("footerTitle")}
       </p>
       <div className="space-y-1">
         <p className="break-words">{name}</p>
@@ -94,7 +102,7 @@ export function EmailOutboundFooterPreview({
               onNavigate={onSettingsNavigate}
               className="ml-1 underline underline-offset-2"
             >
-              前往店铺信息
+              {t("goToStoreSettings")}
             </Link>
           </p>
         )}
@@ -102,7 +110,7 @@ export function EmailOutboundFooterPreview({
           <span
             className="cursor-default text-primary underline underline-offset-2"
             aria-disabled="true"
-            title="预览占位，发送时会替换为真实退订链接"
+            title={t("unsubscribeTitle")}
           >
             Unsubscribe / 退订
           </span>

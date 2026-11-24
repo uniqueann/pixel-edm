@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Ban,
   ChartNoAxesCombined,
@@ -22,6 +23,7 @@ import {
   Webhook,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LocalDate } from "@/components/local-date";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,16 +41,15 @@ import {
   setPrimaryDeliveryChannel,
 } from "./actions";
 import { ChannelFormDialog } from "./channel-form-dialog";
-import {
-  deliveryChannelStatusLabels,
-  type DeliveryChannel,
-  type DeliveryChannelInput,
-  type DeliveryTestAttempt,
+import type {
+  DeliveryChannel,
+  DeliveryChannelInput,
+  DeliveryTestAttempt,
 } from "./model";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ChannelTestResult } from "./channel-test-result";
 import {
-  channelSetupCopy,
+  channelSetupStateKey,
   isTestPending,
   latestTestSnapshot,
 } from "./channel-presentation";
@@ -56,19 +57,11 @@ import type {
   ChannelOperation,
   ChannelOperationGate,
 } from "./use-channel-operation";
-import type { DeliveryChannelSummary } from "./registry";
+import { directMailRegions } from "./provider";
+import type { DeliveryChannelSummary, mergeProviderRecord } from "./registry";
 import styles from "./channel-setup.module.css";
-import { deliveryProviderErrorToast } from "@/lib/delivery-provider-error";
-import {
-  capabilityRows,
-  directMailRegionLabel,
-  mergeProviderRecord,
-  providerQuotaHint,
-  sendGridDataCenterLabel,
-  trackingDisabledReason,
-  trackingFieldHelp,
-  trackingFieldLabel,
-} from "./registry";
+import { classifyDeliveryProviderError } from "@/lib/delivery-provider-error";
+import { useErrorMessage } from "@/i18n/use-resolvers";
 
 const directMailEventPattern = JSON.stringify(
   {
@@ -87,7 +80,7 @@ const directMailEventPattern = JSON.stringify(
   2,
 );
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <dt>{label}</dt>
@@ -125,6 +118,9 @@ export function ChannelDetail({
   nextStep: ReactNode;
   onChannelsReplace: (rows: DeliveryChannelSummary[]) => void;
 }) {
+  const t = useTranslations("channels");
+  const tProviderErrors = useTranslations("common.providerErrors");
+  const resolveError = useErrorMessage();
   const router = useRouter();
   const [lastTest, setLastTest] = useState(initialTest);
   const [formOpen, setFormOpen] = useState(false);
@@ -160,7 +156,7 @@ export function ChannelDetail({
   }
   const testPending = isTestPending(lastTest?.status);
   const mutationBlocked = operation.busy || testPending;
-  const setupCopy = channelSetupCopy(channel, lastTest?.status);
+  const setupState = channelSetupStateKey(channel, lastTest?.status);
 
   const connected = channel && channel.status !== "disconnected";
   const capabilities = channel?.capabilities ?? {
@@ -174,17 +170,24 @@ export function ChannelDetail({
     requires_webhook_subscription_confirmation:
       provider.requires_webhook_subscription_confirmation,
   };
-  const trackingDisabled = trackingDisabledReason(capabilities);
-  const acceptedLabel = provider.acceptedTestLabel;
-  const headingTitle =
-    provider.provider === "aliyun_directmail"
-      ? "阿里云邮件推送 DirectMail"
-      : provider.display_name;
+  const providerDisplayName = t(`providers.${provider.provider}.name`);
+  const providerShortName = t(`providers.${provider.provider}.shortName`);
+  const acceptedLabel = t(`providers.${provider.provider}.acceptedTestLabel`);
+  const sandboxNotice =
+    provider.provider === "amazon_ses"
+      ? t("providers.amazon_ses.sandboxNotice")
+      : provider.provider === "sendgrid"
+        ? t("providers.sendgrid.sandboxNotice")
+        : null;
+  const trackingDisabled =
+    capabilities.supports_open_tracking || capabilities.supports_click_tracking
+      ? null
+      : t("tracking.unsupported", { provider: providerDisplayName });
 
   function copy(value: string, label: string) {
     void navigator.clipboard.writeText(value).then(
-      () => toast.success(`${label}已复制`),
-      () => toast.error(`${label}复制失败，请手动复制`),
+      () => toast.success(t("toast.copied", { label })),
+      () => toast.error(t("toast.copyFailed", { label })),
     );
   }
 
@@ -202,7 +205,7 @@ export function ChannelDetail({
       const result = await saveDeliveryChannel(values);
       if (!request.isCurrent()) return;
       if ("error" in result) {
-        setError(result.error);
+        setError(resolveError(result));
         return;
       }
       onChannelChange(result.data);
@@ -210,15 +213,12 @@ export function ChannelDetail({
       setTestError("");
       closeForm();
       toast.success(
-        connected
-          ? "配置已更新，请核对当前验证状态"
-          : "配置已保存，下一步发送测试邮件",
+        connected ? t("toast.updatedVerify") : t("toast.savedNeedTest"),
       );
       onChannelsListChange?.();
       router.refresh();
     } catch {
-      if (request.isCurrent())
-        setError("保存请求未完成，请核对网络与通道状态后重试。");
+      if (request.isCurrent()) setError(t("toast.saveRequestIncomplete"));
     }
   }
 
@@ -235,9 +235,7 @@ export function ChannelDetail({
         await task(request);
       } catch {
         if (request.isCurrent())
-          setActionError(
-            "操作结果暂时无法确认。请刷新页面核对当前状态，再决定是否重试。",
-          );
+          setActionError(t("toast.operationUnconfirmed"));
       } finally {
         request.finish();
       }
@@ -248,7 +246,7 @@ export function ChannelDetail({
     if (
       !channel ||
       mutationBlocked ||
-      !window.confirm("确认断开发信通道？已保存的凭据密文会被删除。")
+      !window.confirm(t("detail.disconnectConfirm"))
     )
       return;
     perform(startDisconnect, async (request) => {
@@ -259,13 +257,13 @@ export function ChannelDetail({
       });
       if (!request.isCurrent()) return;
       if ("error" in result) {
-        setActionError(result.error);
+        setActionError(resolveError(result));
         return;
       }
       onChannelChange(result.data);
       testIdempotency.current = null;
       setTestError("");
-      toast.success("发信通道已断开，凭据已删除");
+      toast.success(t("toast.disconnected"));
       onChannelsListChange?.();
       router.refresh();
     });
@@ -286,14 +284,14 @@ export function ChannelDetail({
         });
         if (!request.isCurrent()) return;
         if ("error" in result) {
-          setTestError(result.error);
+          setTestError(resolveError(result));
           return;
         }
         if (
           result.data.workspace_id !== workspaceId ||
           result.data.channel_id !== channel.id
         ) {
-          setTestError("测试结果与当前通道不一致，请刷新核对。");
+          setTestError(t("toast.testMismatch"));
           return;
         }
         if (!isTestPending(result.data.status)) testIdempotency.current = null;
@@ -301,18 +299,27 @@ export function ChannelDetail({
         if (result.channel) onChannelChange(result.channel);
         if (result.data.status === "accepted")
           toast.success(
-            `${provider.provider === "aliyun_directmail" ? "DirectMail" : provider.display_name} 已接收测试邮件`,
+            t("toast.testAccepted", { provider: providerShortName }),
           );
         else if (result.data.status === "unknown")
-          toast.warning("发送结果未知，请先核对邮箱和服务商控制台");
+          toast.warning(t("toast.testUnknown"));
         else if (result.data.status === "failed") {
-          const copy = deliveryProviderErrorToast(result.data);
-          toast.error(copy.title, { description: copy.description });
+          const { key, debugDetail } = classifyDeliveryProviderError(
+            result.data,
+          );
+          const descParts = [tProviderErrors(`${key}.hint`)];
+          if (debugDetail && debugDetail !== "UNKNOWN") {
+            descParts.push(
+              tProviderErrors("technicalInfoPrefix", { detail: debugDetail }),
+            );
+          }
+          toast.error(tProviderErrors(`${key}.message`), {
+            description: descParts.join("\n"),
+          });
         }
         router.refresh();
       } catch {
-        if (request.isCurrent())
-          setTestError("请求中断，暂时无法确认本次发送结果。");
+        if (request.isCurrent()) setTestError(t("toast.testInterrupted"));
       }
     });
   }
@@ -330,7 +337,7 @@ export function ChannelDetail({
         (attempt.workspace_id !== workspaceId ||
           attempt.channel_id !== channel.id)
       ) {
-        setTestError("测试结果与当前通道不一致，请刷新核对。");
+        setTestError(t("toast.testMismatch"));
         return;
       }
       setLastTest(attempt);
@@ -340,7 +347,7 @@ export function ChannelDetail({
         setTestError("");
       }
       toast.success(
-        attempt ? "已刷新测试结果" : "暂未查到测试记录，请先核对邮箱与控制台",
+        attempt ? t("toast.testRefreshed") : t("toast.testNoRecord"),
       );
       router.refresh();
     });
@@ -356,15 +363,15 @@ export function ChannelDetail({
       });
       if (!request.isCurrent()) return;
       if ("error" in result) {
-        setActionError(result.error);
+        setActionError(resolveError(result));
         return;
       }
       onChannelChange(result.data);
       setWebhookToken(result.token);
       toast.success(
         channel.webhook?.configured
-          ? "Webhook 令牌已轮换"
-          : "Webhook 令牌已生成",
+          ? t("toast.webhookRotated")
+          : t("toast.webhookGenerated"),
       );
       router.refresh();
     });
@@ -375,7 +382,7 @@ export function ChannelDetail({
       !channel?.webhook?.configured ||
       !channel.webhook.token_version ||
       mutationBlocked ||
-      !window.confirm("确认停用回执 Webhook？服务商后续事件将被拒绝。")
+      !window.confirm(t("webhook.revokeConfirm"))
     )
       return;
     perform(startWebhookUpdate, async (request) => {
@@ -386,12 +393,12 @@ export function ChannelDetail({
       });
       if (!request.isCurrent()) return;
       if ("error" in result) {
-        setActionError(result.error);
+        setActionError(resolveError(result));
         return;
       }
       onChannelChange(result.data);
       setWebhookToken(null);
-      toast.success("回执 Webhook 已停用");
+      toast.success(t("toast.webhookRevoked"));
       router.refresh();
     });
   }
@@ -411,7 +418,7 @@ export function ChannelDetail({
       });
       if (!request.isCurrent()) return;
       if ("error" in result) {
-        setTrackingError(result.error);
+        setTrackingError(resolveError(result));
         return;
       }
       onChannelChange(result.data);
@@ -419,7 +426,9 @@ export function ChannelDetail({
       setTrackingTagName(result.data.tracking_tag_name ?? "");
       setConfigurationSetName(result.data.configuration_set_name ?? "");
       toast.success(
-        result.data.tracking_enabled ? "行为追踪已开启" : "行为追踪已关闭",
+        result.data.tracking_enabled
+          ? t("toast.trackingEnabled")
+          : t("toast.trackingDisabled"),
       );
       router.refresh();
     });
@@ -435,11 +444,13 @@ export function ChannelDetail({
       });
       if (!request.isCurrent()) return;
       if ("error" in result) {
-        setActionError(result.error);
+        setActionError(resolveError(result));
         return;
       }
       onChannelsReplace(result.data);
-      toast.success(`已将 ${provider.display_name} 设为主发信通道`);
+      toast.success(
+        t("toast.primaryUpdated", { provider: providerDisplayName }),
+      );
       onChannelsListChange?.();
       router.refresh();
     });
@@ -451,23 +462,100 @@ export function ChannelDetail({
     channel.provider_config.event_webhook_public_key.trim(),
   );
 
-  const regionLabel =
-    provider.provider === "aliyun_directmail"
-      ? directMailRegionLabel(channel?.region)
-      : provider.provider === "sendgrid"
-        ? sendGridDataCenterLabel(channel?.region)
-        : (channel?.region ?? "未设置");
+  const regionLabel = (() => {
+    const region = channel?.region;
+    if (!region) return t("regions.unset");
+    if (
+      provider.provider === "aliyun_directmail" &&
+      (directMailRegions as readonly string[]).includes(region)
+    ) {
+      return t(`regions.directmail.${region as "cn-hangzhou"}`);
+    }
+    if (
+      provider.provider === "sendgrid" &&
+      (region === "global" || region === "eu")
+    ) {
+      return t(`regions.sendgrid.${region}`);
+    }
+    return region;
+  })();
 
   const trackingDetail =
     channel?.tracking_enabled && provider.provider === "aliyun_directmail"
-      ? `已开启 · ${channel.tracking_tag_name ?? "标签缺失"}`
+      ? t("detail.trackingEnabledWithTag", {
+          value: channel.tracking_tag_name ?? t("detail.trackingTagMissing"),
+        })
       : channel?.tracking_enabled && provider.provider === "amazon_ses"
-        ? `已开启 · ${channel.configuration_set_name ?? "配置集缺失"}`
+        ? t("detail.trackingEnabledWithTag", {
+            value:
+              channel.configuration_set_name ??
+              t("detail.trackingConfigSetMissing"),
+          })
         : channel?.tracking_enabled && provider.provider === "sendgrid"
-          ? "已开启"
-          : "未开启";
+          ? t("detail.trackingEnabledSimple")
+          : t("detail.trackingDisabled");
 
-  const trackingFieldName = trackingFieldLabel(provider.provider);
+  const trackingFieldName =
+    provider.provider === "aliyun_directmail"
+      ? t("providers.aliyun_directmail.trackingFieldLabel")
+      : provider.provider === "amazon_ses"
+        ? t("providers.amazon_ses.trackingFieldLabel")
+        : null;
+
+  const capabilityList = [
+    {
+      key: "open",
+      label: t("capabilities.openTracking"),
+      supported: provider.supports_open_tracking,
+      value: provider.supports_open_tracking
+        ? t("capabilities.supported")
+        : t("capabilities.unsupported"),
+    },
+    {
+      key: "click",
+      label: t("capabilities.clickTracking"),
+      supported: provider.supports_click_tracking,
+      value: provider.supports_click_tracking
+        ? t("capabilities.supported")
+        : t("capabilities.unsupported"),
+    },
+    {
+      key: "html",
+      label: t("capabilities.htmlRequired"),
+      supported: provider.requires_html_for_tracking,
+      value: provider.requires_html_for_tracking
+        ? t("capabilities.requiresHtml")
+        : t("capabilities.noHtmlNeeded"),
+    },
+    {
+      key: "optOut",
+      label: t("capabilities.optOut"),
+      supported: provider.supports_link_tracking_opt_out,
+      value: provider.supports_link_tracking_opt_out
+        ? t("capabilities.supported")
+        : t("capabilities.unsupported"),
+    },
+    {
+      key: "webhook",
+      label: t("capabilities.webhookConfirm"),
+      supported: provider.requires_webhook_subscription_confirmation,
+      value: provider.requires_webhook_subscription_confirmation
+        ? t("capabilities.requiresHandshake")
+        : t("capabilities.noHandshake"),
+    },
+  ];
+
+  const quotaHintText =
+    provider.quota_timezone === "Asia/Shanghai"
+      ? t("capabilities.quotaHintBeijing", {
+          rate: provider.default_rate_per_second,
+          daily: provider.default_daily_quota,
+        })
+      : t("capabilities.quotaHintTimezone", {
+          rate: provider.default_rate_per_second,
+          daily: provider.default_daily_quota,
+          timezone: provider.quota_timezone,
+        });
 
   return (
     <Card data-channel-provider={provider.provider}>
@@ -479,12 +567,14 @@ export function ChannelDetail({
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2>{headingTitle}</h2>
+                <h2>{providerDisplayName}</h2>
                 {channel?.is_primary && (
-                  <Badge variant="secondary">主通道</Badge>
+                  <Badge variant="secondary">{t("statusBadge.primary")}</Badge>
                 )}
               </div>
-              <p className="hint m-0">{provider.tagline}</p>
+              <p className="hint m-0">
+                {t(`providers.${provider.provider}.tagline`)}
+              </p>
             </div>
           </div>
           <Badge
@@ -499,28 +589,31 @@ export function ChannelDetail({
           >
             {channel
               ? channel.status === "verified" && !channel.credential_configured
-                ? "配置未完成（缺少凭据）"
-                : deliveryChannelStatusLabels[channel.status]
-              : "未连接"}
+                ? t("statusBadge.incompleteMissingCredential")
+                : t(`statusBadge.${channel.status}`)
+              : t("statusBadge.unconnected")}
           </Badge>
         </div>
 
-        {provider.sandboxNotice && connected && (
-          <Notice tone="warning">{provider.sandboxNotice}</Notice>
+        {sandboxNotice && connected && (
+          <Notice tone="warning">{sandboxNotice}</Notice>
         )}
 
         <div className={styles.status}>
-          <h3>{setupCopy.title}</h3>
-          <p className={styles.supporting}>{setupCopy.detail}</p>
+          <h3>{t(`setupState.${setupState}.title`)}</h3>
+          <p className={styles.supporting}>
+            {t(`setupState.${setupState}.detail`)}
+          </p>
           {connected && (
             <p className={styles.supporting}>
-              测试收件人：{testRecipient || "当前管理员的已验证邮箱"}
-              。测试只发给当前管理员，不会发给客户名单。
+              {t("detail.testRecipientNote", {
+                recipient: testRecipient || t("detail.testRecipientFallback"),
+              })}
             </p>
           )}
           {testPending && (
             <p className={styles.supporting} role="status">
-              已有测试尚未完成。请刷新本次结果，完成后再更新配置或进行其他操作。
+              {t("detail.testPendingNotice")}
             </p>
           )}
           {canEdit && (
@@ -543,14 +636,14 @@ export function ChannelDetail({
                   >
                     <Send aria-hidden="true" />
                     {testing
-                      ? "测试发送中…"
+                      ? t("detail.sendingTest")
                       : refreshingTest
-                        ? "刷新中…"
+                        ? t("detail.refreshingTest")
                         : testPending
-                          ? "刷新本次测试结果"
+                          ? t("detail.refreshPendingTest")
                           : testError
-                            ? "恢复本次测试"
-                            : "发送测试邮件"}
+                            ? t("detail.recoverTest")
+                            : t("detail.sendTest")}
                   </Button>
                 )}
               <Button
@@ -571,10 +664,10 @@ export function ChannelDetail({
               >
                 <KeyRound aria-hidden="true" />
                 {connected
-                  ? "更新发信通道"
+                  ? t("detail.updateChannel")
                   : channel
-                    ? "重新连接发信通道"
-                    : "连接发信通道"}
+                    ? t("detail.reconnectChannel")
+                    : t("detail.connectChannel")}
               </Button>
               {connected && !channel.is_primary && (
                 <Button
@@ -583,7 +676,9 @@ export function ChannelDetail({
                   onClick={makePrimary}
                 >
                   <Star aria-hidden="true" />
-                  {settingPrimary ? "切换中…" : "设为主通道"}
+                  {settingPrimary
+                    ? t("detail.settingPrimary")
+                    : t("detail.setPrimary")}
                 </Button>
               )}
             </div>
@@ -611,22 +706,22 @@ export function ChannelDetail({
 
         {testing && (
           <p role="status" className={styles.supporting}>
-            正在向服务商提交本次测试，请保持页面打开。
+            {t("detail.submittingTestNotice")}
           </p>
         )}
         {testError && (
           <div className={styles.result} role="alert" data-tone="error">
-            <h3 className="text-sm font-semibold">本次测试结果暂时无法确认</h3>
+            <h3 className="text-sm font-semibold">
+              {t("detail.testErrorTitle")}
+            </h3>
             <p className={styles.supporting}>{testError}</p>
-            <p className={styles.supporting}>
-              请先核对邮箱与服务商控制台。恢复本次测试会沿用同一请求标识；如果上次尚未提交，服务端仍可能发送一封邮件。
-            </p>
+            <p className={styles.supporting}>{t("detail.testErrorGuidance")}</p>
             <Button
               variant="outline"
               disabled={operation.busy}
               onClick={refreshTest}
             >
-              只刷新测试结果
+              {t("detail.refreshOnly")}
             </Button>
           </div>
         )}
@@ -651,17 +746,17 @@ export function ChannelDetail({
             disabled={operation.busy}
             onClick={refreshTest}
           >
-            只刷新测试结果
+            {t("detail.refreshOnly")}
           </Button>
         )}
         <ConfirmDialog
           contentClassName={styles.confirmation}
           open={confirmRetest}
           onOpenChange={setConfirmRetest}
-          title="核对后重新发送测试？"
-          description="上次结果未知，邮件可能已经发出。请先核对管理员邮箱与服务商控制台；继续将使用新的请求标识，可能再发送一封邮件。"
-          confirmLabel="已核对，重新测试"
-          cancelLabel="继续核对"
+          title={t("detail.retestConfirmTitle")}
+          description={t("detail.retestConfirmDescription")}
+          confirmLabel={t("detail.retestConfirmAction")}
+          cancelLabel={t("detail.retestCancelAction")}
           onConfirm={sendTest}
         />
 
@@ -669,67 +764,76 @@ export function ChannelDetail({
 
         {channel ? (
           <dl className={styles.identity}>
-            <Detail label="区域" value={regionLabel} />
+            <Detail label={t("detail.fieldRegion")} value={regionLabel} />
             {channel.sender_domain && (
-              <Detail label="发件域名" value={channel.sender_domain} />
-            )}
-            <Detail label="发件地址" value={channel.sender_address} />
-            <Detail label="发件人" value={channel.sender_alias} />
-            <Detail
-              label="回复地址"
-              value={channel.reply_to_address || "跟随发件地址"}
-            />
-            {provider.provider === "sendgrid" && (
               <Detail
-                label="Webhook 验签公钥"
-                value={webhookPublicKeyConfigured ? "已保存" : "未保存"}
+                label={t("detail.fieldSenderDomain")}
+                value={channel.sender_domain}
               />
             )}
             <Detail
-              label={
-                provider.provider === "amazon_ses"
-                  ? "AWS 访问密钥"
-                  : provider.provider === "sendgrid"
-                    ? "API Key"
-                    : "AccessKey"
+              label={t("detail.fieldSenderAddress")}
+              value={channel.sender_address}
+            />
+            <Detail
+              label={t("detail.fieldSenderAlias")}
+              value={channel.sender_alias}
+            />
+            <Detail
+              label={t("detail.fieldReplyTo")}
+              value={
+                channel.reply_to_address || t("detail.replyToFollowSender")
               }
+            />
+            {provider.provider === "sendgrid" && (
+              <Detail
+                label={t("detail.fieldWebhookPublicKey")}
+                value={
+                  webhookPublicKeyConfigured
+                    ? t("detail.saved")
+                    : t("detail.notSaved")
+                }
+              />
+            )}
+            <Detail
+              label={t(`providers.${provider.provider}.credentialShortLabel`)}
               value={
                 channel.credential_configured
                   ? channel.access_key_hint
                     ? `••••${channel.access_key_hint}`
-                    : "已安全保存"
-                  : "未保存"
+                    : t("detail.savedSecurely")
+                  : t("detail.notSaved")
               }
             />
             <Detail
-              label="最近验证"
+              label={t("detail.fieldLastVerified")}
               value={
-                channel.last_verified_at
-                  ? new Intl.DateTimeFormat("zh-CN", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(new Date(channel.last_verified_at))
-                  : "尚未通过测试发送"
+                channel.last_verified_at ? (
+                  <LocalDate value={channel.last_verified_at} />
+                ) : (
+                  t("detail.neverVerified")
+                )
               }
             />
-            <Detail label="行为追踪" value={trackingDetail} />
+            <Detail label={t("detail.fieldTracking")} value={trackingDetail} />
           </dl>
         ) : (
           <div className="rounded-xl border border-dashed p-4">
-            <p className="text-sm">尚未配置此发信通道。</p>
-            <p className="hint m-0">
-              保存区域、已验证发件身份和专用访问密钥后即可测试发送。
-            </p>
+            <p className="text-sm">{t("detail.unconfiguredTitle")}</p>
+            <p className="hint m-0">{t("detail.unconfiguredDescription")}</p>
           </div>
         )}
 
         {channel && canEdit && channel.webhook && (
           <details className={styles.disclosure} data-channel-webhook>
             <summary>
-              投递回执配置{" "}
+              {t("webhook.summaryTitle")}{" "}
               <span>
-                {channel.webhook.configured ? "已生成令牌" : "未配置"} ·
-                首次测试无需配置
+                {t("webhook.summaryMeta", {
+                  state: channel.webhook.configured
+                    ? t("webhook.stateTokenGenerated")
+                    : t("webhook.stateNotConfigured"),
+                })}
               </span>
             </summary>
             <div className={`space-y-4 ${styles.disclosureBody}`}>
@@ -737,30 +841,28 @@ export function ChannelDetail({
                 <div className="flex items-start gap-3">
                   <Webhook className="mt-0.5 size-5" aria-hidden="true" />
                   <div>
-                    <h3 className="text-sm font-semibold">投递回执 Webhook</h3>
+                    <h3 className="text-sm font-semibold">
+                      {t("webhook.heading")}
+                    </h3>
                     <p className="hint mt-1 mb-0">
-                      {provider.provider === "amazon_ses"
-                        ? "通过 SNS 接收 SES 事件；首次通知系统将自动完成订阅确认。"
-                        : provider.provider === "sendgrid"
-                          ? "在 SendGrid Event Webhook 中启用 Signed Event，将 HTTPS 目标指向上方地址并填入验签公钥。"
-                          : "接收投递、投诉、退订及行为事件；断开发信通道不会自动停用回执。"}
+                      {t(`providers.${provider.provider}.webhookDesc`)}
                     </p>
                   </div>
                 </div>
                 <Badge variant="outline">
                   {!channel.webhook.configured
-                    ? "未配置"
+                    ? t("webhook.badgeNotConfigured")
                     : channel.webhook.last_event_at
-                      ? "正在接收"
+                      ? t("webhook.badgeReceiving")
                       : provider.requires_webhook_subscription_confirmation
-                        ? "等待 SNS 确认"
-                        : "等待首个事件"}
+                        ? t("webhook.badgeWaitingSns")
+                        : t("webhook.badgeWaitingFirst")}
                 </Badge>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor={`webhook-endpoint-${channel.id}`}>
-                  HTTPS 目标地址
+                  {t("webhook.endpointLabel")}
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -773,9 +875,12 @@ export function ChannelDetail({
                     type="button"
                     variant="outline"
                     size="icon"
-                    aria-label="复制 Webhook 地址"
+                    aria-label={t("webhook.copyEndpointAria")}
                     onClick={() =>
-                      copy(channel.webhook!.endpoint, "Webhook 地址")
+                      copy(
+                        channel.webhook!.endpoint,
+                        t("webhook.copyEndpointName"),
+                      )
                     }
                   >
                     <Copy aria-hidden="true" />
@@ -786,31 +891,29 @@ export function ChannelDetail({
               {webhookToken && (
                 <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
                   <p className="text-sm font-medium">
-                    请立即保存令牌，仅本次显示
+                    {t("webhook.tokenOnceNotice")}
                   </p>
                   <div className="flex gap-2">
                     <Input
                       readOnly
                       value={webhookToken}
                       className="bg-background font-mono text-xs"
-                      aria-label="Webhook 令牌"
+                      aria-label={t("webhook.tokenAria")}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      aria-label="复制 Webhook 令牌"
-                      onClick={() => copy(webhookToken, "Webhook 令牌")}
+                      aria-label={t("webhook.copyTokenAria")}
+                      onClick={() =>
+                        copy(webhookToken, t("webhook.copyTokenName"))
+                      }
                     >
                       <Copy aria-hidden="true" />
                     </Button>
                   </div>
                   <p className="m-0 text-xs">
-                    {provider.provider === "amazon_ses"
-                      ? "将令牌作为查询参数 token= 或请求头 x-edm-webhook-token 传给 SNS HTTPS 订阅。"
-                      : provider.provider === "sendgrid"
-                        ? "Webhook URL 须包含 token= 查询参数，或使用请求头 x-edm-webhook-token。"
-                        : "在 EventBridge HTTP 目标高级选项中将它填入 Token；请求头名称为 x-eventbridge-signature-token。"}
+                    {t(`providers.${provider.provider}.webhookTokenGuide`)}
                   </p>
                 </div>
               )}
@@ -818,11 +921,10 @@ export function ChannelDetail({
               {provider.provider === "aliyun_directmail" && (
                 <details className="rounded-lg bg-muted p-3">
                   <summary className="cursor-pointer text-sm font-medium">
-                    EventBridge 事件规则
+                    {t("webhook.eventBridgeSummary")}
                   </summary>
                   <p className="hint mt-2 mb-2">
-                    事件源请选择 acs.dm，消息体选择“完整事件”，不要选择
-                    acs.directmail。阿里云控制台中建议开启重试机制。
+                    {t("webhook.eventBridgeHelp")}
                   </p>
                   <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
                     {directMailEventPattern}
@@ -831,18 +933,11 @@ export function ChannelDetail({
               )}
 
               {provider.provider === "amazon_ses" && (
-                <p className="hint m-0">
-                  在 SES 配置集中启用 SNS 事件发布，并将 HTTPS
-                  订阅指向上方地址。Topic ARN
-                  须与通道配置一致，首次订阅由系统自动确认。
-                </p>
+                <p className="hint m-0">{t("webhook.sesHint")}</p>
               )}
 
               {provider.provider === "sendgrid" && (
-                <p className="hint m-0">
-                  请在通道配置中保存 SendGrid 控制台提供的 Signed Webhook
-                  公钥，否则回执事件会被拒绝。
-                </p>
+                <p className="hint m-0">{t("webhook.sendgridHint")}</p>
               )}
 
               <div className="flex flex-wrap gap-2">
@@ -856,10 +951,10 @@ export function ChannelDetail({
                     <RotateCw aria-hidden="true" />
                   )}
                   {updatingWebhook
-                    ? "处理中…"
+                    ? t("webhook.processing")
                     : channel.webhook.configured
-                      ? "轮换令牌"
-                      : "生成令牌"}
+                      ? t("webhook.rotateToken")
+                      : t("webhook.generateToken")}
                 </Button>
                 {channel.webhook.configured && (
                   <Button
@@ -869,15 +964,17 @@ export function ChannelDetail({
                     onClick={revokeWebhook}
                   >
                     <Ban aria-hidden="true" />
-                    停用 Webhook
+                    {t("webhook.revoke")}
                   </Button>
                 )}
               </div>
               {channel.webhook.configured && (
                 <p className="hint m-0">
-                  当前令牌尾号 ••••{channel.webhook.token_hint}。
+                  {t("webhook.currentTokenHint", {
+                    hint: channel.webhook.token_hint ?? "",
+                  })}
                   {provider.provider === "aliyun_directmail" &&
-                    " 轮换后旧令牌保留 15 分钟宽限期，便于无中断更新 EventBridge。"}
+                    ` ${t("webhook.directmailGraceHint")}`}
                 </p>
               )}
             </div>
@@ -887,7 +984,10 @@ export function ChannelDetail({
         {connected && canEdit && (
           <details className={styles.disclosure} data-channel-tracking>
             <summary>
-              打开与点击追踪 <span>{trackingDetail} · 按需开启</span>
+              {t("tracking.summaryTitle")}{" "}
+              <span>
+                {t("tracking.summaryMeta", { detail: trackingDetail })}
+              </span>
             </summary>
             <div className={`space-y-4 ${styles.disclosureBody}`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -897,18 +997,18 @@ export function ChannelDetail({
                     aria-hidden="true"
                   />
                   <div>
-                    <h3 className="text-sm font-semibold">打开与点击追踪</h3>
+                    <h3 className="text-sm font-semibold">
+                      {t("tracking.heading")}
+                    </h3>
                     <p className="hint mt-1 mb-0">
-                      {provider.provider === "aliyun_directmail"
-                        ? "开启后，新邮件将统计打开与点击行为；历史活动数据不受影响。"
-                        : provider.provider === "sendgrid"
-                          ? "开启后，新邮件将通过 SendGrid 统计打开与点击行为；历史活动数据不受影响。"
-                          : "开启后，新邮件将使用 SES Configuration Set 统计打开与点击行为；历史活动数据不受影响。"}
+                      {t(`providers.${provider.provider}.trackingDesc`)}
                     </p>
                   </div>
                 </div>
                 <Badge variant="outline">
-                  {channel.tracking_enabled ? "已开启" : "未开启"}
+                  {channel.tracking_enabled
+                    ? t("detail.trackingEnabledSimple")
+                    : t("detail.trackingDisabled")}
                 </Badge>
               </div>
               {trackingDisabled && (
@@ -924,11 +1024,10 @@ export function ChannelDetail({
                 />
                 <span>
                   <span className="block font-medium">
-                    为未来正式活动开启追踪
+                    {t("tracking.toggleTitle")}
                   </span>
                   <span className="hint m-0 block">
-                    统计邮件打开与链接点击数据。部分客户端（如 Apple
-                    邮件隐私保护）可能影响统计准确度。
+                    {t("tracking.toggleHint")}
                   </span>
                 </span>
               </label>
@@ -963,12 +1062,12 @@ export function ChannelDetail({
                 </div>
               ) : (
                 <p className="hint m-0">
-                  {trackingFieldHelp(provider.provider)}
+                  {t(`providers.${provider.provider}.trackingFieldHelp`)}
                 </p>
               )}
               {trackingFieldName && (
                 <p className="hint m-0">
-                  {trackingFieldHelp(provider.provider)}
+                  {t(`providers.${provider.provider}.trackingFieldHelp`)}
                 </p>
               )}
               {trackingError && (
@@ -1002,14 +1101,16 @@ export function ChannelDetail({
                   }
                   onClick={saveTracking}
                 >
-                  {updatingTracking ? "保存中…" : "保存追踪设置"}
+                  {updatingTracking
+                    ? t("tracking.saving")
+                    : t("tracking.saveButton")}
                 </Button>
                 {trackingEnabled &&
                   ((provider.provider === "aliyun_directmail" &&
                     !trackingTagName.trim()) ||
                     (provider.provider === "amazon_ses" &&
                       !configurationSetName.trim())) && (
-                    <span className="hint">请先填写追踪标签名称</span>
+                    <span className="hint">{t("tracking.missingTagHint")}</span>
                   )}
               </div>
             </div>
@@ -1020,28 +1121,28 @@ export function ChannelDetail({
           <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <p className="hint m-0">
             {channel?.credential_configured
-              ? "访问凭据已加密保存，页面不回显明文。"
-              : "当前通道尚未保存发信凭据。"}
+              ? t("detail.credentialEncrypted")
+              : t("detail.credentialMissing")}
           </p>
         </div>
 
         {!canStoreCredentials && canEdit && (
           <p role="alert" className="field-error">
-            服务器尚未配置凭据加密密钥，发信通道暂时只能查看。
+            {t("detail.keyringReadOnlyAlert")}
           </p>
         )}
-        {!canEdit && (
-          <p className="hint m-0">仅管理员可以连接或修改发信通道。</p>
-        )}
+        {!canEdit && <p className="hint m-0">{t("detail.adminOnlyNotice")}</p>}
 
         <details className={styles.disclosure}>
-          <summary>服务商能力与默认限额</summary>
+          <summary>{t("capabilities.summary")}</summary>
           <div className={styles.disclosureBody}>
-            <p className="mb-2 text-sm font-medium">服务商能力</p>
+            <p className="mb-2 text-sm font-medium">
+              {t("capabilities.heading")}
+            </p>
             <div className="grid gap-2 sm:grid-cols-2">
-              {capabilityRows(provider).map((row) => (
+              {capabilityList.map((row) => (
                 <div
-                  key={row.label}
+                  key={row.key}
                   className="flex items-center justify-between rounded-lg bg-muted px-3 py-2 text-sm"
                 >
                   <span>{row.label}</span>
@@ -1051,7 +1152,7 @@ export function ChannelDetail({
                 </div>
               ))}
             </div>
-            <p className="hint mt-2 mb-0">{providerQuotaHint(provider)}</p>
+            <p className="hint mt-2 mb-0">{quotaHintText}</p>
           </div>
         </details>
         {canEdit && connected && (
@@ -1061,11 +1162,11 @@ export function ChannelDetail({
               disabled={mutationBlocked}
               onClick={disconnect}
             >
-              {disconnecting ? "断开中…" : "断开发信通道"}
+              {disconnecting
+                ? t("detail.disconnecting")
+                : t("detail.disconnect")}
             </Button>
-            <p className={styles.supporting}>
-              断开将删除发信凭据，不会自动停用投递回执。
-            </p>
+            <p className={styles.supporting}>{t("detail.disconnectNote")}</p>
           </div>
         )}
       </CardContent>

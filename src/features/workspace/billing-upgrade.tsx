@@ -2,17 +2,21 @@
 import { Notice } from "@/components/ui/notice";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import type { EdmBilledPlan } from "@/lib/billing/metadata";
 import { Button } from "@/components/ui/button";
 import type { WorkspaceDeliveryPlan } from "./delivery-plan";
 import type { WorkspaceBillingStatus } from "./billing";
-import {
-  billingProviderLabel,
-  deliveryPlanLabel,
-  subscriptionStatusLabel,
-} from "./plan-labels";
+import { billingProviderLabel } from "./plan-labels";
 import { BillingCheckoutDialog } from "./billing-checkout-dialog";
 import { remainingAtUsageNudge } from "@/lib/billing/usage-nudge";
+import {
+  DEFAULT_LOCALE,
+  formatDate,
+  formatNumber,
+  type AppLocale,
+} from "@/i18n/format";
+import { isAppLocale } from "@/i18n/config";
 
 export type EdmCheckoutAvailability = {
   pro: boolean;
@@ -27,17 +31,6 @@ type BillingUpgradeProps = {
   checkoutAvailability?: EdmCheckoutAvailability;
 };
 
-function formatPeriodEnd(iso: string | null) {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 function usagePercent(used: number, max: number) {
   if (max <= 0) return 0;
   return Math.min(100, Math.round((used / max) * 100));
@@ -47,20 +40,22 @@ function PlanUsageMetric({
   label,
   used,
   max,
-  unit = "",
+  locale,
+  valueText,
 }: {
   label: string;
   used: number;
   max: number;
-  unit?: string;
+  locale: AppLocale;
+  valueText?: string;
 }) {
   return (
     <li className="plan-usage-item">
       <div className="plan-usage-item-head">
         <span className="plan-usage-label">{label}</span>
         <span className="plan-usage-value">
-          {used.toLocaleString("zh-CN")} / {max.toLocaleString("zh-CN")}
-          {unit}
+          {valueText ??
+            `${formatNumber(used, locale)} / ${formatNumber(max, locale)}`}
         </span>
       </div>
       <div className="plan-usage-track" aria-hidden>
@@ -73,6 +68,7 @@ function PlanUsageMetric({
   );
 }
 
+/** 设置页展示当前工作区套餐、额度与结账入口。 */
 export function BillingUpgrade({
   workspaceId,
   deliveryPlan,
@@ -80,13 +76,32 @@ export function BillingUpgrade({
   canUpgrade,
   checkoutAvailability = { pro: true, team: true },
 }: BillingUpgradeProps) {
+  const t = useTranslations("billing");
+  const rawLocale = useLocale();
+  const locale: AppLocale = isAppLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
   const [checkoutPlan, setCheckoutPlan] = useState<EdmBilledPlan | null>(null);
-  const label = deliveryPlanLabel(
-    deliveryPlan.plan,
-    deliveryPlan.plan_display_name,
-  );
+
+  const planKey = deliveryPlan.plan;
+  const label =
+    planKey === "free" || planKey === "pro" || planKey === "team"
+      ? t(`plans.${planKey}`)
+      : deliveryPlan.plan_display_name || planKey;
   const providerLabel = billingProviderLabel(billing?.payment_provider ?? null);
-  const periodEnd = formatPeriodEnd(billing?.current_period_end ?? null);
+  const periodEnd = billing?.current_period_end
+    ? formatDate(billing.current_period_end, locale) || null
+    : null;
+  const subStatus = billing?.subscription_status ?? "none";
+  const statusLabel =
+    subStatus === "none" ||
+    subStatus === "inactive" ||
+    subStatus === "active" ||
+    subStatus === "trialing" ||
+    subStatus === "past_due" ||
+    subStatus === "canceled" ||
+    subStatus === "unpaid" ||
+    subStatus === "incomplete"
+      ? t(`subscriptionStatus.${subStatus}`)
+      : subStatus;
 
   const canBuyPro = canUpgrade && deliveryPlan.plan === "free";
   const contactNudge = remainingAtUsageNudge(
@@ -115,99 +130,120 @@ export function BillingUpgrade({
 
   return (
     <div className="rounded-lg border border-border/80 bg-muted/30 px-4 py-3 text-sm">
-      <p className="font-medium text-foreground">当前套餐：{label}</p>
+      <p className="font-medium text-foreground">
+        {t("currentPlan", { plan: label })}
+      </p>
       <ul className="plan-usage-list">
         <PlanUsageMetric
-          label="有效客户"
+          label={t("metrics.contacts")}
           used={deliveryPlan.billable_contacts}
           max={deliveryPlan.max_billable_contacts}
+          locale={locale}
         />
         {deliveryPlan.max_custom_templates !== null ? (
           <PlanUsageMetric
-            label="自定义模板"
+            label={t("metrics.customTemplates")}
             used={deliveryPlan.custom_templates}
             max={deliveryPlan.max_custom_templates}
+            locale={locale}
           />
         ) : (
           <li className="plan-usage-item">
             <div className="plan-usage-item-head">
-              <span className="plan-usage-label">自定义模板</span>
-              <span className="plan-usage-value">不限</span>
+              <span className="plan-usage-label">
+                {t("metrics.customTemplates")}
+              </span>
+              <span className="plan-usage-value">{t("metrics.unlimited")}</span>
             </div>
           </li>
         )}
         {deliveryPlan.max_confirmed_campaigns_per_month !== null && (
           <PlanUsageMetric
-            label="本月已确认活动"
+            label={t("metrics.confirmedCampaigns")}
             used={deliveryPlan.confirmed_campaigns_this_month}
             max={deliveryPlan.max_confirmed_campaigns_per_month}
+            locale={locale}
           />
         )}
         <li className="plan-usage-item">
           <div className="plan-usage-item-head">
-            <span className="plan-usage-label">单活动收件人上限</span>
+            <span className="plan-usage-label">
+              {t("metrics.maxRecipients")}
+            </span>
             <span className="plan-usage-value">
-              {deliveryPlan.max_recipients_per_campaign.toLocaleString("zh-CN")}{" "}
-              人
+              {t("metrics.recipientsValue", {
+                count: formatNumber(
+                  deliveryPlan.max_recipients_per_campaign,
+                  locale,
+                ),
+              })}
             </span>
           </div>
         </li>
         {deliveryPlan.allows_team_collaboration ? (
           <PlanUsageMetric
-            label="团队席位"
+            label={t("metrics.teamSeats")}
             used={deliveryPlan.active_members}
             max={deliveryPlan.max_active_members}
+            locale={locale}
           />
         ) : (
           <li className="plan-usage-item">
             <div className="plan-usage-item-head">
-              <span className="plan-usage-label">协作</span>
-              <span className="plan-usage-value">个人版单人使用</span>
+              <span className="plan-usage-label">
+                {t("metrics.collaboration")}
+              </span>
+              <span className="plan-usage-value">
+                {t("metrics.personalOnly")}
+              </span>
             </div>
           </li>
         )}
         <PlanUsageMetric
-          label="今日发信"
+          label={t("metrics.dailySends")}
           used={deliveryPlan.usage_today}
           max={deliveryPlan.daily_send_quota}
-          unit=" 封"
+          locale={locale}
+          valueText={t("metrics.dailySendsValue", {
+            used: formatNumber(deliveryPlan.usage_today, locale),
+            max: formatNumber(deliveryPlan.daily_send_quota, locale),
+          })}
         />
       </ul>
       <p className="plan-meta mb-0">
-        每日发信额度在北京时间 00:00 重置。
-        {!deliveryPlan.allows_team_collaboration &&
-          " 如需多人协作请升级团队版。"}
+        {t("quotaResetNote")}
+        {!deliveryPlan.allows_team_collaboration && t("teamUpgradeHint")}
       </p>
       {billing?.has_payment_provider && (
         <p className="plan-meta mb-0">
-          订阅：{providerLabel ?? "—"} ·{" "}
-          {subscriptionStatusLabel(billing.subscription_status)}
-          {periodEnd ? ` · 当前周期至 ${periodEnd}` : ""}
-          {billing.cancel_at_period_end ? " · 已设置到期不续费" : ""}
+          {t("subscriptionSummary", {
+            provider: providerLabel ?? "—",
+            status: statusLabel,
+          })}
+          {periodEnd ? t("periodEnd", { date: periodEnd }) : ""}
+          {billing.cancel_at_period_end ? t("cancelAtPeriodEnd") : ""}
         </p>
       )}
       {billing?.cancel_at_period_end && (
-        <p className="plan-meta mb-0">
-          当前周期到期前仍可正常使用。到期后将转为免费版，已有客户和成员均会保留。
-        </p>
+        <p className="plan-meta mb-0">{t("cancelScheduledNote")}</p>
       )}
       {contactNudge !== null && (
         <Notice tone="warning" className="mt-3">
-          有效客户还剩 {contactNudge} 个名额。用满后不能再新增，已有客户会保留。
+          {t("nudges.contactsRemaining", { count: contactNudge })}
         </Notice>
       )}
       {seatNudge !== null && (
         <Notice tone="warning" className="mt-3">
-          团队席位还剩 {seatNudge} 个。席位加购尚未开放。
+          {t("nudges.seatsRemaining", { count: seatNudge })}
         </Notice>
       )}
       {memberCapLocked && (
         <Notice tone="warning" className="mt-3">
-          当前成员数已超出套餐席位。成员仍会保留，但运营人员的操作权限已暂停。管理员可移除多余成员或升级套餐以恢复。
+          {t("nudges.memberCapLocked")}
         </Notice>
       )}
       {deliveryPlan.plan === "free" && !canUpgrade && (
-        <p className="hint mt-2 mb-0">仅管理员可为工作区升级套餐。</p>
+        <p className="hint mt-2 mb-0">{t("adminOnlyUpgrade")}</p>
       )}
       {(canBuyPro || canBuyTeam) && (
         <div className="mt-3 flex flex-wrap gap-2">
@@ -218,7 +254,7 @@ export function BillingUpgrade({
               variant="default"
               onClick={() => setCheckoutPlan("pro")}
             >
-              升级专业版
+              {t("upgradePro")}
             </Button>
           )}
           {canBuyTeam && (
@@ -228,14 +264,14 @@ export function BillingUpgrade({
               variant={canBuyPro ? "outline" : "default"}
               onClick={() => setCheckoutPlan("team")}
             >
-              {deliveryPlan.plan === "pro" ? "升级团队版" : "购买团队版"}
+              {deliveryPlan.plan === "pro" ? t("upgradeTeam") : t("buyTeam")}
             </Button>
           )}
           {canUpgrade &&
             (deliveryPlan.plan === "free" || deliveryPlan.plan === "pro") &&
             !teamSkuReady && (
               <p className="hint mb-0 w-full text-left">
-                团队版在线支付暂未开放，如需开通请联系客服或管理员。
+                {t("teamSkuUnavailable")}
               </p>
             )}
         </div>
@@ -254,9 +290,7 @@ export function BillingUpgrade({
         />
       )}
       {deliveryPlan.plan !== "free" && !canBuyPro && !canBuyTeam && (
-        <p className="hint mt-2 mb-0">
-          如需调整续费、更改支付方式或申请退款，请直接点击付款收据邮件中的「管理订阅」链接；额度以当前工作区套餐为准。
-        </p>
+        <p className="hint mt-2 mb-0">{t("manageSubscriptionHint")}</p>
       )}
       {canCancelRenewal && (
         <form
@@ -264,25 +298,19 @@ export function BillingUpgrade({
           action="/api/billing/cancel"
           method="post"
           onSubmit={(event) => {
-            if (
-              !window.confirm(
-                "确认取消自动续费？当前周期到期前仍可正常使用，到期后自动降为免费版，数据不会丢失。",
-              )
-            ) {
+            if (!window.confirm(t("cancelRenewalConfirm"))) {
               event.preventDefault();
             }
           }}
         >
           <input type="hidden" name="workspace_id" value={workspaceId} />
           <Button type="submit" size="sm" variant="outline">
-            取消续费
+            {t("cancelRenewalButton")}
           </Button>
         </form>
       )}
       {deliveryPlan.plan === "pro" && canBuyTeam && (
-        <p className="hint mt-2 mb-0">
-          已订阅专业版时，可在支付平台管理原订阅；购买团队版后请取消专业版以免重复扣费。
-        </p>
+        <p className="hint mt-2 mb-0">{t("proToTeamHint")}</p>
       )}
     </div>
   );

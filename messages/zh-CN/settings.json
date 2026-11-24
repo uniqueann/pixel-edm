@@ -1,0 +1,57 @@
+{
+  "pageTitle": "邮局设置",
+  "workspaceBadge": "工作区",
+  "sectionNav": {
+    "ariaLabel": "设置分区",
+    "store": "店铺信息",
+    "channels": "发信通道",
+    "billing": "套餐",
+    "appearance": "外观"
+  },
+  "store": {
+    "title": "店铺信息",
+    "description": "用于邮件页脚落款与发件人默认信息。",
+    "nameLabel": "店铺 / 工作区名称",
+    "addressLabel": "邮件页脚实体地址",
+    "addressPlaceholder": "例：上海市徐汇区漕溪北路 88 号 12 楼，中国",
+    "addressHelp": "会显示在每一封营销邮件的页脚。请填写收件人可以寄信的真实地址（街道、门牌号、城市、国家），可用中文或英文，如 “88 Caoxi North Rd, Xuhui, Shanghai, China”。不要填写邮箱、电话或“联系方式”这类占位文字。",
+    "savedAddressInvalid": "当前保存的页脚地址无法通过校验：{problem}。修正前，营销邮件页脚仍会原样显示这段文字。",
+    "contactAdminToFix": "请联系工作区管理员修正。",
+    "footerPreviewTitle": "页脚预览",
+    "footerPreviewStorePlaceholder": "（店铺 / 工作区名称）",
+    "footerPreviewAddressPlaceholder": "（未填写）",
+    "footerPreviewUnsubscribe": "（发送时自动生成退订链接）",
+    "saveButton": "保存设置",
+    "saving": "保存中…",
+    "savedToast": "工作区已保存",
+    "saveFailed": "保存失败，输入已保留，请重试。",
+    "adminOnlyHint": "仅管理员可以修改工作区设置。",
+    "whyAddressTrigger": "为什么需要实体地址？",
+    "whyAddressTitle": "为什么需要邮件页脚实体地址？",
+    "whyAddressDescription": "根据国际反垃圾邮件法规（如 CAN-SPAM），营销邮件页脚必须包含有效的实体邮寄地址。这里填写的地址会原样附在每一封营销邮件末尾，可以是办公地址、店铺地址或邮政信箱，不能用邮箱、电话或占位文字代替。"
+  },
+  "profile": {
+    "title": "我的署名",
+    "description": "用于邮件落款，仅影响你本人。",
+    "defaultWarning": "你还在使用系统默认称呼“店主”。收到邮件的海外客户会在落款处看到它，请先填写真实署名。",
+    "label": "我的对外署名（'{{sender_name}}'）",
+    "placeholder": "例：Anna Chen 或 Canvas Studio Team",
+    "help": "会作为邮件落款（模板里的 '{{sender_name}}'）出现在发给客户的邮件中，也会显示在团队成员列表和操作记录里。建议填写客户能认出的姓名或品牌名，面向海外客户时可用英文。只影响之后新建或重新编辑的活动，已保存的活动内容不会被改动。",
+    "saveButton": "保存署名",
+    "saving": "保存中…",
+    "savedToast": "对外署名已保存",
+    "saveFailed": "保存失败，输入已保留，请重试。"
+  },
+  "channels": {
+    "title": "发信通道",
+    "descriptionPrefix": "为工作区配置发信服务商与主通道，保存后可发送测试邮件验证连通性。首次开通请参考",
+    "directmailGuide": "DirectMail 图文教程",
+    "descriptionSuffix": "。"
+  },
+  "appearance": {
+    "title": "界面外观",
+    "description": "选择适合你的视觉风格，支持浅色、深色或随系统自动切换。",
+    "languageTitle": "界面语言",
+    "languageDescription": "切换当前账号的界面显示语言，不会改动已有邮件内容与客户资料。"
+  }
+}

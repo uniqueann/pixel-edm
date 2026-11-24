@@ -23,6 +23,7 @@ try {
     .join(";\n");
   const functions = [
     "initialize_member: { Args: Record<string,never>; Returns: string }",
+    "set_member_locale: { Args: {payload:Json}; Returns:Json }",
     "save_contact: { Args: {payload:Json}; Returns:string }",
     "archive_contact: { Args: {payload:Json}; Returns:string }",
     "list_contacts: { Args: {payload:Json}; Returns:Json }",

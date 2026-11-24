@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { serverClient } from "@/lib/supabase/server";
 import { isConfigured } from "@/lib/supabase/config";
+import { getCachedAuthMember } from "@/i18n/locale";
 export const workspaceCookie = "pixel-edm-workspace";
 
 /** 与 getContext 一致：cookie → 个人 bootstrap → 列表首项。 */
@@ -21,20 +22,13 @@ export async function resolveWorkspaceId(
 
 export const getContext = cache(async () => {
   if (!isConfigured()) redirect("/setup");
-  const db = await serverClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await db.auth.getUser();
+  const { user, member, authError, memberError } = await getCachedAuthMember();
   if (authError || !user) redirect("/login");
-  const { data: member, error } = await db
-    .from("members")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (error) throw new Error("暂时无法加载邮局，请重试或检查数据库连接。");
+  if (memberError)
+    throw new Error("暂时无法加载邮局，请重试或检查数据库连接。");
   if (member?.status === "disabled") redirect("/disabled");
   if (!member) redirect("/onboarding");
+  const db = await serverClient();
   const [
     { data: workspaces, error: wsError },
     { data: memberships, error: msError },

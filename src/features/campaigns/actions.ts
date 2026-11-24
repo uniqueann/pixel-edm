@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/workspace";
 import { serverClient } from "@/lib/supabase/server";
+import { resolveValidationMessage } from "@/lib/validation-messages";
 import {
   campaignInput,
   type CampaignConfirmation,
@@ -216,7 +217,13 @@ export async function saveCampaign(input: unknown) {
     return { success: true, id: data };
   } catch (error) {
     if (error instanceof z.ZodError)
-      return { error: error.issues[0]?.message ?? "活动内容无效。" };
+      return {
+        error: resolveValidationMessage(
+          error.issues[0]?.message,
+          undefined,
+          "活动内容无效。",
+        ),
+      };
     return actionError(error);
   }
 }

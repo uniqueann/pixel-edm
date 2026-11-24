@@ -1,0 +1,128 @@
+{
+  "title": "Overview",
+  "description": "Manage contacts, design templates, and send marketing campaigns reliably.",
+  "createTemplate": "Create template",
+  "createCampaign": "Create campaign",
+  "stats": {
+    "contacts": "Contacts",
+    "templates": "Templates",
+    "members": "Members",
+    "openRate": "30-day open rate"
+  },
+  "summaryPrefix": "Contact and template counts exclude archived records, including ",
+  "subscribedCount": "{count, plural, one {# subscribed contact} other {# subscribed contacts}}",
+  "subscribedUnknown": "an unverified number of subscribed contacts",
+  "summaryMiddle": ". Campaign audiences always exclude unsubscribed and suppressed addresses.",
+  "openRateFormula": "Open rate is weighted by delivered recipients across tracked campaigns in the last 30 days ({opened} / {delivered}, across {tracked, plural, one {# campaign} other {# campaigns}}).",
+  "planUnavailable": "Plan and analytics permissions are temporarily unavailable. Please retry.",
+  "statsUnavailable": "Campaign statistics are temporarily unavailable. Please retry.",
+  "statsPaidOnly": "Open and click analytics require the Pro or Team plan.",
+  "recentCampaigns": {
+    "title": "Recent campaigns",
+    "viewAll": "View all campaigns",
+    "recipients": "{count, plural, one {# recipient} other {# recipients}}",
+    "unavailable": "Recent campaigns could not be loaded. Please retry.",
+    "emptyNeedTemplate": "No campaigns yet. Prepare a template first.",
+    "emptyCanWrite": "No campaigns yet. Your first draft will appear here.",
+    "emptyReadOnly": "No campaigns yet. Campaigns created by an admin or editor will appear here."
+  },
+  "campaignStatus": {
+    "draft": "Draft",
+    "confirmed": "Confirmed",
+    "queued": "Queued",
+    "sending": "Sending",
+    "paused": "Paused",
+    "needs_review": "Needs review",
+    "completed": "Completed",
+    "completed_with_errors": "Partially failed",
+    "failed": "Failed"
+  },
+  "recentActivity": {
+    "title": "Recent activity",
+    "viewAll": "View all activity logs",
+    "unavailable": "Recent activity could not be loaded. Other tasks remain available.",
+    "emptyTitle": "No activity logs yet",
+    "emptyDescription": "Actions on contacts, imports, templates, and campaigns will appear here.",
+    "planCheckTitle": "Plan status pending",
+    "planCheckDescription": "Retry to confirm activity log permissions.",
+    "noLogsTitle": "Activity logs not included in this plan",
+    "noLogsDescription": "Upgrade your plan to view audit logs on the overview and logs pages.",
+    "adminOnlyTitle": "Activity visible to admins only",
+    "adminOnlyDescription": "Admins can view workspace audit logs on the overview and logs pages.",
+    "viewPlan": "View plan details"
+  },
+  "channelSelectPrimary": "Channels exist. Select and verify a primary sending channel.",
+  "preparation": {
+    "headingExisting": "Workspace checklist",
+    "headingFirst": "Prepare your first campaign",
+    "rechecking": "Rechecking readiness…",
+    "summaryUnknown": "{completed}/4 foundation steps complete; some details need verification",
+    "summaryDone": "4/4 foundation steps complete",
+    "summaryProgress": "{completed}/4 foundation steps complete",
+    "collapse": "Hide checklist",
+    "expand": "Show checklist",
+    "partialError": "Some overview data could not be loaded and is marked pending. You can keep using other features.",
+    "retrying": "Checking…",
+    "retry": "Retry",
+    "recommendedPrefix": "Recommended: {action}",
+    "recUnknownTitle": "Verify current readiness first",
+    "recViewerTitle": "Track progress with your team",
+    "recHasCampaignsTitle": "Campaign created—review content & audience",
+    "recReadyTitle": "Foundation ready—create your first campaign",
+    "recRoleStartTitle": "Start with tasks available for your role",
+    "recUnknownDetail": "Unverified items are not counted as complete. Retry to refresh with the latest data.",
+    "recViewerDetail": "You can view contacts, templates, and campaigns. Ask an admin or editor for changes.",
+    "recReadyDetail": "Next, preview emails and confirm your audience on the campaigns page. Passing setup does not guarantee every campaign is sendable.",
+    "recRoleStartDetail": "Admins manage store details and sending channels. You can still review content or prepare drafts based on your permissions.",
+    "goReviewCampaigns": "Review campaigns",
+    "goCreateCampaign": "Create campaign",
+    "viewCampaigns": "View campaigns",
+    "createdNote": "Campaign created—continue reviewing content and audience.",
+    "draftFirst": "Or start a campaign draft first",
+    "onboardingHelp": "Getting started guide",
+    "safetyNote": "Complete steps in any order. Formal sending always requires admin confirmation; confirming an audience locks a snapshot without sending immediately.",
+    "tasksAriaLabel": "Foundation setup tasks",
+    "statusDone": "Done",
+    "statusUnknown": "Pending check",
+    "statusTodo": "To do",
+    "signatureRecommend": "Recommended: Set your sign-off name",
+    "signatureHint": "Used in email sign-offs; not required for foundation setup.",
+    "restrictions": {
+      "viewer": "As a viewer, please ask an admin or editor to complete this step.",
+      "unknown": "Permissions are pending check. Retry loading plan info.",
+      "seatExceeded": "Workspace exceeds plan seat limit. Editor actions are paused until an admin resolves this.",
+      "storeAdminOnly": "Store details are managed by admins. Ask an admin to complete this.",
+      "channelAdminOnly": "Credentials and test sends require an admin. Ask an admin to verify the primary channel."
+    },
+    "items": {
+      "store": {
+        "title": "Add physical footer address",
+        "done": "Footer mailing address saved and ready for outgoing emails.",
+        "todo": "Enter a real street address so recipients can recognize and reach your store.",
+        "action": "Set store details"
+      },
+      "channels": {
+        "title": "Connect & verify sending channel",
+        "unknown": "Primary channel could not be loaded and needs verification.",
+        "action": "Configure primary channel"
+      },
+      "contacts": {
+        "title": "Prepare subscribed contacts",
+        "unknown": "Contacts and subscription statuses could not be loaded. Retry to check.",
+        "done": "{count, plural, one {# active subscribed contact} other {# active subscribed contacts}} ready; unsubscribed and suppressed addresses are always excluded.",
+        "activeOnly": "{count, plural, one {# contact exists} other {# contacts exist}}, but none are subscribed. Verify consent—adding a contact does not subscribe them.",
+        "empty": "Import or add contacts with documented consent. Only eligible contacts enter campaign audiences.",
+        "actionCheck": "Review subscriptions",
+        "actionImport": "Import first contacts"
+      },
+      "templates": {
+        "title": "Prepare an email template",
+        "unknown": "Templates could not be loaded and need verification.",
+        "done": "{count, plural, one {# active template} other {# active templates}} ready. Start from a preset and verify variables for each campaign.",
+        "empty": "Create a template or restore an archived one to use in campaign drafts.",
+        "actionView": "View & edit templates",
+        "actionCreate": "Create first template"
+      }
+    }
+  }
+}

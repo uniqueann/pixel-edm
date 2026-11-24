@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
 /** 编辑类弹窗：关闭与主动离开共用未保存确认，遮罩不触发关闭。 */
@@ -8,7 +9,7 @@ export function useUnsavedEditDialog({
   dirty,
   onClose,
   busy = false,
-  cancelLabel = "取消",
+  cancelLabel,
   onReturnFocus,
   confirmClassName,
 }: {
@@ -19,6 +20,7 @@ export function useUnsavedEditDialog({
   onReturnFocus?: () => void;
   confirmClassName?: string;
 }) {
+  const t = useTranslations("common");
   const [discardOpen, setDiscardOpen] = useState(false);
   const [pendingLeave, setPendingLeave] = useState<{ run: () => void } | null>(
     null,
@@ -65,6 +67,8 @@ export function useUnsavedEditDialog({
     },
   };
 
+  const resolvedCancelLabel = cancelLabel ?? t("actions.cancel");
+
   const discardConfirm = (
     <ConfirmDialog
       open={discardOpen}
@@ -72,14 +76,24 @@ export function useUnsavedEditDialog({
         setDiscardOpen(open);
         if (!open) setPendingLeave(null);
       }}
-      title={pendingLeave ? "离开并放弃未保存的更改？" : "放弃未保存的更改？"}
+      title={
+        pendingLeave
+          ? t("unsavedDialog.leaveTitle")
+          : t("unsavedDialog.closeTitle")
+      }
       description={
         pendingLeave
-          ? "离开后，当前编辑内容将不会保存。可以继续编辑并先保存。"
-          : "关闭后，当前编辑内容将不会保存。"
+          ? t("unsavedDialog.leaveDescription")
+          : t("unsavedDialog.closeDescription")
       }
-      confirmLabel={pendingLeave ? "放弃并离开" : "放弃更改"}
-      cancelLabel={pendingLeave ? "继续编辑" : cancelLabel}
+      confirmLabel={
+        pendingLeave
+          ? t("unsavedDialog.leaveConfirm")
+          : t("unsavedDialog.closeConfirm")
+      }
+      cancelLabel={
+        pendingLeave ? t("unsavedDialog.continueEditing") : resolvedCancelLabel
+      }
       variant="destructive"
       onReturnFocus={onReturnFocus}
       contentClassName={confirmClassName}

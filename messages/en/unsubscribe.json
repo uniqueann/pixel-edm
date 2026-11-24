@@ -1,0 +1,35 @@
+{
+  "metaTitle": "Unsubscribe",
+  "switcher": {
+    "ariaLabel": "Switch unsubscribe page language",
+    "zh": "中文",
+    "en": "English"
+  },
+  "invalid": {
+    "title": "Invalid link",
+    "body": "This unsubscribe link is invalid or has been disabled. Please contact the sender directly."
+  },
+  "unavailable": {
+    "title": "Temporarily unavailable",
+    "body": "The service is temporarily unavailable. Please try again later."
+  },
+  "alreadySuppressed": {
+    "title": "Already unsubscribed",
+    "body": "{email} is already unsubscribed from marketing emails from {workspace}."
+  },
+  "confirm": {
+    "title": "Unsubscribe from marketing emails?",
+    "body": "Unsubscribe {email} from future marketing emails from {workspace}?",
+    "submit": "Unsubscribe",
+    "submitting": "Processing…"
+  },
+  "completed": {
+    "title": "Unsubscribed",
+    "body": "{email} has been unsubscribed from future marketing emails from {workspace}."
+  },
+  "errors": {
+    "invalid": "This unsubscribe link is invalid.",
+    "unavailable": "Temporarily unavailable. Please try again later."
+  },
+  "footer": "Pixel EDM · Respecting every customer relationship"
+}

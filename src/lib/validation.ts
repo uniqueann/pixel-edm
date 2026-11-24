@@ -1,22 +1,25 @@
 import { z } from "zod";
-import { mailingAddressProblem } from "./mailing-address";
+import { mailingAddressProblemCode } from "./mailing-address";
 export const workspaceSettings = z.object({
   name: z
     .string()
     .trim()
-    .min(1, "请填写工作区名称")
-    .max(80, "名称不能超过 80 字"),
+    .min(1, "validation.workspaceNameRequired")
+    .max(80, "validation.workspaceNameTooLong"),
   mailing_address: z
     .string()
     .trim()
-    .max(500, "地址不能超过 500 字")
+    .max(500, "validation.mailingAddressTooLong")
     .superRefine((value, ctx) => {
-      const problem = mailingAddressProblem(value);
-      if (problem)
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem });
+      const problemCode = mailingAddressProblemCode(value);
+      if (problemCode)
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: problemCode });
     }),
 });
 export const credentials = z.object({
-  email: z.string().email("请输入有效邮箱"),
-  password: z.string().min(8, "密码至少 8 位").max(128, "密码过长"),
+  email: z.string().email("validation.emailInvalid"),
+  password: z
+    .string()
+    .min(8, "validation.passwordTooShort")
+    .max(128, "validation.passwordTooLong"),
 });

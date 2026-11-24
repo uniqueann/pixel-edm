@@ -976,6 +976,8 @@ export type Database = {
           display_name: string;
           created_at: string;
           updated_at: string;
+          locale: string | null;
+          display_name_customized: boolean;
         };
         Insert: {
           user_id: string;
@@ -983,6 +985,8 @@ export type Database = {
           display_name?: string;
           created_at?: string;
           updated_at?: string;
+          locale?: string | null;
+          display_name_customized?: boolean;
         };
         Update: {
           user_id?: string;
@@ -990,6 +994,8 @@ export type Database = {
           display_name?: string;
           created_at?: string;
           updated_at?: string;
+          locale?: string | null;
+          display_name_customized?: boolean;
         };
         Relationships: [];
       };
@@ -1273,6 +1279,7 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       initialize_member: { Args: Record<string, never>; Returns: string };
+      set_member_locale: { Args: { payload: Json }; Returns: Json };
       save_contact: { Args: { payload: Json }; Returns: string };
       archive_contact: { Args: { payload: Json }; Returns: string };
       list_contacts: { Args: { payload: Json }; Returns: Json };

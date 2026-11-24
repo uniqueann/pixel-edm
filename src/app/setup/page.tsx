@@ -1,15 +1,21 @@
+import { getTranslations } from "next-intl/server";
 import { Brand } from "@/components/brand";
-export default function Setup() {
+import { LocaleToggle } from "@/components/locale-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
+
+export default async function Setup() {
+  const t = await getTranslations("auth.setup");
   return (
-    <main className="auth-wrap">
+    <main className="auth-wrap relative">
+      <div className="absolute top-4 right-4 flex items-center gap-1">
+        <LocaleToggle />
+        <ThemeToggle />
+      </div>
       <Brand />
       <section className="auth-card">
-        <h1>连接你的邮局</h1>
-        <p className="hint">
-          应用已就绪。请在本地环境中配置 Supabase
-          项目地址、公开密钥和本站地址，再重新启动。
-        </p>
-        <p>配置字段见仓库的 .env.example。</p>
+        <h1>{t("title")}</h1>
+        <p className="hint">{t("description")}</p>
+        <p>{t("envHint")}</p>
       </section>
     </main>
   );

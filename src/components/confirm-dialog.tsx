@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +18,8 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "确认",
-  cancelLabel = "取消",
+  confirmLabel,
+  cancelLabel,
   variant = "default",
   loading = false,
   onConfirm,
@@ -38,6 +39,7 @@ export function ConfirmDialog({
   onReturnFocus?: () => void;
   contentClassName?: string;
 }) {
+  const t = useTranslations("common.actions");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -69,7 +71,7 @@ export function ConfirmDialog({
             disabled={loading}
             onClick={() => onOpenChange(false)}
           >
-            {cancelLabel}
+            {cancelLabel ?? t("cancel")}
           </Button>
           <Button
             type="button"
@@ -80,7 +82,7 @@ export function ConfirmDialog({
               onOpenChange(false);
             }}
           >
-            {loading ? "处理中…" : confirmLabel}
+            {loading ? t("processing") : (confirmLabel ?? t("confirm"))}
           </Button>
         </DialogFooter>
       </DialogContent>

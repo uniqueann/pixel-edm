@@ -1,0 +1,128 @@
+{
+  "title": "总览",
+  "description": "管理客户、设计模板并高效发送营销邮件。",
+  "createTemplate": "创建模板",
+  "createCampaign": "创建活动",
+  "stats": {
+    "contacts": "客户数",
+    "templates": "模板数",
+    "members": "工作区成员",
+    "openRate": "近 30 天打开率"
+  },
+  "summaryPrefix": "客户数与模板数仅包含未归档记录；其中未归档的已订阅客户 ",
+  "subscribedCount": "{count} 位",
+  "subscribedUnknown": "数量待核对",
+  "summaryMiddle": "。活动名单仍会排除退订与防打扰地址。",
+  "openRateFormula": "打开率按近 30 天启用追踪活动的已送达收件人加权计算（{opened} / {delivered}，共 {tracked} 个活动）。",
+  "planUnavailable": "套餐与统计权限暂时无法读取，请重试核对。",
+  "statsUnavailable": "活动统计暂时无法读取，请重试核对。",
+  "statsPaidOnly": "打开/点击统计需专业版或团队版。",
+  "recentCampaigns": {
+    "title": "最近活动",
+    "viewAll": "查看全部发信活动",
+    "recipients": "{count} 位收件人",
+    "unavailable": "最近活动暂时无法读取，请重试核对。",
+    "emptyNeedTemplate": "还没有活动，先准备一套可用模板。",
+    "emptyCanWrite": "还没有活动，创建第一份草稿后会显示在这里。",
+    "emptyReadOnly": "还没有活动，管理员或运营创建后会显示在这里。"
+  },
+  "campaignStatus": {
+    "draft": "草稿",
+    "confirmed": "已确认",
+    "queued": "排队中",
+    "sending": "发送中",
+    "paused": "已暂停",
+    "needs_review": "待核对",
+    "completed": "已完成",
+    "completed_with_errors": "部分失败",
+    "failed": "失败"
+  },
+  "recentActivity": {
+    "title": "最近动态",
+    "viewAll": "查看全部操作记录",
+    "unavailable": "最近动态暂时无法读取，其他准备操作仍可继续。",
+    "emptyTitle": "还没有操作记录",
+    "emptyDescription": "完成客户、导入、模板或活动操作后，记录会出现在这里。",
+    "planCheckTitle": "套餐信息待核对",
+    "planCheckDescription": "请重试读取，暂时无法确认日志权限。",
+    "noLogsTitle": "当前套餐不含操作日志",
+    "noLogsDescription": "升级套餐后可在总览和日志页查看业务审计。",
+    "adminOnlyTitle": "动态仅管理员可见",
+    "adminOnlyDescription": "管理员可以在总览和日志页查看业务审计。",
+    "viewPlan": "查看套餐详情"
+  },
+  "channelSelectPrimary": "已有通道，请选择并验证主发信通道。",
+  "preparation": {
+    "headingExisting": "工作区准备清单",
+    "headingFirst": "准备你的第一场活动",
+    "rechecking": "正在重新核对准备信息…",
+    "summaryUnknown": "{completed}/4 项基础准备已完成，部分信息待核对",
+    "summaryDone": "4/4 项基础准备已完成",
+    "summaryProgress": "{completed}/4 项基础准备已完成",
+    "collapse": "收起清单",
+    "expand": "查看准备清单",
+    "partialError": "部分总览信息暂时无法读取，保留为待核对。你可以继续浏览现有功能。",
+    "retrying": "正在核对…",
+    "retry": "重试读取",
+    "recommendedPrefix": "建议先{action}",
+    "recUnknownTitle": "先核对当前准备情况",
+    "recViewerTitle": "查看进度，与团队一起准备",
+    "recHasCampaignsTitle": "活动已创建，继续核对内容与名单",
+    "recReadyTitle": "基础准备已齐，创建第一场活动",
+    "recRoleStartTitle": "从你有权限的任务开始",
+    "recUnknownDetail": "无法确认的项目不会计为完成。重试后会按最新数据更新清单。",
+    "recViewerDetail": "你可以查看客户、模板和活动；需要修改时，请联系管理员或运营。",
+    "recReadyDetail": "接下来到活动页预览邮件并确认名单。基础准备完成不代表某场活动必然可发送。",
+    "recRoleStartDetail": "店铺信息和发信通道由管理员处理。你仍可查看内容，或按已有权限准备草稿。",
+    "goReviewCampaigns": "前往活动核对",
+    "goCreateCampaign": "前往创建活动",
+    "viewCampaigns": "查看发信活动",
+    "createdNote": "活动已创建，可继续核对内容与名单。",
+    "draftFirst": "也可以先创建活动草稿",
+    "onboardingHelp": "首次使用说明",
+    "safetyNote": "顺序可自由调整；正式发送仍需管理员确认。确认名单会锁定快照，不会立即正式发送。",
+    "tasksAriaLabel": "基础准备项目",
+    "statusDone": "已完成",
+    "statusUnknown": "待核对",
+    "statusTodo": "待完成",
+    "signatureRecommend": "建议：完善我的署名",
+    "signatureHint": "用于邮件落款，不计入基础准备。",
+    "restrictions": {
+      "viewer": "当前为查看者，请联系管理员或运营完成此项。",
+      "unknown": "操作权限待核对，请重试读取套餐信息。",
+      "seatExceeded": "工作区席位超出套餐，运营操作已暂停，请联系管理员处理。",
+      "storeAdminOnly": "店铺信息由管理员统一维护，请联系管理员补充。",
+      "channelAdminOnly": "密钥和测试邮件仅管理员可操作，请联系管理员验证主通道。"
+    },
+    "items": {
+      "store": {
+        "title": "补充邮件页脚实体地址",
+        "done": "已保存页脚联系地址，正式邮件会展示此地址。",
+        "todo": "填写真实的街道门牌地址，方便收件人识别并联系你的店铺。",
+        "action": "填写店铺信息"
+      },
+      "channels": {
+        "title": "连接并验证发信通道",
+        "unknown": "暂时无法读取主通道，当前配置待核对。",
+        "action": "配置主发信通道"
+      },
+      "contacts": {
+        "title": "准备已订阅客户",
+        "unknown": "暂时无法读取客户与订阅状态，请重试核对。",
+        "done": "已有 {count} 位未归档的已订阅客户；活动仍会排除退订与防打扰地址。",
+        "activeOnly": "已有 {count} 位客户，但没有已订阅客户。请核对授权，添加客户不等于订阅。",
+        "empty": "导入或添加获得订阅同意的客户；只有符合活动条件的客户才会进入名单。",
+        "actionCheck": "核对客户订阅",
+        "actionImport": "导入第一批客户"
+      },
+      "templates": {
+        "title": "准备可用模板",
+        "unknown": "暂时无法读取模板，当前可用数量待核对。",
+        "done": "已有 {count} 套未归档模板，可从预置模板开始。请按本次活动核对内容与变量。",
+        "empty": "创建模板或恢复已归档模板，保存后可用于活动草稿。",
+        "actionView": "查看与编辑模板",
+        "actionCreate": "准备第一套模板"
+      }
+    }
+  }
+}

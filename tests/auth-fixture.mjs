@@ -878,6 +878,7 @@ const server = createServer(async (req, res) => {
         "list_campaign_delivery_tasks",
         "resolve_delivery_unknown",
         "list_workspace_team",
+        "set_member_locale",
       ].includes(rpc)
     ) {
       const sql = noPayloadRpcs.has(rpc)

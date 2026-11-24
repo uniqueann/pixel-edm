@@ -52,6 +52,13 @@ const sesConfigSetPattern = /^[A-Za-z0-9_-]+$/;
 const snsTopicArnPattern =
   /^arn:(aws|aws-cn|aws-us-gov):sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]+$/;
 
+function encodeIssue(code: string, params?: Record<string, string | number>) {
+  if (!params) return code;
+  const search = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) search.set(k, String(v));
+  return `${code}?${search.toString()}`;
+}
+
 export function createDeliveryChannelInput(options: {
   provider: DeliveryProviderName;
   senderAliasMaxLength: number;
@@ -63,21 +70,23 @@ export function createDeliveryChannelInput(options: {
       provider: z.enum(["aliyun_directmail", "amazon_ses", "sendgrid"]),
       id: z.string().uuid().optional(),
       expected_version: z.number().int().positive().optional(),
-      region: z.string().trim().min(1, "请输入区域"),
+      region: z.string().trim().min(1, "validation.channelRegionRequired"),
       sender_domain: z.string().trim().toLowerCase().max(253),
       sender_address: z
         .string()
         .trim()
         .toLowerCase()
-        .email("发件地址格式无效")
+        .email("validation.channelSenderAddressInvalid")
         .max(254),
       sender_alias: z
         .string()
         .trim()
-        .min(1, "请输入发件人名称")
+        .min(1, "validation.channelSenderAliasRequired")
         .max(
           options.senderAliasMaxLength,
-          `发件人名称最多 ${options.senderAliasMaxLength} 个字符`,
+          encodeIssue("validation.channelSenderAliasTooLong", {
+            max: options.senderAliasMaxLength,
+          }),
         ),
       reply_to_address: z
         .string()
@@ -86,7 +95,7 @@ export function createDeliveryChannelInput(options: {
         .max(254)
         .refine(
           (value) => !value || z.string().email().safeParse(value).success,
-          { message: "回复地址格式无效" },
+          { message: "validation.channelReplyToInvalid" },
         ),
       sns_topic_arn: z.string().trim().max(2048).optional(),
       event_webhook_public_key: z.string().trim().max(8192).optional(),
@@ -98,7 +107,7 @@ export function createDeliveryChannelInput(options: {
         context.addIssue({
           code: "custom",
           path: ["expected_version"],
-          message: "缺少通道版本，请重新加载后重试",
+          message: "validation.channelVersionRequired",
         });
       }
       if (options.provider === "aliyun_directmail") {
@@ -106,7 +115,7 @@ export function createDeliveryChannelInput(options: {
           context.addIssue({
             code: "custom",
             path: ["region"],
-            message: "阿里云区域无效",
+            message: "validation.channelAliyunRegionInvalid",
           });
         }
       } else if (options.provider === "sendgrid") {
@@ -116,14 +125,14 @@ export function createDeliveryChannelInput(options: {
           context.addIssue({
             code: "custom",
             path: ["region"],
-            message: "SendGrid 数据中心无效",
+            message: "validation.channelSendgridRegionInvalid",
           });
         }
       } else if (!awsRegionPattern.test(value.region)) {
         context.addIssue({
           code: "custom",
           path: ["region"],
-          message: "AWS 区域格式无效",
+          message: "validation.channelAwsRegionInvalid",
         });
       }
 
@@ -132,13 +141,13 @@ export function createDeliveryChannelInput(options: {
           context.addIssue({
             code: "custom",
             path: ["sender_domain"],
-            message: "请输入发件域名",
+            message: "validation.channelSenderDomainRequired",
           });
         } else if (!domainPattern.test(value.sender_domain)) {
           context.addIssue({
             code: "custom",
             path: ["sender_domain"],
-            message: "发件域名格式无效",
+            message: "validation.channelSenderDomainInvalid",
           });
         }
         const senderDomain = value.sender_address.split("@")[1];
@@ -146,7 +155,7 @@ export function createDeliveryChannelInput(options: {
           context.addIssue({
             code: "custom",
             path: ["sender_address"],
-            message: "发件地址必须属于所填发件域名",
+            message: "validation.channelSenderDomainMismatch",
           });
         }
       }
@@ -158,7 +167,7 @@ export function createDeliveryChannelInput(options: {
         context.addIssue({
           code: "custom",
           path: ["sns_topic_arn"],
-          message: "SNS Topic ARN 格式无效",
+          message: "validation.channelSnsTopicInvalid",
         });
       }
 
@@ -175,14 +184,14 @@ export function createDeliveryChannelInput(options: {
           context.addIssue({
             code: "custom",
             path: ["access_key_secret"],
-            message: "首次连接必须填写 SendGrid API Key",
+            message: "validation.channelSendgridKeyRequired",
           });
         }
         if (hasSecret && (value.access_key_secret?.length ?? 0) < 20) {
           context.addIssue({
             code: "custom",
             path: ["access_key_secret"],
-            message: "API Key 长度无效",
+            message: "validation.channelApiKeyTooShort",
           });
         }
       } else {
@@ -190,28 +199,33 @@ export function createDeliveryChannelInput(options: {
           context.addIssue({
             code: "custom",
             path: hasId ? ["access_key_secret"] : ["access_key_id"],
-            message: `${credentialLabel} ID 和 Secret 必须同时填写`,
+            message: encodeIssue("validation.channelCredentialsPairRequired", {
+              label: credentialLabel,
+            }),
           });
         }
         if (!value.id && (!hasId || !hasSecret)) {
           context.addIssue({
             code: "custom",
             path: ["access_key_id"],
-            message: `首次连接必须填写完整 ${credentialLabel}`,
+            message: encodeIssue(
+              "validation.channelCredentialsInitialRequired",
+              { label: credentialLabel },
+            ),
           });
         }
         if (hasId && (value.access_key_id?.length ?? 0) < 8) {
           context.addIssue({
             code: "custom",
             path: ["access_key_id"],
-            message: "访问密钥 ID 长度无效",
+            message: "validation.channelAccessKeyIdTooShort",
           });
         }
         if (hasSecret && (value.access_key_secret?.length ?? 0) < 8) {
           context.addIssue({
             code: "custom",
             path: ["access_key_secret"],
-            message: "访问密钥 Secret 长度无效",
+            message: "validation.channelAccessKeySecretTooShort",
           });
         }
       }
@@ -246,13 +260,13 @@ export function createDeliveryTrackingInput(provider: DeliveryProviderName) {
           context.addIssue({
             code: "custom",
             path: ["tracking_tag_name"],
-            message: "开启追踪前请填写阿里云标签",
+            message: "validation.trackingAliyunTagRequired",
           });
         } else if (!/^[A-Za-z0-9_]+$/.test(value.tracking_tag_name)) {
           context.addIssue({
             code: "custom",
             path: ["tracking_tag_name"],
-            message: "阿里云标签仅支持字母、数字和下划线",
+            message: "validation.trackingAliyunTagInvalid",
           });
         }
       } else if (provider === "sendgrid") {
@@ -262,7 +276,7 @@ export function createDeliveryTrackingInput(provider: DeliveryProviderName) {
           context.addIssue({
             code: "custom",
             path: ["configuration_set_name"],
-            message: "开启追踪前请填写 SES 配置集名称",
+            message: "validation.trackingSesConfigSetRequired",
           });
         } else if (
           !sesConfigSetPattern.test(value.configuration_set_name) ||
@@ -271,8 +285,7 @@ export function createDeliveryTrackingInput(provider: DeliveryProviderName) {
           context.addIssue({
             code: "custom",
             path: ["configuration_set_name"],
-            message:
-              "SES 配置集名称仅支持 1 至 64 位字母、数字、下划线和连字符",
+            message: "validation.trackingSesConfigSetInvalid",
           });
         }
       }

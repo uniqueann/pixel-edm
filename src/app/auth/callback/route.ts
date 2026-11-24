@@ -5,6 +5,7 @@ import {
 } from "@/lib/supabase/auth-callback";
 import { siteUrl } from "@/lib/supabase/config";
 import { serverClient } from "@/lib/supabase/server";
+import { syncMemberLocaleForCurrentUser } from "@/i18n/locale";
 
 export async function GET(request: NextRequest) {
   const plan = planAuthCallback({
@@ -21,5 +22,8 @@ export async function GET(request: NextRequest) {
       return (await serverClient()).auth.exchangeCodeForSession(code);
     },
   });
+  if (path !== "/login?error=callback") {
+    await syncMemberLocaleForCurrentUser().catch(() => {});
+  }
   return NextResponse.redirect(new URL(path, siteUrl()));
 }

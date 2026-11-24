@@ -20,22 +20,50 @@ const tokenPattern = /{{([\s\S]*?)}}/g;
 
 export type TemplateValidationError = {
   field: "subject" | "body";
+  code:
+    | "validation.templateVariableSyntaxInvalid"
+    | "validation.templateVariableUnknown"
+    | "validation.templateUnclosedBraces";
+  params?: Record<string, string>;
   message: string;
 };
+
+function encodeTemplateIssue(
+  code: TemplateValidationError["code"],
+  params?: Record<string, string>,
+) {
+  if (!params || Object.keys(params).length === 0) return code;
+  const search = new URLSearchParams(params);
+  return `${code}?${search.toString()}`;
+}
 
 function validateField(value: string, field: TemplateValidationError["field"]) {
   const errors: TemplateValidationError[] = [];
   const stripped = value.replace(tokenPattern, (_match, raw: string) => {
     const key = raw.trim();
     if (!/^[a-z][a-z0-9_]*$/.test(key)) {
-      errors.push({ field, message: `变量“${raw}”语法无效` });
+      errors.push({
+        field,
+        code: "validation.templateVariableSyntaxInvalid",
+        params: { raw },
+        message: `变量“${raw}”语法无效`,
+      });
     } else if (!allowedVariables.has(key)) {
-      errors.push({ field, message: `未知变量 {{${key}}}` });
+      errors.push({
+        field,
+        code: "validation.templateVariableUnknown",
+        params: { key },
+        message: `未知变量 {{${key}}}`,
+      });
     }
     return "";
   });
   if (stripped.includes("{{") || stripped.includes("}}")) {
-    errors.push({ field, message: "存在未闭合的双花括号" });
+    errors.push({
+      field,
+      code: "validation.templateUnclosedBraces",
+      message: "存在未闭合的双花括号",
+    });
   }
   return errors;
 }
@@ -44,7 +72,11 @@ export function validateTemplateText(subject: string, body: string) {
   return [...validateField(subject, "subject"), ...validateField(body, "body")];
 }
 
-function renderField(value: string, values: TemplateValues) {
+function renderField(
+  value: string,
+  values: TemplateValues,
+  formatMissing: (key: TemplateVariable) => string,
+) {
   const missing = new Set<TemplateVariable>();
   const rendered = value.replace(tokenPattern, (_match, raw: string) => {
     const key = raw.trim() as TemplateVariable;
@@ -54,7 +86,7 @@ function renderField(value: string, values: TemplateValues) {
     }
     if (!replacement) {
       missing.add(key);
-      return `【缺少：${key}】`;
+      return formatMissing(key);
     }
     return replacement;
   });
@@ -65,9 +97,11 @@ export function renderTemplate(
   subject: string,
   body: string,
   values: TemplateValues,
+  formatMissing: (key: TemplateVariable) => string = (key) =>
+    `【缺少：${key}】`,
 ) {
-  const renderedSubject = renderField(subject, values);
-  const renderedBody = renderField(body, values);
+  const renderedSubject = renderField(subject, values, formatMissing);
+  const renderedBody = renderField(body, values, formatMissing);
   return {
     subject: renderedSubject.rendered,
     body: renderedBody.rendered,
@@ -82,25 +116,38 @@ export const templateInput = z
     workspace_id: z.string().uuid(),
     id: z.string().uuid().optional(),
     expected_version: z.number().int().positive().optional(),
-    name: z.string().trim().min(1, "请输入模板名称").max(80),
-    category: z.string().trim().min(1, "请输入分类").max(50),
+    name: z.string().trim().min(1, "validation.templateNameRequired").max(80),
+    category: z
+      .string()
+      .trim()
+      .min(1, "validation.templateCategoryRequired")
+      .max(50),
     subject: z
       .string()
       .trim()
-      .min(1, "请输入邮件主题")
+      .min(1, "validation.templateSubjectRequired")
       .max(200)
-      .refine((value) => !/[\r\n]/.test(value), "邮件主题不能换行"),
+      .refine(
+        (value) => !/[\r\n]/.test(value),
+        "validation.templateSubjectNoNewline",
+      ),
     body: z
       .string()
-      .refine((value) => value.trim().length > 0, "请输入邮件正文")
-      .refine((value) => value.length <= 20000, "邮件正文最多 20000 字"),
+      .refine(
+        (value) => value.trim().length > 0,
+        "validation.templateBodyRequired",
+      )
+      .refine(
+        (value) => value.length <= 20000,
+        "validation.templateBodyTooLong",
+      ),
   })
   .superRefine((value, context) => {
     for (const error of validateTemplateText(value.subject, value.body)) {
       context.addIssue({
         code: "custom",
         path: [error.field],
-        message: error.message,
+        message: encodeTemplateIssue(error.code, error.params),
       });
     }
   });

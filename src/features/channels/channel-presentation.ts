@@ -4,6 +4,32 @@ import type {
   DeliveryTestAttempt,
 } from "./model";
 
+export type ChannelSetupStateKey =
+  | "unconnected"
+  | "disconnected"
+  | "incomplete"
+  | "testPending"
+  | "testUnknown"
+  | "verified"
+  | "error"
+  | "configured";
+
+/** 返回稳定的通道引导状态 key，供多语言展示层查表。 */
+export function channelSetupStateKey(
+  channel: Pick<DeliveryChannel, "status" | "credential_configured"> | null,
+  testStatus?: DeliveryTestStatus,
+): ChannelSetupStateKey {
+  if (!channel) return "unconnected";
+  if (channel.status === "disconnected") return "disconnected";
+  if (channel.status === "incomplete" || !channel.credential_configured)
+    return "incomplete";
+  if (isTestPending(testStatus)) return "testPending";
+  if (testStatus === "unknown") return "testUnknown";
+  if (channel.status === "verified") return "verified";
+  if (channel.status === "error") return "error";
+  return "configured";
+}
+
 /** 只解释接口已有状态，不建立独立的通道业务状态。 */
 export function channelSetupCopy(
   channel: Pick<DeliveryChannel, "status" | "credential_configured"> | null,

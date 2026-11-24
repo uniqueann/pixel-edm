@@ -24,13 +24,28 @@ export function campaignVariableKeysFromTemplate(
 
 export const campaignVariablesInput = z
   .object({
-    store_name: z.string().max(200, "店铺名称最多 200 字").optional(),
-    sender_name: z.string().max(200, "发件人最多 200 字").optional(),
-    discount: z.string().max(200, "优惠信息最多 200 字").optional(),
-    product: z.string().max(200, "商品名称最多 200 字").optional(),
-    order_number: z.string().max(200, "订单号最多 200 字").optional(),
+    store_name: z
+      .string()
+      .max(200, "validation.campaignStoreNameTooLong")
+      .optional(),
+    sender_name: z
+      .string()
+      .max(200, "validation.campaignSenderNameTooLong")
+      .optional(),
+    discount: z
+      .string()
+      .max(200, "validation.campaignDiscountTooLong")
+      .optional(),
+    product: z
+      .string()
+      .max(200, "validation.campaignProductTooLong")
+      .optional(),
+    order_number: z
+      .string()
+      .max(200, "validation.campaignOrderNumberTooLong")
+      .optional(),
   })
-  .strict("活动包含未知变量")
+  .strict("validation.campaignUnknownVariables")
   .default({});
 
 export const campaignInput = z
@@ -38,10 +53,14 @@ export const campaignInput = z
     workspace_id: z.string().uuid(),
     id: z.string().uuid().optional(),
     expected_version: z.number().int().positive().optional(),
-    name: z.string().trim().min(1, "请输入活动名称").max(100),
-    template_id: z.string().uuid("请选择有效模板"),
+    name: z.string().trim().min(1, "validation.campaignNameRequired").max(100),
+    template_id: z.string().uuid("validation.campaignTemplateInvalid"),
     audience_type: z.enum(["all", "tag"]),
-    tag_id: z.string().uuid("请选择有效标签").nullable().optional(),
+    tag_id: z
+      .string()
+      .uuid("validation.campaignTagInvalid")
+      .nullable()
+      .optional(),
     variables: campaignVariablesInput,
   })
   .superRefine((value, context) => {
@@ -49,21 +68,21 @@ export const campaignInput = z
       context.addIssue({
         code: "custom",
         path: ["expected_version"],
-        message: "缺少活动版本，请重新加载后重试",
+        message: "validation.campaignVersionRequired",
       });
     }
     if (value.audience_type === "all" && value.tag_id) {
       context.addIssue({
         code: "custom",
         path: ["tag_id"],
-        message: "全部客户活动不能指定标签",
+        message: "validation.campaignAllAudienceNoTag",
       });
     }
     if (value.audience_type === "tag" && !value.tag_id) {
       context.addIssue({
         code: "custom",
         path: ["tag_id"],
-        message: "请选择客户标签",
+        message: "validation.campaignTagRequired",
       });
     }
   });

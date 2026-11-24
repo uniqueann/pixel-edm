@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   isDefaultSenderName,
+  isMemberSenderNameCustomized,
   memberProfile,
   senderNameDefault,
 } from "../src/lib/sender-name.ts";
@@ -13,6 +14,22 @@ test("P0-3 对外署名：默认“店主”不预填 sender_name，真实署名
   assert.equal(isDefaultSenderName(undefined), false);
   assert.equal(senderNameDefault("店主"), "");
   assert.equal(senderNameDefault(" Anna Chen "), "Anna Chen");
+  assert.equal(
+    isMemberSenderNameCustomized({
+      display_name: "店主",
+      display_name_customized: false,
+    }),
+    false,
+  );
+  assert.equal(
+    isMemberSenderNameCustomized({
+      display_name: "Anna Chen",
+      display_name_customized: true,
+    }),
+    true,
+  );
+  assert.equal(senderNameDefault("Anna Chen", false), "");
+  assert.equal(senderNameDefault(" Anna Chen ", true), "Anna Chen");
 });
 
 test("P0-3 对外署名校验：拒绝空值、默认值和过长署名", () => {

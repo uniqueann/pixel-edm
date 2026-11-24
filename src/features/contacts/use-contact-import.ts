@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { csvCell } from "@/lib/csv";
+import { AppError, isExposableAppError } from "@/lib/errors";
+import { useErrorMessage } from "@/i18n/use-resolvers";
 import {
   confirmContactImport,
   exportContactImport,
@@ -19,7 +22,6 @@ import {
   type ContactImportDetail,
   type ContactImportHistory,
 } from "./import-model";
-import { importResultLabels } from "./import-presentation";
 
 type Activity = "file" | "prepare" | "process" | "page" | "report" | "load";
 type Failure = {
@@ -31,11 +33,18 @@ type Failure = {
   locateError?: boolean;
 };
 
-function failureMessage(error: unknown, fallback: string) {
-  return error instanceof Error && /[\u4e00-\u9fff]/.test(error.message)
-    ? error.message
-    : fallback;
-}
+const KNOWN_RESULT_KEYS = new Set([
+  "new",
+  "update",
+  "unchanged",
+  "archived_skipped",
+  "suppressed_protected",
+  "suppressed",
+  "error",
+  "pending",
+  "created",
+  "updated",
+]);
 
 export function downloadImportCsv(name: string, rows: unknown[][]) {
   const csv = `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
@@ -62,9 +71,12 @@ export function useContactImport({
   initialError?: string;
   selectedId?: string;
 }) {
+  const t = useTranslations("contacts.import");
+  const resolveError = useErrorMessage();
   const router = useRouter();
+  const defaultSourceName = t("defaultSourceName");
   const [sourceType, setSourceType] = useState<"paste" | "csv">("paste");
-  const [sourceName, setSourceName] = useState("手动导入");
+  const [sourceName, setSourceName] = useState(defaultSourceName);
   const [text, setText] = useState("");
   const [delimiter, setDelimiter] = useState<"" | "," | "\t">("");
   const [consentDeclared, setConsentDeclared] = useState(false);
@@ -94,6 +106,16 @@ export function useContactImport({
   const errorRef = useRef<HTMLDivElement>(null);
   const allowLeave = useRef(false);
   const busy = activity !== null;
+
+  function failureMessage(error: unknown, fallback: string) {
+    if (!isExposableAppError(error)) return fallback;
+    return resolveError({
+      code: error.code,
+      params: error.params,
+      message: error.message,
+    });
+  }
+
   // 批处理会刷新服务端页面；同一任务刷新不能重新挂载并丢失正在执行的互斥锁。
   if (routeSelection !== incomingSelection) {
     setRouteSelection(incomingSelection);
@@ -117,7 +139,7 @@ export function useContactImport({
     !job &&
     Boolean(
       text ||
-      sourceName !== "手动导入" ||
+      sourceName !== defaultSourceName ||
       fileName ||
       consentDeclared ||
       consentSource ||
@@ -128,7 +150,7 @@ export function useContactImport({
 
   const resetDraft = useCallback(() => {
     setSourceType("paste");
-    setSourceName("手动导入");
+    setSourceName(defaultSourceName);
     setText("");
     setDelimiter("");
     setConsentDeclared(false);
@@ -141,7 +163,7 @@ export function useContactImport({
     setFieldErrors({});
     setFailure(null);
     if (fileRef.current) fileRef.current.value = "";
-  }, []);
+  }, [defaultSourceName]);
   const { requestLeave, discardConfirm } = useUnsavedEditDialog({
     dirty,
     busy,
@@ -306,7 +328,10 @@ export function useContactImport({
     if (token === null) return;
     try {
       if (file.size > 2 * 1024 * 1024)
-        throw new Error("CSV 文件不能超过 2 MiB，请缩小后重新选择。");
+        throw new AppError(
+          "errors.import.csvTooLarge",
+          "CSV 文件不能超过 2 MiB，请缩小后重新选择。",
+        );
       const content = await file.text();
       if (!isCurrent(token)) return;
       setText(content);
@@ -318,10 +343,7 @@ export function useContactImport({
       showFailure(
         {
           operation: "file",
-          message: failureMessage(
-            error,
-            "文件读取失败，原有名单已保留，请重新选择文件。",
-          ),
+          message: failureMessage(error, t("failure.fileReadFailed")),
         },
         token,
       );
@@ -334,19 +356,19 @@ export function useContactImport({
   async function prepare() {
     if (active.current) return;
     const errors: Record<string, string> = {};
-    if (!sourceName.trim()) errors["import-name"] = "请填写名单来源名称。";
-    if (!text.trim())
-      errors["import-text"] = "请粘贴名单，或选择含数据的 CSV 文件。";
+    if (!sourceName.trim())
+      errors["import-name"] = t("validation.sourceNameRequired");
+    if (!text.trim()) errors["import-text"] = t("validation.textRequired");
     if (consentDeclared && !consentSource.trim())
-      errors["consent-source"] = "请填写客户明确同意接收商业邮件的来源。";
+      errors["consent-source"] = t("validation.consentSourceRequired");
     if (consentDeclared && !consentNote.trim())
-      errors["consent-note"] = "请填写可核对的授权说明。";
+      errors["consent-note"] = t("validation.consentNoteRequired");
     if (
       consentAt &&
       (!Number.isFinite(Date.parse(consentAt)) ||
         Date.parse(consentAt) > Date.now())
     )
-      errors["consent-at"] = "请填写有效且不晚于当前时间的同意时间。";
+      errors["consent-at"] = t("validation.consentAtInvalid");
     setFieldErrors(errors);
     if (Object.keys(errors).length) {
       const first = Object.keys(errors)[0];
@@ -363,7 +385,11 @@ export function useContactImport({
     if (token === null) return;
     try {
       const parsed = parseImportText(text, { sourceType, delimiter });
-      setWarnings(parsed.warnings);
+      setWarnings(
+        parsed.unknownHeaders.map((header) =>
+          t("form.unknownColumnWarning", { header }),
+        ),
+      );
       const result = await prepareContactImport({
         workspace_id: workspace,
         source_type: sourceType,
@@ -375,7 +401,8 @@ export function useContactImport({
         rows: parsed.rows,
       });
       if (!isCurrent(token)) return;
-      if ("error" in result) throw new Error(result.error);
+      if ("error" in result)
+        throw new AppError("errors.contacts.importInvalidFormat", result.error);
       applyJob(result.data, true);
       setDraftJobId(result.data.job.id);
       updateAddress(result.data.job.id);
@@ -383,10 +410,7 @@ export function useContactImport({
       showFailure(
         {
           operation: "prepare",
-          message: failureMessage(
-            error,
-            "预检请求未完成，输入已保留，请检查网络后重试。",
-          ),
+          message: failureMessage(error, t("failure.prepareNetworkFailed")),
         },
         token,
       );
@@ -403,7 +427,8 @@ export function useContactImport({
       if (refresh || !confirm) {
         const latest = await getContactImport({ workspace_id: workspace, id });
         if (!isCurrent(token)) return;
-        if ("error" in latest) throw new Error(latest.error);
+        if ("error" in latest)
+          throw new AppError("errors.common.unknown", latest.error);
         current = latest.data;
         applyJob(current);
       }
@@ -413,7 +438,8 @@ export function useContactImport({
           id,
         });
         if (!isCurrent(token)) return;
-        if ("error" in confirmed) throw new Error(confirmed.error);
+        if ("error" in confirmed)
+          throw new AppError("errors.common.unknown", confirmed.error);
         current = confirmed.data;
         applyJob(current);
       }
@@ -428,22 +454,23 @@ export function useContactImport({
           id,
         });
         if (!isCurrent(token)) return;
-        if ("error" in result) throw new Error(result.error);
+        if ("error" in result)
+          throw new AppError(
+            "errors.contacts.importInvalidFormat",
+            result.error,
+          );
         current = result.data;
         applyJob(current);
       }
       if (current?.job.status === "completed")
-        toast.success("名单处理完成，请核对结果与订阅状态");
+        toast.success(t("results.completedToast"));
     } catch (error) {
       showFailure(
         {
           operation: "process",
           id,
           confirm,
-          message: failureMessage(
-            error,
-            "请求未完成。请检查网络后继续原任务，已提交的记录会保留。",
-          ),
+          message: failureMessage(error, t("failure.processNetworkFailed")),
         },
         token,
       );
@@ -462,7 +489,8 @@ export function useContactImport({
           id,
         });
         if (!isCurrent(token)) return;
-        if ("error" in report) throw new Error(report.error);
+        if ("error" in report)
+          throw new AppError("errors.common.unknown", report.error);
         const index = report.data.findIndex((row) => row.result === "error");
         page = index < 0 ? 1 : Math.floor(index / 50) + 1;
       }
@@ -472,7 +500,8 @@ export function useContactImport({
         page,
       });
       if (!isCurrent(token)) return;
-      if ("error" in result) throw new Error(result.error);
+      if ("error" in result)
+        throw new AppError("errors.contacts.importInvalidFormat", result.error);
       applyJob(result.data, true);
       updateAddress(id, page);
     } catch (error) {
@@ -482,10 +511,7 @@ export function useContactImport({
           id,
           page,
           locateError,
-          message: failureMessage(
-            error,
-            "结果加载失败，当前任务和页码已保留，请检查网络后重试。",
-          ),
+          message: failureMessage(error, t("failure.loadNetworkFailed")),
         },
         token,
       );
@@ -502,13 +528,21 @@ export function useContactImport({
     try {
       const result = await exportContactImport({ workspace_id: workspace, id });
       if (!isCurrent(token)) return;
-      if ("error" in result) throw new Error(result.error);
-      downloadImportCsv(`名单导入报告-${id}.csv`, [
-        ["来源行", "邮箱", "处理结果", "说明"],
+      if ("error" in result)
+        throw new AppError("errors.contacts.importInvalidFormat", result.error);
+      downloadImportCsv(t("results.reportFilename", { id }), [
+        [
+          t("results.reportHeaders.sourceRows"),
+          t("results.reportHeaders.email"),
+          t("results.reportHeaders.result"),
+          t("results.reportHeaders.reason"),
+        ],
         ...result.data.map((row) => [
           row.source_rows.join("|"),
           row.email,
-          importResultLabels[row.result] ?? row.result,
+          KNOWN_RESULT_KEYS.has(row.result)
+            ? t(`results.labels.${row.result as "error"}`)
+            : row.result,
           dedupeImportMessages(row.message),
         ]),
       ]);
@@ -516,7 +550,7 @@ export function useContactImport({
       showFailure(
         {
           operation: "report",
-          message: failureMessage(error, "报告下载失败，请检查网络后重试。"),
+          message: failureMessage(error, t("failure.reportNetworkFailed")),
         },
         token,
       );

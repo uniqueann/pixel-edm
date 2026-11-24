@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { Tag } from "lucide-react";
 import type { EdmBilledPlan } from "@/lib/billing/metadata";
 import { normalizeCheckoutDiscountCode } from "@/lib/billing/discount-code";
-import {
-  EDM_PLAN_PRICING,
-  edmPlanCheckoutDescription,
-  edmPlanShortLabel,
-  formatUsd,
-} from "@/lib/billing/edm-plan-catalog";
+import { getAppErrorCode, type AppErrorParams } from "@/lib/errors";
+import { useErrorMessage } from "@/i18n/use-resolvers";
+import { EDM_PLAN_PRICING, formatUsd } from "@/lib/billing/edm-plan-catalog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,10 +17,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  CREEM_CHECKOUT_PAYMENT_HINT,
-  DODO_CHECKOUT_PAYMENT_HINT,
-} from "@/lib/billing/checkout-payment-methods";
 
 /** 结账按钮不展示支付服务商名称。 */
 
@@ -53,6 +47,8 @@ export function BillingCheckoutDialog({
   checkoutPlan,
   showProCancelHint = false,
 }: BillingCheckoutDialogProps) {
+  const t = useTranslations("billing");
+  const translateError = useErrorMessage();
   const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
   const [discountOpen, setDiscountOpen] = useState(false);
   const [draft, setDraft] = useState("");
@@ -62,8 +58,17 @@ export function BillingCheckoutDialog({
   const pricing = EDM_PLAN_PRICING[checkoutPlan];
   const priceLabel =
     interval === "yearly"
-      ? `${formatUsd(pricing.yearlyUsd)}/年`
-      : `${formatUsd(pricing.monthlyUsd)}/月`;
+      ? t("checkout.perYear", { price: formatUsd(pricing.yearlyUsd) })
+      : t("checkout.perMonth", { price: formatUsd(pricing.monthlyUsd) });
+  const planName = t(`plans.${checkoutPlan}`);
+  const cycleLabel =
+    interval === "yearly"
+      ? t("checkout.cycleYearly")
+      : t("checkout.cycleMonthly");
+  const checkoutDescription =
+    checkoutPlan === "team"
+      ? t("checkout.descriptionTeam", { cycle: cycleLabel })
+      : t("checkout.descriptionPro", { cycle: cycleLabel });
   const draftNeedsVerify =
     discountOpen &&
     draft.trim().length > 0 &&
@@ -73,7 +78,10 @@ export function BillingCheckoutDialog({
     setInterval(next);
     setApplied(null);
     if (draft.trim()) {
-      setNotice({ tone: "error", text: "计费周期已更换，请重新验证。" });
+      setNotice({
+        tone: "error",
+        text: t("checkout.intervalChangedNotice"),
+      });
     }
   }
 
@@ -83,15 +91,29 @@ export function BillingCheckoutDialog({
       code = normalizeCheckoutDiscountCode(draft);
     } catch (error) {
       setApplied(null);
+      const errCode = getAppErrorCode(error);
       setNotice({
         tone: "error",
-        text: error instanceof Error ? error.message : "折扣代码无效。",
+        text: translateError(
+          errCode
+            ? {
+                code: errCode,
+                message: error instanceof Error ? error.message : undefined,
+              }
+            : error instanceof Error
+              ? error.message
+              : undefined,
+          "errors.billing.discountInvalid",
+        ),
       });
       return;
     }
     if (!code) {
       setApplied(null);
-      setNotice({ tone: "error", text: "请输入折扣代码。" });
+      setNotice({
+        tone: "error",
+        text: translateError("errors.billing.discountRequired"),
+      });
       return;
     }
     setChecking(true);
@@ -110,9 +132,12 @@ export function BillingCheckoutDialog({
       const data = (await response.json()) as {
         ok?: boolean;
         error?: string;
+        errorCode?: string;
         code?: string;
         available?: boolean;
         message?: string;
+        messageCode?: string;
+        messageParams?: AppErrorParams;
         creem?: boolean;
         dodo?: boolean;
       };
@@ -120,7 +145,12 @@ export function BillingCheckoutDialog({
         setApplied(null);
         setNotice({
           tone: "error",
-          text: data.error ?? "暂时无法验证这个折扣代码，请稍后重试。",
+          text: translateError(
+            data.errorCode
+              ? { code: data.errorCode, message: data.error }
+              : data.error,
+            "errors.billing.discountRetry",
+          ),
         });
         return;
       }
@@ -128,7 +158,16 @@ export function BillingCheckoutDialog({
         setApplied(null);
         setNotice({
           tone: "error",
-          text: data.message ?? "折扣代码不存在",
+          text: translateError(
+            data.messageCode
+              ? {
+                  code: data.messageCode,
+                  params: data.messageParams,
+                  message: data.message,
+                }
+              : data.message,
+            "errors.billing.discountMissing",
+          ),
         });
         return;
       }
@@ -140,13 +179,22 @@ export function BillingCheckoutDialog({
       });
       setNotice({
         tone: "success",
-        text: data.message ?? "折扣代码已生效。",
+        text: translateError(
+          data.messageCode
+            ? {
+                code: data.messageCode,
+                params: data.messageParams,
+                message: data.message,
+              }
+            : data.message,
+          "errors.billing.discountAvailable",
+        ),
       });
     } catch {
       setApplied(null);
       setNotice({
         tone: "error",
-        text: "暂时无法验证这个折扣代码，请稍后重试。",
+        text: translateError("errors.billing.discountRetry"),
       });
     } finally {
       setChecking(false);
@@ -158,7 +206,7 @@ export function BillingCheckoutDialog({
     event.preventDefault();
     setNotice({
       tone: "error",
-      text: "已输入折扣代码，请先点击「验证」确认优惠。",
+      text: t("checkout.verifyBeforeCheckout"),
     });
   }
 
@@ -167,19 +215,17 @@ export function BillingCheckoutDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-left">
           <DialogTitle className="text-left">
-            购买{edmPlanShortLabel(checkoutPlan)} · {priceLabel}
+            {t("checkout.dialogTitle", { plan: planName, price: priceLabel })}
           </DialogTitle>
           <DialogDescription className="text-left leading-relaxed text-pretty">
-            <span className="block">
-              {edmPlanCheckoutDescription(checkoutPlan, interval)}
-            </span>
+            <span className="block">{checkoutDescription}</span>
             <span className="mt-2 block text-xs text-muted-foreground">
-              支付由第三方处理，不会在本站保存卡号。
+              {t("checkout.thirdPartyPaymentNote")}
             </span>
           </DialogDescription>
         </DialogHeader>
         <p className="text-left text-sm font-medium text-foreground">
-          计费周期
+          {t("checkout.billingCycle")}
         </p>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -188,7 +234,9 @@ export function BillingCheckoutDialog({
             size="sm"
             onClick={() => changeInterval("monthly")}
           >
-            月付 {formatUsd(pricing.monthlyUsd)}
+            {t("checkout.monthlyButton", {
+              price: formatUsd(pricing.monthlyUsd),
+            })}
           </Button>
           <Button
             type="button"
@@ -196,7 +244,9 @@ export function BillingCheckoutDialog({
             size="sm"
             onClick={() => changeInterval("yearly")}
           >
-            年付 {formatUsd(pricing.yearlyUsd)}
+            {t("checkout.yearlyButton", {
+              price: formatUsd(pricing.yearlyUsd),
+            })}
           </Button>
         </div>
         <CheckoutDiscountCode
@@ -213,7 +263,7 @@ export function BillingCheckoutDialog({
           onVerify={() => void verifyDiscount()}
         />
         <p className="text-left text-sm font-medium text-foreground">
-          支付方式
+          {t("checkout.paymentMethods")}
         </p>
         <div className="space-y-2">
           <BillingProviderForm
@@ -221,8 +271,10 @@ export function BillingCheckoutDialog({
             workspaceId={workspaceId}
             plan={checkoutPlan}
             interval={interval}
-            title="订阅结账"
-            hint={CREEM_CHECKOUT_PAYMENT_HINT}
+            title={t("checkout.primaryCheckout")}
+            hint={t("checkout.primaryHint")}
+            appliedSubline={t("checkout.discountAppliedSubline")}
+            excludedSubline={t("checkout.discountExcludedSubline")}
             variant="default"
             discountCode={applied?.creem ? applied.code : ""}
             discountHint={providerDiscountHint(applied, "creem")}
@@ -234,8 +286,10 @@ export function BillingCheckoutDialog({
             workspaceId={workspaceId}
             plan={checkoutPlan}
             interval={interval}
-            title="其他支付方式"
-            hint={DODO_CHECKOUT_PAYMENT_HINT}
+            title={t("checkout.altCheckout")}
+            hint={t("checkout.altHint")}
+            appliedSubline={t("checkout.discountAppliedSubline")}
+            excludedSubline={t("checkout.discountExcludedSubline")}
             variant="outline"
             discountCode={applied?.dodo ? applied.code : ""}
             discountHint={providerDiscountHint(applied, "dodo")}
@@ -245,11 +299,11 @@ export function BillingCheckoutDialog({
         </div>
         {showProCancelHint && (
           <p className="hint mb-0 text-left text-xs leading-relaxed">
-            团队版生效后，请在购买专业版时收到的邮件收据中取消原自动续费，避免后续周期重复扣费。
+            {t("checkout.proCancelReminder")}
           </p>
         )}
         <p className="hint mb-0 text-left text-xs leading-relaxed">
-          订阅将按所选周期自动续费；取消续费后当前周期结束会回到免费版额度。席位加购与自助降档后续提供。如需调整续费、更改支付方式或申请退款，请直接点击付款收据邮件中的「管理订阅」链接。
+          {t("checkout.renewalFootnote")}
         </p>
       </DialogContent>
     </Dialog>
@@ -273,10 +327,11 @@ function CheckoutDiscountCode({
   onDraftChange: (value: string) => void;
   onVerify: () => void;
 }) {
+  const t = useTranslations("billing.checkout");
   if (!open) {
     return (
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">有折扣代码吗？</p>
+        <p className="text-sm text-muted-foreground">{t("haveDiscountCode")}</p>
         <Button
           type="button"
           variant="outline"
@@ -286,7 +341,7 @@ function CheckoutDiscountCode({
           onClick={onOpen}
         >
           <Tag aria-hidden />
-          应用折扣代码
+          {t("applyDiscountCode")}
         </Button>
       </div>
     );
@@ -298,7 +353,7 @@ function CheckoutDiscountCode({
         <Input
           id="checkout-discount-code"
           value={draft}
-          placeholder="输入折扣代码（如：SAVE20）"
+          placeholder={t("discountPlaceholder")}
           autoFocus
           autoComplete="off"
           autoCapitalize="characters"
@@ -323,7 +378,7 @@ function CheckoutDiscountCode({
           aria-busy={checking}
           onClick={onVerify}
         >
-          验证
+          {t("verifyDiscount")}
         </Button>
       </div>
       {notice && (
@@ -364,6 +419,8 @@ function BillingProviderForm({
   interval,
   title,
   hint,
+  appliedSubline,
+  excludedSubline,
   variant,
   discountCode,
   discountHint,
@@ -376,6 +433,8 @@ function BillingProviderForm({
   interval: "monthly" | "yearly";
   title: string;
   hint: string;
+  appliedSubline: string;
+  excludedSubline: string;
   variant: "default" | "outline" | "secondary";
   discountCode: string;
   discountHint: "applied" | "excluded" | null;
@@ -384,9 +443,9 @@ function BillingProviderForm({
 }) {
   const subline =
     discountHint === "applied"
-      ? "已应用折扣"
+      ? appliedSubline
       : discountHint === "excluded"
-        ? "此方式不含折扣"
+        ? excludedSubline
         : hint;
   const buttonVariant = discountHint === "excluded" ? "secondary" : variant;
 
@@ -395,28 +454,17 @@ function BillingProviderForm({
       <input type="hidden" name="workspace_id" value={workspaceId} />
       <input type="hidden" name="plan" value={plan} />
       <input type="hidden" name="interval" value={interval} />
-      {discountCode ? (
+      {discountCode && (
         <input type="hidden" name="discount_code" value={discountCode} />
-      ) : null}
+      )}
       <Button
         type="submit"
         variant={buttonVariant}
-        className="w-full justify-between"
         disabled={disabled}
+        className="h-auto w-full flex-col items-start gap-0.5 px-4 py-2.5 text-left"
       >
-        <span>
-          <span className="block text-left text-sm font-bold">{title}</span>
-          <span
-            className={
-              discountHint === "excluded"
-                ? "block text-left text-xs font-normal text-muted-foreground"
-                : "block text-left text-xs font-normal opacity-80"
-            }
-          >
-            {subline}
-          </span>
-        </span>
-        <span aria-hidden>→</span>
+        <span className="text-sm font-medium">{title}</span>
+        <span className="text-xs font-normal opacity-80">{subline}</span>
       </Button>
     </form>
   );

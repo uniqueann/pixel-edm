@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useUnsavedEditDialog } from "@/hooks/use-unsaved-edit-dialog";
 import { settingsSectionHref } from "@/features/settings/anchors";
 import styles from "./channel-setup.module.css";
@@ -36,14 +37,14 @@ import {
   type DeliveryChannel,
   type DeliveryChannelInput,
 } from "./model";
+import { directMailRegions } from "./provider";
 import {
-  directMailRegionOptions,
   mergeProviderRecord,
   regionFieldKind,
-  regionFieldLabel,
   sendGridDataCenterOptions,
   type DeliveryProviderRecord,
 } from "./registry";
+import { useValidationMessage } from "@/i18n/use-resolvers";
 
 function defaults(input: {
   workspaceId: string;
@@ -107,6 +108,9 @@ export function ChannelFormDialog({
   onSubmit: (values: DeliveryChannelInput) => Promise<void>;
   onReturnFocus?: () => void;
 }) {
+  const t = useTranslations("channels");
+  const tCommon = useTranslations("common");
+  const resolveValidation = useValidationMessage();
   const router = useRouter();
   const prefix = useId();
   const formId = `${prefix}-channel-form`;
@@ -123,13 +127,13 @@ export function ChannelFormDialog({
       context.addIssue({
         code: "custom",
         path: ["access_key_secret"],
-        message: "连接前请填写访问凭据",
+        message: "validation.channelCredentialSecretBeforeConnect",
       });
     if (provider.provider !== "sendgrid" && !values.access_key_id)
       context.addIssue({
         code: "custom",
         path: ["access_key_id"],
-        message: "连接前请填写访问密钥 ID",
+        message: "validation.channelCredentialIdBeforeConnect",
       });
   });
   const form = useForm<DeliveryChannelInput>({
@@ -141,7 +145,7 @@ export function ChannelFormDialog({
   const guard = useUnsavedEditDialog({
     dirty: isDirty,
     busy: isSubmitting,
-    cancelLabel: "继续编辑",
+    cancelLabel: tCommon("unsavedDialog.continueEditing"),
     confirmClassName: styles.confirmation,
     onReturnFocus: () => {
       if (lastFieldRef.current?.isConnected) lastFieldRef.current.focus();
@@ -191,15 +195,16 @@ export function ChannelFormDialog({
 
   const regionOptions =
     provider.provider === "aliyun_directmail"
-      ? directMailRegionOptions()
+      ? directMailRegions.map((region) => ({
+          value: region,
+          label: t(`regions.directmail.${region}`),
+        }))
       : sendGridDataCenterOptions.map((option) => ({
           value: option.value,
-          label: option.label,
+          label: t(`regions.sendgrid.${option.value}`),
         }));
-  const titleProvider =
-    provider.provider === "aliyun_directmail"
-      ? "阿里云发信通道"
-      : `${provider.display_name} 发信通道`;
+  const titleProvider = t(`providers.${provider.provider}.dialogName`);
+  const regionLabel = t(`providers.${provider.provider}.regionFieldLabel`);
   const credentialRequired = !channel?.credential_configured;
 
   function fieldAttributes(name: keyof DeliveryChannelInput) {
@@ -245,7 +250,7 @@ export function ChannelFormDialog({
             className={styles.fieldError}
             role="alert"
           >
-            {errors[name]?.message}
+            {resolveValidation(errors[name]?.message)}
           </p>
         )}
       </div>
@@ -281,11 +286,11 @@ export function ChannelFormDialog({
               data-dialog-scroll-chrome
             >
               <DialogTitle>
-                {connected ? `更新${titleProvider}` : `连接${titleProvider}`}
+                {connected
+                  ? t("dialog.updateTitle", { provider: titleProvider })
+                  : t("dialog.connectTitle", { provider: titleProvider })}
               </DialogTitle>
-              <DialogDescription>
-                先保存发件身份与访问凭据，再向当前管理员邮箱发送测试。保存配置不代表已通过验证。
-              </DialogDescription>
+              <DialogDescription>{t("dialog.description")}</DialogDescription>
               {provider.provider === "aliyun_directmail" && (
                 <Link
                   href="/help#help-directmail-setup"
@@ -293,7 +298,7 @@ export function ChannelFormDialog({
                   rel="noopener noreferrer"
                   className="w-fit text-sm underline underline-offset-2"
                 >
-                  查看 DirectMail 图文开通教程（新标签页）
+                  {t("dialog.directmailGuideLink")}
                 </Link>
               )}
             </DialogHeader>
@@ -309,22 +314,20 @@ export function ChannelFormDialog({
                 try {
                   await onSubmit(values);
                 } catch {
-                  onError(
-                    "暂时无法确认保存结果，输入已保留。请核对通道状态后重试。",
-                  );
+                  onError(t("dialog.saveUnconfirmedError"));
                 }
               })}
             >
               <fieldset className={styles.formGroup} disabled={isSubmitting}>
-                <legend>发件身份</legend>
-                <p className={styles.supporting}>
-                  先在服务商控制台完成发件身份验证，再将相同信息填入下方。
-                </p>
+                <legend>{t("dialog.identityLegend")}</legend>
+                <p className={styles.supporting}>{t("dialog.identityHelp")}</p>
                 <div className={styles.fieldGrid}>
                   {renderField(
                     "sender_alias",
-                    "发件人名称",
-                    `显示在收件人邮箱的“发件人”一栏，最多 ${provider.sender_alias_max_length} 个字符。`,
+                    t("dialog.senderAliasLabel"),
+                    t("dialog.senderAliasHelp", {
+                      max: provider.sender_alias_max_length,
+                    }),
                     {
                       maxLength: provider.sender_alias_max_length,
                       required: true,
@@ -333,10 +336,10 @@ export function ChannelFormDialog({
                   )}
                   {renderField(
                     "sender_address",
-                    "发件地址",
+                    t("dialog.senderAddressLabel"),
                     provider.requires_sender_domain
-                      ? "须属于下方发件域名，并已在服务商控制台完成验证。"
-                      : "使用已在服务商控制台验证的发件身份。",
+                      ? t("dialog.senderAddressHelpWithDomain")
+                      : t("dialog.senderAddressHelpNoDomain"),
                     {
                       type: "email",
                       required: true,
@@ -349,8 +352,8 @@ export function ChannelFormDialog({
                 {provider.requires_sender_domain &&
                   renderField(
                     "sender_domain",
-                    "发件域名",
-                    "填写已验证的域名，不含 https:// 或路径。",
+                    t("dialog.senderDomainLabel"),
+                    t("dialog.senderDomainHelp"),
                     {
                       required: true,
                       placeholder: "send.example.com",
@@ -360,8 +363,8 @@ export function ChannelFormDialog({
                   )}
                 {renderField(
                   "reply_to_address",
-                  "回复地址（选填）",
-                  "收件人点击回复时使用；留空则跟随发件地址。",
+                  t("dialog.replyToLabel"),
+                  t("dialog.replyToHelp"),
                   {
                     type: "email",
                     placeholder: "support@example.com",
@@ -369,7 +372,7 @@ export function ChannelFormDialog({
                   },
                 )}
                 <p className={styles.supporting}>
-                  发件人名称与邮件正文署名分别设置。需要修改落款时，
+                  {t("dialog.signatureNotePrefix")}
                   <Link
                     className="underline underline-offset-2"
                     href={settingsSectionHref("profile")}
@@ -380,18 +383,16 @@ export function ChannelFormDialog({
                       );
                     }}
                   >
-                    前往我的署名
+                    {t("dialog.signatureNoteLink")}
                   </Link>
-                  ；页脚联系地址在店铺信息中填写。
+                  {t("dialog.signatureNoteSuffix")}
                 </p>
               </fieldset>
 
               <fieldset className={styles.formGroup} disabled={isSubmitting}>
-                <legend>服务区域</legend>
+                <legend>{t("dialog.regionLegend")}</legend>
                 <div className={styles.field}>
-                  <Label htmlFor={`${prefix}-region`}>
-                    {regionFieldLabel(provider.provider)}
-                  </Label>
+                  <Label htmlFor={`${prefix}-region`}>{regionLabel}</Label>
                   {regionFieldKind(provider.provider) === "select" ? (
                     <Controller
                       control={form.control}
@@ -407,7 +408,7 @@ export function ChannelFormDialog({
                             ref={field.ref}
                             onBlur={field.onBlur}
                             className="w-full"
-                            aria-label={regionFieldLabel(provider.provider)}
+                            aria-label={regionLabel}
                           >
                             <SelectValue />
                           </SelectTrigger>
@@ -433,7 +434,7 @@ export function ChannelFormDialog({
                     />
                   )}
                   <p id={`${prefix}-region-help`} className={styles.supporting}>
-                    与服务商控制台中发件身份所在区域保持一致；默认选项不代表已核对。
+                    {t("dialog.regionHelp")}
                   </p>
                   {errors.region && (
                     <p
@@ -441,7 +442,7 @@ export function ChannelFormDialog({
                       className={styles.fieldError}
                       role="alert"
                     >
-                      {errors.region.message}
+                      {resolveValidation(errors.region.message)}
                     </p>
                   )}
                 </div>
@@ -449,19 +450,21 @@ export function ChannelFormDialog({
 
               <fieldset className={styles.formGroup} disabled={isSubmitting}>
                 <legend>
-                  访问凭据{credentialRequired ? "（必填）" : "（可替换）"}
+                  {credentialRequired
+                    ? t("dialog.credentialsLegendRequired")
+                    : t("dialog.credentialsLegendOptional")}
                 </legend>
                 <p className={styles.supporting}>
                   {credentialRequired
-                    ? "从服务商控制台获取具有发信权限的专用凭据。"
-                    : "已有凭据已安全保存。留空则保留；替换时需填写完整的新凭据。"}
+                    ? t("dialog.credentialsHelpRequired")
+                    : t("dialog.credentialsHelpOptional")}
                 </p>
                 <div className={styles.fieldGrid}>
                   {provider.provider !== "sendgrid" &&
                     renderField(
                       "access_key_id",
-                      provider.credentialIdLabel,
-                      "与 Secret 配套使用。",
+                      t(`providers.${provider.provider}.credentialIdLabel`),
+                      t("dialog.credentialIdHelp"),
                       {
                         autoComplete: "off",
                         spellCheck: false,
@@ -470,10 +473,8 @@ export function ChannelFormDialog({
                     )}
                   {renderField(
                     "access_key_secret",
-                    provider.credentialSecretLabel,
-                    provider.provider === "sendgrid"
-                      ? "API Key 需具备 Mail Send 权限。"
-                      : "仅本次输入可见，保存后不回显明文。",
+                    t(`providers.${provider.provider}.credentialSecretLabel`),
+                    t(`providers.${provider.provider}.secretHelp`),
                     {
                       type: "password",
                       autoComplete: "new-password",
@@ -495,14 +496,15 @@ export function ChannelFormDialog({
                     }
                   >
                     <summary>
-                      回执验证信息 <span>首次测试可暂不填写</span>
+                      {t("dialog.receiptSummary")}{" "}
+                      <span>{t("dialog.receiptSummaryMeta")}</span>
                     </summary>
                     <div className={styles.disclosureBody}>
                       {provider.provider === "amazon_ses"
                         ? renderField(
                             "sns_topic_arn",
-                            "SNS Topic ARN（选填）",
-                            "配置回执前填写；Topic 所在区域须与上方 AWS 区域一致。",
+                            t("dialog.snsTopicLabel"),
+                            t("dialog.snsTopicHelp"),
                             {
                               placeholder:
                                 "arn:aws:sns:us-east-1:123456789012:ses-events",
@@ -511,8 +513,8 @@ export function ChannelFormDialog({
                           )
                         : renderField(
                             "event_webhook_public_key",
-                            "Event Webhook 验签公钥（选填）",
-                            "启用 Signed Event Webhook 前必须填写服务商控制台提供的验签公钥。",
+                            t("dialog.publicKeyLabel"),
+                            t("dialog.publicKeyHelp"),
                             { spellCheck: false, autoComplete: "off" },
                           )}
                     </div>
@@ -527,10 +529,12 @@ export function ChannelFormDialog({
                   role="alert"
                   className={styles.formError}
                 >
-                  <p className={styles.fieldError}>配置未能确认保存</p>
+                  <p className={styles.fieldError}>
+                    {t("dialog.saveErrorTitle")}
+                  </p>
                   <p className={styles.supporting}>{error}</p>
                   <p className={styles.supporting}>
-                    当前输入仍保留在此弹窗，可核对后再次保存。若提示版本冲突，请先关闭并重新打开最新配置。
+                    {t("dialog.saveErrorGuidance")}
                   </p>
                 </div>
               )}
@@ -551,10 +555,10 @@ export function ChannelFormDialog({
           >
             <p role="status">
               {isSubmitting
-                ? "正在保存配置，请保持页面打开。"
+                ? t("dialog.statusSubmitting")
                 : isDirty
-                  ? "有未保存的更改"
-                  : "保存后还需发送测试验证"}
+                  ? t("dialog.statusDirty")
+                  : t("dialog.statusClean")}
             </p>
             <Button
               type="button"
@@ -562,10 +566,10 @@ export function ChannelFormDialog({
               disabled={isSubmitting}
               onClick={guard.requestClose}
             >
-              取消
+              {tCommon("actions.cancel")}
             </Button>
             <Button type="submit" form={formId} disabled={isSubmitting}>
-              {isSubmitting ? "正在保存…" : "保存配置"}
+              {isSubmitting ? t("dialog.saving") : t("dialog.saveButton")}
             </Button>
           </div>
         </DialogContent>

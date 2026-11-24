@@ -1,0 +1,125 @@
+{
+  "actions": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "processing": "Processing…",
+    "close": "Close",
+    "retry": "Retry",
+    "reload": "Reload",
+    "loading": "Loading…"
+  },
+  "pagination": {
+    "ariaLabel": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "summary": "Showing {first}–{last} of {total}",
+    "pages": " ({page} / {pageCount})",
+    "pageSizeAriaLabel": "Rows per page",
+    "perPage": "{size} / page"
+  },
+  "planUsage": {
+    "viewPlan": "View plan"
+  },
+  "unsavedDialog": {
+    "leaveTitle": "Leave and discard unsaved changes?",
+    "closeTitle": "Discard unsaved changes?",
+    "leaveDescription": "Your current edits won't be saved if you leave. You can keep editing and save first.",
+    "closeDescription": "Your current edits won't be saved if you close this dialog.",
+    "leaveConfirm": "Discard & leave",
+    "closeConfirm": "Discard changes",
+    "continueEditing": "Keep editing"
+  },
+  "outboundPreview": {
+    "fromLabel": "From (shown in recipients' inbox)",
+    "missingBoth": "Primary delivery channel is missing From name and sender address.",
+    "missingAddress": "Primary delivery channel is missing sender address.",
+    "missingAlias": "Primary delivery channel is missing From name.",
+    "goToChannels": "Configure channels",
+    "footerTitle": "System-appended email footer",
+    "workspacePlaceholder": "(Store / workspace name)",
+    "addressEmpty": "(Not set)",
+    "goToStoreSettings": "Go to store details",
+    "unsubscribeTitle": "Preview placeholder — replaced with a real unsubscribe link on send"
+  },
+  "providerErrors": {
+    "technicalDetails": "Technical details",
+    "technicalInfoPrefix": "Technical info: {detail}",
+    "authentication": {
+      "message": "Access key or API authentication failed",
+      "hint": "Verify that your AccessKey / Secret or SendGrid API Key is accurate and not expired."
+    },
+    "configuration": {
+      "message": "Delivery channel configuration error",
+      "hint": "Verify that the sender address, domain verification, and region/data center match your provider console."
+    },
+    "rate_limit": {
+      "message": "Sending quota or rate limit reached",
+      "hint": "Try again later, or raise your quota / lower the send rate in your provider console."
+    },
+    "temporary": {
+      "message": "Email provider temporarily unavailable",
+      "hint": "Usually a transient outage — retry shortly or check your provider's status page."
+    },
+    "permanent": {
+      "message": "Email permanently rejected",
+      "hint": "Check the recipient address, content, and sender domain reputation, or inspect bounce logs in your provider console."
+    },
+    "unknown": {
+      "message": "Delivery failed (reason unconfirmed)",
+      "hint": "Expand technical details below or check delivery logs in your provider console."
+    },
+    "providerUnsupported": {
+      "message": "This delivery channel type is not supported for sending",
+      "hint": "Switch to a supported channel in Settings or contact your administrator."
+    },
+    "channelConfigChanged": {
+      "message": "Channel configuration changed during the test",
+      "hint": "Make sure the current form is saved, then send a new test email."
+    },
+    "taskNotMatched": {
+      "message": "Matching delivery task not found",
+      "hint": "The receipt may be delayed or archived. Refresh delivery details and try again."
+    },
+    "senderNotVerified": {
+      "message": "Sender address or domain is not verified",
+      "hint": "Complete domain or sender verification in your provider console and try again."
+    },
+    "regionMismatch": {
+      "message": "Channel region or endpoint mismatch",
+      "hint": "Confirm that your DirectMail region, Amazon SES region, or SendGrid data center matches your console."
+    },
+    "credentialDecrypt": {
+      "message": "Server cannot decrypt channel credentials",
+      "hint": "Contact your administrator to check the CREDENTIAL_KEYRING encryption key."
+    },
+    "network": {
+      "message": "Network error connecting to email provider",
+      "hint": "Try again shortly. If this persists, check outbound network or firewall settings."
+    },
+    "serviceUnavailable": {
+      "message": "Email provider temporarily unavailable",
+      "hint": "Try again shortly or check your provider's status page."
+    },
+    "unrecognized": {
+      "message": "Delivery failed with an unrecognized provider error",
+      "hint": "Expand technical details for the raw error code or check receipts in your provider console."
+    }
+  },
+  "language": {
+    "label": "Language",
+    "switchAriaLabel": "Switch language",
+    "zhCN": "简体中文",
+    "en": "English",
+    "saved": "Language updated",
+    "saveFailed": "Failed to switch language. Please try again."
+  },
+  "theme": {
+    "label": "Appearance",
+    "toggleAriaLabel": "Switch theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  }
+}

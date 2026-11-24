@@ -5,33 +5,51 @@ import { EmptyState } from "@/components/empty-state";
 
 import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ListPagination } from "@/components/list-pagination";
-import { activityLabel, activityLabels, type ActivityLogList } from "./model";
+import { LocalDate } from "@/components/local-date";
+import {
+  activityFilterMeta,
+  activityLabel,
+  activityLabels,
+  type ActivityLogList,
+} from "./model";
 
-const roleLabels: Record<string, string> = {
-  system: "系统",
-  admin: "管理员",
-  editor: "运营",
-  viewer: "查看者",
+type DynamicAuditT = {
+  (key: string, values?: Record<string, string | number>): string;
+  has(key: string): boolean;
 };
 
-function formatActionFilterLabel(action: string, label: string) {
-  if (action.startsWith("template.")) {
-    return `模板 · ${label.replace("模板", "")}`;
-  }
-  if (action.startsWith("contact.")) {
-    return `客户 · ${label.replace("客户", "")}`;
-  }
-  if (action.startsWith("campaign.")) {
-    return `活动 · ${label.replace("活动", "")}`;
-  }
-  if (action.startsWith("delivery_channel.")) {
-    return `通道 · ${label.replace("发信通道", "").replace("发信", "")}`;
-  }
-  return label;
+function actionMessageKey(action: string) {
+  return action.replaceAll(".", "_");
+}
+
+function localizedActivityLabel(action: string, t: DynamicAuditT) {
+  const key = `actions.${actionMessageKey(action)}`;
+  if (t.has(key)) return t(key);
+  if (action.startsWith("contact")) return t("actions.fallback_contact");
+  if (action.startsWith("campaign")) return t("actions.fallback_campaign");
+  if (action.startsWith("template")) return t("actions.fallback_template");
+  if (action.startsWith("delivery_")) return t("actions.fallback_delivery");
+  if (action.startsWith("team.") || action.startsWith("workspace."))
+    return t("actions.fallback_team");
+  return t("actions.fallback_other");
+}
+
+function localizedFilterLabel(action: string, t: DynamicAuditT) {
+  const meta = activityFilterMeta(action);
+  if (!meta.groupLabel) return localizedActivityLabel(action, t);
+  const shortKey = `shortActions.${actionMessageKey(action)}`;
+  const shortLabel = t.has(shortKey)
+    ? t(shortKey)
+    : localizedActivityLabel(action, t);
+  return t("groupFormat", {
+    group: t(`groups.${meta.group}`),
+    shortLabel,
+  });
 }
 
 export function ActivityLogs({
@@ -42,6 +60,8 @@ export function ActivityLogs({
   filters: Record<string, string>;
 }) {
   const router = useRouter();
+  const tRaw = useTranslations("audit");
+  const t = tRaw as unknown as DynamicAuditT;
   const [pending, startTransition] = useTransition();
   const hasFilters = Boolean(filters.actor || filters.action);
 
@@ -67,21 +87,21 @@ export function ActivityLogs({
   return (
     <>
       <PageHeader
-        title="操作记录"
-        meta={`${data.total} 条`}
+        title={tRaw("title")}
+        meta={tRaw("metaCount", { total: data.total })}
         description={
           <>
-            记录工作区内的关键操作动态，展示操作人、操作内容及发生时间。
+            {tRaw("description")}
             {typeof data.retention_days === "number" && data.retention_days > 0
-              ? ` 当前套餐仅展示近 ${data.retention_days} 天。`
+              ? tRaw("retentionDays", { days: data.retention_days })
               : data.retention_days === null
-                ? " 团队版展示完整历史。"
+                ? tRaw("retentionFull")
                 : ""}
           </>
         }
       />
-      <ListToolbar aria-label="筛选操作记录">
-        <FilterField id="audit-actor" label="操作者">
+      <ListToolbar aria-label={tRaw("toolbarAriaLabel")}>
+        <FilterField id="audit-actor" label={tRaw("actorLabel")}>
           <select
             id="audit-actor"
             className="list-filter max-w-full"
@@ -90,7 +110,7 @@ export function ActivityLogs({
               navigate({ actor: event.target.value, page: "1" })
             }
           >
-            <option value="">全部操作者</option>
+            <option value="">{tRaw("allActors")}</option>
             {data.actors.map((actor) => (
               <option key={actor.id} value={actor.id}>
                 {actor.name}
@@ -98,7 +118,7 @@ export function ActivityLogs({
             ))}
           </select>
         </FilterField>
-        <FilterField id="audit-action" label="操作类型">
+        <FilterField id="audit-action" label={tRaw("actionLabel")}>
           <select
             id="audit-action"
             className="list-filter max-w-full"
@@ -107,28 +127,37 @@ export function ActivityLogs({
               navigate({ action: event.target.value, page: "1" })
             }
           >
-            <option value="">全部操作</option>
-            {Object.entries(activityLabels).map(([action, label]) => (
+            <option value="">{tRaw("allActions")}</option>
+            {Object.keys(activityLabels).map((action) => (
               <option key={action} value={action}>
-                {formatActionFilterLabel(action, label)}
+                {localizedFilterLabel(action, t)}
               </option>
             ))}
           </select>
         </FilterField>
       </ListToolbar>
       {hasFilters && (
-        <div className="active-filters" aria-label="已应用筛选">
-          <span>已筛选</span>
+        <div
+          className="active-filters"
+          aria-label={tRaw("activeFiltersAriaLabel")}
+        >
+          <span>{tRaw("filteredLabel")}</span>
           {filters.actor && (
             <span className="filter-chip">
-              操作者：
-              {data.actors.find((actor) => actor.id === filters.actor)?.name ??
-                filters.actor}
+              {tRaw("filterActorChip", {
+                actor:
+                  data.actors.find((actor) => actor.id === filters.actor)
+                    ?.name ?? filters.actor,
+              })}
             </span>
           )}
           {filters.action && (
             <span className="filter-chip">
-              操作：{activityLabel(filters.action)}
+              {tRaw("filterActionChip", {
+                action:
+                  localizedActivityLabel(filters.action, t) ||
+                  activityLabel(filters.action),
+              })}
             </span>
           )}
           <Button
@@ -137,69 +166,66 @@ export function ActivityLogs({
             size="sm"
             onClick={() => navigate({ actor: "", action: "", page: "1" })}
           >
-            清空筛选
+            {tRaw("clearFilters")}
           </Button>
         </div>
       )}
       <div aria-live="polite" className="hint">
-        {pending ? "正在加载…" : ""}
+        {pending ? tRaw("loading") : ""}
       </div>
       {data.items.length > 0 ? (
         <div className="my-4 space-y-2 md:space-y-1" aria-busy={pending}>
           <div className="hidden border-b border-border/80 px-4 py-2 text-xs font-medium text-muted-foreground md:grid md:grid-cols-12 md:gap-3">
-            <div className="col-span-3">操作时间</div>
-            <div className="col-span-3">操作人 / 角色</div>
-            <div className="col-span-3">操作动作</div>
-            <div className="col-span-3">目标对象 / 说明</div>
+            <div className="col-span-3">{tRaw("columns.time")}</div>
+            <div className="col-span-3">{tRaw("columns.actor")}</div>
+            <div className="col-span-3">{tRaw("columns.action")}</div>
+            <div className="col-span-3">{tRaw("columns.target")}</div>
           </div>
-          {data.items.map((item) => (
-            <Card
-              key={item.id}
-              className="border-border/70 py-0 transition-colors hover:border-border hover:bg-muted/20"
-            >
-              <CardContent className="flex flex-wrap items-start gap-2 px-4 py-3 md:grid md:grid-cols-12 md:gap-3 md:items-center md:py-2.5">
-                <div className="md:col-span-3">
-                  <time
-                    className="hint m-0 block whitespace-nowrap text-xs md:text-xs"
-                    dateTime={item.created_at}
-                  >
-                    {new Intl.DateTimeFormat("zh-CN", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                      timeZone: "Asia/Shanghai",
-                    }).format(new Date(item.created_at))}
-                  </time>
-                </div>
-                <div className="flex min-w-0 items-center gap-1.5 md:col-span-3">
-                  <span className="truncate text-sm font-medium">
-                    {item.actor_name}
-                  </span>
-                  <Badge variant="secondary" className="shrink-0 text-xs">
-                    {roleLabels[item.actor_role] ?? item.actor_role}
-                  </Badge>
-                </div>
-                <div className="md:col-span-3">
-                  <strong className="block truncate text-sm font-semibold">
-                    {activityLabel(item.action)}
-                  </strong>
-                </div>
-                <div className="min-w-0 flex-1 md:col-span-3 md:flex-none">
-                  <p className="m-0 truncate text-sm text-muted-foreground">
-                    {item.target_label || "—"}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {data.items.map((item) => {
+            const roleKey = `roles.${item.actor_role}`;
+            return (
+              <Card
+                key={item.id}
+                className="border-border/70 py-0 transition-colors hover:border-border hover:bg-muted/20"
+              >
+                <CardContent className="flex flex-wrap items-start gap-2 px-4 py-3 md:grid md:grid-cols-12 md:gap-3 md:items-center md:py-2.5">
+                  <div className="md:col-span-3">
+                    <LocalDate
+                      value={item.created_at}
+                      className="hint m-0 block whitespace-nowrap text-xs md:text-xs"
+                    />
+                  </div>
+                  <div className="flex min-w-0 items-center gap-1.5 md:col-span-3">
+                    <span className="truncate text-sm font-medium">
+                      {item.actor_name}
+                    </span>
+                    <Badge variant="secondary" className="shrink-0 text-xs">
+                      {t.has(roleKey) ? t(roleKey) : item.actor_role}
+                    </Badge>
+                  </div>
+                  <div className="md:col-span-3">
+                    <strong className="block truncate text-sm font-semibold">
+                      {localizedActivityLabel(item.action, t)}
+                    </strong>
+                  </div>
+                  <div className="min-w-0 flex-1 md:col-span-3 md:flex-none">
+                    <p className="m-0 truncate text-sm text-muted-foreground">
+                      {item.target_label || "—"}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <EmptyState
           kind={hasFilters ? "search" : "empty"}
-          title="暂无匹配的操作记录。"
+          title={tRaw("emptyTitle")}
           description={
             hasFilters
-              ? "请调整操作人或操作类型筛选，查看其他记录。"
-              : "完成工作区内的业务操作后，记录会出现在这里。"
+              ? tRaw("emptyFilteredDescription")
+              : tRaw("emptyDescription")
           }
         />
       )}

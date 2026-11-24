@@ -3,24 +3,40 @@ import { Notice } from "@/components/ui/notice";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import {
-  isDefaultSenderName,
+  isMemberSenderNameCustomized,
   memberProfile,
   senderNameDefault,
 } from "@/lib/sender-name";
 import { saveMemberProfile } from "@/app/actions";
+import { useValidationMessage } from "@/i18n/use-resolvers";
 
-export function MemberProfileForm({ displayName }: { displayName: string }) {
+export function MemberProfileForm({
+  displayName,
+  displayNameCustomized,
+}: {
+  displayName: string;
+  displayNameCustomized?: boolean;
+}) {
+  const t = useTranslations("settings.profile");
+  const translateValidation = useValidationMessage();
+
   const [error, setError] = useState("");
-  const usingDefault = isDefaultSenderName(displayName);
+  const usingDefault = !isMemberSenderNameCustomized({
+    display_name: displayName,
+    display_name_customized: displayNameCustomized,
+  });
   const form = useForm({
     mode: "onTouched",
     resolver: zodResolver(memberProfile),
-    defaultValues: { display_name: senderNameDefault(displayName) },
+    defaultValues: {
+      display_name: senderNameDefault(displayName, displayNameCustomized),
+    },
   });
   return (
     <form
@@ -29,36 +45,35 @@ export function MemberProfileForm({ displayName }: { displayName: string }) {
         setError("");
         try {
           const result = await saveMemberProfile(values);
-          if (result.error) setError(result.error);
-          else toast.success("对外署名已保存");
+          if (result.error) setError(translateValidation(result.error));
+          else toast.success(t("savedToast"));
         } catch {
-          setError("保存失败，输入已保留，请重试。");
+          setError(t("saveFailed"));
         }
       })}
     >
       {usingDefault && (
         <Notice tone="warning" role="alert">
-          你还在使用系统默认称呼“店主”。收到邮件的海外客户会在落款处看到它，请先填写真实署名。
+          {t("defaultWarning")}
         </Notice>
       )}
       <div className="space-y-2">
         <Label htmlFor="member-display-name" className="block">
-          我的对外署名（{"{{sender_name}}"}）
+          {t("label")}
         </Label>
         <Input
           id="member-display-name"
           maxLength={80}
-          placeholder="例：Anna Chen 或 Canvas Studio Team"
+          placeholder={t("placeholder")}
           aria-describedby={`member-display-name-help${form.formState.errors.display_name ? " member-display-name-error" : ""}`}
           aria-invalid={Boolean(form.formState.errors.display_name)}
           {...form.register("display_name")}
         />
         <p id="member-display-name-help" className="hint mb-0">
-          会作为邮件落款（模板里的 {"{{sender_name}}"}
-          ）出现在发给客户的邮件中，也会显示在团队成员列表和操作记录里。建议填写客户能认出的姓名或品牌名，面向海外客户时可用英文。只影响之后新建或重新编辑的活动，已保存的活动内容不会被改动。
+          {t("help")}
         </p>
         <p id="member-display-name-error" className="field-error">
-          {form.formState.errors.display_name?.message}
+          {translateValidation(form.formState.errors.display_name?.message)}
         </p>
       </div>
       {error && (
@@ -67,7 +82,7 @@ export function MemberProfileForm({ displayName }: { displayName: string }) {
         </p>
       )}
       <Button disabled={form.formState.isSubmitting}>
-        {form.formState.isSubmitting ? "保存中…" : "保存署名"}
+        {form.formState.isSubmitting ? t("saving") : t("saveButton")}
       </Button>
     </form>
   );

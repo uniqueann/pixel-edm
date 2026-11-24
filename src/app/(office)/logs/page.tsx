@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { listActivityLogs } from "@/features/audit/actions";
 import { ActivityLogs } from "@/features/audit/activity-logs";
 import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
+import { ROOT_CLIENT_NAMESPACES } from "@/i18n/config";
+import { pickMessages } from "@/i18n/messages";
 import { getContext } from "@/lib/workspace";
 
 export default async function Page({
@@ -20,20 +24,35 @@ export default async function Page({
   );
   const context = await getContext();
   if (context.role !== "admin") notFound();
-  const plan = await getWorkspaceDeliveryPlan(context.workspace.id);
+  const [plan, tAudit] = await Promise.all([
+    getWorkspaceDeliveryPlan(context.workspace.id),
+    getTranslations("audit"),
+  ]);
   if (!plan || plan.activity_log_retention_days === 0) {
     return (
       <EmptyState
         kind="restricted"
-        title="当前套餐不含操作日志"
-        description="个人专业版可查看近 7 天日志，团队版可查看完整历史。请在设置页升级。"
+        title={tAudit("restrictedTitle")}
+        description={tAudit("restrictedDescription")}
       >
         <Button asChild variant="outline">
-          <Link href="/settings">查看套餐详情</Link>
+          <Link href="/settings">{tAudit("viewPlanDetails")}</Link>
         </Button>
       </EmptyState>
     );
   }
-  const data = await listActivityLogs(filters);
-  return <ActivityLogs data={data} filters={filters} />;
+  const [data, locale, messages] = await Promise.all([
+    listActivityLogs(filters),
+    getLocale(),
+    getMessages(),
+  ]);
+  const clientMessages = pickMessages(messages, [
+    ...ROOT_CLIENT_NAMESPACES,
+    "audit",
+  ]);
+  return (
+    <NextIntlClientProvider locale={locale} messages={clientMessages}>
+      <ActivityLogs data={data} filters={filters} />
+    </NextIntlClientProvider>
+  );
 }

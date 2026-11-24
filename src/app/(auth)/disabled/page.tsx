@@ -1,12 +1,15 @@
+import { getTranslations } from "next-intl/server";
 import { signOut } from "@/app/actions";
 import { Button } from "@/components/ui/button";
-export default function Page() {
+
+export default async function Page() {
+  const t = await getTranslations("auth.disabled");
   return (
     <section className="auth-card">
-      <h1>邮局账号已停用</h1>
-      <p className="hint">请联系管理员恢复访问权限。</p>
+      <h1>{t("title")}</h1>
+      <p className="hint">{t("description")}</p>
       <form action={signOut}>
-        <Button>退出当前账号</Button>
+        <Button>{t("signOut")}</Button>
       </form>
     </section>
   );

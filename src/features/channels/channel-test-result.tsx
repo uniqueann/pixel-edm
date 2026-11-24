@@ -1,8 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { DeliveryProviderErrorBlock } from "@/components/delivery-provider-error";
+import { LocalDate } from "@/components/local-date";
 import type { DeliveryTestAttempt } from "./model";
-import { testResultCopy } from "./channel-presentation";
 import styles from "./channel-setup.module.css";
 
 export function ChannelTestResult({
@@ -14,33 +15,32 @@ export function ChannelTestResult({
   acceptedLabel: string;
   historical: boolean;
 }) {
-  const copy = testResultCopy[attempt.status];
+  const t = useTranslations("channels.testResult");
   const timestamp = attempt.completed_at ?? attempt.created_at;
+  const statusHeading =
+    attempt.status === "accepted"
+      ? acceptedLabel
+      : t(`${attempt.status}.title`);
+
   return (
     <section
       className={styles.result}
-      aria-label="最近测试结果"
+      aria-label={t("sectionAria")}
       aria-live="polite"
       aria-atomic="true"
       data-tone={attempt.status === "failed" ? "error" : undefined}
     >
       <h3 className="text-sm font-semibold">
-        最近测试：{attempt.status === "accepted" ? acceptedLabel : copy.title}
+        {t("heading", { status: statusHeading })}
       </h3>
-      <p className={styles.supporting}>{copy.detail}</p>
+      <p className={styles.supporting}>{t(`${attempt.status}.detail`)}</p>
       <p className={styles.supporting}>
-        {attempt.recipient_hint && `收件人 ${attempt.recipient_hint} · `}
-        <time dateTime={timestamp}>
-          {new Intl.DateTimeFormat("zh-CN", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }).format(new Date(timestamp))}
-        </time>
+        {attempt.recipient_hint &&
+          t("recipientPrefix", { recipient: attempt.recipient_hint })}
+        <LocalDate value={timestamp} />
       </p>
       {historical && (
-        <p className={styles.supporting}>
-          这是此前配置的测试记录，不能替代当前配置的验证。
-        </p>
+        <p className={styles.supporting}>{t("historicalNotice")}</p>
       )}
       {attempt.status === "failed" && (
         <DeliveryProviderErrorBlock

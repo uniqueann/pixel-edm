@@ -11,6 +11,7 @@ import {
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,8 +35,10 @@ import {
   validateTemplateText,
   type Template,
   type TemplateList,
+  type TemplateValidationError,
   type TemplateVariable,
 } from "./model";
+import { localizeTemplateCategory, localizeTemplateName } from "./localization";
 import { TemplatePreview } from "./template-preview";
 import { TemplateGrid } from "./template-grid";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -45,12 +48,19 @@ import {
   isQuotaExhausted,
   type PlanQuota,
 } from "@/features/workspace/plan-usage";
+import { useErrorMessage, useValidationMessage } from "@/i18n/use-resolvers";
 import styles from "./templates.module.css";
+
+function encodeValidationError(item: TemplateValidationError) {
+  if (!item.params || Object.keys(item.params).length === 0) return item.code;
+  return `${item.code}?${new URLSearchParams(item.params).toString()}`;
+}
 
 export function Templates({
   workspace,
   workspaceName,
   memberName,
+  memberDisplayNameCustomized,
   mailingAddress,
   senderAlias,
   senderAddress,
@@ -62,6 +72,7 @@ export function Templates({
   workspace: string;
   workspaceName: string;
   memberName: string;
+  memberDisplayNameCustomized?: boolean;
   mailingAddress: string;
   senderAlias: string;
   senderAddress: string;
@@ -70,6 +81,10 @@ export function Templates({
   data: TemplateList;
   filters: Record<string, string>;
 }) {
+  const t = useTranslations("templates");
+  const tCommon = useTranslations("common");
+  const resolveValidation = useValidationMessage();
+  const resolveError = useErrorMessage();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
@@ -200,11 +215,13 @@ export function Templates({
     }
   }, [data.page, filters, router]);
 
+  const defaultCustomCategory = t("defaults.customCategory");
+
   const openEditor = useCallback(
     (template: Template | null) => {
       returnFocus.current = document.activeElement as HTMLElement | null;
       const nextName = template?.name ?? "";
-      const nextCategory = template?.category ?? "自定义";
+      const nextCategory = template?.category ?? defaultCustomCategory;
       const nextSubject = template?.subject ?? "";
       const nextBody = template?.body ?? "";
       setEditing(template);
@@ -224,7 +241,7 @@ export function Templates({
         }),
       );
     },
-    [setEditorView],
+    [defaultCustomCategory, setEditorView],
   );
 
   function insertVariable(variable: TemplateVariable) {
@@ -258,18 +275,18 @@ export function Templates({
           workspace_id: workspace,
           id: template.id,
         });
-        if ("error" in result) toast.error(result.error);
+        if ("error" in result) toast.error(resolveError(result));
         else {
-          toast.success("模板副本已创建");
+          toast.success(t("toast.duplicated"));
           router.refresh();
         }
       } catch {
-        toast.error("复制失败，请重试。");
+        toast.error(t("toast.duplicateFailed"));
       } finally {
         setBusy(false);
       }
     },
-    [router, workspace],
+    [resolveError, router, t, workspace],
   );
 
   const performArchive = useCallback(
@@ -282,18 +299,18 @@ export function Templates({
           expected_version: template.version,
           archived: !archived,
         });
-        if ("error" in result) toast.error(result.error);
+        if ("error" in result) toast.error(resolveError(result));
         else {
-          toast.success(archived ? "模板已恢复" : "模板已归档");
+          toast.success(archived ? t("toast.restored") : t("toast.archived"));
           router.refresh();
         }
       } catch {
-        toast.error("操作失败，请重试。");
+        toast.error(t("toast.actionFailed"));
       } finally {
         setBusy(false);
       }
     },
-    [archived, router, workspace],
+    [archived, resolveError, router, t, workspace],
   );
 
   const archive = useCallback(
@@ -310,9 +327,9 @@ export function Templates({
   return (
     <>
       <PageHeader
-        title="邮件模板库"
-        meta={`${data.total} 套`}
-        description="支持使用起步模板参考样例，或创建自定义模板；主题与正文中的动态变量将在发信时自动替换为对应信息。"
+        title={t("title")}
+        meta={t("metaCount", { count: data.total })}
+        description={t("description")}
         actions={
           canEdit && !showInitialEmpty ? (
             <>
@@ -320,55 +337,58 @@ export function Templates({
                 disabled={templateQuotaExhausted}
                 onClick={() => openEditor(null)}
               >
-                新建模板
+                {t("newTemplate")}
               </Button>
             </>
           ) : undefined
         }
       />
-      <ListToolbar role="search" aria-label="查找模板">
+      <ListToolbar role="search" aria-label={t("search.toolbarAria")}>
         <FilterField
           id="template-search"
-          label="搜索模板"
+          label={t("search.label")}
           className="filter-field-search"
         >
           <Input
             id="template-search"
-            aria-label="搜索模板名称或主题"
-            placeholder="搜索模板名称或主题"
+            aria-label={t("search.placeholder")}
+            placeholder={t("search.placeholder")}
             value={q}
             maxLength={200}
             onChange={(event) => setQ(event.target.value)}
           />
         </FilterField>
-        <FilterField id="template-status" label="显示范围">
+        <FilterField id="template-status" label={t("search.statusLabel")}>
           <select
             id="template-status"
-            aria-label="模板状态"
+            aria-label={t("search.statusAria")}
             className="list-filter"
             value={archived ? "archived" : "active"}
             onChange={(event) =>
               navigate({ status: event.target.value, page: "1" })
             }
           >
-            <option value="active">使用中的模板</option>
-            <option value="archived">已归档模板</option>
+            <option value="active">{t("search.statusActive")}</option>
+            <option value="archived">{t("search.statusArchived")}</option>
           </select>
         </FilterField>
-        <FilterField id="template-filter-category" label="分类">
+        <FilterField
+          id="template-filter-category"
+          label={t("search.categoryLabel")}
+        >
           <select
             id="template-filter-category"
-            aria-label="模板分类"
+            aria-label={t("search.categoryAria")}
             className="list-filter"
             value={filters.category ?? ""}
             onChange={(event) =>
               navigate({ category: event.target.value, page: "1" })
             }
           >
-            <option value="">全部分类</option>
-            {(data.categories ?? []).map((category) => (
-              <option key={category} value={category}>
-                {category}
+            <option value="">{t("search.allCategories")}</option>
+            {(data.categories ?? []).map((cat) => (
+              <option key={cat} value={cat}>
+                {localizeTemplateCategory(cat, t)}
               </option>
             ))}
           </select>
@@ -376,19 +396,27 @@ export function Templates({
       </ListToolbar>
       {canEdit && (
         <PlanUsageNote
-          label="自定义模板（起步模板不占用）"
+          label={t("quota.label")}
           quota={customTemplateQuota}
-          exhaustedText="无法再新建或复制模板，可归档不用的模板或升级套餐"
+          exhaustedText={t("quota.exhausted")}
           testId="template-quota"
           className="mb-3"
         />
       )}
       {hasFilters && (
-        <div className="active-filters" aria-label="已应用筛选">
-          <span>已筛选</span>
-          {filters.q && <span className="filter-chip">搜索：{filters.q}</span>}
+        <div className="active-filters" aria-label={t("filters.ariaLabel")}>
+          <span>{t("filters.applied")}</span>
+          {filters.q && (
+            <span className="filter-chip">
+              {t("filters.queryChip", { query: filters.q })}
+            </span>
+          )}
           {filters.category && (
-            <span className="filter-chip">分类：{filters.category}</span>
+            <span className="filter-chip">
+              {t("filters.categoryChip", {
+                category: localizeTemplateCategory(filters.category, t),
+              })}
+            </span>
           )}
           <Button
             type="button"
@@ -396,12 +424,12 @@ export function Templates({
             size="sm"
             onClick={() => navigate({ q: "", category: "", page: "1" })}
           >
-            清空筛选
+            {t("filters.clear")}
           </Button>
         </div>
       )}
       <div aria-live="polite" className="hint mt-2">
-        {pending ? "正在加载…" : !canEdit ? "当前为只读权限。" : ""}
+        {pending ? t("status.loading") : !canEdit ? t("status.readOnly") : ""}
       </div>
       {data.items.length > 0 ? (
         <TemplateGrid
@@ -422,26 +450,26 @@ export function Templates({
             kind={hasFilters ? "search" : "empty"}
             title={
               hasFilters
-                ? "没有匹配的模板"
+                ? t("empty.searchTitle")
                 : archived
-                  ? "暂无已归档模板"
-                  : "还没有模板"
+                  ? t("empty.archivedTitle")
+                  : t("empty.initialTitle")
             }
             description={
               hasFilters
-                ? "请调整搜索条件，或清空筛选查看全部模板。"
+                ? t("empty.searchDescription")
                 : archived
-                  ? "归档的模板会保留在这里，可随时恢复。"
-                  : "新建一套邮件模板，或在编辑器中参考起步样例。"
+                  ? t("empty.archivedDescription")
+                  : t("empty.initialDescription")
             }
           >
             {hasFilters ? (
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate({ q: "", page: "1" })}
+                onClick={() => navigate({ q: "", category: "", page: "1" })}
               >
-                清空筛选
+                {t("filters.clear")}
               </Button>
             ) : (
               canEdit &&
@@ -450,7 +478,7 @@ export function Templates({
                   disabled={templateQuotaExhausted}
                   onClick={() => openEditor(null)}
                 >
-                  新建模板
+                  {t("newTemplate")}
                 </Button>
               )
             )}
@@ -486,15 +514,15 @@ export function Templates({
               className={styles.editorHeader}
               data-dialog-scroll-chrome
             >
-              <DialogTitle>{editing ? "编辑模板" : "新建模板"}</DialogTitle>
-              <DialogDescription>
-                编辑内容，预览核对后保存到模板库。
-              </DialogDescription>
+              <DialogTitle>
+                {editing ? t("editor.editTitle") : t("editor.createTitle")}
+              </DialogTitle>
+              <DialogDescription>{t("editor.description")}</DialogDescription>
             </DialogHeader>
             <div
               className={styles.viewSwitch}
               role="group"
-              aria-label="编辑器视图"
+              aria-label={t("editor.viewSwitchAria")}
               data-dialog-scroll-chrome
             >
               <Button
@@ -507,7 +535,7 @@ export function Templates({
                   editorScrollRef.current?.scrollTo({ top: 0 });
                 }}
               >
-                编辑内容
+                {t("editor.editTab")}
               </Button>
               <Button
                 type="button"
@@ -519,7 +547,7 @@ export function Templates({
                   editorScrollRef.current?.scrollTo({ top: 0 });
                 }}
               >
-                预览当前内容
+                {t("editor.previewTab")}
               </Button>
             </div>
             <div
@@ -534,12 +562,17 @@ export function Templates({
                 ref={editorFormRef}
                 className={`${styles.editorForm} ${styles.editorPane}`}
                 data-active={editorView === "edit"}
-                aria-label="模板内容"
+                aria-label={t("editor.formAria")}
                 onSubmit={async (event) => {
                   event.preventDefault();
                   setError("");
                   if (validationErrors.length) {
-                    setError(validationErrors[0].message);
+                    setError(
+                      resolveValidation(
+                        encodeValidationError(validationErrors[0]),
+                        validationErrors[0].message,
+                      ),
+                    );
                     return;
                   }
                   setBusy(true);
@@ -553,15 +586,22 @@ export function Templates({
                       subject: subject.trim(),
                       body,
                     });
-                    if ("error" in result)
-                      setError(result.error ?? "保存失败，请重试。");
-                    else {
+                    if ("error" in result) {
+                      const resolved =
+                        "validationCode" in result && result.validationCode
+                          ? resolveValidation(
+                              result.validationCode,
+                              result.error ?? t("editor.saveFailed"),
+                            )
+                          : resolveError(result);
+                      setError(resolved || t("editor.saveFailed"));
+                    } else {
                       setEditing(undefined);
-                      toast.success("模板已保存");
+                      toast.success(t("toast.saved"));
                       router.refresh();
                     }
                   } catch {
-                    setError("保存失败，输入已保留，请重试。");
+                    setError(t("editor.saveFailedKeepInput"));
                   } finally {
                     setBusy(false);
                   }
@@ -569,7 +609,9 @@ export function Templates({
               >
                 <div className={styles.identityFields}>
                   <div className={styles.field}>
-                    <Label htmlFor="template-name">模板名称</Label>
+                    <Label htmlFor="template-name">
+                      {t("editor.nameLabel")}
+                    </Label>
                     <Input
                       id="template-name"
                       required
@@ -580,7 +622,9 @@ export function Templates({
                     />
                   </div>
                   <div className={styles.field}>
-                    <Label htmlFor="template-category">分类</Label>
+                    <Label htmlFor="template-category">
+                      {t("editor.categoryLabel")}
+                    </Label>
                     <Input
                       id="template-category"
                       required
@@ -591,7 +635,7 @@ export function Templates({
                     />
                     {(data.categories ?? []).length > 0 && (
                       <details className={styles.categoryChoices}>
-                        <summary>选择已有分类</summary>
+                        <summary>{t("editor.existingCategories")}</summary>
                         <div className={styles.categorySuggestions}>
                           {(data.categories ?? []).slice(0, 5).map((cat) => (
                             <button
@@ -600,7 +644,7 @@ export function Templates({
                               className={styles.categorySuggestion}
                               onClick={() => setCategory(cat)}
                             >
-                              {cat}
+                              {localizeTemplateCategory(cat, t)}
                             </button>
                           ))}
                         </div>
@@ -609,7 +653,9 @@ export function Templates({
                   </div>
                 </div>
                 <div className={styles.field}>
-                  <Label htmlFor="template-subject">邮件主题</Label>
+                  <Label htmlFor="template-subject">
+                    {t("editor.subjectLabel")}
+                  </Label>
                   <Input
                     ref={subjectRef}
                     id="template-subject"
@@ -623,9 +669,11 @@ export function Templates({
                 </div>
                 <div className={styles.field}>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="template-body">纯文本正文</Label>
+                    <Label htmlFor="template-body">
+                      {t("editor.bodyLabel")}
+                    </Label>
                     <span className={styles.characterCount}>
-                      {body.length} / 20000 字
+                      {t("editor.charCount", { count: body.length })}
                     </span>
                   </div>
                   <textarea
@@ -639,16 +687,19 @@ export function Templates({
                     onChange={(event) => setBody(event.target.value)}
                   />
                 </div>
-                <section className={styles.variables} aria-label="模板变量">
+                <section
+                  className={styles.variables}
+                  aria-label={t("editor.variablesAria")}
+                >
                   <h3 className={styles.sectionTitle}>
-                    插入变量到{activeField === "subject" ? "主题" : "正文"}
+                    {activeField === "subject"
+                      ? t("editor.insertToSubject")
+                      : t("editor.insertToBody")}
                   </h3>
-                  <p className={styles.help}>
-                    点击变量插入占位符。未知变量会阻止保存。
-                  </p>
+                  <p className={styles.help}>{t("editor.variablesHelp")}</p>
                   {[
-                    { label: "客户资料 · 按收件人替换", customer: true },
-                    { label: "活动信息 · 创建活动时统一填写", customer: false },
+                    { label: t("editor.groupCustomer"), customer: true },
+                    { label: t("editor.groupCampaign"), customer: false },
                   ].map((group) => (
                     <div key={group.label} className={styles.variableGroup}>
                       <p className={styles.groupLabel}>{group.label}</p>
@@ -660,36 +711,44 @@ export function Templates({
                               (variable.key === "name" ||
                                 variable.key === "email"),
                           )
-                          .map((variable) => (
-                            <button
-                              key={variable.key}
-                              type="button"
-                              className={styles.variableButton}
-                              title={`插入 ${variable.key === "sender_name" ? "正文署名" : variable.label}（{{${variable.key}}}）`}
-                              onMouseDown={(event) => event.preventDefault()}
-                              onClick={() => insertVariable(variable.key)}
-                            >
-                              <span>
-                                {variable.key === "sender_name"
-                                  ? "正文署名"
-                                  : variable.label}
-                              </span>
-                              <code>{`{{${variable.key}}}`}</code>
-                            </button>
-                          ))}
+                          .map((variable) => {
+                            const label = t(`variables.${variable.key}`);
+                            return (
+                              <button
+                                key={variable.key}
+                                type="button"
+                                className={styles.variableButton}
+                                title={t("editor.insertVariableTitle", {
+                                  label,
+                                  key: variable.key,
+                                })}
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={() => insertVariable(variable.key)}
+                              >
+                                <span>{label}</span>
+                                <code>{`{{${variable.key}}}`}</code>
+                              </button>
+                            );
+                          })}
                       </div>
                     </div>
                   ))}
-                  <p className={styles.help}>
-                    正文署名用于邮件文字中的称呼或落款；真实发件人由发信通道配置。
-                  </p>
+                  <p className={styles.help}>{t("editor.senderNameHelp")}</p>
                 </section>
                 {validationErrors.length > 0 && (
                   <div className="field-error" role="alert">
                     {validationErrors.map((item, index) => (
                       <p key={`${item.field}-${index}`}>
-                        {item.field === "subject" ? "主题" : "正文"}：
-                        {item.message}
+                        {t("editor.fieldError", {
+                          field:
+                            item.field === "subject"
+                              ? t("editor.fieldSubject")
+                              : t("editor.fieldBody"),
+                          message: resolveValidation(
+                            encodeValidationError(item),
+                            item.message,
+                          ),
+                        })}
                       </p>
                     ))}
                   </div>
@@ -699,14 +758,17 @@ export function Templates({
                 id="template-preview-panel"
                 className={`${styles.previewPane} ${styles.editorPane}`}
                 data-active={editorView === "preview"}
-                aria-label="邮件预览"
+                aria-label={t("editor.previewSectionTitle")}
               >
-                <h3 className={styles.sectionTitle}>邮件预览</h3>
+                <h3 className={styles.sectionTitle}>
+                  {t("editor.previewSectionTitle")}
+                </h3>
                 <TemplatePreview
                   subject={subject}
                   body={body}
                   workspaceName={workspaceName}
                   memberName={memberName}
+                  memberDisplayNameCustomized={memberDisplayNameCustomized}
                   mailingAddress={mailingAddress}
                   senderAlias={senderAlias}
                   senderAddress={senderAddress}
@@ -730,12 +792,12 @@ export function Templates({
             >
               {error ||
                 (validationErrors.length
-                  ? "模板变量有误，请在编辑内容中修正"
+                  ? t("editor.statusInvalid")
                   : busy
-                    ? "正在保存模板…"
+                    ? t("editor.statusSaving")
                     : isTemplateEditDirty
-                      ? "有未保存的更改"
-                      : "仅保存模板内容")}
+                      ? t("editor.statusDirty")
+                      : t("editor.statusClean"))}
             </p>
             <Button
               type="button"
@@ -743,7 +805,7 @@ export function Templates({
               disabled={busy}
               onClick={requestCloseTemplateEditor}
             >
-              取消
+              {tCommon("actions.cancel")}
             </Button>
             <Button
               type="submit"
@@ -759,7 +821,7 @@ export function Templates({
                 );
               }}
             >
-              {busy ? "保存中…" : "保存模板"}
+              {busy ? t("editor.savingButton") : t("editor.saveButton")}
             </Button>
           </div>
         </DialogContent>
@@ -774,9 +836,13 @@ export function Templates({
           className="bottom-sheet max-h-[90vh] overflow-y-auto"
         >
           <DialogHeader>
-            <DialogTitle>{previewing?.name ?? "模板预览"}</DialogTitle>
+            <DialogTitle>
+              {previewing
+                ? localizeTemplateName(previewing, t)
+                : t("preview.dialogFallbackTitle")}
+            </DialogTitle>
             <DialogDescription>
-              核对邮件主题、正文与系统追加的页脚。
+              {t("preview.dialogDescription")}
             </DialogDescription>
           </DialogHeader>
           {previewing && (
@@ -785,6 +851,7 @@ export function Templates({
               body={previewing.body}
               workspaceName={workspaceName}
               memberName={memberName}
+              memberDisplayNameCustomized={memberDisplayNameCustomized}
               mailingAddress={mailingAddress}
               senderAlias={senderAlias}
               senderAddress={senderAddress}
@@ -800,11 +867,11 @@ export function Templates({
         onOpenChange={(open) => {
           if (!open) setArchiveConfirm(undefined);
         }}
-        title="归档模板"
-        description={
-          <>归档「{archiveConfirm?.name}」？之后可以在已归档列表恢复。</>
-        }
-        confirmLabel="归档"
+        title={t("archiveConfirm.title")}
+        description={t("archiveConfirm.description", {
+          name: archiveConfirm ? localizeTemplateName(archiveConfirm, t) : "",
+        })}
+        confirmLabel={t("archiveConfirm.confirm")}
         variant="destructive"
         onConfirm={() => {
           const template = archiveConfirm;
