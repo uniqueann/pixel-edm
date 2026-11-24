@@ -1,3 +1,53 @@
 {
-  "title": "使用帮助"
+  "title": "使用帮助",
+  "badge": "文档",
+  "roleCard": {
+    "introPrefix": "本文档说明当前版本的使用步骤与限制，随产品迭代更新。你的角色：",
+    "roles": {
+      "admin": "管理员",
+      "editor": "运营",
+      "viewer": "查看者"
+    },
+    "adminScope": "拥有发信通道与全量功能权限",
+    "nonAdminScope": "部分系统设置与正式发信需管理员权限",
+    "permissionsHint": "配置发信通道、Webhook 与正式发送仅管理员可操作；运营与查看者请以对应章节为准。",
+    "channelHintPrefix": "通道与追踪问题请先查看",
+    "channelHintLink": "设置 → 发信通道",
+    "channelHintSuffix": "。"
+  },
+  "englishBodyNotice": "当前版本帮助正文均为中文文档。",
+  "search": {
+    "placeholder": "搜索帮助内容，如：DNS、发信地址、退订保护、正式发送…",
+    "ariaLabel": "搜索使用帮助",
+    "clearAria": "清空搜索",
+    "directoryAria": "帮助目录",
+    "summary": "搜索 “{query}” 找到了 {count} 个相关章节",
+    "reset": "重置搜索",
+    "emptyTitle": "未找到与关键词相关的帮助章节",
+    "emptyDescription": "请尝试使用其他关键词，或清空搜索查看全部帮助内容。",
+    "showAll": "查看全部内容"
+  },
+  "targetRoles": {
+    "all": "全员通用",
+    "adminEditor": "管理员与运营",
+    "adminOnly": "仅管理员"
+  },
+  "sections": {
+    "overview": "产品能做什么",
+    "roles": "角色与权限",
+    "onboarding": "首次使用（建议顺序）",
+    "directmail-setup": "图解开通 DirectMail",
+    "directmail-channel": "DirectMail 通道注意事项",
+    "contacts": "客户、订阅与退订",
+    "campaigns": "活动与正式发送",
+    "go-live": "上线前核对清单（约 30 分钟）",
+    "sendgrid-future": "关于 SendGrid（即将支持）",
+    "ses-future": "关于 Amazon SES（即将支持）"
+  },
+  "links": {
+    "checklist": "查看总览准备清单",
+    "campaigns": "查看发信活动"
+  },
+  "backToDirectory": "回到目录",
+  "backToTopAria": "返回页面顶部"
 }

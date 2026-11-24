@@ -1310,6 +1310,40 @@ label:has(input[type="radio"]) {
     padding-inline: 6px;
   }
 }
+/* 英文导航文案较长：窄屏（含 400px 横屏）提前收敛低频项至 More 菜单，避免横向溢出。 */
+@media (max-width: 640px) {
+  :root[lang="en"] .tabs {
+    gap: 4px;
+  }
+  :root[lang="en"] .tab {
+    padding-inline: 6px;
+  }
+}
+@media (max-width: 560px) {
+  :root[lang="en"] .tabs {
+    gap: 0;
+  }
+  :root[lang="en"] .tab {
+    flex-grow: 1;
+    font-size: 12px;
+    padding-inline: 4px;
+  }
+  :root[lang="en"] .tab-collapsible {
+    display: none;
+  }
+  :root[lang="en"] button.tab.tabs-more {
+    display: inline-flex;
+    padding-inline: 2px;
+  }
+}
+@media (max-width: 360px) {
+  :root[lang="en"] .tabs {
+    padding-inline: 6px;
+  }
+  :root[lang="en"] .tab {
+    padding-inline: 2px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .stat-card,
   [data-slot="button"],

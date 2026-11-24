@@ -1,5 +1,6 @@
+import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { getContext } from "@/lib/workspace";
 import { listContacts } from "@/features/contacts/actions";
 import { Contacts } from "@/features/contacts/contacts";
@@ -7,6 +8,11 @@ import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
 import { planUsageFromDeliveryPlan } from "@/features/workspace/plan-usage";
 import { ROOT_CLIENT_NAMESPACES } from "@/i18n/config";
 import { pickMessages } from "@/i18n/messages";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("contacts");
+  return { title: t("title") };
+}
 
 export default async function Page({
   searchParams,

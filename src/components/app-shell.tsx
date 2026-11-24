@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, useTransition } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ChevronDown, LogOut } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
@@ -33,8 +33,15 @@ const tabSlugs = [
 ] as const;
 type NavSlug = (typeof tabSlugs)[number];
 type RoleKey = "admin" | "editor" | "viewer";
-/** 窄屏收入「更多」菜单的低频导航项 */
-const overflowTabSlugs = new Set<string>(["logs", "help"]);
+/** 中文窄屏收入「更多」菜单的低频导航项 */
+const overflowTabSlugsZh = new Set<string>(["logs", "help"]);
+/** 英文导航词较长，窄屏保留 4 个高频核心入口，其余收入 More 菜单避免溢出 */
+const overflowTabSlugsEn = new Set<string>([
+  "team",
+  "logs",
+  "settings",
+  "help",
+]);
 
 function tabIsActive(pathname: string, slug: string) {
   return pathname === `/${slug}` || pathname.startsWith(`/${slug}/`);
@@ -69,6 +76,9 @@ export function AppShell({
   const queryClient = useQueryClient();
   const router = useRouter();
   const t = useTranslations("shell");
+  const locale = useLocale();
+  const overflowTabSlugs =
+    locale === "en" ? overflowTabSlugsEn : overflowTabSlugsZh;
   const visibleTabs: [NavSlug, string][] = tabSlugs
     .filter((slug) => slug !== "team" || showTeamNav)
     .filter((slug) => slug !== "logs" || (role === "admin" && showLogsNav))

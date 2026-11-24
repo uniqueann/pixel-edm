@@ -1,3 +1,53 @@
 {
-  "title": "Help"
+  "title": "Help",
+  "badge": "Docs",
+  "roleCard": {
+    "introPrefix": "This guide covers current features, workflows, and limits, updated alongside product releases. Your role:",
+    "roles": {
+      "admin": "Admin",
+      "editor": "Operator",
+      "viewer": "Viewer"
+    },
+    "adminScope": "Full access to channels and workspace settings",
+    "nonAdminScope": "Some settings and formal sending require Admin access",
+    "permissionsHint": "Only Admins can configure delivery channels, webhooks, and formal sending. Operators and Viewers can follow the relevant sections below.",
+    "channelHintPrefix": "For channel or tracking issues, check ",
+    "channelHintLink": "Settings → Sending channels",
+    "channelHintSuffix": " first."
+  },
+  "englishBodyNotice": "Detailed tutorial body content is currently available in Chinese; an English edition is planned for a future release.",
+  "search": {
+    "placeholder": "Search help topics, e.g. DNS, sender address, unsubscribe, sending…",
+    "ariaLabel": "Search help guide",
+    "clearAria": "Clear search",
+    "directoryAria": "Help table of contents",
+    "summary": "Found {count, plural, one {# matching section} other {# matching sections}} for \"{query}\"",
+    "reset": "Reset search",
+    "emptyTitle": "No matching help sections",
+    "emptyDescription": "Try different keywords or clear your search to view all topics.",
+    "showAll": "View all topics"
+  },
+  "targetRoles": {
+    "all": "All roles",
+    "adminEditor": "Admin & Operator",
+    "adminOnly": "Admin only"
+  },
+  "sections": {
+    "overview": "What Pixel EDM does",
+    "roles": "Roles & permissions",
+    "onboarding": "Getting started (recommended order)",
+    "directmail-setup": "DirectMail setup walkthrough",
+    "directmail-channel": "DirectMail channel notes",
+    "contacts": "Contacts, consent & unsubscribes",
+    "campaigns": "Campaigns & formal sending",
+    "go-live": "Pre-launch checklist (~30 min)",
+    "sendgrid-future": "About SendGrid (coming soon)",
+    "ses-future": "About Amazon SES (coming soon)"
+  },
+  "links": {
+    "checklist": "View setup checklist on Overview",
+    "campaigns": "View campaigns"
+  },
+  "backToDirectory": "Back to contents",
+  "backToTopAria": "Back to top"
 }

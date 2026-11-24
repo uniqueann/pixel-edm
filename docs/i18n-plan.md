@@ -363,9 +363,9 @@ export type AppErrorPayload = {
 
 ### P1-c 收尾与视觉回归
 
-- [ ] 帮助外壳与目录标题英文（正文留待 P2）
-- [ ] 全站 metadata、placeholder / aria-label / title 排查
-- [ ] 视觉回归：重点巡检英文长词页面（`campaigns.tsx`、表格、按钮）与 `tests/responsive/office-nav.spec.ts` 英文模式导航折叠表现
+- [x] 帮助外壳与目录标题英文（正文留待 P2）
+- [x] 全站 metadata、placeholder / aria-label / title 排查
+- [x] 视觉回归：重点巡检英文长词页面（`campaigns.tsx`、表格、按钮）与 `tests/responsive/office-nav.spec.ts` 英文模式导航折叠表现
 - **验收**：中英双语言完整巡检通过，`npm run ci:verify` 全绿
 
 ---

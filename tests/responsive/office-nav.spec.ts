@@ -102,3 +102,87 @@ test("触摸主导航在横竖屏切换时对齐并恢复焦点", async ({ page 
     page.getByRole("heading", { name: "操作记录", exact: true }),
   ).toBeVisible();
 });
+
+test("英文模式触摸主导航在横竖屏切换时无溢出且折叠菜单正常", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+
+  await page.getByRole("button", { name: "切换界面语言" }).click();
+  await page.getByRole("menuitem", { name: "English" }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+  try {
+    const nav = page.getByRole("navigation", { name: "Primary navigation" });
+    const more = nav.getByRole("button", { name: "More navigation" });
+    const logs = nav.getByRole("link", { name: "Logs", exact: true });
+    const help = nav.getByRole("link", { name: "Help", exact: true });
+
+    for (const [width, height] of [
+      [320, 568],
+      [390, 844],
+      [430, 932],
+      [400, 320],
+      [568, 320],
+      [844, 390],
+    ]) {
+      await page.setViewportSize({ width, height });
+      const collapsed = width <= 560;
+      if (collapsed) {
+        await expect(more).toBeVisible();
+        await expect(logs).toBeHidden();
+        await expect(help).toBeHidden();
+      } else {
+        await expect(more).toBeHidden();
+        await expect(logs).toBeVisible();
+        await expect(help).toBeVisible();
+      }
+
+      const layout = await nav.evaluate(async (element) => {
+        await document.fonts.ready;
+        return {
+          overflow: element.scrollWidth - element.clientWidth,
+          tabs: Array.from(element.children)
+            .filter((tab) => tab.getClientRects().length)
+            .map((tab) => {
+              const box = tab.getBoundingClientRect();
+              return {
+                width: box.width,
+                height: box.height,
+                top: box.top,
+              };
+            }),
+        };
+      });
+      const size = `en ${width}×${height}`;
+      expect(layout.overflow, size).toBeLessThanOrEqual(0);
+      for (const tab of layout.tabs) {
+        expect(tab.width, size).toBeGreaterThanOrEqual(44);
+        expect(tab.height, size).toBeGreaterThanOrEqual(44);
+        expect(
+          Math.abs(tab.top - layout.tabs[0].top),
+          size,
+        ).toBeLessThanOrEqual(1);
+      }
+    }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await more.tap();
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Logs" })).toBeVisible();
+    await menu.getByRole("menuitem", { name: "Help" }).tap();
+    await expect(page).toHaveURL(/\/help$/);
+    await expect(
+      page.getByRole("heading", { name: "Help", exact: true }),
+    ).toBeVisible();
+  } finally {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/dashboard");
+    if ((await page.locator("html").getAttribute("lang")) === "en") {
+      await page.getByRole("button", { name: "Switch language" }).click();
+      await page.getByRole("menuitem", { name: "简体中文" }).click();
+      await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+    }
+  }
+});

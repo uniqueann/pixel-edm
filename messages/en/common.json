@@ -8,7 +8,8 @@
     "close": "Close",
     "retry": "Retry",
     "reload": "Reload",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "loadingWorkspace": "Loading workspace"
   },
   "pagination": {
     "ariaLabel": "Pagination",

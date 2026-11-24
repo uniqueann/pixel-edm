@@ -2,6 +2,7 @@
 
 import { useId, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowUp,
   CheckCircle2,
@@ -20,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { helpNav, helpSections } from "./content";
+import { helpSections } from "./content";
 import { DirectMailSetupGuide } from "./directmail-setup-guide";
 import { settingsSectionHref } from "@/features/settings/anchors";
 
@@ -38,7 +39,43 @@ const sectionIcons: Record<
   clock: Clock,
 };
 
+type HelpSectionId =
+  | "overview"
+  | "roles"
+  | "onboarding"
+  | "directmail-setup"
+  | "directmail-channel"
+  | "contacts"
+  | "campaigns"
+  | "go-live"
+  | "sendgrid-future"
+  | "ses-future";
+
+const KNOWN_SECTION_IDS = new Set<string>([
+  "overview",
+  "roles",
+  "onboarding",
+  "directmail-setup",
+  "directmail-channel",
+  "contacts",
+  "campaigns",
+  "go-live",
+  "sendgrid-future",
+  "ses-future",
+]);
+
+function targetRoleKey(
+  label?: string,
+): "all" | "adminEditor" | "adminOnly" | null {
+  if (label === "全员通用") return "all";
+  if (label === "管理员与运营") return "adminEditor";
+  if (label === "仅管理员") return "adminOnly";
+  return null;
+}
+
 export function HelpGuide({ role }: { role: string }) {
+  const t = useTranslations("help");
+  const locale = useLocale();
   const [searchQuery, setSearchQuery] = useState("");
   const [showBackToTop, setShowBackToTop] = useState(false);
   const searchInputId = useId();
@@ -60,11 +97,41 @@ export function HelpGuide({ role }: { role: string }) {
     });
   };
 
+  const localizedSections = useMemo(
+    () =>
+      helpSections.map((section) => {
+        const displayTitle = KNOWN_SECTION_IDS.has(section.id)
+          ? t(`sections.${section.id as HelpSectionId}`)
+          : section.title;
+        const roleKey = targetRoleKey(section.targetRoleLabel);
+        const displayRole = roleKey
+          ? t(`targetRoles.${roleKey}`)
+          : section.targetRoleLabel;
+        const displayLinks = section.links?.map((link) => ({
+          ...link,
+          label:
+            link.href === "/dashboard#onboarding"
+              ? t("links.checklist")
+              : link.href === "/campaigns?guide=campaigns"
+                ? t("links.campaigns")
+                : link.label,
+        }));
+        return {
+          ...section,
+          displayTitle,
+          displayRole,
+          displayLinks,
+        };
+      }),
+    [t],
+  );
+
   const filteredSections = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return helpSections;
+    if (!q) return localizedSections;
 
-    return helpSections.filter((section) => {
+    return localizedSections.filter((section) => {
+      if (section.displayTitle.toLowerCase().includes(q)) return true;
       if (section.title.toLowerCase().includes(q)) return true;
       if (section.intro && section.intro.toLowerCase().includes(q)) return true;
       if (section.steps?.some((step) => step.toLowerCase().includes(q)))
@@ -76,6 +143,8 @@ export function HelpGuide({ role }: { role: string }) {
         return true;
       if (section.keywords?.some((k) => k.toLowerCase().includes(q)))
         return true;
+      if (section.displayRole && section.displayRole.toLowerCase().includes(q))
+        return true;
       if (
         section.targetRoleLabel &&
         section.targetRoleLabel.toLowerCase().includes(q)
@@ -83,13 +152,21 @@ export function HelpGuide({ role }: { role: string }) {
         return true;
       return false;
     });
-  }, [searchQuery]);
+  }, [searchQuery, localizedSections]);
 
   const activeNav = useMemo(() => {
-    if (!searchQuery.trim()) return helpNav;
-    const activeIds = new Set(filteredSections.map((s) => s.id));
-    return helpNav.filter((item) => activeIds.has(item.id));
-  }, [searchQuery, filteredSections]);
+    return filteredSections.map(({ id, displayTitle }) => ({
+      id,
+      title: displayTitle,
+    }));
+  }, [filteredSections]);
+
+  const roleBadgeLabel =
+    role === "admin"
+      ? t("roleCard.roles.admin")
+      : role === "editor"
+        ? t("roleCard.roles.editor")
+        : t("roleCard.roles.viewer");
 
   return (
     <div className="help-guide space-y-6 w-full max-w-full min-w-0 overflow-x-clip">
@@ -98,35 +175,33 @@ export function HelpGuide({ role }: { role: string }) {
         <CardContent className="space-y-2.5 pt-5 pb-5 sm:pt-6 sm:pb-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="m-0 text-sm font-medium">
-              本文档说明当前版本的使用步骤与限制，随产品迭代更新。你的角色：
+              {t("roleCard.introPrefix")}
               <Badge variant="secondary" className="ml-1.5 align-middle">
-                {role === "admin"
-                  ? "管理员"
-                  : role === "editor"
-                    ? "运营"
-                    : "查看者"}
+                {roleBadgeLabel}
               </Badge>
             </p>
             <span className="text-xs text-muted-foreground">
               {role === "admin"
-                ? "拥有发信通道与全量功能权限"
-                : "部分系统设置与正式发信需管理员权限"}
+                ? t("roleCard.adminScope")
+                : t("roleCard.nonAdminScope")}
             </span>
           </div>
           <p className="hint m-0 text-xs sm:text-sm">
-            配置发信通道、Webhook
-            与正式发送仅管理员可操作；运营与查看者请以对应章节为准。
+            {t("roleCard.permissionsHint")}
           </p>
           <p className="hint m-0 text-xs sm:text-sm">
-            通道与追踪问题请先查看{" "}
+            {t("roleCard.channelHintPrefix")}{" "}
             <Link
               href={settingsSectionHref("channels")}
               className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
             >
-              设置 → 发信通道
+              {t("roleCard.channelHintLink")}
             </Link>
-            。
+            {t("roleCard.channelHintSuffix")}
           </p>
+          {locale === "en" && (
+            <Notice className="mt-2 mb-0">{t("englishBodyNotice")}</Notice>
+          )}
         </CardContent>
       </Card>
 
@@ -142,16 +217,16 @@ export function HelpGuide({ role }: { role: string }) {
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索帮助内容，如：DNS、发信地址、退订保护、正式发送…"
+            placeholder={t("search.placeholder")}
             className="h-10 pl-9 pr-9 text-sm w-full min-w-0 max-w-full"
-            aria-label="搜索使用帮助"
+            aria-label={t("search.ariaLabel")}
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
               className="absolute right-0 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="清空搜索"
+              aria-label={t("search.clearAria")}
             >
               <X className="size-3.5" />
             </button>
@@ -161,7 +236,7 @@ export function HelpGuide({ role }: { role: string }) {
         {/* 目录导航（移动端横向滑动，大屏平铺折行） */}
         <nav
           id="help-directory-nav"
-          aria-label="帮助目录"
+          aria-label={t("search.directoryAria")}
           className="flex w-full min-w-0 max-w-full overflow-x-auto pb-1 text-xs scrollbar-none sm:flex-wrap sm:pb-0 sm:text-sm gap-1.5 sm:gap-2"
         >
           {activeNav.map((item) => (
@@ -180,8 +255,10 @@ export function HelpGuide({ role }: { role: string }) {
       {searchQuery.trim() && (
         <div className="flex items-center justify-between rounded-lg bg-muted/60 px-3.5 py-2 text-xs text-muted-foreground">
           <span>
-            搜索 “<strong className="text-foreground">{searchQuery}</strong>”
-            找到了 {filteredSections.length} 个相关章节
+            {t("search.summary", {
+              query: searchQuery,
+              count: filteredSections.length,
+            })}
           </span>
           <Button
             variant="ghost"
@@ -189,7 +266,7 @@ export function HelpGuide({ role }: { role: string }) {
             className="h-6 px-2 text-xs"
             onClick={() => setSearchQuery("")}
           >
-            重置搜索
+            {t("search.reset")}
           </Button>
         </div>
       )}
@@ -198,18 +275,16 @@ export function HelpGuide({ role }: { role: string }) {
       {filteredSections.length === 0 ? (
         <Card className="py-12 text-center w-full min-w-0 max-w-full overflow-hidden">
           <CardContent className="space-y-3">
-            <p className="text-base font-medium">
-              未找到与关键词相关的帮助章节
-            </p>
+            <p className="text-base font-medium">{t("search.emptyTitle")}</p>
             <p className="text-xs text-muted-foreground">
-              请尝试使用其他关键词，或清空搜索查看全部帮助内容。
+              {t("search.emptyDescription")}
             </p>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSearchQuery("")}
             >
-              查看全部内容
+              {t("search.showAll")}
             </Button>
           </CardContent>
         </Card>
@@ -243,15 +318,15 @@ export function HelpGuide({ role }: { role: string }) {
                       </span>
                     )}
                     <h2 className="m-0 text-base font-semibold tracking-tight sm:text-lg">
-                      {section.title}
+                      {section.displayTitle}
                     </h2>
                   </div>
-                  {section.targetRoleLabel && (
+                  {section.displayRole && (
                     <Badge
                       variant="outline"
                       className="border-muted-foreground/30 text-xs font-normal text-muted-foreground"
                     >
-                      {section.targetRoleLabel}
+                      {section.displayRole}
                     </Badge>
                   )}
                 </div>
@@ -282,9 +357,9 @@ export function HelpGuide({ role }: { role: string }) {
                 ) : null}
 
                 {/* 补充说明 */}
-                {section.links?.length ? (
+                {section.displayLinks?.length ? (
                   <div className="flex flex-wrap gap-x-6 gap-y-2">
-                    {section.links.map((link) => (
+                    {section.displayLinks.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
@@ -309,7 +384,7 @@ export function HelpGuide({ role }: { role: string }) {
                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <ArrowUp className="size-3" aria-hidden="true" />
-                    回到目录
+                    {t("backToDirectory")}
                   </a>
                 </div>
               </CardContent>
@@ -324,7 +399,7 @@ export function HelpGuide({ role }: { role: string }) {
           type="button"
           onClick={scrollToTop}
           className="fixed bottom-6 right-6 z-40 flex size-10 items-center justify-center rounded-full border border-border/80 bg-card/90 text-foreground shadow-lg backdrop-blur-md transition-all hover:bg-muted hover:scale-105 active:scale-95 sm:bottom-8 sm:right-8"
-          aria-label="返回页面顶部"
+          aria-label={t("backToTopAria")}
         >
           <ArrowUp className="size-5" />
         </button>
