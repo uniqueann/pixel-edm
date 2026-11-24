@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { serverClient } from "@/lib/supabase/server";
 import { getInvitationPreview } from "@/features/team/actions";
 import { InviteAcceptance } from "@/features/team/invite-acceptance";
 import { Button } from "@/components/ui/button";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth.invite");
+  return { title: t("guestTitle") };
+}
 
 export default async function Page({
   params,

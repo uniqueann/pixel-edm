@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
@@ -10,6 +11,11 @@ import { getWorkspaceDeliveryPlan } from "@/features/workspace/delivery-plan";
 import { ROOT_CLIENT_NAMESPACES } from "@/i18n/config";
 import { pickMessages } from "@/i18n/messages";
 import { getContext } from "@/lib/workspace";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("audit");
+  return { title: t("title") };
+}
 
 export default async function Page({
   searchParams,

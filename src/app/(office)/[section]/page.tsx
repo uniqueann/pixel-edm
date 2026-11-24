@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Plus } from "lucide-react";
@@ -82,6 +83,47 @@ const pages: Record<
     empty: "暂无操作记录，产生业务变动后将在此记录",
   },
 };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ section: string }>;
+}): Promise<Metadata> {
+  const { section } = await params;
+  if (section === "dashboard") {
+    const t = await getTranslations("dashboard");
+    return { title: t("title") };
+  }
+  if (section === "settings") {
+    const t = await getTranslations("settings");
+    return { title: t("pageTitle") };
+  }
+  if (section === "team") {
+    const t = await getTranslations("team");
+    return { title: t("title") };
+  }
+  if (section === "help") {
+    const t = await getTranslations("help");
+    return { title: t("title") };
+  }
+  if (section === "contacts") {
+    const t = await getTranslations("contacts");
+    return { title: t("title") };
+  }
+  if (section === "templates") {
+    const t = await getTranslations("templates");
+    return { title: t("title") };
+  }
+  if (section === "campaigns") {
+    const t = await getTranslations("campaigns");
+    return { title: t("title") };
+  }
+  if (section === "logs") {
+    const t = await getTranslations("audit");
+    return { title: t("title") };
+  }
+  return {};
+}
+
 export default async function Page({
   params,
 }: {
@@ -96,14 +138,22 @@ export default async function Page({
     notFound();
   const { workspace, role, user, member } = await getContext();
   if (section === "help") {
+    const [locale, messages, tHelp] = await Promise.all([
+      getLocale(),
+      getMessages(),
+      getTranslations("help"),
+    ]);
     return (
-      <>
+      <NextIntlClientProvider
+        locale={locale}
+        messages={pickMessages(messages, [...ROOT_CLIENT_NAMESPACES, "help"])}
+      >
         <PageHeader
-          title="使用帮助"
-          meta={<Badge variant="secondary">文档</Badge>}
+          title={tHelp("title")}
+          meta={<Badge variant="secondary">{tHelp("badge")}</Badge>}
         />
         <HelpGuide role={role} />
-      </>
+      </NextIntlClientProvider>
     );
   }
   if (section === "settings") {

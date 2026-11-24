@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { serverClient } from "@/lib/supabase/server";
@@ -5,6 +6,11 @@ import { isConfigured } from "@/lib/supabase/config";
 import { InitializeForm } from "@/components/initialize-form";
 import { signOut } from "@/app/actions";
 import { Button } from "@/components/ui/button";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth.onboarding");
+  return { title: t("title") };
+}
 
 export default async function Page({
   searchParams,

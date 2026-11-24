@@ -8,7 +8,7 @@ test("英文浏览器完整体验：公开认证页、校验文案、导航、�
   // 1. 英文浏览器首次打开登录页：自动协商为 en，展示英文品牌、表单与校验提示
   await page.goto("/login");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(page).toHaveTitle(/Pixel EDM/);
+  await expect(page).toHaveTitle("Sign in · Pixel EDM");
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
@@ -172,18 +172,118 @@ test("英文核心业务流：总览、预置模板本地化、客户与导入�
     ).toBeVisible();
     await expect(page.getByText(/Current plan:/)).toBeVisible();
 
-    // 6. 操作日志与团队页
+    // 6. 操作日志、团队页与帮助页外壳
     await page.goto("/logs");
+    await expect(page).toHaveTitle("Activity logs · Pixel EDM");
     await expect(
       page.getByRole("heading", { name: "Activity logs", level: 1 }),
     ).toBeVisible();
 
     await page.goto("/team");
+    await expect(page).toHaveTitle("Team · Pixel EDM");
     await expect(
       page.getByRole("heading", { name: "Team", level: 1 }),
     ).toBeVisible();
+
+    await page.goto("/help");
+    await expect(page).toHaveTitle("Help · Pixel EDM");
+    await expect(
+      page.getByRole("heading", { name: "Help", level: 1 }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Detailed tutorial body content is currently available/),
+    ).toBeVisible();
+    const helpToc = page.getByRole("navigation", {
+      name: "Help table of contents",
+    });
+    await expect(
+      helpToc.getByRole("link", { name: "What Pixel EDM does" }),
+    ).toBeVisible();
+    await expect(
+      helpToc.getByRole("link", { name: "DirectMail setup walkthrough" }),
+    ).toBeVisible();
+    await page
+      .getByRole("searchbox", { name: "Search help guide" })
+      .fill("SendGrid");
+    await expect(
+      page.getByText('Found 2 matching sections for "SendGrid"'),
+    ).toBeVisible();
   } finally {
     // 复位 owner 账号回简体中文，避免影响复用同一夹具的中文 E2E
+    await page.goto("/dashboard");
+    if ((await page.locator("html").getAttribute("lang")) === "en") {
+      await page.getByRole("button", { name: "Switch language" }).click();
+      await page.getByRole("menuitem", { name: "简体中文" }).click();
+      await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+    }
+  }
+});
+
+test("英文模式视觉与导航回归：桌面与手机视口无横向溢出且窄屏折叠正常", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Email", { exact: true }).fill("owner@example.test");
+  await page.getByLabel("Password", { exact: true }).fill("edm-test-password");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  if ((await page.locator("html").getAttribute("lang")) !== "en") {
+    await page.getByRole("button", { name: "切换界面语言" }).click();
+    await page.getByRole("menuitem", { name: "English" }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  }
+
+  try {
+    const routes = [
+      "/dashboard",
+      "/contacts",
+      "/contacts/import",
+      "/templates",
+      "/campaigns",
+      "/settings",
+      "/logs",
+      "/team",
+      "/help",
+    ];
+
+    for (const viewport of [
+      { width: 1440, height: 900 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      for (const route of routes) {
+        await page.goto(route);
+        const overflow = await page.evaluate(async () => {
+          await document.fonts.ready;
+          return document.documentElement.scrollWidth - window.innerWidth;
+        });
+        expect(
+          overflow,
+          `${route} @ ${viewport.width}x${viewport.height}`,
+        ).toBeLessThanOrEqual(0);
+      }
+    }
+
+    // 窄屏导航折叠交互检查（390x844）
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/dashboard");
+    const nav = page.getByRole("navigation", { name: "Primary navigation" });
+    const navOverflow = await nav.evaluate(
+      (el) => el.scrollWidth - el.clientWidth,
+    );
+    expect(navOverflow, "390x844 nav overflow").toBeLessThanOrEqual(0);
+
+    const more = nav.getByRole("button", { name: "More navigation" });
+    await expect(more).toBeVisible();
+    await more.click();
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Logs" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Help" })).toBeVisible();
+    await menu.getByRole("menuitem", { name: "Help" }).click();
+    await expect(page).toHaveURL(/\/help$/);
+  } finally {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/dashboard");
     if ((await page.locator("html").getAttribute("lang")) === "en") {
       await page.getByRole("button", { name: "Switch language" }).click();
